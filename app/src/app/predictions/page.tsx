@@ -8,6 +8,7 @@ import StandingsTable from "@/components/StandingsTable";
 import R32Preview from "@/components/R32Preview";
 import { GlobalLiveIndicator } from "@/components/MatchStatus";
 import { useMatches } from "@/contexts/MatchContext";
+import { useSimulation } from "@/contexts/SimulationContext";
 import { createClient } from "@/lib/supabase/client";
 import { CalculatedStanding, Team, Match } from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
@@ -16,7 +17,6 @@ import { buildApiToFifaMapping } from "@/lib/api-client";
 import {
   Profile,
   Prediction,
-  TournamentSettings,
   GroupStandingsOverride,
 } from "@/types/database";
 
@@ -38,7 +38,6 @@ export default function PredictionsPage() {
   const supabase = createClient();
 
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [settings, setSettings] = useState<TournamentSettings | null>(null);
   const [predictions, setPredictions] = useState<Map<number, Prediction>>(
     new Map(),
   );
@@ -55,6 +54,10 @@ export default function PredictionsPage() {
     liveMatches,
     refresh: refreshMatches,
   } = useMatches();
+
+  // Get stage lock status from simulation context (time-based)
+  const { stageLockStatus, getCurrentTime } = useSimulation();
+  const { groupStageLocked: groupLocked, knockoutStageOpen: knockoutOpen, knockoutStageLocked: knockoutLocked } = stageLockStatus;
 
   useEffect(() => {
     const loadData = async () => {
@@ -73,13 +76,6 @@ export default function PredictionsPage() {
         .eq("id", user.id)
         .single();
       setProfile(profileData);
-
-      // Load tournament settings
-      const { data: settingsData } = await supabase
-        .from("tournament_settings")
-        .select("*")
-        .single();
-      setSettings(settingsData);
 
       // Load user predictions
       const { data: predictionsData } = await supabase
@@ -313,10 +309,6 @@ export default function PredictionsPage() {
       return;
     }
 
-    const groupLocked = settings?.group_stage_locked || false;
-    const knockoutOpen = settings?.knockout_stage_open || false;
-    const knockoutLocked = settings?.knockout_stage_locked || false;
-
     // Filter out predictions for unlocked sections only
     const newPredictions = new Map(predictions);
     matches.forEach((match) => {
@@ -382,10 +374,6 @@ export default function PredictionsPage() {
     thirdPlaceQualifying,
   });
   const resolvedKnockoutTeams = resolver.resolve();
-
-  const groupLocked = settings?.group_stage_locked || false;
-  const knockoutOpen = settings?.knockout_stage_open || false;
-  const knockoutLocked = settings?.knockout_stage_locked || false;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -481,13 +469,14 @@ export default function PredictionsPage() {
                       {stageMatches.map((match) => {
                         const resolved = resolvedKnockoutTeams.get(match.id);
                         const fifaNumber = apiToFifaMap.get(match.id);
+                        const matchHasStarted = getCurrentTime() >= new Date(match.utcDate);
                         return (
                           <PredictionInput
                             key={match.id}
                             match={match}
                             prediction={predictions.get(match.id)}
                             onChange={handlePredictionChange}
-                            disabled={knockoutLocked}
+                            disabled={knockoutLocked || matchHasStarted}
                             showWinnerSelect={true}
                             resolvedHomeTeam={resolved?.home}
                             resolvedAwayTeam={resolved?.away}
@@ -543,13 +532,14 @@ export default function PredictionsPage() {
                             )
                             .map((match) => {
                               const fifaNumber = apiToFifaMap.get(match.id);
+                              const matchHasStarted = getCurrentTime() >= new Date(match.utcDate);
                               return (
                                 <PredictionInput
                                   key={match.id}
                                   match={match}
                                   prediction={predictions.get(match.id)}
                                   onChange={handlePredictionChange}
-                                  disabled={groupLocked}
+                                  disabled={groupLocked || matchHasStarted}
                                   fifaMatchNumber={fifaNumber}
                                 />
                               );

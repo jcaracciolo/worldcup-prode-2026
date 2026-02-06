@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import { createClient } from "@/lib/supabase/client";
-import { Profile, InviteCode, TournamentSettings } from "@/types/database";
+import { Profile, InviteCode } from "@/types/database";
 import { useSimulation } from "@/contexts/SimulationContext";
 import { useMatches } from "@/contexts/MatchContext";
 import { format } from "date-fns";
@@ -25,7 +25,6 @@ export default function AdminPage() {
   const { matches, isSimulated } = useMatches();
 
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [settings, setSettings] = useState<TournamentSettings | null>(null);
   const [inviteCodes, setInviteCodes] = useState<
     (InviteCode & { used_by_profile?: Profile | null })[]
   >([]);
@@ -77,13 +76,6 @@ export default function AdminPage() {
       }
 
       setProfile(typedProfile);
-
-      // Load settings
-      const { data: settingsData } = await supabase
-        .from("tournament_settings")
-        .select("*")
-        .single();
-      setSettings(settingsData as unknown as TournamentSettings | null);
 
       // Load invite codes
       const { data: codesData } = await supabase
@@ -137,17 +129,6 @@ export default function AdminPage() {
     }
 
     setGenerating(false);
-  };
-
-  const handleUpdateSettings = async (updates: Partial<TournamentSettings>) => {
-    const { error } = await supabase
-      .from("tournament_settings")
-      .update(updates)
-      .eq("id", 1);
-
-    if (!error) {
-      setSettings((prev) => (prev ? { ...prev, ...updates } : null));
-    }
   };
 
   const handleEnableSimulation = () => {
@@ -354,86 +335,6 @@ export default function AdminPage() {
                 ))}
               </tbody>
             </table>
-          </div>
-        </section>
-
-        {/* Tournament Controls */}
-        <section className="glass-card p-6 mb-6">
-          <h2 className="text-xl font-bold mb-4 text-white">
-            Tournament Controls
-          </h2>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-              <div>
-                <h3 className="font-medium text-white">Group Stage</h3>
-                <p className="text-sm text-white/50">
-                  {settings?.group_stage_locked
-                    ? "Locked - predictions visible"
-                    : "Open - accepting predictions"}
-                </p>
-              </div>
-              <button
-                onClick={() =>
-                  handleUpdateSettings({
-                    group_stage_locked: !settings?.group_stage_locked,
-                  })
-                }
-                className={`px-4 py-2 rounded-lg transition ${
-                  settings?.group_stage_locked
-                    ? "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30"
-                    : "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                }`}
-              >
-                {settings?.group_stage_locked ? "Unlock" : "Lock Group Stage"}
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-              <div>
-                <h3 className="font-medium text-white">Knockout Stage</h3>
-                <p className="text-sm text-white/50">
-                  {settings?.knockout_stage_locked
-                    ? "Locked - predictions visible"
-                    : settings?.knockout_stage_open
-                      ? "Open - accepting predictions"
-                      : "Closed - not yet open"}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                {!settings?.knockout_stage_open && (
-                  <button
-                    onClick={() =>
-                      handleUpdateSettings({ knockout_stage_open: true })
-                    }
-                    className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30"
-                  >
-                    Open Knockout
-                  </button>
-                )}
-                {settings?.knockout_stage_open &&
-                  !settings?.knockout_stage_locked && (
-                    <button
-                      onClick={() =>
-                        handleUpdateSettings({ knockout_stage_locked: true })
-                      }
-                      className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
-                    >
-                      Lock Knockout Stage
-                    </button>
-                  )}
-                {settings?.knockout_stage_locked && (
-                  <button
-                    onClick={() =>
-                      handleUpdateSettings({ knockout_stage_locked: false })
-                    }
-                    className="px-4 py-2 bg-amber-500/20 text-amber-400 rounded-lg hover:bg-amber-500/30"
-                  >
-                    Unlock
-                  </button>
-                )}
-              </div>
-            </div>
           </div>
         </section>
       </main>

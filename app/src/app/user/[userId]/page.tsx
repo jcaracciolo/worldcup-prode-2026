@@ -10,6 +10,7 @@ import { getTeamDisplayName } from "@/lib/match-scoring";
 import { BracketResolver } from "@/lib/bracket-resolver";
 import { getMatchInfo, Venue } from "@/lib/tournament";
 import { buildApiToFifaMapping } from "@/lib/api-client";
+import { getStageLockStatus } from "@/lib/time";
 import { notFound } from "next/navigation";
 import { Match, CalculatedStanding } from "@/types/football";
 
@@ -48,15 +49,8 @@ export default async function UserPredictionsPage({ params }: PageProps) {
     notFound();
   }
 
-  // Get tournament settings
-  const { data: settings } = await supabase
-    .from("tournament_settings")
-    .select("*")
-    .single();
-
-  const groupLocked = settings?.group_stage_locked || false;
-  const knockoutOpen = settings?.knockout_stage_open || false;
-  const knockoutLocked = settings?.knockout_stage_locked || false;
+  // Get stage lock status based on current time
+  const { groupStageLocked: groupLocked, knockoutStageOpen: knockoutOpen, knockoutStageLocked: knockoutLocked } = getStageLockStatus();
   const isOwnPredictions = currentUser?.id === userId;
 
   // Get predictions

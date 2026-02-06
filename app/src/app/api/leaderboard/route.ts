@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { calculateTotalPoints } from "@/lib/scoring";
 import { Match, CalculatedStanding } from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
+import { getStageLockStatus } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
 
@@ -19,14 +20,8 @@ export async function GET() {
       return NextResponse.json({ scores: [] });
     }
 
-    // Get tournament settings
-    const { data: settings } = await supabase
-      .from("tournament_settings")
-      .select("*")
-      .single();
-
-    const groupLocked = settings?.group_stage_locked || false;
-    const knockoutLocked = settings?.knockout_stage_locked || false;
+    // Get stage lock status based on current time
+    const { groupStageLocked: groupLocked, knockoutStageLocked: knockoutLocked } = getStageLockStatus();
 
     // If nothing is locked, return profiles with 0 points
     if (!groupLocked && !knockoutLocked) {

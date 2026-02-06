@@ -1,8 +1,26 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { Match } from "@/types/football";
 import { GROUP_STAGE_SCHEDULE, KNOCKOUT_SCHEDULE } from "@/lib/tournament";
+import { 
+  setTimeProvider, 
+  defaultTimeProvider,
+  isGroupStageLocked,
+  isKnockoutStageOpen,
+  isKnockoutStageLocked,
+  isMatchLocked,
+  getStageLockStatus,
+} from "@/lib/time";
+
+// Re-export time functions for convenience
+export { 
+  isGroupStageLocked, 
+  isKnockoutStageOpen, 
+  isKnockoutStageLocked, 
+  isMatchLocked,
+  getStageLockStatus,
+} from "@/lib/time";
 
 // =====================================================================
 // TYPES
@@ -21,6 +39,8 @@ interface SimulationContextValue {
   simulatedDateTime: Date | null;
   /** Random seed for reproducible results */
   seed: number;
+  /** Get the current time (simulated or real) */
+  getCurrentTime: () => Date;
   /** Enable simulation at a specific datetime */
   enableSimulation: (dateTime: Date, seed?: number) => void;
   /** Disable simulation and return to real data */
@@ -29,6 +49,12 @@ interface SimulationContextValue {
   applySimulation: (matches: Match[]) => Match[];
   /** Get the simulation state for persistence */
   getState: () => SimulationState;
+  /** Stage lock status based on current time */
+  stageLockStatus: {
+    groupStageLocked: boolean;
+    knockoutStageOpen: boolean;
+    knockoutStageLocked: boolean;
+  };
 }
 
 const SimulationContext = createContext<SimulationContextValue | null>(null);
@@ -166,6 +192,32 @@ function getInitialState(): SimulationState {
 export function SimulationProvider({ children }: SimulationProviderProps) {
   const [state, setState] = useState<SimulationState>(getInitialState);
 
+  // Get current time function that respects simulation
+  const getCurrentTime = useCallback((): Date => {
+    if (state.enabled && state.simulatedDateTime) {
+      return new Date(state.simulatedDateTime);
+    }
+    return new Date();
+  }, [state.enabled, state.simulatedDateTime]);
+
+  // Update the global time provider when simulation state changes
+  useEffect(() => {
+    if (state.enabled && state.simulatedDateTime) {
+      const simulatedDate = new Date(state.simulatedDateTime);
+      setTimeProvider({
+        getCurrentTime: () => simulatedDate,
+        isSimulated: true,
+      });
+    } else {
+      setTimeProvider(defaultTimeProvider);
+    }
+    
+    // Cleanup: reset to default on unmount
+    return () => {
+      setTimeProvider(defaultTimeProvider);
+    };
+  }, [state.enabled, state.simulatedDateTime]);
+
   // Save state to localStorage when it changes
   useEffect(() => {
     try {
@@ -174,6 +226,11 @@ export function SimulationProvider({ children }: SimulationProviderProps) {
       console.error("Failed to save simulation state:", e);
     }
   }, [state]);
+
+  // Calculate stage lock status based on current time
+  const stageLockStatus = useMemo(() => {
+    return getStageLockStatus(getCurrentTime());
+  }, [getCurrentTime]);
 
   const enableSimulation = useCallback((dateTime: Date, seed?: number) => {
     setState({
@@ -301,10 +358,12 @@ export function SimulationProvider({ children }: SimulationProviderProps) {
     simulationEnabled: state.enabled,
     simulatedDateTime: state.simulatedDateTime ? new Date(state.simulatedDateTime) : null,
     seed: state.seed,
+    getCurrentTime,
     enableSimulation,
     disableSimulation,
     applySimulation,
     getState,
+    stageLockStatus,
   };
 
   return (

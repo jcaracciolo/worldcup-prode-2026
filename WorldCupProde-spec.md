@@ -210,9 +210,10 @@ tournament_settings
 
 ### Match Data Sync
 
-- **Server cron job** runs every 1 minute during matches to fetch scores from Football-Data.org API
-- Results cached in `matches_cache` table (server is the single source fetching from API)
-- **Clients poll our server** (not the API) for updates — reduces API usage to ~1 req/min regardless of user count
+- **On-demand fetching:** Server fetches from Football-Data.org API only when client requests data
+- **1-minute cache:** If cached data is less than 1 minute old, serve from cache; otherwise fetch fresh
+- Results stored in `matches_cache` table with `updated_at` timestamp
+- This limits API usage to max ~1 req/min regardless of user count
 
 ### Deployment (Azure App Service)
 

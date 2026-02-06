@@ -6,6 +6,10 @@ WorldCupProde is a fantasy betting application for the FIFA World Cup. The appli
 
 **Note:** This is not a real-money betting application. It's for tracking predictions and scores among friends/groups.
 
+## World Cup 2026 Format
+
+The FIFA World Cup 2026 is hosted by USA, Mexico, and Canada. It's the first World Cup with **48 teams** (expanded from 32). Teams are divided into **12 groups of 4 teams** each. In the group stage, each team plays 3 matches. The top 2 teams from each group (24 teams) plus the 8 best third-placed teams advance to the knockout stage. The knockout stage consists of Round of 32, Round of 16, Quarter-finals, Semi-finals, Third-place match, and Final. Total matches: **104 games** (48 group stage + 56 knockout).
+
 ## Core Features
 
 - Track match selections/predictions

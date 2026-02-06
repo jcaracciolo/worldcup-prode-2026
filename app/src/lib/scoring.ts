@@ -249,8 +249,15 @@ export function calculateGroupStandingsBonusPoints(
   predictedStandings: CalculatedStanding[],
   actualStandings: CalculatedStanding[],
   advancingTeamIds: Set<number>, // Teams that actually advanced (1st, 2nd, best 3rds)
+  groupComplete: boolean = false, // Whether all group matches are finished
 ): PointBreakdown[] {
   const points: PointBreakdown[] = [];
+  
+  // Only award group bonus points when group stage is complete
+  if (!groupComplete) {
+    return points;
+  }
+  
   const groupLetter = groupName.replace("GROUP_", "");
 
   predictedStandings.forEach((predicted, index) => {
@@ -444,6 +451,12 @@ export function calculateTotalPoints(
     );
     const actualStandings = actualGroupStandings.get(groupName);
 
+    // Check if all matches in this group are finished (6 matches per group)
+    const finishedMatches = groupMatchList.filter(
+      (m) => m.status === "FINISHED",
+    );
+    const groupComplete = finishedMatches.length === groupMatchList.length && groupMatchList.length > 0;
+
     if (actualStandings) {
       allBreakdown.push(
         ...calculateGroupStandingsBonusPoints(
@@ -451,6 +464,7 @@ export function calculateTotalPoints(
           predictedStandings,
           actualStandings,
           advancingTeamIds,
+          groupComplete,
         ),
       );
     }

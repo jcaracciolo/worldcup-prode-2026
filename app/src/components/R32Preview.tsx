@@ -107,7 +107,7 @@ export default function R32Preview({
                     <span className="text-white/60 text-sm">{matchTime}</span>
                   </div>
                   <span className="text-xs px-2 py-0.5 bg-white/10 rounded text-white/70">
-                    R32
+                    Round of 32
                   </span>
                 </div>
                 {venue && (

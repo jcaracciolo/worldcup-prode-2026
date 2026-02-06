@@ -17,6 +17,19 @@ import {
   GroupStandingsOverride,
 } from "@/types/database";
 
+// Get human-readable stage name
+const getKnockoutStageName = (stage: string): string => {
+  const stageNames: Record<string, string> = {
+    LAST_32: "Round of 32",
+    LAST_16: "Round of 16",
+    QUARTER_FINALS: "Quarter-Finals",
+    SEMI_FINALS: "Semi-Finals",
+    THIRD_PLACE: "3rd Place",
+    FINAL: "Final",
+  };
+  return stageNames[stage] || stage.replace(/_/g, " ");
+};
+
 export default function PredictionsPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -639,7 +652,7 @@ export default function PredictionsPage() {
                 <div className="space-y-6 opacity-50">
                   {["LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "FINAL"].map(
                     (stage) => {
-                      const stageName = stage.replace(/_/g, " ");
+                      const stageName = getKnockoutStageName(stage);
                       return (
                         <div key={stage} className="glass-card p-5">
                           <h3 className="font-bold text-lg mb-4 text-white">
@@ -676,7 +689,7 @@ export default function PredictionsPage() {
                 const stageMatches = knockoutStages.get(stage) || [];
                 if (stageMatches.length === 0) return null;
 
-                const stageName = stage.replace(/_/g, " ");
+                const stageName = getKnockoutStageName(stage);
 
                 return (
                   <div key={stage} className="glass-card p-5">

@@ -137,8 +137,8 @@ export function calculateKnockoutPoints(
 
   // Get human-readable stage name
   const stageName = match.stage
-    .replace("LAST_32", "R32")
-    .replace("LAST_16", "R16")
+    .replace("LAST_32", "Round of 32")
+    .replace("LAST_16", "Round of 16")
     .replace("QUARTER_FINALS", "Quarter-Final")
     .replace("SEMI_FINALS", "Semi-Final")
     .replace("THIRD_PLACE", "3rd Place")

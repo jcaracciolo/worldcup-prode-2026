@@ -128,6 +128,20 @@ export interface PointBreakdown {
     | "knockout_win"
     | "knockout_lose"
     | "knockout_tie";
+  // Optional team info for display
+  team?: {
+    tla: string;
+    crest: string;
+    name: string;
+  };
+  // Optional match info for display
+  matchInfo?: {
+    homeTeam: { tla: string; crest: string };
+    awayTeam: { tla: string; crest: string };
+    homeGoals: number;
+    awayGoals: number;
+    stage: string;
+  };
 }
 
 export interface UserScore {

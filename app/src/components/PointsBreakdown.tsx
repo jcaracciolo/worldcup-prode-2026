@@ -11,46 +11,135 @@ export default function PointsBreakdown({
   breakdown,
   totalPoints,
 }: PointsBreakdownProps) {
-  const getTypeIcon = (type: PointBreakdown["type"]) => {
+  const getTypeLabel = (type: PointBreakdown["type"]) => {
     switch (type) {
       case "result":
-        return "✓";
+        return "Result";
       case "goals_home":
       case "goals_away":
-        return "⚽";
+        return "Goals";
       case "group_advance":
-        return "📈";
+        return "Advance";
       case "group_position":
-        return "🎯";
+        return "Position";
       case "knockout_win":
-        return "🏆";
+        return "Winner";
       case "knockout_lose":
+        return "Loser";
       case "knockout_tie":
-        return "📊";
+        return "Tie";
       default:
-        return "+";
+        return "";
     }
   };
 
-  const getTypeColor = (type: PointBreakdown["type"]) => {
+  const getTypeBgColor = (type: PointBreakdown["type"]) => {
     switch (type) {
       case "result":
-        return "text-green-400";
+        return "bg-green-500/20 text-green-400";
       case "goals_home":
       case "goals_away":
-        return "text-blue-400";
+        return "bg-blue-500/20 text-blue-400";
       case "group_advance":
       case "group_position":
-        return "text-purple-400";
+        return "bg-purple-500/20 text-purple-400";
       case "knockout_win":
-        return "text-yellow-400";
+        return "bg-yellow-500/20 text-yellow-400";
       case "knockout_lose":
       case "knockout_tie":
-        return "text-orange-400";
+        return "bg-orange-500/20 text-orange-400";
       default:
-        return "text-white/60";
+        return "bg-white/10 text-white/60";
     }
   };
+
+  // Group breakdown by category
+  const groupMatchPoints = breakdown.filter(b => 
+    (b.type === "result" || b.type === "goals_home" || b.type === "goals_away") &&
+    (!b.matchInfo || b.matchInfo.stage === "GROUP_STAGE")
+  );
+  const groupBonusPoints = breakdown.filter(b => 
+    b.type === "group_advance" || b.type === "group_position"
+  );
+  const knockoutPoints = breakdown.filter(b => 
+    b.type === "knockout_win" || b.type === "knockout_lose" || b.type === "knockout_tie" ||
+    ((b.type === "goals_home" || b.type === "goals_away") && b.matchInfo && b.matchInfo.stage !== "GROUP_STAGE")
+  );
+
+  const renderItem = (item: PointBreakdown, index: number) => (
+    <div
+      key={index}
+      className="px-4 py-3 flex items-center gap-3 hover:bg-white/5 border-b border-white/5 last:border-0"
+    >
+      {/* Team crest/flag */}
+      <div className="w-8 h-8 flex items-center justify-center shrink-0">
+        {item.team?.crest ? (
+          <img 
+            src={item.team.crest} 
+            alt={item.team.tla} 
+            className="w-6 h-6 object-contain"
+          />
+        ) : item.matchInfo ? (
+          <div className="flex -space-x-2">
+            <img 
+              src={item.matchInfo.homeTeam.crest} 
+              alt={item.matchInfo.homeTeam.tla} 
+              className="w-5 h-5 object-contain"
+            />
+            <img 
+              src={item.matchInfo.awayTeam.crest} 
+              alt={item.matchInfo.awayTeam.tla} 
+              className="w-5 h-5 object-contain"
+            />
+          </div>
+        ) : (
+          <span className="text-lg">📊</span>
+        )}
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          {item.team && (
+            <span className="font-bold text-white">{item.team.tla}</span>
+          )}
+          {item.matchInfo && !item.team && (
+            <span className="font-medium text-white">
+              {item.matchInfo.homeTeam.tla} {item.matchInfo.homeGoals}-{item.matchInfo.awayGoals} {item.matchInfo.awayTeam.tla}
+            </span>
+          )}
+          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${getTypeBgColor(item.type)}`}>
+            {getTypeLabel(item.type)}
+          </span>
+        </div>
+        <p className="text-xs text-white/50 truncate">{item.description}</p>
+      </div>
+
+      {/* Points */}
+      <div className="text-right shrink-0">
+        <span className="text-lg font-bold text-emerald-400">+{item.points}</span>
+      </div>
+    </div>
+  );
+
+  const renderSection = (title: string, emoji: string, items: PointBreakdown[], sectionPoints: number) => {
+    if (items.length === 0) return null;
+    return (
+      <div className="mb-4 last:mb-0">
+        <div className="flex items-center justify-between px-4 py-2 bg-white/5">
+          <span className="text-sm font-medium text-white/70">{emoji} {title}</span>
+          <span className="text-sm font-bold text-white">{sectionPoints} pts</span>
+        </div>
+        <div>
+          {items.map((item, index) => renderItem(item, index))}
+        </div>
+      </div>
+    );
+  };
+
+  const groupMatchPts = groupMatchPoints.reduce((sum, p) => sum + p.points, 0);
+  const groupBonusPts = groupBonusPoints.reduce((sum, p) => sum + p.points, 0);
+  const knockoutPts = knockoutPoints.reduce((sum, p) => sum + p.points, 0);
 
   return (
     <div className="glass-card overflow-hidden">
@@ -59,32 +148,43 @@ export default function PointsBreakdown({
         <span className="text-2xl font-bold">{totalPoints} pts</span>
       </div>
 
-      <div className="max-h-96 overflow-y-auto">
+      <div className="max-h-[500px] overflow-y-auto">
         {breakdown.length === 0 ? (
-          <div className="p-4 text-center text-white/50">
-            No points earned yet - points are calculated when matches finish
+          <div className="p-6 text-center">
+            <div className="text-4xl mb-3">⏳</div>
+            <p className="text-white/50">
+              No points earned yet
+            </p>
+            <p className="text-white/30 text-sm mt-1">
+              Points are calculated when matches finish
+            </p>
           </div>
         ) : (
-          <div className="divide-y divide-white/10">
-            {breakdown.map((item, index) => (
-              <div
-                key={index}
-                className="px-4 py-2 flex items-center gap-3 hover:bg-white/5"
-              >
-                <span className={`text-lg ${getTypeColor(item.type)}`}>
-                  {getTypeIcon(item.type)}
-                </span>
-                <span className="flex-1 text-sm text-white/80">
-                  {item.description}
-                </span>
-                <span className={`font-bold ${getTypeColor(item.type)}`}>
-                  +{item.points}
-                </span>
-              </div>
-            ))}
+          <div className="py-2">
+            {renderSection("Group Match Predictions", "⚽", groupMatchPoints, groupMatchPts)}
+            {renderSection("Group Standings Bonus", "📈", groupBonusPoints, groupBonusPts)}
+            {renderSection("Knockout Stage", "⚔️", knockoutPoints, knockoutPts)}
           </div>
         )}
       </div>
+
+      {/* Summary footer */}
+      {breakdown.length > 0 && (
+        <div className="border-t border-white/10 px-4 py-3 bg-white/5">
+          <div className="flex justify-between text-sm">
+            <span className="text-white/50">Group matches</span>
+            <span className="text-white">{groupMatchPts}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-white/50">Group bonus</span>
+            <span className="text-white">{groupBonusPts}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-white/50">Knockout</span>
+            <span className="text-white">{knockoutPts}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

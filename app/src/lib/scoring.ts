@@ -52,13 +52,23 @@ export function calculateGroupStagePoints(
   );
   const actualResult = getMatchResult(match);
 
+  const matchInfo = {
+    homeTeam: { tla: match.homeTeam.tla, crest: match.homeTeam.crest },
+    awayTeam: { tla: match.awayTeam.tla, crest: match.awayTeam.crest },
+    homeGoals: actualHomeGoals,
+    awayGoals: actualAwayGoals,
+    stage: match.stage,
+  };
+
   // 2 points for correct result
   if (predictedResult === actualResult) {
+    const resultText = actualResult === "home" ? "Home win" : actualResult === "away" ? "Away win" : "Draw";
     points.push({
       matchId: match.id,
-      description: `Correct result: ${match.homeTeam.tla} ${actualResult === "home" ? "win" : actualResult === "away" ? "loss" : "draw"} (${match.homeTeam.tla} ${actualHomeGoals}-${actualAwayGoals} ${match.awayTeam.tla})`,
+      description: `Correct result: ${resultText}`,
       points: 2,
       type: "result",
+      matchInfo,
     });
   }
 
@@ -66,9 +76,11 @@ export function calculateGroupStagePoints(
   if (prediction.home_goals === actualHomeGoals) {
     points.push({
       matchId: match.id,
-      description: `Correct goals: ${match.homeTeam.tla} ${actualHomeGoals} (${match.homeTeam.tla} ${actualHomeGoals}-${actualAwayGoals} ${match.awayTeam.tla})`,
+      description: `Correct goals`,
       points: 1,
       type: "goals_home",
+      team: { tla: match.homeTeam.tla, crest: match.homeTeam.crest, name: match.homeTeam.name },
+      matchInfo,
     });
   }
 
@@ -76,9 +88,11 @@ export function calculateGroupStagePoints(
   if (prediction.away_goals === actualAwayGoals) {
     points.push({
       matchId: match.id,
-      description: `Correct goals: ${match.awayTeam.tla} ${actualAwayGoals} (${match.homeTeam.tla} ${actualHomeGoals}-${actualAwayGoals} ${match.awayTeam.tla})`,
+      description: `Correct goals`,
       points: 1,
       type: "goals_away",
+      team: { tla: match.awayTeam.tla, crest: match.awayTeam.crest, name: match.awayTeam.name },
+      matchInfo,
     });
   }
 
@@ -111,13 +125,20 @@ export function calculateKnockoutPoints(
   }
 
   const multiplier = ROUND_MULTIPLIERS[match.stage] || 1;
-  const stageName = match.stage.replace(/_/g, " ");
 
   const predictedResult = getPredictionResult(
     prediction.home_goals,
     prediction.away_goals,
   );
   const actualResult = getMatchResult(match);
+
+  const matchInfo = {
+    homeTeam: { tla: match.homeTeam.tla, crest: match.homeTeam.crest },
+    awayTeam: { tla: match.awayTeam.tla, crest: match.awayTeam.crest },
+    homeGoals: actualHomeGoals,
+    awayGoals: actualAwayGoals,
+    stage: match.stage,
+  };
 
   // For knockout, we award points for correct team win/lose/tie separately
   // This allows partial credit even if you didn't predict the exact teams
@@ -128,15 +149,19 @@ export function calculateKnockoutPoints(
       // Both teams tie = 1 point each × multiplier
       points.push({
         matchId: match.id,
-        description: `Correct: ${match.homeTeam.tla} ties (${stageName})`,
+        description: `Predicted tie (${multiplier}×)`,
         points: 1 * multiplier,
         type: "knockout_tie",
+        team: { tla: match.homeTeam.tla, crest: match.homeTeam.crest, name: match.homeTeam.name },
+        matchInfo,
       });
       points.push({
         matchId: match.id,
-        description: `Correct: ${match.awayTeam.tla} ties (${stageName})`,
+        description: `Predicted tie (${multiplier}×)`,
         points: 1 * multiplier,
         type: "knockout_tie",
+        team: { tla: match.awayTeam.tla, crest: match.awayTeam.crest, name: match.awayTeam.name },
+        matchInfo,
       });
     }
   } else {
@@ -147,15 +172,19 @@ export function calculateKnockoutPoints(
 
       points.push({
         matchId: match.id,
-        description: `Correct: ${winner.tla} wins (${stageName})`,
+        description: `Predicted winner (${multiplier}×)`,
         points: 1 * multiplier,
         type: "knockout_win",
+        team: { tla: winner.tla, crest: winner.crest, name: winner.name },
+        matchInfo,
       });
       points.push({
         matchId: match.id,
-        description: `Correct: ${loser.tla} loses (${stageName})`,
+        description: `Predicted loser (${multiplier}×)`,
         points: 1 * multiplier,
         type: "knockout_lose",
+        team: { tla: loser.tla, crest: loser.crest, name: loser.name },
+        matchInfo,
       });
     }
   }
@@ -164,18 +193,22 @@ export function calculateKnockoutPoints(
   if (prediction.home_goals === actualHomeGoals) {
     points.push({
       matchId: match.id,
-      description: `Correct goals: ${match.homeTeam.tla} ${actualHomeGoals}`,
+      description: `Correct goals`,
       points: 1,
       type: "goals_home",
+      team: { tla: match.homeTeam.tla, crest: match.homeTeam.crest, name: match.homeTeam.name },
+      matchInfo,
     });
   }
 
   if (prediction.away_goals === actualAwayGoals) {
     points.push({
       matchId: match.id,
-      description: `Correct goals: ${match.awayTeam.tla} ${actualAwayGoals}`,
+      description: `Correct goals`,
       points: 1,
       type: "goals_away",
+      team: { tla: match.awayTeam.tla, crest: match.awayTeam.crest, name: match.awayTeam.name },
+      matchInfo,
     });
   }
 
@@ -189,20 +222,27 @@ export function calculateGroupStandingsBonusPoints(
   advancingTeamIds: Set<number>, // Teams that actually advanced (1st, 2nd, best 3rds)
 ): PointBreakdown[] {
   const points: PointBreakdown[] = [];
+  const groupLetter = groupName.replace("GROUP_", "");
 
   predictedStandings.forEach((predicted, index) => {
     const predictedPosition = index + 1;
     const actual = actualStandings.find((s) => s.team.id === predicted.team.id);
 
-    if (!actual) return;
+    if (!actual || !predicted.team) return;
 
     // 1 point if team advances
     if (advancingTeamIds.has(predicted.team.id)) {
+      const positionText = predictedPosition === 1 ? "1st" : predictedPosition === 2 ? "2nd" : "3rd";
       points.push({
         matchId: 0,
-        description: `${predicted.team.tla} advanced from ${groupName}`,
+        description: `Predicted to advance from Group ${groupLetter}`,
         points: 1,
         type: "group_advance",
+        team: { 
+          tla: predicted.team.tla || "???", 
+          crest: predicted.team.crest || "", 
+          name: predicted.team.name || "Unknown" 
+        },
       });
 
       // 1 additional point if position is correct
@@ -211,9 +251,14 @@ export function calculateGroupStandingsBonusPoints(
       if (predictedPosition === actualPosition) {
         points.push({
           matchId: 0,
-          description: `${predicted.team.tla} correct position: ${predictedPosition} (${groupName})`,
+          description: `Correct position: ${positionText} in Group ${groupLetter}`,
           points: 1,
           type: "group_position",
+          team: { 
+            tla: predicted.team.tla || "???", 
+            crest: predicted.team.crest || "", 
+            name: predicted.team.name || "Unknown" 
+          },
         });
       }
     }

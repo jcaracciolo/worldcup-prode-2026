@@ -57,9 +57,11 @@ Users get a second chance to predict all knockout matches once group stage is co
 |------------|--------|
 | Correct team wins | 1 × multiplier |
 | Correct team loses | 1 × multiplier |
-| Correct team ties (before penalties) | 1 × multiplier |
+| Correct team ties (before penalties)* | 1 × multiplier |
 | Exact goals for Team A | 1 |
 | Exact goals for Team B | 1 |
+
+*\*Tie option only applies to R32 through Semi-finals. Third-place match and Final only have win/lose predictions.*
 
 *Note: You can only score points for teams you predicted to reach that stage.*
 

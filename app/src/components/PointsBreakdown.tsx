@@ -81,21 +81,33 @@ export default function PointsBreakdown({
       key={index}
       className="px-4 py-3 flex items-center gap-3 hover:bg-white/5 border-b border-white/5 last:border-0"
     >
-      {/* Team crest/flag */}
-      <div className="w-8 h-8 flex items-center justify-center shrink-0">
+      {/* Team or Match display */}
+      <div className="flex items-center gap-2 shrink-0">
         {item.team?.crest ? (
-          <img
-            src={item.team.crest}
-            alt={item.team.tla}
-            className="w-6 h-6 object-contain"
-          />
+          <>
+            <img
+              src={item.team.crest}
+              alt={item.team.tla}
+              className="w-6 h-6 object-contain"
+            />
+            <span className="font-bold text-white w-10">{item.team.tla}</span>
+          </>
         ) : item.matchInfo ? (
-          <div className="flex -space-x-2">
+          <div className="flex items-center gap-1.5">
             <img
               src={item.matchInfo.homeTeam.crest}
               alt={item.matchInfo.homeTeam.tla}
               className="w-5 h-5 object-contain"
             />
+            <span className="text-white/70 text-xs font-medium w-8 text-right">
+              {item.matchInfo.homeTeam.tla}
+            </span>
+            <span className="font-bold text-white px-1.5 py-0.5 bg-white/10 rounded text-sm min-w-[40px] text-center">
+              {item.matchInfo.homeGoals}-{item.matchInfo.awayGoals}
+            </span>
+            <span className="text-white/70 text-xs font-medium w-8">
+              {item.matchInfo.awayTeam.tla}
+            </span>
             <img
               src={item.matchInfo.awayTeam.crest}
               alt={item.matchInfo.awayTeam.tla}
@@ -107,24 +119,13 @@ export default function PointsBreakdown({
         )}
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          {item.team && (
-            <span className="font-bold text-white">{item.team.tla}</span>
-          )}
-          {item.matchInfo && !item.team && (
-            <span className="font-medium text-white">
-              {item.matchInfo.homeTeam.tla} {item.matchInfo.homeGoals}-
-              {item.matchInfo.awayGoals} {item.matchInfo.awayTeam.tla}
-            </span>
-          )}
-          <span
-            className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${getTypeBgColor(item.type)}`}
-          >
-            {getTypeLabel(item.type)}
-          </span>
-        </div>
+      {/* Description and badge */}
+      <div className="flex-1 min-w-0 flex items-center gap-2">
+        <span
+          className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${getTypeBgColor(item.type)}`}
+        >
+          {getTypeLabel(item.type)}
+        </span>
         <p className="text-xs text-white/50 truncate">{item.description}</p>
       </div>
 

@@ -3,6 +3,7 @@
 import { Match, CalculatedStanding, Team } from "@/types/football";
 import { getPositionLabel, getR32BracketByNumber } from "@/lib/r32-bracket";
 import { buildMatchNumberMapping } from "@/lib/bracket-resolver";
+import { getThirdPlaceTeamForMatch } from "@/lib/third-place-ranking";
 import { getVenue } from "@/lib/venues";
 
 interface R32PreviewProps {
@@ -57,32 +58,45 @@ export default function R32Preview({
           const bracketInfo = getR32BracketByNumber(fifaMatchNumber);
           if (!bracketInfo) return null;
 
-          // Handle null positions (3rd place teams are dynamic)
-          const homeTeam = bracketInfo.homePosition
-            ? getTeamFromStandings(
-                bracketInfo.homePosition.group,
-                bracketInfo.homePosition.position,
-              )
-            : null; // 3rd place - would need dynamic resolution
-          const awayTeam = bracketInfo.awayPosition
-            ? getTeamFromStandings(
-                bracketInfo.awayPosition.group,
-                bracketInfo.awayPosition.position,
-              )
-            : null; // 3rd place - would need dynamic resolution
+          // Handle null positions (3rd place teams need dynamic resolution)
+          let homeTeam: Team | null = null;
+          let awayTeam: Team | null = null;
+          let homeLabel = "";
+          let awayLabel = "";
 
-          const homeLabel = bracketInfo.homePosition
-            ? getPositionLabel(
-                bracketInfo.homePosition.group,
-                bracketInfo.homePosition.position,
-              )
-            : "3rd Place";
-          const awayLabel = bracketInfo.awayPosition
-            ? getPositionLabel(
-                bracketInfo.awayPosition.group,
-                bracketInfo.awayPosition.position,
-              )
-            : "3rd Place";
+          if (bracketInfo.homePosition) {
+            homeTeam = getTeamFromStandings(
+              bracketInfo.homePosition.group,
+              bracketInfo.homePosition.position,
+            );
+            homeLabel = getPositionLabel(
+              bracketInfo.homePosition.group,
+              bracketInfo.homePosition.position,
+            );
+          }
+
+          if (bracketInfo.awayPosition) {
+            awayTeam = getTeamFromStandings(
+              bracketInfo.awayPosition.group,
+              bracketInfo.awayPosition.position,
+            );
+            awayLabel = getPositionLabel(
+              bracketInfo.awayPosition.group,
+              bracketInfo.awayPosition.position,
+            );
+          } else {
+            // This is a 3rd place slot - resolve dynamically
+            const thirdPlaceInfo = getThirdPlaceTeamForMatch(
+              fifaMatchNumber,
+              groupStandings,
+            );
+            if (thirdPlaceInfo) {
+              awayTeam = thirdPlaceInfo.team;
+              awayLabel = getPositionLabel(thirdPlaceInfo.group, 3);
+            } else {
+              awayLabel = "3rd Place";
+            }
+          }
 
           const matchDate = new Date(match.utcDate);
           const venue = getVenue(match.id);

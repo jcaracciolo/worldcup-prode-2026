@@ -131,40 +131,36 @@ export function getThirdPlacePoolForMatch(matchNumber: number): string[] | null 
 }
 
 /**
- * Assign qualifying 3rd place teams to R32 matches
- * Uses a greedy assignment that respects the pool constraints
- * Returns map of FIFA match number -> group letter of 3rd place team
+ * Assign qualifying 3rd place teams to R32 matches based on their ranking.
+ * Process matches in order of match number.
+ * For each match, assign the highest-ranked qualifying 3rd place team
+ * from that match's pool that hasn't been assigned yet.
+ * 
+ * @param rankedQualifyingGroups Array of group letters in rank order (best first)
+ * @returns Map of FIFA match number -> group letter of 3rd place team
  */
 export function assignThirdPlaceToR32(
-  qualifyingGroups: string[],
+  rankedQualifyingGroups: string[],
 ): Map<number, string> {
   const result = new Map<number, string>();
   const assigned = new Set<string>();
 
   // Convert qualifying groups to single letters (e.g., "GROUP_A" -> "A")
-  const groups = qualifyingGroups.map((g) => g.replace("GROUP_", ""));
+  const rankedLetters = rankedQualifyingGroups.map((g) => g.replace("GROUP_", ""));
 
-  // Sort matches by pool size (smallest first for better assignment)
-  const sortedMatches = [...R32_THIRD_PLACE_MATCHES].sort(
-    (a, b) => {
-      const aAvailable = a.pool.filter(g => groups.includes(g)).length;
-      const bAvailable = b.pool.filter(g => groups.includes(g)).length;
-      return aAvailable - bAvailable;
-    }
+  // Process matches in order of match number (deterministic)
+  const matchesInOrder = [...R32_THIRD_PLACE_MATCHES].sort(
+    (a, b) => a.matchNumber - b.matchNumber
   );
 
-  // Greedy assignment
-  for (const match of sortedMatches) {
-    // Find the best qualifying group for this match
-    const availableFromPool = match.pool.filter(
-      (g) => groups.includes(g) && !assigned.has(g)
-    );
-
-    if (availableFromPool.length > 0) {
-      // Pick the first available (they're sorted by pool size, so this works)
-      const selectedGroup = availableFromPool[0];
-      result.set(match.matchNumber, selectedGroup);
-      assigned.add(selectedGroup);
+  for (const match of matchesInOrder) {
+    // Find the highest-ranked qualifying group from this pool that hasn't been assigned
+    for (const letter of rankedLetters) {
+      if (match.pool.includes(letter) && !assigned.has(letter)) {
+        result.set(match.matchNumber, letter);
+        assigned.add(letter);
+        break;
+      }
     }
   }
 
@@ -181,57 +177,36 @@ export function getThirdPlaceTeamForMatch(
   matchNumber: number,
   groupStandings: Map<string, CalculatedStanding[]>,
 ): { team: CalculatedStanding["team"]; group: string } | null {
-  // Get qualifying 3rd place groups
-  const qualifyingMap = getQualifyingThirdPlaceTeams(groupStandings);
-  const qualifyingGroups = Array.from(qualifyingMap.entries())
-    .filter(([, qualifies]) => qualifies)
-    .map(([group]) => group);
+  // Get ranked third place teams (already sorted by points/GD/goals)
+  const rankedTeams = getRankedThirdPlaceTeams(groupStandings);
+  
+  // Get qualifying groups in rank order (top 8)
+  const rankedQualifyingGroups = rankedTeams
+    .filter((t) => t.qualifies)
+    .map((t) => t.group);
+
+  if (rankedQualifyingGroups.length < 8) {
+    // Not enough qualifying teams yet (incomplete predictions)
+    return null;
+  }
 
   // Determine the key format used in groupStandings (could be "A" or "GROUP_A")
   const firstKey = groupStandings.keys().next().value;
   const usesPrefix = firstKey?.startsWith("GROUP_");
 
-  // Get assignment from the full algorithm
-  const assignments = assignThirdPlaceToR32(qualifyingGroups);
+  // Get deterministic assignment based on ranked groups
+  const assignments = assignThirdPlaceToR32(rankedQualifyingGroups);
   const assignedGroupLetter = assignments.get(matchNumber);
 
-  if (assignedGroupLetter) {
-    const groupKey = usesPrefix ? `GROUP_${assignedGroupLetter}` : assignedGroupLetter;
-    const standings = groupStandings.get(groupKey);
-    if (standings && standings.length >= 3) {
-      return {
-        team: standings[2].team,
-        group: groupKey,
-      };
-    }
-  }
+  if (!assignedGroupLetter) return null;
 
-  // Fallback: If the global assignment failed for this match,
-  // find the best qualifying 3rd place team from this match's pool
-  const pool = getThirdPlacePoolForMatch(matchNumber);
-  if (!pool) return null;
-
-  // Get qualifying group letters
-  const qualifyingLetters = qualifyingGroups.map((g) => g.replace("GROUP_", ""));
-
-  // Find groups from the pool that qualify
-  const availableFromPool = pool.filter((letter) => qualifyingLetters.includes(letter));
-
-  if (availableFromPool.length === 0) return null;
-
-  // Get the ranked third place teams to find the best one from available pool
-  const rankedTeams = getRankedThirdPlaceTeams(groupStandings);
+  const groupKey = usesPrefix ? `GROUP_${assignedGroupLetter}` : assignedGroupLetter;
+  const standings = groupStandings.get(groupKey);
   
-  // Find the highest-ranked team from our available pool
-  for (const rankedTeam of rankedTeams) {
-    const teamLetter = rankedTeam.group.replace("GROUP_", "");
-    if (availableFromPool.includes(teamLetter) && rankedTeam.qualifies) {
-      return {
-        team: rankedTeam.team,
-        group: rankedTeam.group,
-      };
-    }
-  }
+  if (!standings || standings.length < 3) return null;
 
-  return null;
+  return {
+    team: standings[2].team,
+    group: groupKey,
+  };
 }

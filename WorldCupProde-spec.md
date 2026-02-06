@@ -165,7 +165,23 @@ matches_cache
 ├── match_id (int, primary key)
 ├── data (jsonb, full API response)
 ├── updated_at
+
+tournament_settings
+├── id (int, always 1)
+├── group_stage_locked (boolean, default false)
+├── knockout_stage_open (boolean, default false)
+├── knockout_stage_locked (boolean, default false)
+├── updated_at
 ```
+
+### Prediction Windows
+
+| Phase | Opens | Locks | Predictions Visible |
+|-------|-------|-------|---------------------|
+| Group Stage | Immediately | Before first group match | After group stage starts |
+| Knockout Stage | When knockout teams are defined | Before first knockout match | After knockout stage starts |
+
+**Privacy:** Users can only see their own predictions until that stage begins. Once a stage starts, all predictions for that stage become public.
 
 ### Key Features
 
@@ -173,16 +189,21 @@ matches_cache
 - View all matches (today's matches highlighted, local timezone)
 - View live/final scores (cached from API)
 - View leaderboard/standings
-- View all users' predictions (after match starts)
+- View all users' predictions (only after respective stage starts)
 
 **Authenticated users:**
-- Create/edit predictions (locked when tournament starts: June 11, 2026)
-- View own prediction history
+- Create/edit group stage predictions (until group stage locks)
+- Create/edit knockout predictions (when open, until knockout stage locks)
+- View own predictions anytime
 
 **Admin:**
 - Generate invite codes
 - View invite code usage
-- (Optional) Override prediction lock for late entries
+- **Lock Group Stage** - manually start group stage (locks predictions, makes them public)
+- **Open Knockout Stage** - enable knockout predictions (after teams are defined)
+- **Lock Knockout Stage** - start knockout stage (locks predictions, makes them public)
+- **Generate Random Results** (testing) - auto-fill match results for testing scoring
+- **Reset Tournament State** (testing) - reset locks for re-testing
 
 ### Match Data Sync
 

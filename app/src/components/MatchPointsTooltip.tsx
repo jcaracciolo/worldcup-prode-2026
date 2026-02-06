@@ -24,7 +24,11 @@ export default function MatchPointsTooltip({
 }: MatchPointsTooltipProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   const pts = calculateMatchPoints(match, prediction, predictedHomeTeam, predictedAwayTeam);
-  const detailed = calculateMatchPointsDetailed(match, prediction, predictedHomeTeam, predictedAwayTeam);
+  
+  // Only calculate detailed breakdown when tooltip is shown (expensive)
+  const detailed = showTooltip 
+    ? calculateMatchPointsDetailed(match, prediction, predictedHomeTeam, predictedAwayTeam)
+    : null;
 
   // Don't render if match not finished or no prediction
   if (!pts.isFinished || !pts.hasPrediction) {
@@ -115,7 +119,7 @@ export default function MatchPointsTooltip({
 
             {/* Points breakdown */}
             <div className="mt-2 pt-2 border-t border-white/10 text-xs space-y-1">
-              {detailed.details.map((detail, i) => (
+              {detailed?.details.map((detail, i) => (
                 <div key={i} className="flex justify-between gap-4">
                   <span className={detail.earned ? "text-white/80" : "text-white/40"}>
                     {detail.description}

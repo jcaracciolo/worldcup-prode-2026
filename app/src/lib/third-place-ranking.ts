@@ -187,23 +187,51 @@ export function getThirdPlaceTeamForMatch(
     .filter(([, qualifies]) => qualifies)
     .map(([group]) => group);
 
-  // Get assignment
-  const assignments = assignThirdPlaceToR32(qualifyingGroups);
-  const assignedGroupLetter = assignments.get(matchNumber);
-
-  if (!assignedGroupLetter) return null;
-
   // Determine the key format used in groupStandings (could be "A" or "GROUP_A")
   const firstKey = groupStandings.keys().next().value;
   const usesPrefix = firstKey?.startsWith("GROUP_");
-  const groupKey = usesPrefix ? `GROUP_${assignedGroupLetter}` : assignedGroupLetter;
 
-  // Get the team from standings
-  const standings = groupStandings.get(groupKey);
-  if (!standings || standings.length < 3) return null;
+  // Get assignment from the full algorithm
+  const assignments = assignThirdPlaceToR32(qualifyingGroups);
+  const assignedGroupLetter = assignments.get(matchNumber);
 
-  return {
-    team: standings[2].team,
-    group: groupKey,
-  };
+  if (assignedGroupLetter) {
+    const groupKey = usesPrefix ? `GROUP_${assignedGroupLetter}` : assignedGroupLetter;
+    const standings = groupStandings.get(groupKey);
+    if (standings && standings.length >= 3) {
+      return {
+        team: standings[2].team,
+        group: groupKey,
+      };
+    }
+  }
+
+  // Fallback: If the global assignment failed for this match,
+  // find the best qualifying 3rd place team from this match's pool
+  const pool = getThirdPlacePoolForMatch(matchNumber);
+  if (!pool) return null;
+
+  // Get qualifying group letters
+  const qualifyingLetters = qualifyingGroups.map((g) => g.replace("GROUP_", ""));
+
+  // Find groups from the pool that qualify
+  const availableFromPool = pool.filter((letter) => qualifyingLetters.includes(letter));
+
+  if (availableFromPool.length === 0) return null;
+
+  // Get the ranked third place teams to find the best one from available pool
+  const rankedTeams = getRankedThirdPlaceTeams(groupStandings);
+  
+  // Find the highest-ranked team from our available pool
+  for (const rankedTeam of rankedTeams) {
+    const teamLetter = rankedTeam.group.replace("GROUP_", "");
+    if (availableFromPool.includes(teamLetter) && rankedTeam.qualifies) {
+      return {
+        team: rankedTeam.team,
+        group: rankedTeam.group,
+      };
+    }
+  }
+
+  return null;
 }

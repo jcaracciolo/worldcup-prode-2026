@@ -135,16 +135,57 @@ export default function AdminPage() {
     );
     if (!confirmed) return;
 
+    setGenerating(true);
     const res = await fetch("/api/admin/generate-results", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ stage }),
     });
+    setGenerating(false);
 
     if (res.ok) {
-      alert("Random results generated!");
+      const data = await res.json();
+      alert(`Random results generated! (${data.matchesUpdated} matches)`);
     } else {
       alert("Failed to generate results");
+    }
+  };
+
+  const handleGenerateAllResults = async () => {
+    const confirmed = confirm(
+      "Generate ALL random results? This will generate group stage first, then knockout stage with resolved teams.",
+    );
+    if (!confirmed) return;
+
+    setGenerating(true);
+    
+    // Generate group stage first
+    const groupRes = await fetch("/api/admin/generate-results", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stage: "group" }),
+    });
+    
+    if (!groupRes.ok) {
+      setGenerating(false);
+      alert("Failed to generate group results");
+      return;
+    }
+    const groupData = await groupRes.json();
+
+    // Then generate knockout stage (which will resolve teams from group standings)
+    const knockoutRes = await fetch("/api/admin/generate-results", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stage: "knockout" }),
+    });
+    setGenerating(false);
+
+    if (knockoutRes.ok) {
+      const knockoutData = await knockoutRes.json();
+      alert(`All results generated!\nGroup: ${groupData.matchesUpdated} matches\nKnockout: ${knockoutData.matchesUpdated} matches`);
+    } else {
+      alert("Group results generated, but knockout failed");
     }
   };
 
@@ -322,23 +363,37 @@ export default function AdminPage() {
           <p className="text-sm text-white/50 mb-4">
             These tools are for testing purposes only. Use with caution.
           </p>
+          <p className="text-sm text-amber-400/80 mb-4">
+            ⚠️ To see correct flags in knockout: Generate group stage first, then knockout.
+            Or use &quot;Generate All&quot; which does both in order.
+          </p>
 
           <div className="flex flex-wrap gap-4">
             <button
-              onClick={() => handleGenerateRandomResults("group")}
-              className="px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30"
+              onClick={handleGenerateAllResults}
+              disabled={generating}
+              className="px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 disabled:opacity-50"
             >
-              Generate Random Group Results
+              {generating ? "Generating..." : "🎲 Generate All Results"}
+            </button>
+            <button
+              onClick={() => handleGenerateRandomResults("group")}
+              disabled={generating}
+              className="px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 disabled:opacity-50"
+            >
+              Generate Group Results
             </button>
             <button
               onClick={() => handleGenerateRandomResults("knockout")}
-              className="px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30"
+              disabled={generating}
+              className="px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 disabled:opacity-50"
             >
-              Generate Random Knockout Results
+              Generate Knockout Results
             </button>
             <button
               onClick={handleResetTournament}
-              className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
+              disabled={generating}
+              className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 disabled:opacity-50"
             >
               Reset Tournament State
             </button>

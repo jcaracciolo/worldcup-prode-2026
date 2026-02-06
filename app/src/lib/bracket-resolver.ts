@@ -6,7 +6,8 @@ import { Match, Team } from "@/types/football";
 import { CalculatedStanding } from "@/types/football";
 import { Prediction } from "@/types/database";
 import { r32Bracket, r16Bracket, qfBracket, sfBracket } from "./r32-bracket";
-import { buildApiToFifaMapping, getBracketSource } from "./tournament";
+import { getBracketSource } from "./tournament";
+import { buildApiToFifaMapping } from "./api-client";
 
 export interface BracketResolverParams {
   matches: Match[];

@@ -2,11 +2,11 @@
 
 import { Match, CalculatedStanding, Team } from "@/types/football";
 import { 
-  buildApiToFifaMapping, 
   getBracketSource, 
   getMatchInfo,
   getPositionLabel 
 } from "@/lib/tournament";
+import { buildApiToFifaMapping } from "@/lib/api-client";
 import { getThirdPlaceTeamForMatch, getThirdPlacePoolForMatch } from "@/lib/third-place-ranking";
 
 interface R32PreviewProps {

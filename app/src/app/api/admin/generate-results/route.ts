@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { getBracketSource, buildApiToFifaMapping } from "@/lib/tournament";
+import { getBracketSource } from "@/lib/tournament";
+import { buildApiToFifaMapping } from "@/lib/api-client";
 import { Match, Team, CalculatedStanding } from "@/types/football";
 
 // Calculate actual group standings from finished matches

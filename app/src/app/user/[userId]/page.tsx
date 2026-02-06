@@ -9,7 +9,8 @@ import { calculateTotalPoints } from "@/lib/scoring";
 import { getTeamDisplayName } from "@/lib/match-scoring";
 import { BracketResolver } from "@/lib/bracket-resolver";
 import { getVenue } from "@/lib/venues";
-import { buildApiToFifaMapping, getMatchInfo } from "@/lib/tournament";
+import { getMatchInfo } from "@/lib/tournament";
+import { buildApiToFifaMapping } from "@/lib/api-client";
 import { notFound } from "next/navigation";
 import { Match, CalculatedStanding } from "@/types/football";
 

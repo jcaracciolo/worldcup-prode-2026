@@ -1,16 +1,17 @@
 /**
- * TOURNAMENT STRUCTURE - Single Source of Truth
+ * TOURNAMENT STRUCTURE - Single Source of Truth for STATIC data
  * 
- * All match information comes from FIFA match numbers.
- * The API is ONLY used for scores/results, not for determining structure.
+ * This file contains ONLY tournament structure data that is known before the tournament:
+ * - Match venues, dates, times
+ * - Bracket structure (who plays who)
+ * - Group compositions
+ * 
+ * For LIVE data (scores, match status), use api-client.ts
  * 
  * Usage:
- * 1. Map API match ID to FIFA number: getFifaMatchNumber(apiId, apiMatches)
- * 2. Get match info by FIFA number: getMatchInfo(fifaNumber)
- * 3. Get team sources by FIFA number: getBracketSource(fifaNumber)
+ *   const matchInfo = getMatchInfo(86);  // Get venue, date, time
+ *   const bracket = getBracketSource(86); // Get bracket structure
  */
-
-import { Match } from "@/types/football";
 
 // =====================================================================
 // TYPES
@@ -194,76 +195,6 @@ export function getBracketSource(fifaNumber: number): BracketSource | null {
  */
 export function getMatchesByStage(stage: Stage): MatchInfo[] {
   return KNOCKOUT_SCHEDULE.filter(m => m.stage === stage);
-}
-
-/**
- * Map API match ID to FIFA match number
- * Uses chronological ordering within each stage
- * 
- * @param apiMatchId - The match ID from the football-data.org API
- * @param apiMatches - All matches from the API (needed to determine order)
- * @returns FIFA match number or null if not found
- */
-export function getFifaMatchNumber(
-  apiMatchId: number,
-  apiMatches: Match[]
-): number | null {
-  // Find the match in the API data
-  const match = apiMatches.find(m => m.id === apiMatchId);
-  if (!match) return null;
-
-  // Filter matches of the same stage
-  const stageMatches = apiMatches.filter(m => m.stage === match.stage);
-  
-  // Sort by date/time
-  const sortedMatches = [...stageMatches].sort(
-    (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
-  );
-
-  // Find position in sorted list
-  const position = sortedMatches.findIndex(m => m.id === apiMatchId);
-  if (position === -1) return null;
-
-  // Map to FIFA number based on stage
-  switch (match.stage) {
-    case "LAST_32": return 73 + position;
-    case "LAST_16": return 89 + position;
-    case "QUARTER_FINALS": return 97 + position;
-    case "SEMI_FINALS": return 101 + position;
-    case "THIRD_PLACE": return 103;
-    case "FINAL": return 104;
-    default: return null;
-  }
-}
-
-/**
- * Build a complete mapping of API match IDs to FIFA numbers
- * Call this once and reuse the map for efficiency
- */
-export function buildApiToFifaMapping(apiMatches: Match[]): Map<number, number> {
-  const mapping = new Map<number, number>();
-  
-  const knockoutStages = ["LAST_32", "LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "THIRD_PLACE", "FINAL"];
-  
-  for (const stage of knockoutStages) {
-    const stageMatches = apiMatches.filter(m => m.stage === stage);
-    const sortedMatches = [...stageMatches].sort(
-      (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
-    );
-    
-    const baseNumber = stage === "LAST_32" ? 73
-      : stage === "LAST_16" ? 89
-      : stage === "QUARTER_FINALS" ? 97
-      : stage === "SEMI_FINALS" ? 101
-      : stage === "THIRD_PLACE" ? 103
-      : 104; // FINAL
-    
-    sortedMatches.forEach((match, index) => {
-      mapping.set(match.id, baseNumber + index);
-    });
-  }
-  
-  return mapping;
 }
 
 /**

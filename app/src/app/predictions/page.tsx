@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Match, CalculatedStanding, Team } from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { BracketResolver } from "@/lib/bracket-resolver";
-import { buildApiToFifaMapping } from "@/lib/tournament";
+import { buildApiToFifaMapping } from "@/lib/api-client";
 import {
   Profile,
   Prediction,

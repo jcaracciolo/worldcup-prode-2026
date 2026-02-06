@@ -92,6 +92,7 @@ _Note: You can only score points for teams you predicted to reach that stage._
 **Visible to everyone (public)**
 
 **Layout:**
+
 ```
 ┌─────────────────────────────────────────────────┐
 │  [Logo]                    [Login] or [Logout]  │
@@ -161,6 +162,7 @@ _Note: You can only score points for teams you predicted to reach that stage._
 **Requires login**
 
 **Layout:**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  [Header]                                                   │
@@ -211,6 +213,7 @@ _Note: You can only score points for teams you predicted to reach that stage._
 ```
 
 **Features:**
+
 - Editable goal inputs for each team
 - Standings auto-calculate based on match predictions
 - Tiebreaker: [↕] button to swap position when teams have same points
@@ -226,6 +229,7 @@ _Note: You can only score points for teams you predicted to reach that stage._
 **Public (but content may be blurred)**
 
 Same layout as Predictions Page but:
+
 - Read-only (no editing)
 - **Before group stage starts:** Group predictions are blurred
 - **Before knockout stage starts:** Knockout predictions are blurred
@@ -233,6 +237,7 @@ Same layout as Predictions Page but:
 - At bottom: Detailed points breakdown table
 
 **Points Breakdown Table:**
+
 ```
 ┌────────────────────────────────────────────────────────────┐
 │  POINTS BREAKDOWN                              Total: 142  │
@@ -340,16 +345,16 @@ Same layout as Predictions Page but:
 
 ### Route Summary
 
-| Route | Page | Access |
-|-------|------|--------|
-| `/` | Home | Public |
-| `/login` | Login | Public |
-| `/signup` | Signup | Public (with invite code) |
-| `/settings` | Settings | Authenticated |
-| `/predictions` | My Predictions | Authenticated |
-| `/user/:userId` | User Predictions | Public (blurred before stage starts) |
-| `/match/:matchId` | Match Detail | Public |
-| `/admin` | Admin Panel | Admin only |
+| Route             | Page             | Access                               |
+| ----------------- | ---------------- | ------------------------------------ |
+| `/`               | Home             | Public                               |
+| `/login`          | Login            | Public                               |
+| `/signup`         | Signup           | Public (with invite code)            |
+| `/settings`       | Settings         | Authenticated                        |
+| `/predictions`    | My Predictions   | Authenticated                        |
+| `/user/:userId`   | User Predictions | Public (blurred before stage starts) |
+| `/match/:matchId` | Match Detail     | Public                               |
+| `/admin`          | Admin Panel      | Admin only                           |
 
 ## API
 

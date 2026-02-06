@@ -151,3 +151,31 @@ export const SF_MATCH_SCHEDULE: Record<string, Record<string, number>> = {
     "atlanta": 102, // Mercedes-Benz Stadium
   },
 };
+
+// Canonical venue info for each FIFA R32 match number
+// This is the SOURCE OF TRUTH for R32 venues
+export const R32_MATCH_VENUES: Record<number, { stadium: string; city: string }> = {
+  73: { stadium: "SoFi Stadium", city: "Los Angeles" },
+  74: { stadium: "Gillette Stadium", city: "Boston" },
+  75: { stadium: "Estadio BBVA", city: "Monterrey" },
+  76: { stadium: "NRG Stadium", city: "Houston" },
+  77: { stadium: "MetLife Stadium", city: "New York" },
+  78: { stadium: "AT&T Stadium", city: "Dallas" },
+  79: { stadium: "Estadio Azteca", city: "Mexico City" },
+  80: { stadium: "Mercedes-Benz Stadium", city: "Atlanta" },
+  81: { stadium: "Levi's Stadium", city: "San Francisco" },
+  82: { stadium: "Lumen Field", city: "Seattle" },
+  83: { stadium: "BMO Field", city: "Toronto" },
+  84: { stadium: "SoFi Stadium", city: "Los Angeles" },
+  85: { stadium: "BC Place", city: "Vancouver" },
+  86: { stadium: "Hard Rock Stadium", city: "Miami" },
+  87: { stadium: "Arrowhead Stadium", city: "Kansas City" },
+  88: { stadium: "AT&T Stadium", city: "Dallas" },
+};
+
+/**
+ * Get venue for a FIFA R32 match number
+ */
+export function getR32VenueByMatchNumber(fifaMatchNumber: number): { stadium: string; city: string } | null {
+  return R32_MATCH_VENUES[fifaMatchNumber] || null;
+}

@@ -4,7 +4,7 @@ import { Match, CalculatedStanding, Team } from "@/types/football";
 import { getPositionLabel, getR32BracketByNumber } from "@/lib/r32-bracket";
 import { buildMatchNumberMapping } from "@/lib/bracket-resolver";
 import { getThirdPlaceTeamForMatch, getThirdPlacePoolForMatch } from "@/lib/third-place-ranking";
-import { getVenue } from "@/lib/venues";
+import { getR32VenueByMatchNumber } from "@/lib/fifa-match-schedule";
 
 interface R32PreviewProps {
   matches: Match[];
@@ -105,12 +105,12 @@ export default function R32Preview({
           }
 
           const matchDate = new Date(match.utcDate);
-          // Prefer API venue data, fall back to static mapping
-          const staticVenue = getVenue(match.id);
+          // Get venue from FIFA schedule based on match number (most accurate)
+          const fifaVenue = getR32VenueByMatchNumber(fifaMatchNumber);
           const venueDisplay = match.venue 
-            ? match.venue  // API provides venue as string
-            : staticVenue 
-              ? `${staticVenue.stadium}, ${staticVenue.city}`
+            ? match.venue  // API provides venue as string (if available)
+            : fifaVenue 
+              ? `${fifaVenue.stadium}, ${fifaVenue.city}`
               : null;
 
           // Check if match involves a 3rd place team (null position means 3rd place)
@@ -151,9 +151,17 @@ export default function R32Preview({
                     </span>
                     <span className="text-white/60 text-sm">{matchTime}</span>
                   </div>
-                  <span className="text-xs px-2 py-0.5 bg-white/10 rounded text-white/70">
-                    Round of 32
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-2 py-0.5 bg-blue-500/30 rounded text-blue-300 font-mono">
+                      #{fifaMatchNumber}
+                    </span>
+                    <span className="text-xs px-1 py-0.5 bg-gray-500/30 rounded text-gray-400 font-mono">
+                      id:{match.id}
+                    </span>
+                    <span className="text-xs px-2 py-0.5 bg-white/10 rounded text-white/70">
+                      Round of 32
+                    </span>
+                  </div>
                 </div>
                 {venueDisplay && (
                   <div

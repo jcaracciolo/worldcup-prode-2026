@@ -10,6 +10,7 @@ import {
 import { ScoringProvider } from "@/contexts/ScoringContext";
 import { UserProvider, useUser } from "@/contexts/UserContext";
 import Header from "@/components/Header";
+import { PageTransition } from "@/components/PageTransition";
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -55,7 +56,7 @@ export function Providers({ children }: ProvidersProps) {
             <PredictionsPreloader>
               <ScoringProvider>
                 <Header />
-                {children}
+                <PageTransition>{children}</PageTransition>
               </ScoringProvider>
             </PredictionsPreloader>
           </PredictionsProvider>

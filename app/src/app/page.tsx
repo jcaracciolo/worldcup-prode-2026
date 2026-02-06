@@ -35,9 +35,6 @@ export default function HomePage() {
       <main className="flex-1 container mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="glass-card p-8 mb-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            FIFA World Cup 2026
-          </h1>
           <p className="text-emerald-100/80 text-lg max-w-2xl mx-auto">
             Make your predictions for every match, climb the leaderboard, and
             compete with friends!

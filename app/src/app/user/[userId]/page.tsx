@@ -590,7 +590,7 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                       <h3 className="font-bold text-lg mb-3 text-white">
                         {name}
                       </h3>
-                      <div className="space-y-2">
+                      <div className="grid md:grid-cols-2 gap-3">
                         {stageMatches.map((match) => {
                           const pred = predictionMap.get(match.id);
                           const matchDate = new Date(match.utcDate);

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Profile } from "@/types/database";
+import { useMatches } from "@/contexts/MatchContext";
 
 interface HeaderProps {
   user: Profile | null;
@@ -12,6 +13,7 @@ interface HeaderProps {
 export default function Header({ user }: HeaderProps) {
   const router = useRouter();
   const supabase = createClient();
+  const { isSimulated } = useMatches();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -19,7 +21,14 @@ export default function Header({ user }: HeaderProps) {
   };
 
   return (
-    <header className="bg-[#0a3d36]/80 backdrop-blur-md border-b border-white/10 sticky top-0 z-50">
+    <>
+      {/* Simulation Banner */}
+      {isSimulated && (
+        <div className="bg-amber-500 text-black text-center py-1.5 text-sm font-medium">
+          🧪 Simulation Mode Active — Match data is not real
+        </div>
+      )}
+      <header className="bg-[#0a3d36]/80 backdrop-blur-md border-b border-white/10 sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group">
           <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/20 group-hover:shadow-green-500/40 transition-all">
@@ -36,19 +45,15 @@ export default function Header({ user }: HeaderProps) {
         </Link>
 
         <nav className="flex items-center gap-2">
+          {/* Fixtures link - visible to everyone */}
+          <Link
+            href="/fixtures"
+            className="px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+          >
+            Fixtures
+          </Link>
           {user ? (
             <>
-              <Link
-                href={`/user/${user.id}`}
-                className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-full mr-2 transition-all"
-              >
-                <div className="w-6 h-6 bg-gradient-to-br from-emerald-400 to-green-600 rounded-full flex items-center justify-center text-xs font-bold">
-                  {user.display_name.charAt(0).toUpperCase()}
-                </div>
-                <span className="text-sm text-emerald-100 font-medium">
-                  {user.display_name}
-                </span>
-              </Link>
               <Link
                 href="/predictions"
                 className="px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all"
@@ -69,6 +74,17 @@ export default function Header({ user }: HeaderProps) {
                   Admin
                 </Link>
               )}
+              <Link
+                href={`/user/${user.id}`}
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-full transition-all"
+              >
+                <div className="w-6 h-6 bg-gradient-to-br from-emerald-400 to-green-600 rounded-full flex items-center justify-center text-xs font-bold">
+                  {user.display_name.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-sm text-emerald-100 font-medium">
+                  {user.display_name}
+                </span>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="px-4 py-2 text-sm font-medium bg-red-500/20 text-red-300 hover:bg-red-500/30 rounded-lg transition-all"
@@ -87,5 +103,6 @@ export default function Header({ user }: HeaderProps) {
         </nav>
       </div>
     </header>
+    </>
   );
 }

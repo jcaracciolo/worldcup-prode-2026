@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { Match } from "@/types/football";
 import { getMatchInfo, Venue } from "@/lib/tournament";
+import { useSimulation } from "./SimulationContext";
 
 const POLL_INTERVAL = 60000; // 60 seconds;
 
@@ -39,6 +40,8 @@ interface MatchContextValue {
   lastUpdated: Date | null;
   /** Manually trigger a refresh */
   refresh: () => Promise<void>;
+  /** Whether simulation mode is active */
+  isSimulated: boolean;
 }
 
 const MatchContext = createContext<MatchContextValue | null>(null);
@@ -205,13 +208,22 @@ export function MatchProvider({ children, initialMatches }: MatchProviderProps) 
     initialMatches ? new Date() : null
   );
 
+  // Get simulation context to apply overrides
+  const { simulationEnabled, applySimulation } = useSimulation();
+
+  // Apply simulation to raw matches (if enabled)
+  const processedMatches = useMemo(
+    () => simulationEnabled ? applySimulation(rawMatches) : rawMatches,
+    [rawMatches, simulationEnabled, applySimulation]
+  );
+
   // Build FIFA number mapping once when matches change
-  const fifaMapping = useMemo(() => buildFifaMapping(rawMatches), [rawMatches]);
+  const fifaMapping = useMemo(() => buildFifaMapping(processedMatches), [processedMatches]);
 
   // Transform raw matches to include live info, FIFA number, and venue
   const matches = useMemo(
-    () => rawMatches.map((m) => enhanceMatch(m, fifaMapping)),
-    [rawMatches, fifaMapping]
+    () => processedMatches.map((m) => enhanceMatch(m, fifaMapping)),
+    [processedMatches, fifaMapping]
   );
 
   // Check if any matches are currently live
@@ -264,6 +276,9 @@ export function MatchProvider({ children, initialMatches }: MatchProviderProps) 
 
   // Polling effect - poll when there are live matches or during match day
   useEffect(() => {
+    // Don't poll during simulation mode
+    if (simulationEnabled) return;
+
     const shouldPoll = hasLiveMatches || hasMatchesToday(rawMatches);
 
     if (!shouldPoll) return;
@@ -282,7 +297,7 @@ export function MatchProvider({ children, initialMatches }: MatchProviderProps) 
       console.log("[MatchProvider] Stopping polling");
       clearInterval(intervalId);
     };
-  }, [hasLiveMatches, rawMatches, fetchMatches]);
+  }, [hasLiveMatches, rawMatches, fetchMatches, simulationEnabled]);
 
   const value: MatchContextValue = {
     matches,
@@ -293,6 +308,7 @@ export function MatchProvider({ children, initialMatches }: MatchProviderProps) 
     error,
     lastUpdated,
     refresh,
+    isSimulated: simulationEnabled,
   };
 
   return (

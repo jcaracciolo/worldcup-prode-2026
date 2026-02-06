@@ -1,53 +1,35 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useRef, startTransition } from "react";
+import { useRef, useLayoutEffect } from "react";
 
 interface PageTransitionProps {
   children: React.ReactNode;
 }
 
 /**
- * Simple fade transition effect for page navigation
- * Works on all devices with CSS opacity transition
+ * Simple fade-in animation on page navigation
+ * Uses ref-based class toggling to avoid React render overhead
  */
 export function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname();
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [displayChildren, setDisplayChildren] = useState(children);
-  const previousPathname = useRef(pathname);
+  const ref = useRef<HTMLDivElement>(null);
+  const prevPathname = useRef(pathname);
 
-  useEffect(() => {
-    // Only animate if pathname changed
-    if (pathname !== previousPathname.current) {
-      // Start fade out using startTransition to avoid lint warning
-      startTransition(() => {
-        setIsTransitioning(true);
-      });
-
-      // After fade out, update content and fade in
-      const timeout = setTimeout(() => {
-        startTransition(() => {
-          setDisplayChildren(children);
-          setIsTransitioning(false);
-        });
-        previousPathname.current = pathname;
-      }, 150); // Fast transition
-
-      return () => clearTimeout(timeout);
-    } else {
-      // Same pathname, just update children (for state changes)
-      setDisplayChildren(children);
+  useLayoutEffect(() => {
+    if (pathname !== prevPathname.current && ref.current) {
+      // Remove animation class, force reflow, add it back
+      ref.current.classList.remove("page-fade-in");
+      // Force reflow to restart animation
+      void ref.current.offsetWidth;
+      ref.current.classList.add("page-fade-in");
+      prevPathname.current = pathname;
     }
-  }, [pathname, children]);
+  }, [pathname]);
 
   return (
-    <div
-      className={`transition-opacity duration-150 ease-in-out ${
-        isTransitioning ? "opacity-0" : "opacity-100"
-      }`}
-    >
-      {displayChildren}
+    <div ref={ref} className="page-fade-in">
+      {children}
     </div>
   );
 }

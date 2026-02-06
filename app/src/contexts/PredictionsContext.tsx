@@ -353,24 +353,51 @@ export function useUserPredictions(userId: string | null): {
     updateOverrides: contextUpdateOverrides,
     savePredictions: contextSavePredictions,
   } = usePredictionsContext();
-  const [state, setState] = useState<UserPredictions | null>(null);
+
+  // Initialize state synchronously from cache to avoid loading flash
+  const [state, setState] = useState<UserPredictions | null>(() => {
+    if (!userId) return null;
+    const cached = getCachedPredictions(userId);
+    return cached && !cached.loading ? cached : null;
+  });
+
+  // Track userId changes to reinitialize state
+  const prevUserIdRef = useRef(userId);
+  const hasFetchedRef = useRef(false);
 
   // Load predictions on mount or userId change
   React.useEffect(() => {
-    if (!userId) {
-      setState(null);
+    // Handle userId change - reset and refetch
+    if (prevUserIdRef.current !== userId) {
+      prevUserIdRef.current = userId;
+      hasFetchedRef.current = false;
+      if (!userId) {
+        setState(null);
+        return;
+      }
+      // Check cache on userId change
+      const cached = getCachedPredictions(userId);
+      if (cached && !cached.loading) {
+        setState(cached);
+        hasFetchedRef.current = true;
+        return;
+      }
+    }
+
+    if (!userId || hasFetchedRef.current) {
       return;
     }
 
-    // Check cache first
-    const cached = getCachedPredictions(userId);
-    if (cached) {
-      setState(cached);
+    // If we already have state from cache, mark as fetched
+    if (state && !state.loading) {
+      hasFetchedRef.current = true;
+      return;
     }
 
-    // Fetch (will use cache if available)
+    // Fetch predictions
+    hasFetchedRef.current = true;
     getUserPredictions(userId).then(setState);
-  }, [userId, getCachedPredictions, getUserPredictions]);
+  }, [userId, getCachedPredictions, getUserPredictions, state]);
 
   const refresh = useCallback(async () => {
     if (!userId) return;

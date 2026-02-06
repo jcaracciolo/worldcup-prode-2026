@@ -80,6 +80,12 @@ export interface PointDetail {
 // UTILITY FUNCTIONS - Team display names and helpers
 // =====================================================================
 
+/** Team abbreviation overrides for teams with missing or non-standard TLA */
+const TEAM_TLA_OVERRIDES: Record<string, string> = {
+  "Curaçao": "CUW",
+  "Curacao": "CUW",
+};
+
 /** Get team abbreviation with fallbacks */
 function getTeamName(
   team:
@@ -89,6 +95,10 @@ function getTeamName(
   fallback: string = "TBD",
 ): string {
   if (!team) return fallback;
+  // Check for override first
+  if (team.name && TEAM_TLA_OVERRIDES[team.name]) {
+    return TEAM_TLA_OVERRIDES[team.name];
+  }
   return team.tla || team.shortName || team.name || fallback;
 }
 
@@ -97,8 +107,8 @@ export function getTbdLabels(matchId: number): { home: string; away: string } {
   // Use last 2 digits of match ID for a short identifier
   const matchNum = matchId % 100;
   return {
-    home: `#${matchNum}H`,
-    away: `#${matchNum}A`,
+    home: `${matchNum}H`,
+    away: `${matchNum}A`,
   };
 }
 
@@ -114,6 +124,10 @@ export function getTeamDisplayName(
   matchId: number,
   position: "home" | "away",
 ): string {
+  // Check for override first
+  if (team?.name && TEAM_TLA_OVERRIDES[team.name]) {
+    return TEAM_TLA_OVERRIDES[team.name];
+  }
   if (team?.tla) return team.tla;
   if (team?.shortName) return team.shortName;
   if (team?.name) return team.name;

@@ -4,6 +4,7 @@ import { useSimulation } from "@/contexts/SimulationContext";
 import { Match, Team } from "@/types/football";
 import { Prediction } from "@/types/database";
 import PredictionInput from "@/components/PredictionInput";
+import FixtureRow from "@/components/FixtureRow";
 
 interface ResolvedTeams {
   home: Team | null;
@@ -12,16 +13,18 @@ interface ResolvedTeams {
 
 interface KnockoutStageSectionProps {
   knockoutStages: Map<string, Match[]>;
-  predictions: Map<number, Prediction>;
-  resolvedKnockoutTeams: Map<number, ResolvedTeams>;
+  predictions?: Map<number, Prediction>;
+  resolvedKnockoutTeams?: Map<number, ResolvedTeams>;
   apiToFifaMap: Map<number, number>;
-  knockoutLocked: boolean;
-  onPredictionChange: (
+  knockoutLocked?: boolean;
+  onPredictionChange?: (
     matchId: number,
     homeGoals: number | null,
     awayGoals: number | null,
     winnerId?: number | null,
   ) => void;
+  /** Read-only mode: shows FixtureRow instead of PredictionInput */
+  readOnly?: boolean;
 }
 
 function getKnockoutStageName(stage: string): string {
@@ -50,8 +53,9 @@ export default function KnockoutStageSection({
   predictions,
   resolvedKnockoutTeams,
   apiToFifaMap,
-  knockoutLocked,
+  knockoutLocked = false,
   onPredictionChange,
+  readOnly = false,
 }: KnockoutStageSectionProps) {
   const { getCurrentTime } = useSimulation();
 
@@ -68,7 +72,7 @@ export default function KnockoutStageSection({
       </div>
 
       <div className="space-y-6">
-        {knockoutLocked && (
+        {!readOnly && knockoutLocked && (
           <div className="bg-amber-500/20 border border-amber-500/30 text-amber-300 px-4 py-3 rounded-xl">
             Knockout stage predictions are locked
           </div>
@@ -79,22 +83,37 @@ export default function KnockoutStageSection({
           if (stageMatches.length === 0) return null;
 
           const stageName = getKnockoutStageName(stage);
+          const sortedMatches = [...stageMatches].sort(
+            (a, b) =>
+              new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
+          );
 
           return (
             <div key={stage} className="glass-card p-5">
               <h3 className="font-bold text-lg mb-4 text-white">{stageName}</h3>
               <div className="grid md:grid-cols-2 gap-4">
-                {stageMatches.map((match) => {
-                  const resolved = resolvedKnockoutTeams.get(match.id);
+                {sortedMatches.map((match) => {
                   const fifaNumber = apiToFifaMap.get(match.id);
+
+                  if (readOnly) {
+                    return (
+                      <FixtureRow
+                        key={match.id}
+                        match={match}
+                        fifaMatchNumber={fifaNumber}
+                      />
+                    );
+                  }
+
+                  const resolved = resolvedKnockoutTeams?.get(match.id);
                   const matchHasStarted =
                     getCurrentTime() >= new Date(match.utcDate);
                   return (
                     <PredictionInput
                       key={match.id}
                       match={match}
-                      prediction={predictions.get(match.id)}
-                      onChange={onPredictionChange}
+                      prediction={predictions?.get(match.id)}
+                      onChange={onPredictionChange!}
                       disabled={knockoutLocked || matchHasStarted}
                       showWinnerSelect={true}
                       resolvedHomeTeam={resolved?.home ?? undefined}

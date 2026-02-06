@@ -22,7 +22,7 @@ export default function PredictionsPage() {
   const router = useRouter();
   const { user: profile, loading: userLoading } = useUser();
 
-  // Use cached predictions from context
+  // Use cached predictions from context (initializes from cache synchronously)
   const {
     predictions: cachedPredictions,
     overrides: cachedOverrides,
@@ -30,14 +30,27 @@ export default function PredictionsPage() {
     savePredictions: contextSavePredictions,
   } = useUserPredictions(profile?.id || null);
 
-  // Local state for editing (initialized from cache)
+  // Local state for editing - initialize directly from cache
   const [predictions, setPredictions] = useState<Map<number, Prediction>>(
-    new Map(),
+    () => new Map(cachedPredictions),
   );
-  const [overrides, setOverrides] = useState<GroupStandingsOverride[]>([]);
-  const [hasInitialized, setHasInitialized] = useState(false);
+  const [overrides, setOverrides] = useState<GroupStandingsOverride[]>(
+    () => [...cachedOverrides],
+  );
+  const [hasLocalEdits, setHasLocalEdits] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Sync from cache when it changes (but not if user has local edits)
+  useEffect(() => {
+    if (!hasLocalEdits && !predictionsLoading && cachedPredictions.size > 0) {
+      // Use queueMicrotask to avoid sync setState warning
+      queueMicrotask(() => {
+        setPredictions(new Map(cachedPredictions));
+        setOverrides([...cachedOverrides]);
+      });
+    }
+  }, [hasLocalEdits, predictionsLoading, cachedPredictions, cachedOverrides]);
 
   // Use centralized match context for automatic polling
   const {
@@ -63,23 +76,8 @@ export default function PredictionsPage() {
     }
   }, [userLoading, profile, router]);
 
-  // Initialize local state from cache when available
-  useEffect(() => {
-    if (!predictionsLoading && !hasInitialized && profile) {
-      setPredictions(new Map(cachedPredictions));
-      setOverrides([...cachedOverrides]);
-      setHasInitialized(true);
-    }
-  }, [
-    predictionsLoading,
-    hasInitialized,
-    profile,
-    cachedPredictions,
-    cachedOverrides,
-  ]);
-
-  // Derived loading state
-  const loading = userLoading || predictionsLoading || !hasInitialized;
+  // Derived loading state - only show loading if context is still loading
+  const loading = userLoading || predictionsLoading;
 
   const handlePredictionChange = (
     matchId: number,
@@ -87,6 +85,7 @@ export default function PredictionsPage() {
     awayGoals: number | null,
     winnerId?: number | null,
   ) => {
+    setHasLocalEdits(true);
     const existing = predictions.get(matchId);
     const updated: Prediction = {
       id: existing?.id || "",
@@ -229,6 +228,7 @@ export default function PredictionsPage() {
       updated_at: new Date().toISOString(),
     });
 
+    setHasLocalEdits(true);
     setOverrides(newOverrides);
   };
 
@@ -241,6 +241,7 @@ export default function PredictionsPage() {
     const result = await contextSavePredictions(predictions, overrides);
 
     if (result.success) {
+      setHasLocalEdits(false);
       alert("Predictions saved!");
     } else {
       setError(result.error || "Failed to save predictions");

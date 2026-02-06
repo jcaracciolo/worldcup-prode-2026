@@ -11,7 +11,7 @@ export default function SettingsPage() {
   const { user: profile, loading: userLoading, updateProfile } = useUser();
 
   const [displayName, setDisplayName] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
+  const [_currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
@@ -23,7 +23,10 @@ export default function SettingsPage() {
       return;
     }
     if (profile) {
-      setDisplayName(profile.display_name || "");
+      // Use queueMicrotask to avoid sync setState warning
+      queueMicrotask(() => {
+        setDisplayName(profile.display_name || "");
+      });
     }
   }, [profile, userLoading, router]);
 

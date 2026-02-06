@@ -33,24 +33,6 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-1 container mx-auto px-4 py-8">
-        {/* Hero Section */}
-        <div className="glass-card p-8 mb-8 text-center">
-          <p className="text-emerald-100/80 text-lg max-w-2xl mx-auto">
-            Make your predictions for every match, climb the leaderboard, and
-            compete with friends!
-          </p>
-          {!profile && (
-            <div className="mt-6">
-              <a
-                href="/signup"
-                className="inline-block px-8 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold rounded-xl hover:from-emerald-400 hover:to-green-500 transition-all shadow-lg shadow-green-500/30 hover:shadow-green-500/50"
-              >
-                Start Predicting →
-              </a>
-            </div>
-          )}
-        </div>
-
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Matches Section */}
           <div className="lg:col-span-2">

@@ -31,7 +31,7 @@ export default function AdminPage() {
       used_by_profile?: { id: string; display_name: string } | null;
     })[]
   >([]);
-  const [loading, setLoading] = useState(true);
+  const [codesLoading, setCodesLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
   // Simulation form state - initialized directly from context values
@@ -103,7 +103,7 @@ export default function AdminPage() {
         );
       }
 
-      setLoading(false);
+      setCodesLoading(false);
     };
 
     loadData();
@@ -152,12 +152,17 @@ export default function AdminPage() {
     (m) => m.status === "SCHEDULED" || m.status === "TIMED",
   ).length;
 
-  if (loading) {
+  // Redirect guards (don't block on codes loading)
+  if (userLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-xl text-white/60">Loading...</div>
       </div>
     );
+  }
+
+  if (!profile || !profile.is_admin) {
+    return null; // Redirect will happen via useEffect
   }
 
   return (
@@ -312,7 +317,20 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {inviteCodes.map((code) => (
+                {codesLoading ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-white/50">
+                      Loading invite codes...
+                    </td>
+                  </tr>
+                ) : inviteCodes.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-white/50">
+                      No invite codes yet
+                    </td>
+                  </tr>
+                ) : (
+                  inviteCodes.map((code) => (
                   <tr
                     key={code.id}
                     className="border-b border-white/5 hover:bg-white/5"
@@ -338,7 +356,8 @@ export default function AdminPage() {
                       )}
                     </td>
                   </tr>
-                ))}
+                  ))
+                )}
               </tbody>
             </table>
           </div>

@@ -4,36 +4,40 @@ import { useSimulation } from "@/contexts/SimulationContext";
 import { Match, CalculatedStanding } from "@/types/football";
 import { Prediction } from "@/types/database";
 import PredictionInput from "@/components/PredictionInput";
+import FixtureRow from "@/components/FixtureRow";
 import StandingsTable from "@/components/StandingsTable";
 
 interface GroupStageSectionProps {
   groups: Map<string, Match[]>;
-  predictions: Map<number, Prediction>;
+  predictions?: Map<number, Prediction>;
   apiToFifaMap: Map<number, number>;
-  groupLocked: boolean;
+  groupLocked?: boolean;
   thirdPlaceQualifying: Map<string, boolean>;
   calculateStandings: (
     groupMatches: Match[],
     groupName?: string,
   ) => CalculatedStanding[];
-  onPredictionChange: (
+  onPredictionChange?: (
     matchId: number,
     homeGoals: number | null,
     awayGoals: number | null,
     winnerId?: number | null,
   ) => void;
-  onSwapPositions: (groupName: string, team1: number, team2: number) => void;
+  onSwapPositions?: (groupName: string, team1: number, team2: number) => void;
+  /** Read-only mode: shows FixtureRow instead of PredictionInput, hides standings for groups with no finished matches */
+  readOnly?: boolean;
 }
 
 export default function GroupStageSection({
   groups,
   predictions,
   apiToFifaMap,
-  groupLocked,
+  groupLocked = false,
   thirdPlaceQualifying,
   calculateStandings,
   onPredictionChange,
   onSwapPositions,
+  readOnly = false,
 }: GroupStageSectionProps) {
   const { getCurrentTime } = useSimulation();
 
@@ -54,6 +58,17 @@ export default function GroupStageSection({
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([groupName, groupMatchList]) => {
             const standings = calculateStandings(groupMatchList, groupName);
+            const sortedMatches = [...groupMatchList].sort(
+              (a, b) =>
+                new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
+            );
+            const finishedInGroup = sortedMatches.filter(
+              (m) => m.status === "FINISHED",
+            ).length;
+            // In read-only mode, only show standings if there are finished matches
+            // In edit mode, always show standings based on predictions
+            const showStandings = readOnly ? finishedInGroup > 0 : true;
+
             return (
               <div key={groupName} className="glass-card p-5">
                 <div className="flex items-center gap-2 mb-4">
@@ -69,51 +84,61 @@ export default function GroupStageSection({
                       Matches
                     </h4>
                     <div className="space-y-1">
-                      {groupMatchList
-                        .sort(
-                          (a, b) =>
-                            new Date(a.utcDate).getTime() -
-                            new Date(b.utcDate).getTime(),
-                        )
-                        .map((match) => {
-                          const fifaNumber = apiToFifaMap.get(match.id);
-                          const matchHasStarted =
-                            getCurrentTime() >= new Date(match.utcDate);
+                      {sortedMatches.map((match) => {
+                        const fifaNumber = apiToFifaMap.get(match.id);
+
+                        if (readOnly) {
                           return (
-                            <PredictionInput
+                            <FixtureRow
                               key={match.id}
                               match={match}
-                              prediction={predictions.get(match.id)}
-                              onChange={onPredictionChange}
-                              disabled={groupLocked || matchHasStarted}
                               fifaMatchNumber={fifaNumber}
                             />
                           );
-                        })}
+                        }
+
+                        const matchHasStarted =
+                          getCurrentTime() >= new Date(match.utcDate);
+                        return (
+                          <PredictionInput
+                            key={match.id}
+                            match={match}
+                            prediction={predictions?.get(match.id)}
+                            onChange={onPredictionChange!}
+                            disabled={groupLocked || matchHasStarted}
+                            fifaMatchNumber={fifaNumber}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
 
                   {/* Standings Table */}
-                  <div>
-                    <h4 className="text-sm font-medium text-white/50 mb-3 uppercase tracking-wider">
-                      Standings
-                      {!groupLocked && (
-                        <span className="text-white/30 text-xs ml-2">
-                          (↕ swap tied teams)
-                        </span>
-                      )}
-                    </h4>
-                    <StandingsTable
-                      standings={standings}
-                      disabled={groupLocked}
-                      onSwapPositions={(team1, team2) =>
-                        onSwapPositions(groupName, team1, team2)
-                      }
-                      thirdPlaceQualifies={
-                        thirdPlaceQualifying.get(groupName) || false
-                      }
-                    />
-                  </div>
+                  {showStandings && standings.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-white/50 mb-3 uppercase tracking-wider">
+                        Standings
+                        {!readOnly && !groupLocked && (
+                          <span className="text-white/30 text-xs ml-2">
+                            (↕ swap tied teams)
+                          </span>
+                        )}
+                      </h4>
+                      <StandingsTable
+                        standings={standings}
+                        disabled={readOnly || groupLocked}
+                        onSwapPositions={
+                          readOnly || !onSwapPositions
+                            ? undefined
+                            : (team1, team2) =>
+                                onSwapPositions(groupName, team1, team2)
+                        }
+                        thirdPlaceQualifies={
+                          thirdPlaceQualifying.get(groupName) || false
+                        }
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             );

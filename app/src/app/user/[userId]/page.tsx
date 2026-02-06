@@ -36,17 +36,31 @@ export default function UserPredictionsPage() {
     loading: predictionsLoading,
   } = useUserPredictions(userId);
 
-  // State for target profile
-  const [targetProfile, setTargetProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  // State for target profile - use own profile if available
+  const [targetProfile, setTargetProfile] = useState<Profile | null>(
+    () => (isOwnPredictions ? currentProfile : null),
+  );
+  const [loading, setLoading] = useState(() => !isOwnPredictions || !currentProfile);
   const [notFound, setNotFound] = useState(false);
 
-  // Fetch target user profile using context
+  // Fetch target user profile using context (getProfile is cached)
   useEffect(() => {
-    async function fetchProfile() {
-      setLoading(true);
+    // If viewing own profile, use it directly
+    if (isOwnPredictions && currentProfile) {
+      // Use queueMicrotask to avoid sync setState warning
+      queueMicrotask(() => {
+        setTargetProfile(currentProfile);
+        setLoading(false);
+      });
+      return;
+    }
 
+    // Fetch other user's profile
+    let cancelled = false;
+    async function fetchProfile() {
       const profile = await getProfile(userId);
+
+      if (cancelled) return;
 
       if (!profile) {
         setNotFound(true);
@@ -59,7 +73,10 @@ export default function UserPredictionsPage() {
     }
 
     fetchProfile();
-  }, [userId, getProfile]);
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, getProfile, isOwnPredictions, currentProfile]);
 
   // Use predictions from context
   const predictions: Prediction[] = Array.from(cachedPredictions.values());

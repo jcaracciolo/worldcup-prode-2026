@@ -166,7 +166,7 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading...</div>
+        <div className="text-xl text-white/60">Loading...</div>
       </div>
     );
   }
@@ -176,12 +176,12 @@ export default function AdminPage() {
       <Header user={profile} />
 
       <main className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Admin Panel</h1>
+        <h1 className="text-2xl font-bold mb-6 text-white">Admin Panel</h1>
 
         {/* Invite Codes */}
-        <section className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <section className="glass-card p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Invite Codes</h2>
+            <h2 className="text-xl font-bold text-white">Invite Codes</h2>
             <button
               onClick={handleGenerateCode}
               disabled={generating}
@@ -194,34 +194,34 @@ export default function AdminPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2 px-4">Code</th>
-                  <th className="text-left py-2 px-4">Created</th>
-                  <th className="text-left py-2 px-4">Used By</th>
-                  <th className="text-left py-2 px-4">Status</th>
+                <tr className="border-b border-white/10">
+                  <th className="text-left py-2 px-4 text-white/60">Code</th>
+                  <th className="text-left py-2 px-4 text-white/60">Created</th>
+                  <th className="text-left py-2 px-4 text-white/60">Used By</th>
+                  <th className="text-left py-2 px-4 text-white/60">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {inviteCodes.map((code) => (
-                  <tr key={code.id} className="border-b hover:bg-gray-50">
-                    <td className="py-2 px-4 font-mono font-bold">
+                  <tr key={code.id} className="border-b border-white/5 hover:bg-white/5">
+                    <td className="py-2 px-4 font-mono font-bold text-white">
                       {code.code}
                     </td>
-                    <td className="py-2 px-4">
+                    <td className="py-2 px-4 text-white/70">
                       {format(new Date(code.created_at), "MMM d, yyyy")}
                     </td>
-                    <td className="py-2 px-4">
+                    <td className="py-2 px-4 text-white/70">
                       {code.used_by_profile?.display_name ||
                         code.used_by_profile?.email ||
                         "-"}
                     </td>
                     <td className="py-2 px-4">
                       {code.used_by ? (
-                        <span className="px-2 py-1 bg-gray-200 text-gray-600 rounded text-xs">
+                        <span className="px-2 py-1 bg-white/10 text-white/50 rounded text-xs">
                           Used
                         </span>
                       ) : (
-                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
+                        <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">
                           Available
                         </span>
                       )}
@@ -234,14 +234,14 @@ export default function AdminPage() {
         </section>
 
         {/* Tournament Controls */}
-        <section className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-xl font-bold mb-4">Tournament Controls</h2>
+        <section className="glass-card p-6 mb-6">
+          <h2 className="text-xl font-bold mb-4 text-white">Tournament Controls</h2>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
               <div>
-                <h3 className="font-medium">Group Stage</h3>
-                <p className="text-sm text-gray-500">
+                <h3 className="font-medium text-white">Group Stage</h3>
+                <p className="text-sm text-white/50">
                   {settings?.group_stage_locked
                     ? "Locked - predictions visible"
                     : "Open - accepting predictions"}
@@ -255,18 +255,18 @@ export default function AdminPage() {
                 }
                 className={`px-4 py-2 rounded-lg transition ${
                   settings?.group_stage_locked
-                    ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
-                    : "bg-red-100 text-red-700 hover:bg-red-200"
+                    ? "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30"
+                    : "bg-red-500/20 text-red-400 hover:bg-red-500/30"
                 }`}
               >
                 {settings?.group_stage_locked ? "Unlock" : "Lock Group Stage"}
               </button>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
               <div>
-                <h3 className="font-medium">Knockout Stage</h3>
-                <p className="text-sm text-gray-500">
+                <h3 className="font-medium text-white">Knockout Stage</h3>
+                <p className="text-sm text-white/50">
                   {settings?.knockout_stage_locked
                     ? "Locked - predictions visible"
                     : settings?.knockout_stage_open
@@ -280,7 +280,7 @@ export default function AdminPage() {
                     onClick={() =>
                       handleUpdateSettings({ knockout_stage_open: true })
                     }
-                    className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
+                    className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30"
                   >
                     Open Knockout
                   </button>
@@ -291,7 +291,7 @@ export default function AdminPage() {
                       onClick={() =>
                         handleUpdateSettings({ knockout_stage_locked: true })
                       }
-                      className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+                      className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
                     >
                       Lock Knockout Stage
                     </button>
@@ -301,7 +301,7 @@ export default function AdminPage() {
                     onClick={() =>
                       handleUpdateSettings({ knockout_stage_locked: false })
                     }
-                    className="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200"
+                    className="px-4 py-2 bg-amber-500/20 text-amber-400 rounded-lg hover:bg-amber-500/30"
                   >
                     Unlock
                   </button>
@@ -312,28 +312,28 @@ export default function AdminPage() {
         </section>
 
         {/* Testing Tools */}
-        <section className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4">Testing Tools</h2>
-          <p className="text-sm text-gray-500 mb-4">
+        <section className="glass-card p-6">
+          <h2 className="text-xl font-bold mb-4 text-white">Testing Tools</h2>
+          <p className="text-sm text-white/50 mb-4">
             These tools are for testing purposes only. Use with caution.
           </p>
 
           <div className="flex flex-wrap gap-4">
             <button
               onClick={() => handleGenerateRandomResults("group")}
-              className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200"
+              className="px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30"
             >
               Generate Random Group Results
             </button>
             <button
               onClick={() => handleGenerateRandomResults("knockout")}
-              className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200"
+              className="px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30"
             >
               Generate Random Knockout Results
             </button>
             <button
               onClick={handleResetTournament}
-              className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+              className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
             >
               Reset Tournament State
             </button>
@@ -341,9 +341,9 @@ export default function AdminPage() {
         </section>
       </main>
 
-      <footer className="bg-gray-800 text-white py-4 mt-8">
+      <footer className="bg-black/20 text-white py-4 mt-8">
         <div className="container mx-auto px-4 text-center text-sm">
-          <p>WorldCupProde - Admin Panel</p>
+          <p className="text-white/50">WorldCupProde - Admin Panel</p>
         </div>
       </footer>
     </div>

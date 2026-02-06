@@ -8,6 +8,7 @@ import StandingsTable from "@/components/StandingsTable";
 import R32Preview from "@/components/R32Preview";
 import { createClient } from "@/lib/supabase/client";
 import { Match, CalculatedStanding, Team } from "@/types/football";
+import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import {
   Profile,
   Prediction,
@@ -326,6 +327,9 @@ export default function PredictionsPage() {
     groupStandings.set(groupName, calculateStandings(groupMatchList, groupName));
   });
 
+  // Calculate which 3rd place teams qualify (best 8 of 12)
+  const thirdPlaceQualifying = getQualifyingThirdPlaceTeams(groupStandings);
+
   const knockoutMatches = matches.filter((m) => m.stage !== "GROUP_STAGE");
   const knockoutStages = new Map<string, Match[]>();
   knockoutMatches.forEach((m) => {
@@ -360,7 +364,7 @@ export default function PredictionsPage() {
               onClick={handleSave}
               disabled={saving || (groupLocked && knockoutLocked)}
               className="px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: 'var(--qualifying-text)' }}
+              style={{ backgroundColor: 'var(--qualifying-bg)' }}
             >
               {saving ? "Saving..." : "Save Predictions"}
             </button>
@@ -438,6 +442,7 @@ export default function PredictionsPage() {
                           standings={standings}
                           disabled={groupLocked}
                           onSwapPositions={(team1, team2) => handleSwapPositions(groupName, team1, team2)}
+                          thirdPlaceQualifies={thirdPlaceQualifying.get(groupName) || false}
                         />
                       </div>
                     </div>
@@ -465,6 +470,7 @@ export default function PredictionsPage() {
               <R32Preview 
                 matches={knockoutStages.get("LAST_32") || []}
                 groupStandings={groupStandings}
+                thirdPlaceQualifying={thirdPlaceQualifying}
               />
 
               {/* Blurred rest of knockout */}

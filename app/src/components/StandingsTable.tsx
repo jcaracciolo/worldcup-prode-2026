@@ -6,14 +6,14 @@ interface StandingsTableProps {
   standings: CalculatedStanding[];
   onSwapPositions?: (teamId1: number, teamId2: number) => void;
   disabled?: boolean;
-  highlightAdvancing?: number; // How many teams advance
+  thirdPlaceQualifies?: boolean; // Whether 3rd place team in this group qualifies for R32
 }
 
 export default function StandingsTable({
   standings,
   onSwapPositions,
   disabled = false,
-  highlightAdvancing = 3,
+  thirdPlaceQualifies = false,
 }: StandingsTableProps) {
   // Check if team can swap with the one above
   const canSwapUp = (index: number): boolean => {
@@ -57,14 +57,35 @@ export default function StandingsTable({
         </thead>
         <tbody>
           {standings.map((standing, index) => {
-            const advances = index < highlightAdvancing;
+            const definitelyAdvances = index < 2; // 1st and 2nd always qualify
+            const isThirdPlace = index === 2;
+            const thirdAdvances = isThirdPlace && thirdPlaceQualifies;
+            const thirdDoesNotAdvance = isThirdPlace && !thirdPlaceQualifies;
+            
+            // Determine styling based on qualification status
+            const rowStyle = definitelyAdvances || thirdAdvances
+              ? { backgroundColor: 'var(--qualifying-bg)' }
+              : thirdDoesNotAdvance
+              ? { backgroundColor: 'rgba(239, 68, 68, 0.15)' } // red tint for doesn't qualify
+              : undefined;
+            const textColor = definitelyAdvances || thirdAdvances
+              ? 'var(--qualifying-text)'
+              : thirdDoesNotAdvance
+              ? '#f87171' // red-400
+              : 'rgba(255,255,255,0.6)';
+            const dimTextColor = definitelyAdvances || thirdAdvances
+              ? 'var(--qualifying-text)'
+              : thirdDoesNotAdvance
+              ? '#f87171'
+              : 'rgba(255,255,255,0.6)';
+            
             return (
               <tr
                 key={standing.team.id}
                 className="border-b border-white/5"
-                style={advances ? { backgroundColor: 'var(--qualifying-bg)' } : undefined}
+                style={rowStyle}
               >
-                <td className="px-2 py-2 font-medium" style={advances ? { color: 'var(--qualifying-text)' } : { color: 'rgba(255,255,255,0.6)' }}>{index + 1}</td>
+                <td className="px-2 py-2 font-medium" style={{ color: textColor }}>{index + 1}</td>
                 <td className="px-2 py-2">
                   <div className="flex items-center gap-1.5">
                     {standing.team.crest ? (
@@ -78,18 +99,19 @@ export default function StandingsTable({
                         {standing.team.tla?.substring(0, 2)}
                       </div>
                     )}
-                    <span className={`truncate ${advances ? "font-medium" : "text-white/80"}`} style={advances ? { color: 'var(--qualifying-text)' } : undefined}>{standing.team.tla}</span>
+                    <span className={`truncate ${definitelyAdvances || thirdAdvances ? "font-medium" : "text-white/80"}`} style={{ color: textColor }}>{standing.team.tla}</span>
+                    {thirdDoesNotAdvance && <span className="text-[9px] text-red-400 ml-1">✗</span>}
                   </div>
                 </td>
-                <td className="px-2 py-2 text-center" style={advances ? { color: 'var(--qualifying-text)', opacity: 0.7 } : { color: 'rgba(255,255,255,0.6)' }}>{standing.played}</td>
-                <td className="px-2 py-2 text-center" style={advances ? { color: 'var(--qualifying-text)', opacity: 0.7 } : { color: 'rgba(255,255,255,0.6)' }}>{standing.won}</td>
-                <td className="px-2 py-2 text-center" style={advances ? { color: 'var(--qualifying-text)', opacity: 0.7 } : { color: 'rgba(255,255,255,0.6)' }}>{standing.drawn}</td>
-                <td className="px-2 py-2 text-center" style={advances ? { color: 'var(--qualifying-text)', opacity: 0.7 } : { color: 'rgba(255,255,255,0.6)' }}>{standing.lost}</td>
-                <td className="px-2 py-2 text-center" style={advances ? { color: 'var(--qualifying-text)', opacity: 0.7 } : { color: 'rgba(255,255,255,0.6)' }}>
+                <td className="px-2 py-2 text-center" style={{ color: dimTextColor, opacity: definitelyAdvances || thirdAdvances ? 0.7 : 1 }}>{standing.played}</td>
+                <td className="px-2 py-2 text-center" style={{ color: dimTextColor, opacity: definitelyAdvances || thirdAdvances ? 0.7 : 1 }}>{standing.won}</td>
+                <td className="px-2 py-2 text-center" style={{ color: dimTextColor, opacity: definitelyAdvances || thirdAdvances ? 0.7 : 1 }}>{standing.drawn}</td>
+                <td className="px-2 py-2 text-center" style={{ color: dimTextColor, opacity: definitelyAdvances || thirdAdvances ? 0.7 : 1 }}>{standing.lost}</td>
+                <td className="px-2 py-2 text-center" style={{ color: dimTextColor, opacity: definitelyAdvances || thirdAdvances ? 0.7 : 1 }}>
                   {standing.goalDifference > 0 ? "+" : ""}
                   {standing.goalDifference}
                 </td>
-                <td className="px-2 py-2 text-center font-bold" style={advances ? { color: 'var(--qualifying-text)' } : { color: 'white' }}>
+                <td className="px-2 py-2 text-center font-bold" style={{ color: definitelyAdvances || thirdAdvances ? 'var(--qualifying-text)' : thirdDoesNotAdvance ? '#f87171' : 'white' }}>
                   {standing.points}
                 </td>
                 {onSwapPositions && !disabled && (

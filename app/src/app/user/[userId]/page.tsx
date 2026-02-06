@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import PointsBreakdown from "@/components/PointsBreakdown";
 import StandingsTable from "@/components/StandingsTable";
 import { createClient } from "@/lib/supabase/server";
+import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { notFound } from "next/navigation";
 import {
   Match,
@@ -154,7 +155,7 @@ export default async function UserPredictionsPage({ params }: PageProps) {
       .sort((a, b) => {
         if (b.points !== a.points) return b.points - a.points;
         if (b.goalDifference !== a.goalDifference)
-  cons      return b.goalDifference - a.goalDifference;
+          return b.goalDifference - a.goalDifference;
         return b.goalsFor - a.goalsFor;
       })
       .map((s, i) => ({ ...s, position: i + 1 }));
@@ -167,6 +168,13 @@ export default async function UserPredictionsPage({ params }: PageProps) {
     if (!groups.has(m.group)) groups.set(m.group, []);
     groups.get(m.group)!.push(m);
   });
+
+  // Pre-calculate standings for all groups to determine 3rd place qualifiers
+  const allGroupStandings = new Map<string, CalculatedStanding[]>();
+  groups.forEach((groupMatchList, groupName) => {
+    allGroupStandings.set(groupName, calculateStandings(groupMatchList));
+  });
+  const thirdPlaceQualifying = getQualifyingThirdPlaceTeams(allGroupStandings);
 
   // Calculate points breakdown (simplified for now)
   const breakdown: PointBreakdown[] = [];
@@ -244,7 +252,11 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                           <h4 className="text-sm font-medium text-gray-500 mb-2">
                             Standings
                           </h4>
-                          <StandingsTable standings={standings} disabled />
+                          <StandingsTable 
+                            standings={standings} 
+                            disabled 
+                            thirdPlaceQualifies={thirdPlaceQualifying.get(groupName) || false}
+                          />
                         </div>
                       </div>
                     </div>

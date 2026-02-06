@@ -327,6 +327,14 @@ export default function PredictionsPage() {
     setPredictions(newPredictions);
   };
 
+  const handleResetPredictions = () => {
+    if (!confirm("Are you sure you want to reset all predictions? This will clear all your scores.")) {
+      return;
+    }
+    setPredictions(new Map());
+    setOverrides([]);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -386,6 +394,13 @@ export default function PredictionsPage() {
             <p className="text-white/50 mt-1">Set your scores for each match</p>
           </div>
           <div className="flex gap-3">
+            <button
+              onClick={handleResetPredictions}
+              disabled={groupLocked && knockoutLocked}
+              className="px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed bg-red-600 hover:bg-red-700"
+            >
+              🗑️ Reset
+            </button>
             <button
               onClick={handleRandomPredictions}
               disabled={groupLocked && knockoutLocked}

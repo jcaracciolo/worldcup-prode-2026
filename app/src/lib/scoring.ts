@@ -153,7 +153,9 @@ export function calculateMatchPoints(
   predictedHomeTeam?: { id: number } | null,
   predictedAwayTeam?: { id: number } | null,
 ): MatchPointsResult {
-  const multiplier = isGroupStageMatch(match) ? 1 : (ROUND_MULTIPLIERS[match.stage] || 1);
+  const multiplier = isGroupStageMatch(match)
+    ? 1
+    : ROUND_MULTIPLIERS[match.stage] || 1;
   const isKnockout = !isGroupStageMatch(match);
 
   // Max possible: result points × multiplier + 2 goals points
@@ -191,7 +193,10 @@ export function calculateMatchPoints(
   let total = 0;
 
   // Result points
-  const predictedResult = getPredictionResult(prediction.home_goals, prediction.away_goals);
+  const predictedResult = getPredictionResult(
+    prediction.home_goals,
+    prediction.away_goals,
+  );
   const actualResult = getMatchResult(match);
 
   if (predictedResult === actualResult) {
@@ -240,7 +245,9 @@ export function calculateMatchPointsDetailed(
   predictedHomeTeam?: { id: number } | null,
   predictedAwayTeam?: { id: number } | null,
 ): MatchPointsBreakdown {
-  const multiplier = isGroupStageMatch(match) ? 1 : (ROUND_MULTIPLIERS[match.stage] || 1);
+  const multiplier = isGroupStageMatch(match)
+    ? 1
+    : ROUND_MULTIPLIERS[match.stage] || 1;
   const isKnockout = !isGroupStageMatch(match);
   const details: PointDetail[] = [];
 
@@ -295,7 +302,10 @@ export function calculateMatchPointsDetailed(
     };
   }
 
-  const predictedResult = getPredictionResult(prediction.home_goals, prediction.away_goals);
+  const predictedResult = getPredictionResult(
+    prediction.home_goals,
+    prediction.away_goals,
+  );
   const actualResult = getMatchResult(match)!;
   const tbdLabels = getTbdLabels(match.id);
 
@@ -403,7 +413,9 @@ export function calculateMatchPointsDetailed(
  * Get maximum possible points for a match type
  */
 export function getMaxPossiblePoints(match: Match): number {
-  const multiplier = isGroupStageMatch(match) ? 1 : (ROUND_MULTIPLIERS[match.stage] || 1);
+  const multiplier = isGroupStageMatch(match)
+    ? 1
+    : ROUND_MULTIPLIERS[match.stage] || 1;
   const isKnockout = !isGroupStageMatch(match);
 
   return isKnockout

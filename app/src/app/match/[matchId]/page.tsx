@@ -19,7 +19,7 @@ export default function MatchDetailPage() {
   const params = useParams();
   const matchId = params.matchId as string;
   const supabase = createClient();
-  
+
   const { matches, loading: matchesLoading } = useMatches();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [prediction, setPrediction] = useState<Prediction | null>(null);

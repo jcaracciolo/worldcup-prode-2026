@@ -1,0 +1,235 @@
+/**
+ * Standings Calculation Utilities
+ *
+ * Functions to calculate group standings from predictions or actual results.
+ * Used by user profile page and scoring context.
+ */
+
+import { Match, CalculatedStanding } from "@/types/football";
+import { Prediction } from "@/types/database";
+
+/**
+ * Calculate standings from user predictions
+ */
+export function calculateStandingsFromPredictions(
+  groupMatches: Match[],
+  predictionMap: Map<number, Prediction>,
+): CalculatedStanding[] {
+  const teamStats = new Map<number, CalculatedStanding>();
+
+  // Initialize all teams
+  groupMatches.forEach((match) => {
+    if (!teamStats.has(match.homeTeam.id)) {
+      teamStats.set(match.homeTeam.id, {
+        team: match.homeTeam,
+        position: 0,
+        points: 0,
+        goalsFor: 0,
+        goalsAgainst: 0,
+        goalDifference: 0,
+        played: 0,
+        won: 0,
+        drawn: 0,
+        lost: 0,
+      });
+    }
+    if (!teamStats.has(match.awayTeam.id)) {
+      teamStats.set(match.awayTeam.id, {
+        team: match.awayTeam,
+        position: 0,
+        points: 0,
+        goalsFor: 0,
+        goalsAgainst: 0,
+        goalDifference: 0,
+        played: 0,
+        won: 0,
+        drawn: 0,
+        lost: 0,
+      });
+    }
+  });
+
+  // Apply predictions
+  groupMatches.forEach((match) => {
+    const prediction = predictionMap.get(match.id);
+    if (
+      !prediction ||
+      prediction.home_goals === null ||
+      prediction.away_goals === null
+    )
+      return;
+
+    const homeStats = teamStats.get(match.homeTeam.id)!;
+    const awayStats = teamStats.get(match.awayTeam.id)!;
+
+    homeStats.played++;
+    awayStats.played++;
+    homeStats.goalsFor += prediction.home_goals;
+    homeStats.goalsAgainst += prediction.away_goals;
+    awayStats.goalsFor += prediction.away_goals;
+    awayStats.goalsAgainst += prediction.home_goals;
+    homeStats.goalDifference = homeStats.goalsFor - homeStats.goalsAgainst;
+    awayStats.goalDifference = awayStats.goalsFor - awayStats.goalsAgainst;
+
+    if (prediction.home_goals > prediction.away_goals) {
+      homeStats.won++;
+      homeStats.points += 3;
+      awayStats.lost++;
+    } else if (prediction.away_goals > prediction.home_goals) {
+      awayStats.won++;
+      awayStats.points += 3;
+      homeStats.lost++;
+    } else {
+      homeStats.drawn++;
+      awayStats.drawn++;
+      homeStats.points += 1;
+      awayStats.points += 1;
+    }
+  });
+
+  return sortStandings(Array.from(teamStats.values()));
+}
+
+/**
+ * Calculate standings from actual match results
+ */
+export function calculateActualStandings(
+  groupMatches: Match[],
+): CalculatedStanding[] {
+  const teamStats = new Map<number, CalculatedStanding>();
+
+  // Initialize all teams
+  groupMatches.forEach((match) => {
+    if (!teamStats.has(match.homeTeam.id)) {
+      teamStats.set(match.homeTeam.id, {
+        team: match.homeTeam,
+        position: 0,
+        points: 0,
+        goalsFor: 0,
+        goalsAgainst: 0,
+        goalDifference: 0,
+        played: 0,
+        won: 0,
+        drawn: 0,
+        lost: 0,
+      });
+    }
+    if (!teamStats.has(match.awayTeam.id)) {
+      teamStats.set(match.awayTeam.id, {
+        team: match.awayTeam,
+        position: 0,
+        points: 0,
+        goalsFor: 0,
+        goalsAgainst: 0,
+        goalDifference: 0,
+        played: 0,
+        won: 0,
+        drawn: 0,
+        lost: 0,
+      });
+    }
+  });
+
+  // Apply actual results
+  groupMatches.forEach((match) => {
+    if (match.status !== "FINISHED") return;
+    const homeGoals = match.score.fullTime.home;
+    const awayGoals = match.score.fullTime.away;
+    if (homeGoals === null || awayGoals === null) return;
+
+    const homeStats = teamStats.get(match.homeTeam.id)!;
+    const awayStats = teamStats.get(match.awayTeam.id)!;
+
+    homeStats.played++;
+    awayStats.played++;
+    homeStats.goalsFor += homeGoals;
+    homeStats.goalsAgainst += awayGoals;
+    awayStats.goalsFor += awayGoals;
+    awayStats.goalsAgainst += homeGoals;
+
+    homeStats.goalDifference = homeStats.goalsFor - homeStats.goalsAgainst;
+    awayStats.goalDifference = awayStats.goalsFor - awayStats.goalsAgainst;
+
+    if (homeGoals > awayGoals) {
+      homeStats.won++;
+      homeStats.points += 3;
+      awayStats.lost++;
+    } else if (awayGoals > homeGoals) {
+      awayStats.won++;
+      awayStats.points += 3;
+      homeStats.lost++;
+    } else {
+      homeStats.drawn++;
+      awayStats.drawn++;
+      homeStats.points += 1;
+      awayStats.points += 1;
+    }
+  });
+
+  return sortStandings(Array.from(teamStats.values()));
+}
+
+/**
+ * Sort standings by points, goal difference, goals for
+ */
+function sortStandings(standings: CalculatedStanding[]): CalculatedStanding[] {
+  return standings
+    .sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      if (b.goalDifference !== a.goalDifference)
+        return b.goalDifference - a.goalDifference;
+      return b.goalsFor - a.goalsFor;
+    })
+    .map((s, i) => ({ ...s, position: i + 1 }));
+}
+
+/**
+ * Group matches by group name
+ */
+export function groupMatchesByGroup(matches: Match[]): Map<string, Match[]> {
+  const groups = new Map<string, Match[]>();
+  matches
+    .filter((m) => m.stage === "GROUP_STAGE")
+    .forEach((m) => {
+      if (!m.group) return;
+      if (!groups.has(m.group)) groups.set(m.group, []);
+      groups.get(m.group)!.push(m);
+    });
+  return groups;
+}
+
+/**
+ * Calculate all group standings from predictions
+ */
+export function calculateAllGroupStandings(
+  matches: Match[],
+  predictionMap: Map<number, Prediction>,
+): Map<string, CalculatedStanding[]> {
+  const groups = groupMatchesByGroup(matches);
+  const allStandings = new Map<string, CalculatedStanding[]>();
+
+  groups.forEach((groupMatches, groupName) => {
+    allStandings.set(
+      groupName,
+      calculateStandingsFromPredictions(groupMatches, predictionMap),
+    );
+  });
+
+  return allStandings;
+}
+
+/**
+ * Calculate all actual group standings
+ */
+export function calculateAllActualStandings(
+  matches: Match[],
+): Map<string, CalculatedStanding[]> {
+  const groups = groupMatchesByGroup(matches);
+  const allStandings = new Map<string, CalculatedStanding[]>();
+
+  groups.forEach((groupMatches, groupName) => {
+    allStandings.set(groupName, calculateActualStandings(groupMatches));
+  });
+
+  return allStandings;
+}

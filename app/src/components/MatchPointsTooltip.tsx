@@ -5,7 +5,7 @@ import { Prediction } from "@/types/database";
 import {
   calculateMatchPoints,
   calculateMatchPointsDetailed,
-} from "@/lib/match-scoring";
+} from "@/lib/scoring";
 import { useState } from "react";
 
 interface MatchPointsTooltipProps {

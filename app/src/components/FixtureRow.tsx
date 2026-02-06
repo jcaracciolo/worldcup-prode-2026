@@ -2,7 +2,7 @@
 
 import { Match } from "@/types/football";
 import { MatchWithLiveInfo } from "@/contexts/MatchContext";
-import { getTeamDisplayName } from "@/lib/match-scoring";
+import { getTeamDisplayName } from "@/lib/scoring";
 import { getMatchInfo } from "@/lib/tournament";
 import Link from "next/link";
 

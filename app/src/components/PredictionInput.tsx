@@ -2,7 +2,7 @@
 
 import { Match, Team } from "@/types/football";
 import { Prediction } from "@/types/database";
-import { getTeamDisplayName } from "@/lib/match-scoring";
+import { getTeamDisplayName } from "@/lib/scoring";
 import { getMatchInfo } from "@/lib/tournament";
 
 interface PredictionInputProps {

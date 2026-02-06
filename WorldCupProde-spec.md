@@ -122,7 +122,9 @@ curl -H "X-Auth-Token: YOUR_TOKEN" https://api.football-data.org/v4/competitions
 1. Admin generates an **invite code** in the admin panel
 2. User visits signup page with invite code (e.g., `/signup?code=ABC123`)
 3. User creates account via Supabase Auth (email/password or OAuth)
-4. Invite code is marked as used, user is activated
+4. Invite code is marked as used, user is activated immediately (no email verification)
+
+**Supabase Config:** Disable "Confirm email" in Authentication → Settings → Email Auth
 
 ### Access Control
 

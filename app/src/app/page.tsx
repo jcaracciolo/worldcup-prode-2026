@@ -3,38 +3,32 @@
 import { useState, useEffect } from "react";
 import TodaysMatches from "@/components/TodaysMatches";
 import Leaderboard from "@/components/Leaderboard";
-import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/contexts/UserContext";
 import { UserScore } from "@/types/football";
 
 export default function HomePage() {
-  const supabase = createClient();
-  const { user: profile } = useUser();
+  const { user: profile, getAllProfiles } = useUser();
   const [leaderboard, setLeaderboard] = useState<UserScore[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
-      // Fetch leaderboard
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, display_name");
+      // Fetch all profiles from context cache
+      const profiles = await getAllProfiles();
 
-      if (profiles) {
-        setLeaderboard(
-          profiles.map((p: { id: string; display_name: string }) => ({
-            userId: p.id,
-            displayName: p.display_name,
-            totalPoints: 0,
-            groupStagePoints: 0,
-            groupBonusPoints: 0,
-            knockoutPoints: 0,
-          })),
-        );
-      }
+      setLeaderboard(
+        profiles.map((p) => ({
+          userId: p.id,
+          displayName: p.display_name,
+          totalPoints: 0,
+          groupStagePoints: 0,
+          groupBonusPoints: 0,
+          knockoutPoints: 0,
+        })),
+      );
     };
 
     loadData();
-  }, [supabase]);
+  }, [getAllProfiles]);
 
   return (
     <div className="min-h-screen flex flex-col">

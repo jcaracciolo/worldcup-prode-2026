@@ -7,8 +7,8 @@ import { useUser } from "@/contexts/UserContext";
 
 export default function SettingsPage() {
   const router = useRouter();
-  const supabase = createClient();
-  const { user: profile, loading: userLoading, refetch } = useUser();
+  const supabase = createClient(); // Only used for password change (auth)
+  const { user: profile, loading: userLoading, updateProfile } = useUser();
 
   const [displayName, setDisplayName] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -34,16 +34,12 @@ export default function SettingsPage() {
 
     if (!profile) return;
 
-    const { error } = await supabase
-      .from("profiles")
-      .update({ display_name: displayName })
-      .eq("id", profile.id);
+    const result = await updateProfile({ display_name: displayName });
 
-    if (error) {
-      setMessage({ type: "error", text: "Failed to update profile" });
-    } else {
+    if (result.success) {
       setMessage({ type: "success", text: "Profile updated!" });
-      refetch(); // Refresh user context
+    } else {
+      setMessage({ type: "error", text: result.error || "Failed to update profile" });
     }
 
     setSaving(false);

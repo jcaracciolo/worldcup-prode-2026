@@ -12,7 +12,6 @@ import { useMatches } from "@/contexts/MatchContext";
 import { useSimulation } from "@/contexts/SimulationContext";
 import { useUser } from "@/contexts/UserContext";
 import { useUserPredictions } from "@/contexts/PredictionsContext";
-import { createClient } from "@/lib/supabase/client";
 import { CalculatedStanding, Team, Match } from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { BracketResolver } from "@/lib/bracket-resolver";
@@ -21,7 +20,6 @@ import { Prediction, GroupStandingsOverride } from "@/types/database";
 
 export default function PredictionsPage() {
   const router = useRouter();
-  const supabase = createClient();
   const { user: profile, loading: userLoading } = useUser();
 
   // Use cached predictions from context
@@ -29,8 +27,7 @@ export default function PredictionsPage() {
     predictions: cachedPredictions,
     overrides: cachedOverrides,
     loading: predictionsLoading,
-    updatePrediction: updateCachedPrediction,
-    updateOverrides: updateCachedOverrides,
+    savePredictions: contextSavePredictions,
   } = useUserPredictions(profile?.id || null);
 
   // Local state for editing (initialized from cache)
@@ -235,53 +232,15 @@ export default function PredictionsPage() {
     setSaving(true);
     setError("");
 
-    try {
-      // Convert predictions to array
-      const predictionsArray = Array.from(predictions.values())
-        .filter((p) => p.home_goals !== null || p.away_goals !== null)
-        .map((p) => ({
-          user_id: profile.id,
-          match_id: p.match_id,
-          home_goals: p.home_goals,
-          away_goals: p.away_goals,
-          winner_id: p.winner_id,
-        }));
+    const result = await contextSavePredictions(predictions, overrides);
 
-      // Upsert predictions
-      const { error: predError } = await supabase
-        .from("predictions")
-        .upsert(predictionsArray, { onConflict: "user_id,match_id" });
-
-      if (predError) throw predError;
-
-      // Upsert overrides
-      if (overrides.length > 0) {
-        const { error: overrideError } = await supabase
-          .from("group_standings_overrides")
-          .upsert(
-            overrides.map((o) => ({
-              user_id: profile.id,
-              group_name: o.group_name,
-              team_id: o.team_id,
-              position: o.position,
-            })),
-            { onConflict: "user_id,group_name,team_id" },
-          );
-
-        if (overrideError) throw overrideError;
-      }
-
-      // Update cache with saved predictions
-      predictions.forEach((pred) => updateCachedPrediction(pred));
-      updateCachedOverrides(overrides);
-
+    if (result.success) {
       alert("Predictions saved!");
-    } catch (err) {
-      setError("Failed to save predictions");
-      console.error(err);
-    } finally {
-      setSaving(false);
+    } else {
+      setError(result.error || "Failed to save predictions");
     }
+
+    setSaving(false);
   };
 
   const handleResetPredictions = () => {

@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useMatches } from "@/contexts/MatchContext";
 import { useUser } from "@/contexts/UserContext";
-import { createClient } from "@/lib/supabase/client";
+import { useUserPredictions } from "@/contexts/PredictionsContext";
 import { getMatchInfo } from "@/lib/tournament";
 import { buildApiToFifaMapping } from "@/lib/api-client";
 import {
@@ -12,42 +11,29 @@ import {
   calculateKnockoutPoints,
 } from "@/lib/scoring";
 import { isGroupStageMatch } from "@/lib/football-api";
-import { Prediction } from "@/types/database";
 import { format } from "date-fns";
 
 export default function MatchDetailPage() {
   const params = useParams();
   const matchId = params.matchId as string;
-  const supabase = createClient();
   const { user: profile } = useUser();
 
   const { matches, loading: matchesLoading } = useMatches();
-  const [prediction, setPrediction] = useState<Prediction | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadData = async () => {
-      if (profile) {
-        // Get user's prediction for this match
-        const { data: predData } = await supabase
-          .from("predictions")
-          .select("*")
-          .eq("user_id", profile.id)
-          .eq("match_id", matchId)
-          .single();
-        setPrediction(predData);
-      }
+  // Use cached predictions from context
+  const { predictions, loading: predictionsLoading } = useUserPredictions(
+    profile?.id || null,
+  );
 
-      setLoading(false);
-    };
-
-    loadData();
-  }, [supabase, matchId, profile]);
+  // Get prediction for this match
+  const prediction = predictions.get(parseInt(matchId)) || null;
 
   // Find the specific match
   const match = matches.find((m) => m.id === parseInt(matchId));
 
-  if (matchesLoading || loading) {
+  const loading = matchesLoading || (profile && predictionsLoading);
+
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-xl text-white/60">Loading...</div>

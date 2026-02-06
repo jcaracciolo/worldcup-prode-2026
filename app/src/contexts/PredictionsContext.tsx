@@ -37,6 +37,12 @@ interface PredictionsContextValue {
     userId: string,
     overrides: GroupStandingsOverride[],
   ) => void;
+  /** Save all predictions to database */
+  savePredictions: (
+    userId: string,
+    predictions: Map<number, Prediction>,
+    overrides: GroupStandingsOverride[],
+  ) => Promise<{ success: boolean; error?: string }>;
   /** Clear cache for a user */
   clearCache: (userId: string) => void;
   /** Clear all caches */
@@ -212,12 +218,82 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
     setCache(new Map());
   }, []);
 
+  // Save predictions to database
+  const savePredictions = useCallback(
+    async (
+      userId: string,
+      predictions: Map<number, Prediction>,
+      overrides: GroupStandingsOverride[],
+    ): Promise<{ success: boolean; error?: string }> => {
+      try {
+        // Convert predictions to array for upsert
+        const predictionsArray = Array.from(predictions.values())
+          .filter((p) => p.home_goals !== null || p.away_goals !== null)
+          .map((p) => ({
+            user_id: userId,
+            match_id: p.match_id,
+            home_goals: p.home_goals,
+            away_goals: p.away_goals,
+            winner_id: p.winner_id,
+          }));
+
+        // Upsert predictions
+        const { error: predError } = await supabase
+          .from("predictions")
+          .upsert(predictionsArray, { onConflict: "user_id,match_id" });
+
+        if (predError) throw predError;
+
+        // Upsert overrides
+        if (overrides.length > 0) {
+          const { error: overrideError } = await supabase
+            .from("group_standings_overrides")
+            .upsert(
+              overrides.map((o) => ({
+                user_id: userId,
+                group_name: o.group_name,
+                team_id: o.team_id,
+                position: o.position,
+              })),
+              { onConflict: "user_id,group_name,team_id" },
+            );
+
+          if (overrideError) throw overrideError;
+        }
+
+        // Update cache with saved data
+        setCache((prev) => {
+          const newCache = new Map(prev);
+          newCache.set(userId, {
+            userId,
+            predictions: new Map(predictions),
+            overrides: [...overrides],
+            loading: false,
+            error: null,
+            lastUpdated: new Date(),
+          });
+          return newCache;
+        });
+
+        return { success: true };
+      } catch (error) {
+        console.error("Failed to save predictions:", error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Failed to save",
+        };
+      }
+    },
+    [supabase],
+  );
+
   const value: PredictionsContextValue = {
     getUserPredictions,
     getCachedPredictions,
     refreshUserPredictions,
     updatePrediction,
     updateOverrides,
+    savePredictions,
     clearCache,
     clearAllCaches,
   };
@@ -258,6 +334,10 @@ export function useUserPredictions(userId: string | null): {
   refresh: () => Promise<void>;
   updatePrediction: (prediction: Prediction) => void;
   updateOverrides: (overrides: GroupStandingsOverride[]) => void;
+  savePredictions: (
+    predictions: Map<number, Prediction>,
+    overrides: GroupStandingsOverride[],
+  ) => Promise<{ success: boolean; error?: string }>;
 } {
   const {
     getUserPredictions,
@@ -265,6 +345,7 @@ export function useUserPredictions(userId: string | null): {
     refreshUserPredictions,
     updatePrediction: contextUpdatePrediction,
     updateOverrides: contextUpdateOverrides,
+    savePredictions: contextSavePredictions,
   } = usePredictionsContext();
   const [state, setState] = useState<UserPredictions | null>(null);
 
@@ -316,6 +397,26 @@ export function useUserPredictions(userId: string | null): {
     [userId, contextUpdateOverrides],
   );
 
+  const savePredictions = useCallback(
+    async (
+      predictions: Map<number, Prediction>,
+      overrides: GroupStandingsOverride[],
+    ): Promise<{ success: boolean; error?: string }> => {
+      if (!userId) return { success: false, error: "Not logged in" };
+      const result = await contextSavePredictions(userId, predictions, overrides);
+      if (result.success) {
+        // Update local state with saved data
+        setState((prev) =>
+          prev
+            ? { ...prev, predictions: new Map(predictions), overrides: [...overrides] }
+            : prev,
+        );
+      }
+      return result;
+    },
+    [userId, contextSavePredictions],
+  );
+
   return {
     predictions: state?.predictions || new Map(),
     overrides: state?.overrides || [],
@@ -324,6 +425,7 @@ export function useUserPredictions(userId: string | null): {
     refresh,
     updatePrediction,
     updateOverrides,
+    savePredictions,
   };
 }
 

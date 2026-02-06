@@ -6,6 +6,7 @@ import FixtureRow from "@/components/FixtureRow";
 import StandingsTable from "@/components/StandingsTable";
 import { GlobalLiveIndicator } from "@/components/MatchStatus";
 import { useMatches } from "@/contexts/MatchContext";
+import { useSimulation } from "@/contexts/SimulationContext";
 import { createClient } from "@/lib/supabase/client";
 import { buildApiToFifaMapping } from "@/lib/api-client";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
@@ -108,6 +109,156 @@ function createEmptyStanding(team: Team): CalculatedStanding {
   };
 }
 
+// Knockout Section Component
+function KnockoutSection({ 
+  knockoutStages, 
+  apiToFifaMap 
+}: { 
+  knockoutStages: Map<string, Match[]>;
+  apiToFifaMap: Map<number, number>;
+}) {
+  return (
+    <section className="mb-10">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
+          <span className="text-xl">⚔️</span>
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-white">Knockout Stage</h2>
+          <p className="text-white/50 text-sm">Single elimination rounds</p>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        {[
+          "LAST_32",
+          "LAST_16",
+          "QUARTER_FINALS",
+          "SEMI_FINALS",
+          "THIRD_PLACE",
+          "FINAL",
+        ].map((stage) => {
+          const stageMatches = knockoutStages.get(stage) || [];
+          if (stageMatches.length === 0) return null;
+
+          const stageName = getKnockoutStageName(stage);
+          const sortedMatches = [...stageMatches].sort(
+            (a, b) =>
+              new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
+          );
+
+          return (
+            <div key={stage} className="glass-card p-5">
+              <h3 className="font-bold text-lg mb-4 text-white">
+                {stageName}
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                {sortedMatches.map((match) => {
+                  const fifaNumber = apiToFifaMap.get(match.id);
+                  return (
+                    <FixtureRow 
+                      key={match.id} 
+                      match={match} 
+                      fifaMatchNumber={fifaNumber}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// Group Stage Section Component
+function GroupStageSection({ 
+  groups, 
+  groupStandings,
+  thirdPlaceQualifying,
+  apiToFifaMap 
+}: { 
+  groups: Map<string, Match[]>;
+  groupStandings: Map<string, CalculatedStanding[]>;
+  thirdPlaceQualifying: Map<string, boolean>;
+  apiToFifaMap: Map<number, number>;
+}) {
+  return (
+    <section className="mb-10">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+          <span className="text-xl">🏆</span>
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-white">Group Stage</h2>
+          <p className="text-white/50 text-sm">48 teams in 12 groups</p>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {Array.from(groups.entries())
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([groupName, groupMatchList]) => {
+            const standings = groupStandings.get(groupName) || [];
+            const sortedMatches = [...groupMatchList].sort(
+              (a, b) =>
+                new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
+            );
+            const finishedInGroup = sortedMatches.filter(
+              (m) => m.status === "FINISHED"
+            ).length;
+
+            return (
+              <div key={groupName} className="glass-card p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="px-4 py-2 bg-emerald-500/20 text-emerald-400 text-xl font-bold rounded-lg">
+                    {groupName.replace("GROUP_", "Group ")}
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Matches */}
+                  <div>
+                    <h4 className="text-sm font-medium text-white/50 mb-3 uppercase tracking-wider">
+                      Matches
+                    </h4>
+                    <div className="space-y-1">
+                      {sortedMatches.map((match) => {
+                        const fifaNumber = apiToFifaMap.get(match.id);
+                        return (
+                          <FixtureRow 
+                            key={match.id} 
+                            match={match} 
+                            fifaMatchNumber={fifaNumber}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Standings Table */}
+                  {standings.length > 0 && finishedInGroup > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-white/50 mb-3 uppercase tracking-wider">
+                        Standings
+                      </h4>
+                      <StandingsTable
+                        standings={standings}
+                        disabled={true}
+                        thirdPlaceQualifies={thirdPlaceQualifying.get(groupName) || false}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+      </div>
+    </section>
+  );
+}
+
 export default function FixturesPage() {
   const supabase = createClient();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -121,6 +272,10 @@ export default function FixturesPage() {
     refresh: refreshMatches,
     isSimulated,
   } = useMatches();
+
+  // Get stage lock status to determine section order
+  const { stageLockStatus } = useSimulation();
+  const showKnockoutFirst = stageLockStatus.knockoutStageLocked;
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -244,133 +399,34 @@ export default function FixturesPage() {
           </div>
         )}
 
-        {/* Knockout Stage - if any matches have been played */}
-        {knockoutStages.size > 0 && (
-          <section className="mb-10">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
-                <span className="text-xl">⚔️</span>
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-white">Knockout Stage</h2>
-                <p className="text-white/50 text-sm">Single elimination rounds</p>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              {[
-                "LAST_32",
-                "LAST_16",
-                "QUARTER_FINALS",
-                "SEMI_FINALS",
-                "THIRD_PLACE",
-                "FINAL",
-              ].map((stage) => {
-                const stageMatches = knockoutStages.get(stage) || [];
-                if (stageMatches.length === 0) return null;
-
-                const stageName = getKnockoutStageName(stage);
-                const sortedMatches = [...stageMatches].sort(
-                  (a, b) =>
-                    new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
-                );
-
-                return (
-                  <div key={stage} className="glass-card p-5">
-                    <h3 className="font-bold text-lg mb-4 text-white">
-                      {stageName}
-                    </h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {sortedMatches.map((match) => {
-                        const fifaNumber = apiToFifaMap.get(match.id);
-                        return (
-                          <FixtureRow 
-                            key={match.id} 
-                            match={match} 
-                            fifaMatchNumber={fifaNumber}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+        {/* Show Group Stage first during group stage, Knockout first during knockouts */}
+        {showKnockoutFirst ? (
+          <>
+            {/* Knockout Stage */}
+            {knockoutStages.size > 0 && <KnockoutSection knockoutStages={knockoutStages} apiToFifaMap={apiToFifaMap} />}
+            
+            {/* Group Stage */}
+            <GroupStageSection 
+              groups={groups} 
+              groupStandings={groupStandings}
+              thirdPlaceQualifying={thirdPlaceQualifying}
+              apiToFifaMap={apiToFifaMap}
+            />
+          </>
+        ) : (
+          <>
+            {/* Group Stage */}
+            <GroupStageSection 
+              groups={groups} 
+              groupStandings={groupStandings}
+              thirdPlaceQualifying={thirdPlaceQualifying}
+              apiToFifaMap={apiToFifaMap}
+            />
+            
+            {/* Knockout Stage */}
+            {knockoutStages.size > 0 && <KnockoutSection knockoutStages={knockoutStages} apiToFifaMap={apiToFifaMap} />}
+          </>
         )}
-
-        {/* Group Stage */}
-        <section>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-              <span className="text-xl">🏆</span>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">Group Stage</h2>
-              <p className="text-white/50 text-sm">48 teams in 12 groups</p>
-            </div>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            {Array.from(groups.entries())
-              .sort(([a], [b]) => a.localeCompare(b))
-              .map(([groupName, groupMatchList]) => {
-                const standings = groupStandings.get(groupName) || [];
-                const sortedMatches = [...groupMatchList].sort(
-                  (a, b) =>
-                    new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
-                );
-                const finishedInGroup = sortedMatches.filter(
-                  (m) => m.status === "FINISHED"
-                ).length;
-
-                return (
-                  <div key={groupName} className="glass-card p-5">
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="px-4 py-2 bg-emerald-500/20 text-emerald-400 text-xl font-bold rounded-lg">
-                        {groupName.replace("GROUP_", "Group ")}
-                      </span>
-                    </div>
-
-                    <div className="space-y-4">
-                      {/* Matches */}
-                      <div>
-                        <h4 className="text-sm font-medium text-white/50 mb-3 uppercase tracking-wider">
-                          Matches
-                        </h4>
-                        <div className="space-y-1">
-                          {sortedMatches.map((match) => {
-                            const fifaNumber = apiToFifaMap.get(match.id);
-                            return (
-                              <FixtureRow 
-                                key={match.id} 
-                                match={match} 
-                                fifaMatchNumber={fifaNumber}
-                              />
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Standings Table */}
-                      {standings.length > 0 && finishedInGroup > 0 && (
-                        <div>
-                          <h4 className="text-sm font-medium text-white/50 mb-3 uppercase tracking-wider">
-                            Standings
-                          </h4>
-                          <StandingsTable
-                            standings={standings}
-                            disabled={true}
-                            thirdPlaceQualifies={thirdPlaceQualifying.get(groupName) || false}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </section>
       </main>
 
       <footer className="border-t border-white/10 mt-auto">

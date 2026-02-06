@@ -3,12 +3,11 @@ import PointsBreakdown from "@/components/PointsBreakdown";
 import StandingsTable from "@/components/StandingsTable";
 import { createClient } from "@/lib/supabase/server";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
+import { calculateTotalPoints } from "@/lib/scoring";
 import { notFound } from "next/navigation";
 import {
   Match,
   CalculatedStanding,
-  Team,
-  PointBreakdown,
 } from "@/types/football";
 
 export const dynamic = "force-dynamic";
@@ -59,6 +58,12 @@ export default async function UserPredictionsPage({ params }: PageProps) {
   // Get predictions
   const { data: predictions } = await supabase
     .from("predictions")
+    .select("*")
+    .eq("user_id", userId);
+
+  // Get group standings overrides
+  const { data: groupOverrides } = await supabase
+    .from("group_standings_overrides")
     .select("*")
     .eq("user_id", userId);
 
@@ -176,9 +181,116 @@ export default async function UserPredictionsPage({ params }: PageProps) {
   });
   const thirdPlaceQualifying = getQualifyingThirdPlaceTeams(allGroupStandings);
 
-  // Calculate points breakdown (simplified for now)
-  const breakdown: PointBreakdown[] = [];
-  let totalPoints = 0;
+  // Calculate actual standings from actual match results (for scoring)
+  const calculateActualStandings = (groupMatches: Match[]): CalculatedStanding[] => {
+    const teamStats = new Map<number, CalculatedStanding>();
+
+    groupMatches.forEach((match) => {
+      if (!teamStats.has(match.homeTeam.id)) {
+        teamStats.set(match.homeTeam.id, {
+          team: match.homeTeam,
+          position: 0,
+          points: 0,
+          goalsFor: 0,
+          goalsAgainst: 0,
+          goalDifference: 0,
+          played: 0,
+          won: 0,
+          drawn: 0,
+          lost: 0,
+        });
+      }
+      if (!teamStats.has(match.awayTeam.id)) {
+        teamStats.set(match.awayTeam.id, {
+          team: match.awayTeam,
+          position: 0,
+          points: 0,
+          goalsFor: 0,
+          goalsAgainst: 0,
+          goalDifference: 0,
+          played: 0,
+          won: 0,
+          drawn: 0,
+          lost: 0,
+        });
+      }
+    });
+
+    groupMatches.forEach((match) => {
+      // Use actual results
+      if (match.status !== "FINISHED") return;
+      const homeGoals = match.score.fullTime.home;
+      const awayGoals = match.score.fullTime.away;
+      if (homeGoals === null || awayGoals === null) return;
+
+      const homeStats = teamStats.get(match.homeTeam.id)!;
+      const awayStats = teamStats.get(match.awayTeam.id)!;
+
+      homeStats.played++;
+      awayStats.played++;
+      homeStats.goalsFor += homeGoals;
+      homeStats.goalsAgainst += awayGoals;
+      awayStats.goalsFor += awayGoals;
+      awayStats.goalsAgainst += homeGoals;
+
+      homeStats.goalDifference = homeStats.goalsFor - homeStats.goalsAgainst;
+      awayStats.goalDifference = awayStats.goalsFor - awayStats.goalsAgainst;
+
+      if (homeGoals > awayGoals) {
+        homeStats.won++;
+        homeStats.points += 3;
+        awayStats.lost++;
+      } else if (awayGoals > homeGoals) {
+        awayStats.won++;
+        awayStats.points += 3;
+        homeStats.lost++;
+      } else {
+        homeStats.drawn++;
+        awayStats.drawn++;
+        homeStats.points += 1;
+        awayStats.points += 1;
+      }
+    });
+
+    return Array.from(teamStats.values())
+      .sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        if (b.goalDifference !== a.goalDifference)
+          return b.goalDifference - a.goalDifference;
+        return b.goalsFor - a.goalsFor;
+      })
+      .map((s, i) => ({ ...s, position: i + 1 }));
+  };
+
+  // Calculate actual group standings (from real results)
+  const actualGroupStandings = new Map<string, CalculatedStanding[]>();
+  groups.forEach((groupMatchList, groupName) => {
+    actualGroupStandings.set(groupName, calculateActualStandings(groupMatchList));
+  });
+
+  // Determine which teams actually advanced (1st, 2nd, + best 8 3rds)
+  const actualThirdPlaceQualifying = getQualifyingThirdPlaceTeams(actualGroupStandings);
+  const advancingTeamIds = new Set<number>();
+  actualGroupStandings.forEach((standings, groupName) => {
+    standings.forEach((standing, index) => {
+      if (index < 2) {
+        // 1st and 2nd always advance
+        advancingTeamIds.add(standing.team.id);
+      } else if (index === 2 && actualThirdPlaceQualifying.get(groupName)) {
+        // 3rd advances if in best 8
+        advancingTeamIds.add(standing.team.id);
+      }
+    });
+  });
+
+  // Calculate points
+  const { totalPoints, breakdown } = calculateTotalPoints(
+    matches,
+    predictions || [],
+    groupOverrides || [],
+    actualGroupStandings,
+    advancingTeamIds
+  );
 
   // Show blurred state for predictions not yet visible
   const showGroupPredictions = isOwnPredictions || groupLocked;
@@ -190,21 +302,21 @@ export default async function UserPredictionsPage({ params }: PageProps) {
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-2xl font-bold text-white">
             {targetProfile.display_name}&apos;s Predictions
           </h1>
           {isOwnPredictions && (
-            <p className="text-gray-500 text-sm mt-1">This is you!</p>
+            <p className="text-white/50 text-sm mt-1">This is you!</p>
           )}
         </div>
 
         {/* Group Stage */}
         <section className="mb-8">
-          <h2 className="text-xl font-bold mb-4 border-b pb-2">Group Stage</h2>
+          <h2 className="text-xl font-bold mb-4 border-b border-white/10 pb-2 text-white">Group Stage</h2>
 
           {!showGroupPredictions ? (
-            <div className="bg-gray-100 rounded-lg p-8 text-center blur-sm select-none">
-              <p className="text-gray-500">
+            <div className="glass-card p-8 text-center blur-sm select-none">
+              <p className="text-white/50">
                 Predictions will be visible after group stage starts
               </p>
             </div>
@@ -217,13 +329,13 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                   return (
                     <div
                       key={groupName}
-                      className="bg-white rounded-lg shadow-md p-4"
+                      className="glass-card p-4"
                     >
-                      <h3 className="font-bold text-lg mb-3">{groupName}</h3>
+                      <h3 className="font-bold text-lg mb-3 text-white">{groupName.replace('GROUP_', 'Group ')}</h3>
 
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
-                          <h4 className="text-sm font-medium text-gray-500 mb-2">
+                          <h4 className="text-sm font-medium text-white/50 mb-2">
                             Predictions
                           </h4>
                           {groupMatchList.map((match) => {
@@ -233,14 +345,14 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                 key={match.id}
                                 className="flex items-center gap-2 py-2 text-sm"
                               >
-                                <span className="flex-1 text-right">
+                                <span className="flex-1 text-right text-white/80">
                                   {match.homeTeam.tla}
                                 </span>
-                                <span className="w-16 text-center font-bold">
+                                <span className="w-16 text-center font-bold text-white">
                                   {pred?.home_goals ?? "-"} -{" "}
                                   {pred?.away_goals ?? "-"}
                                 </span>
-                                <span className="flex-1">
+                                <span className="flex-1 text-white/80">
                                   {match.awayTeam.tla}
                                 </span>
                               </div>
@@ -249,7 +361,7 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                         </div>
 
                         <div>
-                          <h4 className="text-sm font-medium text-gray-500 mb-2">
+                          <h4 className="text-sm font-medium text-white/50 mb-2">
                             Standings
                           </h4>
                           <StandingsTable 
@@ -268,18 +380,18 @@ export default async function UserPredictionsPage({ params }: PageProps) {
 
         {/* Knockout Stage */}
         <section className="mb-8">
-          <h2 className="text-xl font-bold mb-4 border-b pb-2">
+          <h2 className="text-xl font-bold mb-4 border-b border-white/10 pb-2 text-white">
             Knockout Stage
           </h2>
 
           {!showKnockoutPredictions ? (
-            <div className="bg-gray-100 rounded-lg p-8 text-center blur-sm select-none">
-              <p className="text-gray-500">
+            <div className="glass-card p-8 text-center blur-sm select-none">
+              <p className="text-white/50">
                 Predictions will be visible after knockout stage starts
               </p>
             </div>
           ) : (
-            <div className="text-gray-500 text-center py-8">
+            <div className="text-white/50 text-center py-8">
               Knockout predictions display coming soon
             </div>
           )}
@@ -293,9 +405,9 @@ export default async function UserPredictionsPage({ params }: PageProps) {
         )}
       </main>
 
-      <footer className="bg-gray-800 text-white py-4 mt-8">
+      <footer className="bg-black/20 text-white py-4 mt-8">
         <div className="container mx-auto px-4 text-center text-sm">
-          <p>WorldCupProde - FIFA World Cup 2026 Predictions</p>
+          <p className="text-white/50">WorldCupProde - FIFA World Cup 2026 Predictions</p>
         </div>
       </footer>
     </div>

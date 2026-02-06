@@ -35,46 +35,46 @@ export default function PointsBreakdown({
   const getTypeColor = (type: PointBreakdown["type"]) => {
     switch (type) {
       case "result":
-        return "text-green-600";
+        return "text-green-400";
       case "goals_home":
       case "goals_away":
-        return "text-blue-600";
+        return "text-blue-400";
       case "group_advance":
       case "group_position":
-        return "text-purple-600";
+        return "text-purple-400";
       case "knockout_win":
-        return "text-yellow-600";
+        return "text-yellow-400";
       case "knockout_lose":
       case "knockout_tie":
-        return "text-orange-600";
+        return "text-orange-400";
       default:
-        return "text-gray-600";
+        return "text-white/60";
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-700 to-blue-600 text-white px-4 py-3 flex justify-between items-center">
+    <div className="glass-card overflow-hidden">
+      <div className="bg-gradient-to-r from-emerald-700 to-emerald-600 text-white px-4 py-3 flex justify-between items-center">
         <h2 className="text-lg font-bold">📊 Points Breakdown</h2>
         <span className="text-2xl font-bold">{totalPoints} pts</span>
       </div>
 
       <div className="max-h-96 overflow-y-auto">
         {breakdown.length === 0 ? (
-          <div className="p-4 text-center text-gray-500">
-            No points earned yet
+          <div className="p-4 text-center text-white/50">
+            No points earned yet - points are calculated when matches finish
           </div>
         ) : (
-          <div className="divide-y">
+          <div className="divide-y divide-white/10">
             {breakdown.map((item, index) => (
               <div
                 key={index}
-                className="px-4 py-2 flex items-center gap-3 hover:bg-gray-50"
+                className="px-4 py-2 flex items-center gap-3 hover:bg-white/5"
               >
                 <span className={`text-lg ${getTypeColor(item.type)}`}>
                   {getTypeIcon(item.type)}
                 </span>
-                <span className="flex-1 text-sm text-gray-700">
+                <span className="flex-1 text-sm text-white/80">
                   {item.description}
                 </span>
                 <span className={`font-bold ${getTypeColor(item.type)}`}>

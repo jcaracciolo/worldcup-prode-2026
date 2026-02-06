@@ -12,63 +12,13 @@ WorldCupProde is a fantasy betting application for the FIFA World Cup. The appli
 - Track scores
 - World Cup match data integration
 
----
+## API
 
-## Data Sources
-
-### Requirements
-- World Cup match schedule and fixtures
-- Real-time or near-real-time match results
-- Team information
-- **Must be free to use**
-
-### API Research
-
-#### Option 1: Football-Data.org
-- **URL:** https://www.football-data.org/
-- **Free Tier:** Yes - 10 requests/minute
-- **Coverage:** Major competitions including World Cup
-- **Data Available:** Matches, standings, teams, scores
-- **Notes:** Requires API key (free registration)
-
-#### Option 2: API-Football (RapidAPI)
-- **URL:** https://www.api-football.com/
-- **Free Tier:** Yes - 100 requests/day
-- **Coverage:** Extensive, includes World Cup
-- **Data Available:** Fixtures, live scores, statistics
-- **Notes:** Free tier may be limiting for active use
-
-#### Option 3: OpenLigaDB
-- **URL:** https://www.openligadb.de/
-- **Free Tier:** Yes - completely free
-- **Coverage:** German leagues primarily, some international
-- **Data Available:** Matches, results
-- **Notes:** World Cup coverage may be limited
-
-#### Option 4: SportMonks
-- **URL:** https://www.sportmonks.com/
-- **Free Tier:** Limited free plan
-- **Coverage:** Comprehensive football data
-- **Notes:** Best features require paid plans
-
-### Recommendation
-
-**Football-Data.org** appears to be the best option for this use case:
-- Generous free tier (10 req/min)
-- Confirmed World Cup coverage
-- Well-documented API
-- Active maintenance
-
----
-
-## API Configuration
-
-### Confirmed Working ✅
-
-**Provider:** Football-Data.org  
+**Provider:** [Football-Data.org](https://www.football-data.org/)  
 **Base URL:** `https://api.football-data.org/v4/`  
 **Authentication:** API key in `X-Auth-Token` header  
-**Token Storage:** `.secrets` file (git-ignored)
+**Token Storage:** `.secrets` file (git-ignored)  
+**Free Tier:** 10 requests/minute
 
 ### World Cup 2026 Data
 
@@ -79,38 +29,15 @@ WorldCupProde is a fantasy betting application for the FIFA World Cup. The appli
 
 ### Key Endpoints
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /competitions/WC` | World Cup competition info |
-| `GET /competitions/WC/matches` | All matches/fixtures |
-| `GET /competitions/WC/teams` | Participating teams |
-| `GET /competitions/WC/standings` | Group standings |
+| Endpoint                         | Description                |
+| -------------------------------- | -------------------------- |
+| `GET /competitions/WC`           | World Cup competition info |
+| `GET /competitions/WC/matches`   | All matches/fixtures       |
+| `GET /competitions/WC/teams`     | Participating teams        |
+| `GET /competitions/WC/standings` | Group standings            |
 
 ### Example Request
 
 ```bash
 curl -H "X-Auth-Token: YOUR_TOKEN" https://api.football-data.org/v4/competitions/WC/matches
 ```
-
----
-
-## Open Questions
-
-- [ ] Determine data refresh frequency needed
-- [ ] Define what match data fields are required (kickoff time, teams, venue, etc.)
-- [ ] Design scoring system for predictions
-
----
-
-## Technical Decisions
-
-*To be determined*
-
----
-
-## Next Steps
-
-1. ~~Register for Football-Data.org API key~~ ✅
-2. ~~Test API endpoints for World Cup data availability~~ ✅
-3. Define data models based on API response structure
-4. Design prediction/scoring system

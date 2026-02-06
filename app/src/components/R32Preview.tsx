@@ -148,12 +148,18 @@ export default function R32Preview({
                   <div className="flex-1 text-center">
                     {homeTeam ? (
                       <div className="flex flex-col items-center gap-2">
-                        {homeTeam.crest && (
+                        {homeTeam.crest ? (
                           <img
                             src={homeTeam.crest}
                             alt={homeTeam.name || ""}
                             className="w-12 h-12 object-contain"
                           />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                            <span className="text-white/60 font-bold text-sm">
+                              {homeTeam.tla?.substring(0, 2) || "?"}
+                            </span>
+                          </div>
                         )}
                         <div>
                           <div className="text-white font-bold text-xl">
@@ -188,12 +194,18 @@ export default function R32Preview({
                   <div className="flex-1 text-center">
                     {awayTeam ? (
                       <div className="flex flex-col items-center gap-2">
-                        {awayTeam.crest && (
+                        {awayTeam.crest ? (
                           <img
                             src={awayTeam.crest}
                             alt={awayTeam.name || ""}
                             className="w-12 h-12 object-contain"
                           />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                            <span className="text-white/60 font-bold text-sm">
+                              {awayTeam.tla?.substring(0, 2) || "?"}
+                            </span>
+                          </div>
                         )}
                         <div>
                           <div className="text-white font-bold text-xl">

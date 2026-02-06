@@ -1,13 +1,21 @@
 /**
- * FIFA Match Number Mapping for World Cup 2026 R32
+ * FIFA Match Number Mapping for World Cup 2026
  * 
- * Maps venue + date combinations to correct FIFA match numbers.
- * FIFA doesn't number matches strictly chronologically, so we need
- * to identify matches by their venue and date to ensure correct mapping.
+ * R32 FIFA numbers 73-88 are assigned in chronological order.
+ * We map them by sorting API matches by date/time.
  */
 
-// R32 match schedule with FIFA numbers (official schedule)
-// Format: { date (ISO): { venue keyword: FIFA match number } }
+// FIFA R32 match numbers in chronological order
+export const R32_FIFA_NUMBERS_BY_DATE: Record<string, number[]> = {
+  "2026-06-28": [73],
+  "2026-06-29": [74, 75, 76],
+  "2026-06-30": [77, 78, 79],
+  "2026-07-01": [80, 81, 82],
+  "2026-07-02": [83, 84, 85],
+  "2026-07-03": [86, 87, 88],
+};
+
+// Keep the old format for backward compatibility (but it's not used for mapping anymore)
 export const R32_MATCH_SCHEDULE: Record<string, Record<string, number>> = {
   // June 28
   "2026-06-28": {

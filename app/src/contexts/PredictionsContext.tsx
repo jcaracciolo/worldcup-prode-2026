@@ -256,9 +256,16 @@ export function useUserPredictions(userId: string | null): {
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
+  updatePrediction: (prediction: Prediction) => void;
+  updateOverrides: (overrides: GroupStandingsOverride[]) => void;
 } {
-  const { getUserPredictions, getCachedPredictions, refreshUserPredictions } =
-    usePredictionsContext();
+  const {
+    getUserPredictions,
+    getCachedPredictions,
+    refreshUserPredictions,
+    updatePrediction: contextUpdatePrediction,
+    updateOverrides: contextUpdateOverrides,
+  } = usePredictionsContext();
   const [state, setState] = useState<UserPredictions | null>(null);
 
   // Load predictions on mount or userId change
@@ -285,11 +292,39 @@ export function useUserPredictions(userId: string | null): {
     if (updated) setState(updated);
   }, [userId, refreshUserPredictions, getCachedPredictions]);
 
+  const updatePrediction = useCallback(
+    (prediction: Prediction) => {
+      if (!userId) return;
+      contextUpdatePrediction(userId, prediction);
+      // Also update local state for immediate UI feedback
+      setState((prev) => {
+        if (!prev) return prev;
+        const newPredictions = new Map(prev.predictions);
+        newPredictions.set(prediction.match_id, prediction);
+        return { ...prev, predictions: newPredictions };
+      });
+    },
+    [userId, contextUpdatePrediction],
+  );
+
+  const updateOverrides = useCallback(
+    (overrides: GroupStandingsOverride[]) => {
+      if (!userId) return;
+      contextUpdateOverrides(userId, overrides);
+      setState((prev) => (prev ? { ...prev, overrides } : prev));
+    },
+    [userId, contextUpdateOverrides],
+  );
+
   return {
     predictions: state?.predictions || new Map(),
     overrides: state?.overrides || [],
     loading: state?.loading ?? true,
     error: state?.error || null,
     refresh,
+    updatePrediction,
+    updateOverrides,
   };
 }
+
+

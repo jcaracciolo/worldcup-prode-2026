@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useMatches } from "@/contexts/MatchContext";
 import { useSimulation } from "@/contexts/SimulationContext";
 import { useUser } from "@/contexts/UserContext";
+import { useUserPredictions } from "@/contexts/PredictionsContext";
 import { getStageLockStatus } from "@/lib/time";
 import { calculateTotalPoints } from "@/lib/scoring";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
@@ -27,16 +28,28 @@ export default function UserPredictionsPage() {
   const { getCurrentTime, simulationEnabled } = useSimulation();
   const { user: currentProfile } = useUser();
 
-  // State for data
+  // Check if viewing own profile
+  const isOwnPredictions = currentProfile?.id === userId;
+
+  // Use cached predictions if viewing own profile
+  const {
+    predictions: cachedPredictions,
+    overrides: cachedOverrides,
+    loading: cachedLoading,
+  } = useUserPredictions(isOwnPredictions ? userId : null);
+
+  // State for data (used when viewing others' predictions)
   const [targetProfile, setTargetProfile] = useState<Profile | null>(null);
-  const [predictions, setPredictions] = useState<Prediction[]>([]);
-  const [groupOverrides, setGroupOverrides] = useState<
+  const [fetchedPredictions, setFetchedPredictions] = useState<Prediction[]>(
+    [],
+  );
+  const [fetchedOverrides, setFetchedOverrides] = useState<
     GroupStandingsOverride[]
   >([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  // Fetch user data
+  // Fetch user data (always fetch profile, only fetch predictions for others)
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
@@ -55,35 +68,50 @@ export default function UserPredictionsPage() {
       }
       setTargetProfile(target);
 
-      // Get predictions
+      // Skip fetching predictions if viewing own profile (use cache)
+      if (isOwnPredictions) {
+        setLoading(false);
+        return;
+      }
+
+      // Get predictions for other users
       const { data: preds } = await supabase
         .from("predictions")
         .select("*")
         .eq("user_id", userId);
-      setPredictions(preds || []);
+      setFetchedPredictions(preds || []);
 
       // Get group standings overrides
       const { data: overrides } = await supabase
         .from("group_standings_overrides")
         .select("*")
         .eq("user_id", userId);
-      setGroupOverrides(overrides || []);
+      setFetchedOverrides(overrides || []);
 
       setLoading(false);
     }
 
     fetchData();
-  }, [userId, supabase]);
+  }, [userId, supabase, isOwnPredictions]);
+
+  // Use cached data for own profile, fetched data for others
+  const predictions: Prediction[] = isOwnPredictions
+    ? Array.from(cachedPredictions.values())
+    : fetchedPredictions;
+  const groupOverrides = isOwnPredictions ? cachedOverrides : fetchedOverrides;
+  const isLoading = isOwnPredictions
+    ? loading || cachedLoading
+    : loading;
 
   // Stage lock status (uses simulation time if enabled)
   const lockStatus = useMemo(() => {
     const time = getCurrentTime();
     return getStageLockStatus(time);
-  }, [getCurrentTime, simulationEnabled]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getCurrentTime]);
 
   const { groupStageLocked, knockoutStageOpen, knockoutStageLocked } =
     lockStatus;
-  const isOwnPredictions = currentProfile?.id === userId;
 
   // Calculate predicted standings
   const predictionMap = useMemo(
@@ -145,7 +173,7 @@ export default function UserPredictionsPage() {
   const showGroupPredictions = isOwnPredictions || groupStageLocked;
   const showKnockoutPredictions = isOwnPredictions || knockoutStageLocked;
 
-  if (loading || matchesLoading) {
+  if (isLoading || matchesLoading) {
     return (
       <div className="min-h-screen">
         <main className="container mx-auto px-4 py-8">

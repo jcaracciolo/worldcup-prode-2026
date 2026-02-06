@@ -11,6 +11,7 @@ import {
 import { useMatches } from "@/contexts/MatchContext";
 import { useSimulation } from "@/contexts/SimulationContext";
 import { useUser } from "@/contexts/UserContext";
+import { useUserPredictions } from "@/contexts/PredictionsContext";
 import { createClient } from "@/lib/supabase/client";
 import { CalculatedStanding, Team, Match } from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
@@ -23,11 +24,21 @@ export default function PredictionsPage() {
   const supabase = createClient();
   const { user: profile, loading: userLoading } = useUser();
 
+  // Use cached predictions from context
+  const {
+    predictions: cachedPredictions,
+    overrides: cachedOverrides,
+    loading: predictionsLoading,
+    updatePrediction: updateCachedPrediction,
+    updateOverrides: updateCachedOverrides,
+  } = useUserPredictions(profile?.id || null);
+
+  // Local state for editing (initialized from cache)
   const [predictions, setPredictions] = useState<Map<number, Prediction>>(
     new Map(),
   );
   const [overrides, setOverrides] = useState<GroupStandingsOverride[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [hasInitialized, setHasInitialized] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -48,40 +59,24 @@ export default function PredictionsPage() {
     knockoutStageLocked: knockoutLocked,
   } = stageLockStatus;
 
+  // Redirect if not logged in
   useEffect(() => {
-    // Redirect if not logged in (after user loading completes)
     if (!userLoading && !profile) {
       router.push("/login?redirect=/predictions");
-      return;
     }
+  }, [userLoading, profile, router]);
 
-    if (!profile) return;
+  // Initialize local state from cache when available
+  useEffect(() => {
+    if (!predictionsLoading && !hasInitialized && profile) {
+      setPredictions(new Map(cachedPredictions));
+      setOverrides([...cachedOverrides]);
+      setHasInitialized(true);
+    }
+  }, [predictionsLoading, hasInitialized, profile, cachedPredictions, cachedOverrides]);
 
-    const loadData = async () => {
-      // Load user predictions
-      const { data: predictionsData } = await supabase
-        .from("predictions")
-        .select("*")
-        .eq("user_id", profile.id);
-
-      const predMap = new Map();
-      (predictionsData as unknown as Prediction[] | null)?.forEach(
-        (p: Prediction) => predMap.set(p.match_id, p),
-      );
-      setPredictions(predMap);
-
-      // Load standing overrides
-      const { data: overridesData } = await supabase
-        .from("group_standings_overrides")
-        .select("*")
-        .eq("user_id", profile.id);
-      setOverrides(overridesData || []);
-
-      setLoading(false);
-    };
-
-    loadData();
-  }, [supabase, router, profile, userLoading]);
+  // Derived loading state
+  const loading = userLoading || predictionsLoading || !hasInitialized;
 
   const handlePredictionChange = (
     matchId: number,
@@ -275,6 +270,10 @@ export default function PredictionsPage() {
 
         if (overrideError) throw overrideError;
       }
+
+      // Update cache with saved predictions
+      predictions.forEach((pred) => updateCachedPrediction(pred));
+      updateCachedOverrides(overrides);
 
       alert("Predictions saved!");
     } catch (err) {

@@ -85,10 +85,9 @@ export default function AdminPage() {
           .in("id", usedByIds);
 
         const profileMap = new Map(
-          (usedByProfiles || []).map((p) => [
-            p.id,
-            p as { id: string; display_name: string },
-          ]),
+          ((usedByProfiles || []) as { id: string; display_name: string }[]).map(
+            (p) => [p.id, p],
+          ),
         );
         setInviteCodes(
           typedCodes.map((c) => ({

@@ -49,7 +49,7 @@ export default function R32Preview({
       <p className="text-white/40 text-sm mb-4">
         Based on your group predictions
       </p>
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-2 gap-4 items-stretch">
         {sortedMatches.map((match) => {
           // Get FIFA match number for this API match ID
           const fifaMatchNumber = matchNumberMapping.get(match.id);
@@ -117,7 +117,7 @@ export default function R32Preview({
           return (
             <div
               key={match.id}
-              className={`rounded-xl overflow-hidden border ${
+              className={`rounded-xl overflow-hidden border flex flex-col ${
                 isThirdPlace ? "border-amber-500/50" : "border-white/20"
               }`}
             >
@@ -155,7 +155,7 @@ export default function R32Preview({
 
               {/* Teams section */}
               <div
-                className={`p-4 ${isThirdPlace ? "bg-amber-900/20" : "bg-slate-800/80"}`}
+                className={`p-4 flex-1 ${isThirdPlace ? "bg-amber-900/20" : "bg-slate-800/80"}`}
               >
                 <div className="flex items-center justify-between gap-4">
                   {/* Home Team */}

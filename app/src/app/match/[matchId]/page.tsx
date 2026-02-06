@@ -2,6 +2,8 @@ import Header from "@/components/Header";
 import { createClient } from "@/lib/supabase/server";
 import { getMatchInfo } from "@/lib/tournament";
 import { buildApiToFifaMapping } from "@/lib/api-client";
+import { calculateGroupStagePoints, calculateKnockoutPoints } from "@/lib/scoring";
+import { isGroupStageMatch } from "@/lib/football-api";
 import { Match } from "@/types/football";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
@@ -98,54 +100,22 @@ export default async function MatchDetailPage({ params }: PageProps) {
   const isFinished = match.status === "FINISHED";
   const matchDate = new Date(match.utcDate);
 
-  // Calculate points for this match
+  // Calculate points for this match using centralized scoring
   let pointsEarned = 0;
   const pointsBreakdown: string[] = [];
 
-  if (
-    isFinished &&
-    prediction &&
-    prediction.home_goals !== null &&
-    prediction.away_goals !== null
-  ) {
-    const actualHome = match.score.fullTime.home;
-    const actualAway = match.score.fullTime.away;
+  if (isFinished && prediction) {
+    // Use centralized scoring functions
+    const breakdown = isGroupStageMatch(match)
+      ? calculateGroupStagePoints(match, prediction)
+      : calculateKnockoutPoints(match, prediction);
 
-    if (actualHome !== null && actualAway !== null) {
-      const predictedResult =
-        prediction.home_goals > prediction.away_goals
-          ? "home"
-          : prediction.away_goals > prediction.home_goals
-            ? "away"
-            : "draw";
-      const actualResult =
-        actualHome > actualAway
-          ? "home"
-          : actualAway > actualHome
-            ? "away"
-            : "draw";
-
-      if (predictedResult === actualResult) {
-        pointsEarned += 2;
-        pointsBreakdown.push(
-          `+2 Correct result (${actualResult === "home" ? match.homeTeam.tla + " win" : actualResult === "away" ? match.awayTeam.tla + " win" : "Draw"})`,
-        );
-      }
-
-      if (prediction.home_goals === actualHome) {
-        pointsEarned += 1;
-        pointsBreakdown.push(
-          `+1 Correct ${match.homeTeam.tla} goals (${actualHome})`,
-        );
-      }
-
-      if (prediction.away_goals === actualAway) {
-        pointsEarned += 1;
-        pointsBreakdown.push(
-          `+1 Correct ${match.awayTeam.tla} goals (${actualAway})`,
-        );
-      }
-    }
+    pointsEarned = breakdown.reduce((sum, p) => sum + p.points, 0);
+    
+    // Build breakdown descriptions
+    breakdown.forEach((p) => {
+      pointsBreakdown.push(`+${p.points} ${p.description}`);
+    });
   }
 
   // Determine winner

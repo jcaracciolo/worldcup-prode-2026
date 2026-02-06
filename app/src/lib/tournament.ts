@@ -60,6 +60,28 @@ export interface BracketSource {
 }
 
 // =====================================================================
+// CONSTANTS
+// =====================================================================
+
+/** All group names in order (A-L for 48-team format) */
+export const GROUPS = [
+  "GROUP_A",
+  "GROUP_B",
+  "GROUP_C",
+  "GROUP_D",
+  "GROUP_E",
+  "GROUP_F",
+  "GROUP_G",
+  "GROUP_H",
+  "GROUP_I",
+  "GROUP_J",
+  "GROUP_K",
+  "GROUP_L",
+] as const;
+
+export type GroupName = typeof GROUPS[number];
+
+// =====================================================================
 // GROUP STAGE SCHEDULE (FIFA Match Numbers 1-72)
 // This is the OFFICIAL FIFA schedule for World Cup 2026
 // =====================================================================

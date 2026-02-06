@@ -2,7 +2,7 @@
  * Match Scoring Utility
  * 
  * Self-contained module for calculating points from predictions vs actual results.
- * All scoring constants and logic are defined here for easy modification.
+ * Scoring constants are defined in scoring.ts for centralized modification.
  * 
  * USAGE:
  * - calculateMatchPoints(): Get total points for a single match
@@ -12,30 +12,15 @@
 
 import { Match } from "@/types/football";
 import { Prediction } from "@/types/database";
+import { 
+  POINTS_CORRECT_RESULT, 
+  POINTS_CORRECT_GOALS, 
+  ROUND_MULTIPLIERS 
+} from "./scoring";
 
-// =============================================================================
-// SCORING CONFIGURATION
-// Modify these constants to change scoring rules
-// =============================================================================
-
-/** Points for predicting correct result (win/draw/loss) */
-export const POINTS_CORRECT_RESULT = 2;
-
-/** Points for predicting exact goals for one team */
-export const POINTS_CORRECT_GOALS = 1;
-
-/** 
- * Multipliers for knockout rounds 
- * Applied to result prediction points (not goals)
- */
-export const KNOCKOUT_MULTIPLIERS: Record<string, number> = {
-  LAST_32: 1,
-  LAST_16: 2,
-  QUARTER_FINALS: 3,
-  SEMI_FINALS: 4,
-  THIRD_PLACE: 5,
-  FINAL: 6,
-};
+// Re-export constants for backwards compatibility
+export { POINTS_CORRECT_RESULT, POINTS_CORRECT_GOALS };
+export const KNOCKOUT_MULTIPLIERS = ROUND_MULTIPLIERS;
 
 // =============================================================================
 // TYPES
@@ -389,16 +374,5 @@ export function getMaxPossiblePoints(match: Match): number {
     : POINTS_CORRECT_RESULT + (POINTS_CORRECT_GOALS * 2);
 }
 
-/**
- * Calculate total points across multiple matches
- */
-export function calculateTotalPoints(
-  matches: Match[],
-  predictions: Map<number, Prediction>
-): number {
-  return matches.reduce((total, match) => {
-    const prediction = predictions.get(match.id);
-    const result = calculateMatchPoints(match, prediction);
-    return total + result.total;
-  }, 0);
-}
+// Note: For total points calculation across all matches (including group bonuses),
+// use calculateTotalPoints from "@/lib/scoring" instead.

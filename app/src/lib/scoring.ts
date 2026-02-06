@@ -11,8 +11,22 @@ import {
   isGroupStageMatch,
 } from "./football-api";
 
-// Round multipliers for knockout stages
-const ROUND_MULTIPLIERS: Record<string, number> = {
+// =====================================================================
+// SCORING CONSTANTS - Single source of truth for all scoring rules
+// Modify these to change scoring rules across the entire app
+// =====================================================================
+
+/** Points for predicting correct result (win/draw/loss) in group stage */
+export const POINTS_CORRECT_RESULT = 2;
+
+/** Points for predicting exact goals for one team */
+export const POINTS_CORRECT_GOALS = 1;
+
+/** 
+ * Multipliers for knockout rounds 
+ * Applied to result prediction points (not goals)
+ */
+export const ROUND_MULTIPLIERS: Record<string, number> = {
   LAST_32: 1,
   LAST_16: 2,
   QUARTER_FINALS: 3,

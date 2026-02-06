@@ -6,6 +6,7 @@ import React, {
   useState,
   useCallback,
   useMemo,
+  useRef,
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Prediction, GroupStandingsOverride } from "@/types/database";
@@ -61,6 +62,10 @@ interface PredictionsProviderProps {
 
 export function PredictionsProvider({ children }: PredictionsProviderProps) {
   const [cache, setCache] = useState<Map<string, UserPredictions>>(new Map());
+  // Use ref for synchronous cache access without causing re-renders
+  const cacheRef = useRef<Map<string, UserPredictions>>(cache);
+  cacheRef.current = cache;
+  
   const supabase = useMemo(() => createClient(), []);
 
   // Fetch predictions for a user from Supabase
@@ -113,7 +118,8 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
   // Get user predictions (loads if not cached)
   const getUserPredictions = useCallback(
     async (userId: string): Promise<UserPredictions> => {
-      const cached = cache.get(userId);
+      // Use ref for synchronous cache access to avoid dependency on cache state
+      const cached = cacheRef.current.get(userId);
       if (cached && cached.lastUpdated) {
         return cached;
       }
@@ -142,15 +148,15 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
 
       return result;
     },
-    [cache, fetchPredictions],
+    [fetchPredictions],
   );
 
   // Get cached predictions without fetching
   const getCachedPredictions = useCallback(
     (userId: string): UserPredictions | undefined => {
-      return cache.get(userId);
+      return cacheRef.current.get(userId);
     },
-    [cache],
+    [],
   );
 
   // Refresh predictions for a user

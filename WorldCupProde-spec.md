@@ -16,6 +16,63 @@ The FIFA World Cup 2026 is hosted by USA, Mexico, and Canada. It's the first Wor
 - Track scores
 - World Cup match data integration
 
+## Scoring System
+
+### Phase 1: Group Stage Predictions (before tournament starts)
+
+Users predict the score (goals) for all 48 group stage matches before the World Cup begins.
+
+**Per match scoring:**
+
+| Prediction | Points |
+|------------|--------|
+| Correct result (win/draw/loss) | 2 |
+| Exact goals for Team A | 1 |
+| Exact goals for Team B | 1 |
+| **Max per match** | **4** |
+
+*Example: Predict 3-1, actual 0-1 → 2 pts (correct result: away win) + 0 (wrong home goals) + 1 (correct away goals) = 3 points*
+
+### Phase 2: Group Standings Bonus (after group stage)
+
+Points awarded based on how group predictions (derived from match predictions) align with final standings.
+
+**Per team scoring:**
+
+| Prediction | Points |
+|------------|--------|
+| Team survives (advances from group) | 1 |
+| Correct position in group | 1 |
+| **Max per group (3 advancing teams)** | **6** |
+
+*Note: Up to 3 teams per group can advance (1st, 2nd, and potentially 3rd as best third-place).*
+
+### Phase 3: Knockout Stage Predictions (after group stage ends)
+
+Users get a second chance to predict all knockout matches once group stage is complete.
+
+**Per match scoring:**
+
+| Prediction | Points |
+|------------|--------|
+| Correct team wins | 1 × multiplier |
+| Correct team loses | 1 × multiplier |
+| Exact goals for Team A | 1 |
+| Exact goals for Team B | 1 |
+
+*Note: You can only score points for teams you predicted to reach that stage.*
+
+**Round multipliers:**
+
+| Round | Result Multiplier | Max Points (result + goals) |
+|-------|-------------------|------------------------------|
+| Round of 32 | 1× | 4 (2+2) |
+| Round of 16 | 1× | 4 (2+2) |
+| Quarter-finals | 1× | 4 (2+2) |
+| Semi-finals | 2× | 6 (4+2) |
+| Third-place match | 3× | 8 (6+2) |
+| Final | 4× | 10 (8+2) |
+
 ## API
 
 **Provider:** [Football-Data.org](https://www.football-data.org/)  

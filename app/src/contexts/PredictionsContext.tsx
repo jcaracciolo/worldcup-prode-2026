@@ -403,12 +403,20 @@ export function useUserPredictions(userId: string | null): {
       overrides: GroupStandingsOverride[],
     ): Promise<{ success: boolean; error?: string }> => {
       if (!userId) return { success: false, error: "Not logged in" };
-      const result = await contextSavePredictions(userId, predictions, overrides);
+      const result = await contextSavePredictions(
+        userId,
+        predictions,
+        overrides,
+      );
       if (result.success) {
         // Update local state with saved data
         setState((prev) =>
           prev
-            ? { ...prev, predictions: new Map(predictions), overrides: [...overrides] }
+            ? {
+                ...prev,
+                predictions: new Map(predictions),
+                overrides: [...overrides],
+              }
             : prev,
         );
       }
@@ -428,5 +436,3 @@ export function useUserPredictions(userId: string | null): {
     savePredictions,
   };
 }
-
-

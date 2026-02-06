@@ -16,7 +16,9 @@ interface UserContextValue {
   loading: boolean;
   refetch: () => Promise<void>;
   /** Update current user's profile */
-  updateProfile: (updates: Partial<Profile>) => Promise<{ success: boolean; error?: string }>;
+  updateProfile: (
+    updates: Partial<Profile>,
+  ) => Promise<{ success: boolean; error?: string }>;
   /** Get a profile by user ID (cached) */
   getProfile: (userId: string) => Promise<Profile | null>;
   /** Get all profiles (cached, for leaderboard) */
@@ -36,7 +38,9 @@ interface UserProviderProps {
 export function UserProvider({ children }: UserProviderProps) {
   const [user, setUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profileCache, setProfileCache] = useState<Map<string, Profile>>(new Map());
+  const [profileCache, setProfileCache] = useState<Map<string, Profile>>(
+    new Map(),
+  );
   const [allProfiles, setAllProfiles] = useState<Profile[] | null>(null);
   const supabase = createClient();
 
@@ -71,7 +75,9 @@ export function UserProvider({ children }: UserProviderProps) {
 
   // Update current user's profile
   const updateProfile = useCallback(
-    async (updates: Partial<Profile>): Promise<{ success: boolean; error?: string }> => {
+    async (
+      updates: Partial<Profile>,
+    ): Promise<{ success: boolean; error?: string }> => {
       if (!user) return { success: false, error: "Not logged in" };
 
       try {
@@ -92,7 +98,8 @@ export function UserProvider({ children }: UserProviderProps) {
         console.error("Failed to update profile:", error);
         return {
           success: false,
-          error: error instanceof Error ? error.message : "Failed to update profile",
+          error:
+            error instanceof Error ? error.message : "Failed to update profile",
         };
       }
     },

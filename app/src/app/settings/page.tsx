@@ -39,7 +39,10 @@ export default function SettingsPage() {
     if (result.success) {
       setMessage({ type: "success", text: "Profile updated!" });
     } else {
-      setMessage({ type: "error", text: result.error || "Failed to update profile" });
+      setMessage({
+        type: "error",
+        text: result.error || "Failed to update profile",
+      });
     }
 
     setSaving(false);

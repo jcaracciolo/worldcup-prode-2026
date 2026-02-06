@@ -70,7 +70,13 @@ export default function PredictionsPage() {
       setOverrides([...cachedOverrides]);
       setHasInitialized(true);
     }
-  }, [predictionsLoading, hasInitialized, profile, cachedPredictions, cachedOverrides]);
+  }, [
+    predictionsLoading,
+    hasInitialized,
+    profile,
+    cachedPredictions,
+    cachedOverrides,
+  ]);
 
   // Derived loading state
   const loading = userLoading || predictionsLoading || !hasInitialized;

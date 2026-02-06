@@ -1,26 +1,63 @@
 "use client";
 
 import { Match } from "@/types/football";
+import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { format } from "date-fns";
 import Link from "next/link";
 
 interface MatchCardProps {
-  match: Match;
+  match: Match | MatchWithLiveInfo;
   showDate?: boolean;
 }
 
+// Type guard to check if match has live info
+function hasLiveInfo(match: Match | MatchWithLiveInfo): match is MatchWithLiveInfo {
+  return "isLive" in match && "elapsedMinutes" in match;
+}
+
 export default function MatchCard({ match, showDate = false }: MatchCardProps) {
-  const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
+  // Support both Match and MatchWithLiveInfo
+  const isLive = hasLiveInfo(match) 
+    ? match.isLive 
+    : match.status === "IN_PLAY" || match.status === "PAUSED";
   const isFinished = match.status === "FINISHED";
   const matchDate = new Date(match.utcDate);
+  
+  // Get elapsed minutes if available
+  const elapsedMinutes = hasLiveInfo(match) ? match.elapsedMinutes : null;
+  const period = hasLiveInfo(match) ? match.period : null;
+
+  // Format group name: GROUP_A -> Group A
+  const formatGroupName = (group: string | null): string | null => {
+    if (!group) return null;
+    // Handle "GROUP_A" format -> "Group A"
+    if (group.startsWith("GROUP_")) {
+      return `Group ${group.replace("GROUP_", "")}`;
+    }
+    return group;
+  };
+
+  // Format stage name for display
+  const formatStageName = (stage: string): string => {
+    const stageNames: Record<string, string> = {
+      GROUP_STAGE: "Group Stage",
+      LAST_32: "Round of 32",
+      LAST_16: "Round of 16",
+      QUARTER_FINALS: "Quarter-Finals",
+      SEMI_FINALS: "Semi-Finals",
+      THIRD_PLACE: "3rd Place",
+      FINAL: "Final",
+    };
+    return stageNames[stage] || stage.replace(/_/g, " ");
+  };
 
   // Determine winner for highlighting
   const homeGoals = match.score.fullTime.home;
   const awayGoals = match.score.fullTime.away;
-  const hasScore = isFinished && homeGoals !== null && awayGoals !== null;
-  const homeWon = hasScore && homeGoals > awayGoals;
-  const awayWon = hasScore && awayGoals > homeGoals;
-  const isDraw = hasScore && homeGoals === awayGoals;
+  const hasScore = (isFinished || isLive) && homeGoals !== null && awayGoals !== null;
+  const homeWon = isFinished && hasScore && homeGoals > awayGoals;
+  const awayWon = isFinished && hasScore && awayGoals > homeGoals;
+  const isDraw = isFinished && hasScore && homeGoals === awayGoals;
   const isGroupStage = match.stage === "GROUP_STAGE";
   // Highlight both teams on group stage draws
   const homeHighlight = homeWon || (isGroupStage && isDraw);
@@ -28,18 +65,27 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
 
   const getStatusDisplay = () => {
     if (isLive) {
+      const timeDisplay = period === "HALF_TIME" 
+        ? "HT" 
+        : elapsedMinutes !== null 
+          ? `${elapsedMinutes}'` 
+          : "";
+      
       return (
         <div className="flex flex-col items-center gap-1">
           <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full live-pulse">
             LIVE
           </span>
+          {timeDisplay && (
+            <span className="text-red-400 text-xs font-semibold">{timeDisplay}</span>
+          )}
         </div>
       );
     }
     if (isFinished) {
       return (
         <span className="px-3 py-1 bg-slate-600 text-white text-xs font-semibold rounded-full">
-          Final
+          FT
         </span>
       );
     }
@@ -86,12 +132,12 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
           <div className="flex flex-col items-center gap-2 min-w-[100px]">
             {isFinished || isLive ? (
               <div className="flex items-center gap-3">
-                <span className="text-3xl font-bold text-slate-800">
-                  {match.score.fullTime.home}
+                <span className={`text-3xl font-bold ${isLive ? "text-red-500" : "text-slate-800"}`}>
+                  {match.score.fullTime.home ?? 0}
                 </span>
                 <span className="text-slate-400 text-xl">-</span>
-                <span className="text-3xl font-bold text-slate-800">
-                  {match.score.fullTime.away}
+                <span className={`text-3xl font-bold ${isLive ? "text-red-500" : "text-slate-800"}`}>
+                  {match.score.fullTime.away ?? 0}
                 </span>
               </div>
             ) : (
@@ -123,12 +169,22 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
           </div>
         </div>
 
-        {/* Group/Stage info */}
+        {/* Group/Stage info and Venue */}
         <div className="mt-4 pt-3 border-t border-slate-100">
-          <div className="text-center">
+          <div className="flex flex-col items-center gap-1">
             <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full">
-              {match.group || match.stage.replace(/_/g, " ")}
+              {formatGroupName(match.group) || formatStageName(match.stage)}
             </span>
+            {/* Use venueDisplay from MatchWithLiveInfo if available, otherwise fall back to match.venue */}
+            {(hasLiveInfo(match) && match.venueDisplay) ? (
+              <span className="text-slate-400 text-xs">
+                📍 {match.venueDisplay}
+              </span>
+            ) : match.venue && (
+              <span className="text-slate-400 text-xs">
+                📍 {match.venue}
+              </span>
+            )}
           </div>
         </div>
       </div>

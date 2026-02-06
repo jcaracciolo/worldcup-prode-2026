@@ -2,7 +2,6 @@
 
 import { Match, Team } from "@/types/football";
 import { Prediction } from "@/types/database";
-import { getVenue } from "@/lib/venues";
 import { getTeamDisplayName } from "@/lib/match-scoring";
 import { getMatchInfo } from "@/lib/tournament";
 
@@ -102,9 +101,9 @@ export default function PredictionInput({
     minute: "2-digit",
   });
 
-  // Get venue info - use FIFA number for knockout matches, API ID for group stage
+  // Get venue info from centralized tournament data
   const matchInfo = fifaMatchNumber ? getMatchInfo(fifaMatchNumber) : null;
-  const venue = matchInfo ? matchInfo.venue : getVenue(match.id);
+  const venue = matchInfo?.venue || null;
 
   return (
     <div

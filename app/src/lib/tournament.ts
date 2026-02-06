@@ -60,6 +60,91 @@ export interface BracketSource {
 }
 
 // =====================================================================
+// GROUP STAGE SCHEDULE (FIFA Match Numbers 1-72)
+// This is the OFFICIAL FIFA schedule for World Cup 2026
+// =====================================================================
+
+export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
+  // Matchday 1
+  { fifaNumber: 1, stage: "GROUP_STAGE", date: "2026-06-11", time: "18:00", venue: { stadium: "Estadio Azteca", city: "Mexico City", country: "MEX" } },
+  { fifaNumber: 2, stage: "GROUP_STAGE", date: "2026-06-11", time: "21:00", venue: { stadium: "Hard Rock Stadium", city: "Miami", country: "USA" } },
+  { fifaNumber: 3, stage: "GROUP_STAGE", date: "2026-06-12", time: "15:00", venue: { stadium: "BC Place", city: "Vancouver", country: "CAN" } },
+  { fifaNumber: 4, stage: "GROUP_STAGE", date: "2026-06-12", time: "18:00", venue: { stadium: "MetLife Stadium", city: "New York", country: "USA" } },
+  { fifaNumber: 5, stage: "GROUP_STAGE", date: "2026-06-12", time: "21:00", venue: { stadium: "SoFi Stadium", city: "Los Angeles", country: "USA" } },
+  { fifaNumber: 6, stage: "GROUP_STAGE", date: "2026-06-13", time: "15:00", venue: { stadium: "AT&T Stadium", city: "Dallas", country: "USA" } },
+  { fifaNumber: 7, stage: "GROUP_STAGE", date: "2026-06-13", time: "18:00", venue: { stadium: "NRG Stadium", city: "Houston", country: "USA" } },
+  { fifaNumber: 8, stage: "GROUP_STAGE", date: "2026-06-13", time: "21:00", venue: { stadium: "Mercedes-Benz Stadium", city: "Atlanta", country: "USA" } },
+  { fifaNumber: 9, stage: "GROUP_STAGE", date: "2026-06-14", time: "12:00", venue: { stadium: "Lincoln Financial Field", city: "Philadelphia", country: "USA" } },
+  { fifaNumber: 10, stage: "GROUP_STAGE", date: "2026-06-14", time: "15:00", venue: { stadium: "Lumen Field", city: "Seattle", country: "USA" } },
+  { fifaNumber: 11, stage: "GROUP_STAGE", date: "2026-06-14", time: "18:00", venue: { stadium: "Levi's Stadium", city: "San Francisco", country: "USA" } },
+  { fifaNumber: 12, stage: "GROUP_STAGE", date: "2026-06-14", time: "21:00", venue: { stadium: "Arrowhead Stadium", city: "Kansas City", country: "USA" } },
+  // Matchday 2
+  { fifaNumber: 13, stage: "GROUP_STAGE", date: "2026-06-15", time: "12:00", venue: { stadium: "BMO Field", city: "Toronto", country: "CAN" } },
+  { fifaNumber: 14, stage: "GROUP_STAGE", date: "2026-06-15", time: "15:00", venue: { stadium: "Gillette Stadium", city: "Boston", country: "USA" } },
+  { fifaNumber: 15, stage: "GROUP_STAGE", date: "2026-06-15", time: "18:00", venue: { stadium: "Estadio BBVA", city: "Monterrey", country: "MEX" } },
+  { fifaNumber: 16, stage: "GROUP_STAGE", date: "2026-06-15", time: "21:00", venue: { stadium: "Estadio Azteca", city: "Mexico City", country: "MEX" } },
+  { fifaNumber: 17, stage: "GROUP_STAGE", date: "2026-06-16", time: "12:00", venue: { stadium: "Hard Rock Stadium", city: "Miami", country: "USA" } },
+  { fifaNumber: 18, stage: "GROUP_STAGE", date: "2026-06-16", time: "15:00", venue: { stadium: "MetLife Stadium", city: "New York", country: "USA" } },
+  { fifaNumber: 19, stage: "GROUP_STAGE", date: "2026-06-16", time: "18:00", venue: { stadium: "BC Place", city: "Vancouver", country: "CAN" } },
+  { fifaNumber: 20, stage: "GROUP_STAGE", date: "2026-06-16", time: "21:00", venue: { stadium: "SoFi Stadium", city: "Los Angeles", country: "USA" } },
+  { fifaNumber: 21, stage: "GROUP_STAGE", date: "2026-06-17", time: "12:00", venue: { stadium: "AT&T Stadium", city: "Dallas", country: "USA" } },
+  { fifaNumber: 22, stage: "GROUP_STAGE", date: "2026-06-17", time: "15:00", venue: { stadium: "NRG Stadium", city: "Houston", country: "USA" } },
+  { fifaNumber: 23, stage: "GROUP_STAGE", date: "2026-06-17", time: "18:00", venue: { stadium: "Mercedes-Benz Stadium", city: "Atlanta", country: "USA" } },
+  { fifaNumber: 24, stage: "GROUP_STAGE", date: "2026-06-17", time: "21:00", venue: { stadium: "Lincoln Financial Field", city: "Philadelphia", country: "USA" } },
+  // Matchday 3 (continued)
+  { fifaNumber: 25, stage: "GROUP_STAGE", date: "2026-06-18", time: "12:00", venue: { stadium: "Lumen Field", city: "Seattle", country: "USA" } },
+  { fifaNumber: 26, stage: "GROUP_STAGE", date: "2026-06-18", time: "15:00", venue: { stadium: "Levi's Stadium", city: "San Francisco", country: "USA" } },
+  { fifaNumber: 27, stage: "GROUP_STAGE", date: "2026-06-18", time: "18:00", venue: { stadium: "Arrowhead Stadium", city: "Kansas City", country: "USA" } },
+  { fifaNumber: 28, stage: "GROUP_STAGE", date: "2026-06-18", time: "21:00", venue: { stadium: "BMO Field", city: "Toronto", country: "CAN" } },
+  { fifaNumber: 29, stage: "GROUP_STAGE", date: "2026-06-19", time: "12:00", venue: { stadium: "Gillette Stadium", city: "Boston", country: "USA" } },
+  { fifaNumber: 30, stage: "GROUP_STAGE", date: "2026-06-19", time: "15:00", venue: { stadium: "Estadio BBVA", city: "Monterrey", country: "MEX" } },
+  { fifaNumber: 31, stage: "GROUP_STAGE", date: "2026-06-19", time: "18:00", venue: { stadium: "Estadio Azteca", city: "Mexico City", country: "MEX" } },
+  { fifaNumber: 32, stage: "GROUP_STAGE", date: "2026-06-19", time: "21:00", venue: { stadium: "Hard Rock Stadium", city: "Miami", country: "USA" } },
+  { fifaNumber: 33, stage: "GROUP_STAGE", date: "2026-06-20", time: "12:00", venue: { stadium: "MetLife Stadium", city: "New York", country: "USA" } },
+  { fifaNumber: 34, stage: "GROUP_STAGE", date: "2026-06-20", time: "15:00", venue: { stadium: "BC Place", city: "Vancouver", country: "CAN" } },
+  { fifaNumber: 35, stage: "GROUP_STAGE", date: "2026-06-20", time: "18:00", venue: { stadium: "SoFi Stadium", city: "Los Angeles", country: "USA" } },
+  { fifaNumber: 36, stage: "GROUP_STAGE", date: "2026-06-20", time: "21:00", venue: { stadium: "AT&T Stadium", city: "Dallas", country: "USA" } },
+  // Matchday 4 (Round 2 continues)
+  { fifaNumber: 37, stage: "GROUP_STAGE", date: "2026-06-21", time: "12:00", venue: { stadium: "NRG Stadium", city: "Houston", country: "USA" } },
+  { fifaNumber: 38, stage: "GROUP_STAGE", date: "2026-06-21", time: "15:00", venue: { stadium: "Mercedes-Benz Stadium", city: "Atlanta", country: "USA" } },
+  { fifaNumber: 39, stage: "GROUP_STAGE", date: "2026-06-21", time: "18:00", venue: { stadium: "Lincoln Financial Field", city: "Philadelphia", country: "USA" } },
+  { fifaNumber: 40, stage: "GROUP_STAGE", date: "2026-06-21", time: "21:00", venue: { stadium: "Lumen Field", city: "Seattle", country: "USA" } },
+  { fifaNumber: 41, stage: "GROUP_STAGE", date: "2026-06-22", time: "12:00", venue: { stadium: "Levi's Stadium", city: "San Francisco", country: "USA" } },
+  { fifaNumber: 42, stage: "GROUP_STAGE", date: "2026-06-22", time: "15:00", venue: { stadium: "Arrowhead Stadium", city: "Kansas City", country: "USA" } },
+  { fifaNumber: 43, stage: "GROUP_STAGE", date: "2026-06-22", time: "18:00", venue: { stadium: "BMO Field", city: "Toronto", country: "CAN" } },
+  { fifaNumber: 44, stage: "GROUP_STAGE", date: "2026-06-22", time: "21:00", venue: { stadium: "Gillette Stadium", city: "Boston", country: "USA" } },
+  { fifaNumber: 45, stage: "GROUP_STAGE", date: "2026-06-23", time: "12:00", venue: { stadium: "Estadio BBVA", city: "Monterrey", country: "MEX" } },
+  { fifaNumber: 46, stage: "GROUP_STAGE", date: "2026-06-23", time: "15:00", venue: { stadium: "Estadio Azteca", city: "Mexico City", country: "MEX" } },
+  { fifaNumber: 47, stage: "GROUP_STAGE", date: "2026-06-23", time: "18:00", venue: { stadium: "Hard Rock Stadium", city: "Miami", country: "USA" } },
+  { fifaNumber: 48, stage: "GROUP_STAGE", date: "2026-06-23", time: "21:00", venue: { stadium: "MetLife Stadium", city: "New York", country: "USA" } },
+  // Matchday 5 (Round 3 - final group matches)
+  { fifaNumber: 49, stage: "GROUP_STAGE", date: "2026-06-24", time: "18:00", venue: { stadium: "BC Place", city: "Vancouver", country: "CAN" } },
+  { fifaNumber: 50, stage: "GROUP_STAGE", date: "2026-06-24", time: "18:00", venue: { stadium: "SoFi Stadium", city: "Los Angeles", country: "USA" } },
+  { fifaNumber: 51, stage: "GROUP_STAGE", date: "2026-06-24", time: "21:00", venue: { stadium: "AT&T Stadium", city: "Dallas", country: "USA" } },
+  { fifaNumber: 52, stage: "GROUP_STAGE", date: "2026-06-24", time: "21:00", venue: { stadium: "NRG Stadium", city: "Houston", country: "USA" } },
+  { fifaNumber: 53, stage: "GROUP_STAGE", date: "2026-06-25", time: "18:00", venue: { stadium: "Mercedes-Benz Stadium", city: "Atlanta", country: "USA" } },
+  { fifaNumber: 54, stage: "GROUP_STAGE", date: "2026-06-25", time: "18:00", venue: { stadium: "Lincoln Financial Field", city: "Philadelphia", country: "USA" } },
+  { fifaNumber: 55, stage: "GROUP_STAGE", date: "2026-06-25", time: "21:00", venue: { stadium: "Lumen Field", city: "Seattle", country: "USA" } },
+  { fifaNumber: 56, stage: "GROUP_STAGE", date: "2026-06-25", time: "21:00", venue: { stadium: "Levi's Stadium", city: "San Francisco", country: "USA" } },
+  { fifaNumber: 57, stage: "GROUP_STAGE", date: "2026-06-26", time: "18:00", venue: { stadium: "Arrowhead Stadium", city: "Kansas City", country: "USA" } },
+  { fifaNumber: 58, stage: "GROUP_STAGE", date: "2026-06-26", time: "18:00", venue: { stadium: "BMO Field", city: "Toronto", country: "CAN" } },
+  { fifaNumber: 59, stage: "GROUP_STAGE", date: "2026-06-26", time: "21:00", venue: { stadium: "Gillette Stadium", city: "Boston", country: "USA" } },
+  { fifaNumber: 60, stage: "GROUP_STAGE", date: "2026-06-26", time: "21:00", venue: { stadium: "Estadio BBVA", city: "Monterrey", country: "MEX" } },
+  { fifaNumber: 61, stage: "GROUP_STAGE", date: "2026-06-27", time: "18:00", venue: { stadium: "Estadio Azteca", city: "Mexico City", country: "MEX" } },
+  { fifaNumber: 62, stage: "GROUP_STAGE", date: "2026-06-27", time: "18:00", venue: { stadium: "Hard Rock Stadium", city: "Miami", country: "USA" } },
+  { fifaNumber: 63, stage: "GROUP_STAGE", date: "2026-06-27", time: "21:00", venue: { stadium: "MetLife Stadium", city: "New York", country: "USA" } },
+  { fifaNumber: 64, stage: "GROUP_STAGE", date: "2026-06-27", time: "21:00", venue: { stadium: "BC Place", city: "Vancouver", country: "CAN" } },
+  { fifaNumber: 65, stage: "GROUP_STAGE", date: "2026-06-28", time: "15:00", venue: { stadium: "SoFi Stadium", city: "Los Angeles", country: "USA" } },
+  { fifaNumber: 66, stage: "GROUP_STAGE", date: "2026-06-28", time: "15:00", venue: { stadium: "AT&T Stadium", city: "Dallas", country: "USA" } },
+  { fifaNumber: 67, stage: "GROUP_STAGE", date: "2026-06-28", time: "18:00", venue: { stadium: "NRG Stadium", city: "Houston", country: "USA" } },
+  { fifaNumber: 68, stage: "GROUP_STAGE", date: "2026-06-28", time: "18:00", venue: { stadium: "Mercedes-Benz Stadium", city: "Atlanta", country: "USA" } },
+  { fifaNumber: 69, stage: "GROUP_STAGE", date: "2026-06-28", time: "15:00", venue: { stadium: "Lincoln Financial Field", city: "Philadelphia", country: "USA" } },
+  { fifaNumber: 70, stage: "GROUP_STAGE", date: "2026-06-28", time: "15:00", venue: { stadium: "Lumen Field", city: "Seattle", country: "USA" } },
+  { fifaNumber: 71, stage: "GROUP_STAGE", date: "2026-06-28", time: "18:00", venue: { stadium: "Levi's Stadium", city: "San Francisco", country: "USA" } },
+  { fifaNumber: 72, stage: "GROUP_STAGE", date: "2026-06-28", time: "18:00", venue: { stadium: "Arrowhead Stadium", city: "Kansas City", country: "USA" } },
+];
+
+// =====================================================================
 // KNOCKOUT MATCH SCHEDULE (FIFA Match Numbers 73-104)
 // This is the OFFICIAL FIFA schedule for World Cup 2026
 // =====================================================================
@@ -165,6 +250,8 @@ export const BRACKET_SOURCES: BracketSource[] = [
 // =====================================================================
 
 const scheduleByFifaNumber = new Map<number, MatchInfo>();
+// Add all matches (group stage + knockout) to the lookup map
+GROUP_STAGE_SCHEDULE.forEach(m => scheduleByFifaNumber.set(m.fifaNumber, m));
 KNOCKOUT_SCHEDULE.forEach(m => scheduleByFifaNumber.set(m.fifaNumber, m));
 
 const bracketByFifaNumber = new Map<number, BracketSource>();
@@ -191,9 +278,12 @@ export function getBracketSource(fifaNumber: number): BracketSource | null {
 }
 
 /**
- * Get all knockout matches for a specific stage
+ * Get all matches for a specific stage
  */
 export function getMatchesByStage(stage: Stage): MatchInfo[] {
+  if (stage === "GROUP_STAGE") {
+    return GROUP_STAGE_SCHEDULE;
+  }
   return KNOCKOUT_SCHEDULE.filter(m => m.stage === stage);
 }
 

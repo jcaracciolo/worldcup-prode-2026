@@ -129,83 +129,6 @@ export default function AdminPage() {
     }
   };
 
-  const handleGenerateRandomResults = async (stage: "group" | "knockout") => {
-    const confirmed = confirm(
-      `Generate random ${stage} stage results? This is for testing only.`,
-    );
-    if (!confirmed) return;
-
-    setGenerating(true);
-    const res = await fetch("/api/admin/generate-results", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stage }),
-    });
-    setGenerating(false);
-
-    if (res.ok) {
-      const data = await res.json();
-      alert(`Random results generated! (${data.matchesUpdated} matches)`);
-    } else {
-      alert("Failed to generate results");
-    }
-  };
-
-  const handleGenerateAllResults = async () => {
-    const confirmed = confirm(
-      "Generate ALL random results? This will generate group stage first, then knockout stage with resolved teams.",
-    );
-    if (!confirmed) return;
-
-    setGenerating(true);
-
-    // Generate group stage first
-    const groupRes = await fetch("/api/admin/generate-results", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stage: "group" }),
-    });
-
-    if (!groupRes.ok) {
-      setGenerating(false);
-      alert("Failed to generate group results");
-      return;
-    }
-    const groupData = await groupRes.json();
-
-    // Then generate knockout stage (which will resolve teams from group standings)
-    const knockoutRes = await fetch("/api/admin/generate-results", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stage: "knockout" }),
-    });
-    setGenerating(false);
-
-    if (knockoutRes.ok) {
-      const knockoutData = await knockoutRes.json();
-      alert(
-        `All results generated!\nGroup: ${groupData.matchesUpdated} matches\nKnockout: ${knockoutData.matchesUpdated} matches`,
-      );
-    } else {
-      alert("Group results generated, but knockout failed");
-    }
-  };
-
-  const handleResetTournament = async () => {
-    const confirmed = confirm(
-      "Reset tournament state? This will unlock all predictions.",
-    );
-    if (!confirmed) return;
-
-    await handleUpdateSettings({
-      group_stage_locked: false,
-      knockout_stage_open: false,
-      knockout_stage_locked: false,
-    });
-
-    alert("Tournament state reset!");
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -356,50 +279,6 @@ export default function AdminPage() {
                 )}
               </div>
             </div>
-          </div>
-        </section>
-
-        {/* Testing Tools */}
-        <section className="glass-card p-6">
-          <h2 className="text-xl font-bold mb-4 text-white">Testing Tools</h2>
-          <p className="text-sm text-white/50 mb-4">
-            These tools are for testing purposes only. Use with caution.
-          </p>
-          <p className="text-sm text-amber-400/80 mb-4">
-            ⚠️ To see correct flags in knockout: Generate group stage first,
-            then knockout. Or use &quot;Generate All&quot; which does both in
-            order.
-          </p>
-
-          <div className="flex flex-wrap gap-4">
-            <button
-              onClick={handleGenerateAllResults}
-              disabled={generating}
-              className="px-4 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 disabled:opacity-50"
-            >
-              {generating ? "Generating..." : "🎲 Generate All Results"}
-            </button>
-            <button
-              onClick={() => handleGenerateRandomResults("group")}
-              disabled={generating}
-              className="px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 disabled:opacity-50"
-            >
-              Generate Group Results
-            </button>
-            <button
-              onClick={() => handleGenerateRandomResults("knockout")}
-              disabled={generating}
-              className="px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 disabled:opacity-50"
-            >
-              Generate Knockout Results
-            </button>
-            <button
-              onClick={handleResetTournament}
-              disabled={generating}
-              className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 disabled:opacity-50"
-            >
-              Reset Tournament State
-            </button>
           </div>
         </section>
       </main>

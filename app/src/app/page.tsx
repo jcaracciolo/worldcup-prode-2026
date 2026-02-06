@@ -1,8 +1,7 @@
 import Header from "@/components/Header";
-import MatchCard from "@/components/MatchCard";
+import TodaysMatches from "@/components/TodaysMatches";
 import Leaderboard from "@/components/Leaderboard";
 import { createClient } from "@/lib/supabase/server";
-import { getTodaysMatches } from "@/lib/football-api";
 import { UserScore } from "@/types/football";
 
 export const dynamic = "force-dynamic";
@@ -45,13 +44,6 @@ export default async function HomePage() {
     profile = data;
   }
 
-  let matches: Awaited<ReturnType<typeof getTodaysMatches>> = [];
-  try {
-    matches = await getTodaysMatches();
-  } catch (error) {
-    console.error("Failed to fetch matches:", error);
-  }
-
   const leaderboard = await getLeaderboard();
 
   return (
@@ -88,30 +80,12 @@ export default async function HomePage() {
                 <span className="text-xl">📅</span>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">
-                  {matches.length > 0 ? "Today's Matches" : "Upcoming Matches"}
-                </h2>
+                <h2 className="text-2xl font-bold text-white">Today&apos;s Matches</h2>
                 <p className="text-white/50 text-sm">World Cup 2026</p>
               </div>
             </div>
 
-            {matches.length === 0 ? (
-              <div className="glass-card p-12 text-center">
-                <div className="text-6xl mb-4">⚽</div>
-                <p className="text-xl text-white/80 font-medium">
-                  No matches scheduled
-                </p>
-                <p className="text-white/50 mt-2">
-                  The World Cup starts June 11, 2026!
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {matches.map((match) => (
-                  <MatchCard key={match.id} match={match} showDate />
-                ))}
-              </div>
-            )}
+            <TodaysMatches />
           </div>
 
           {/* Leaderboard Section */}

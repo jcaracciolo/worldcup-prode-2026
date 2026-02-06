@@ -1,6 +1,8 @@
 import Header from "@/components/Header";
 import { createClient } from "@/lib/supabase/server";
-import { getMatch } from "@/lib/football-api";
+import { getMatchInfo } from "@/lib/tournament";
+import { buildApiToFifaMapping } from "@/lib/api-client";
+import { Match } from "@/types/football";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 
@@ -28,11 +30,57 @@ export default async function MatchDetailPage({ params }: PageProps) {
     profile = data;
   }
 
-  // Get match
-  const match = await getMatch(parseInt(matchId));
+  // Get all matches from our centralized API
+  let matches: Match[] = [];
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/matches`,
+      { cache: "no-store" }
+    );
+    const data = await res.json();
+    matches = data.matches || [];
+  } catch (error) {
+    console.error("Failed to fetch matches:", error);
+  }
+
+  // Find the specific match
+  const match = matches.find((m) => m.id === parseInt(matchId));
   if (!match) {
     notFound();
   }
+
+  // Build FIFA number mapping to get venue from tournament.ts
+  const apiToFifaMap = buildApiToFifaMapping(matches);
+  const fifaNumber = apiToFifaMap.get(match.id);
+  const matchInfo = fifaNumber ? getMatchInfo(fifaNumber) : null;
+  const venueDisplay = matchInfo
+    ? `${matchInfo.venue.stadium}, ${matchInfo.venue.city}`
+    : match.venue;
+
+  // Format group name: GROUP_A -> Group A
+  const formatGroupName = (group: string | null): string | null => {
+    if (!group) return null;
+    if (group.startsWith("GROUP_")) {
+      return `Group ${group.replace("GROUP_", "")}`;
+    }
+    return group;
+  };
+
+  // Format stage name for display
+  const formatStageName = (stage: string): string => {
+    const stageNames: Record<string, string> = {
+      GROUP_STAGE: "Group Stage",
+      LAST_32: "Round of 32",
+      LAST_16: "Round of 16",
+      QUARTER_FINALS: "Quarter-Finals",
+      SEMI_FINALS: "Semi-Finals",
+      THIRD_PLACE: "3rd Place",
+      FINAL: "Final",
+    };
+    return stageNames[stage] || stage.replace(/_/g, " ");
+  };
+
+  const stageDisplay = formatGroupName(match.group) || formatStageName(match.stage);
 
   // Get user's prediction for this match
   let prediction = null;
@@ -235,18 +283,17 @@ export default async function MatchDetailPage({ params }: PageProps) {
                 <span>{format(matchDate, "EEEE, MMMM d, yyyy - h:mm a")}</span>
               </div>
 
-              {match.venue && (
+              {venueDisplay && (
                 <div className="flex items-center gap-3 text-white/70">
                   <span className="text-xl">📍</span>
-                  <span>{match.venue}</span>
+                  <span>{venueDisplay}</span>
                 </div>
               )}
 
               <div className="flex items-center gap-3 text-white/70">
                 <span className="text-xl">🏆</span>
                 <span>
-                  {match.group || match.stage.replace(/_/g, " ")} - Matchday{" "}
-                  {match.matchday}
+                  {stageDisplay} - Matchday {match.matchday}
                 </span>
               </div>
             </div>

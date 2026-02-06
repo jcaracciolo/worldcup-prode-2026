@@ -6,8 +6,10 @@ import Header from "@/components/Header";
 import PredictionInput from "@/components/PredictionInput";
 import StandingsTable from "@/components/StandingsTable";
 import R32Preview from "@/components/R32Preview";
+import { GlobalLiveIndicator } from "@/components/MatchStatus";
+import { useMatches } from "@/contexts/MatchContext";
 import { createClient } from "@/lib/supabase/client";
-import { Match, CalculatedStanding, Team } from "@/types/football";
+import { CalculatedStanding, Team, Match } from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { BracketResolver } from "@/lib/bracket-resolver";
 import { buildApiToFifaMapping } from "@/lib/api-client";
@@ -37,7 +39,6 @@ export default function PredictionsPage() {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [settings, setSettings] = useState<TournamentSettings | null>(null);
-  const [matches, setMatches] = useState<Match[]>([]);
   const [predictions, setPredictions] = useState<Map<number, Prediction>>(
     new Map(),
   );
@@ -45,6 +46,15 @@ export default function PredictionsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Use centralized match context for automatic polling
+  const {
+    matches,
+    loading: matchesLoading,
+    hasLiveMatches,
+    liveMatches,
+    refresh: refreshMatches,
+  } = useMatches();
 
   useEffect(() => {
     const loadData = async () => {
@@ -70,11 +80,6 @@ export default function PredictionsPage() {
         .select("*")
         .single();
       setSettings(settingsData);
-
-      // Load matches from API
-      const matchesRes = await fetch("/api/matches");
-      const matchesData = await matchesRes.json();
-      setMatches(matchesData.matches || []);
 
       // Load user predictions
       const { data: predictionsData } = await supabase
@@ -303,40 +308,6 @@ export default function PredictionsPage() {
     }
   };
 
-  const handleRandomPredictions = () => {
-    const newPredictions = new Map(predictions);
-
-    const groupLocked = settings?.group_stage_locked || false;
-    const knockoutOpen = settings?.knockout_stage_open || false;
-    const knockoutLocked = settings?.knockout_stage_locked || false;
-
-    matches.forEach((match) => {
-      // Skip locked sections
-      const isGroupStage = match.stage === "GROUP_STAGE";
-      if (isGroupStage && groupLocked) return;
-      if (!isGroupStage && (!knockoutOpen || knockoutLocked)) return;
-
-      // Generate random scores (0-5 each)
-      const homeGoals = Math.floor(Math.random() * 6);
-      const awayGoals = Math.floor(Math.random() * 6);
-
-      const existing = newPredictions.get(match.id);
-      const updated: Prediction = {
-        id: existing?.id || "",
-        user_id: profile?.id || "",
-        match_id: match.id,
-        home_goals: homeGoals,
-        away_goals: awayGoals,
-        winner_id: existing?.winner_id ?? null,
-        created_at: existing?.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      newPredictions.set(match.id, updated);
-    });
-
-    setPredictions(newPredictions);
-  };
-
   const handleResetPredictions = () => {
     if (!confirm("Are you sure you want to reset predictions? This will clear scores for unlocked sections.")) {
       return;
@@ -365,7 +336,10 @@ export default function PredictionsPage() {
     }
   };
 
-  if (loading) {
+  // Build API match ID to FIFA match number mapping for knockout matches
+  const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
+
+  if (loading || matchesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-xl text-white/60">Loading...</div>
@@ -400,9 +374,6 @@ export default function PredictionsPage() {
     knockoutStages.get(m.stage)!.push(m);
   });
 
-  // Build API match ID to FIFA match number mapping for knockout matches
-  const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
-
   // Use BracketResolver to resolve knockout teams based on predictions
   const resolver = new BracketResolver({
     matches,
@@ -425,6 +396,13 @@ export default function PredictionsPage() {
           <div>
             <h1 className="text-3xl font-bold text-white">My Predictions</h1>
             <p className="text-white/50 mt-1">Set your scores for each match</p>
+            <div className="mt-2">
+              <GlobalLiveIndicator
+                hasLiveMatches={hasLiveMatches}
+                liveCount={liveMatches.length}
+                onClick={refreshMatches}
+              />
+            </div>
           </div>
           <div className="flex gap-3">
             <button
@@ -433,14 +411,6 @@ export default function PredictionsPage() {
               className="px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed bg-red-600 hover:bg-red-700"
             >
               🗑️ Reset
-            </button>
-            <button
-              onClick={handleRandomPredictions}
-              disabled={groupLocked && knockoutLocked}
-              className="px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: "var(--accent)" }}
-            >
-              🎲 Random
             </button>
             <button
               onClick={handleSave}
@@ -571,15 +541,19 @@ export default function PredictionsPage() {
                                 new Date(a.utcDate).getTime() -
                                 new Date(b.utcDate).getTime(),
                             )
-                            .map((match) => (
-                              <PredictionInput
-                                key={match.id}
-                                match={match}
-                                prediction={predictions.get(match.id)}
-                                onChange={handlePredictionChange}
-                                disabled={groupLocked}
-                              />
-                            ))}
+                            .map((match) => {
+                              const fifaNumber = apiToFifaMap.get(match.id);
+                              return (
+                                <PredictionInput
+                                  key={match.id}
+                                  match={match}
+                                  prediction={predictions.get(match.id)}
+                                  onChange={handlePredictionChange}
+                                  disabled={groupLocked}
+                                  fifaMatchNumber={fifaNumber}
+                                />
+                              );
+                            })}
                         </div>
                       </div>
 

@@ -8,8 +8,7 @@ import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { calculateTotalPoints } from "@/lib/scoring";
 import { getTeamDisplayName } from "@/lib/match-scoring";
 import { BracketResolver } from "@/lib/bracket-resolver";
-import { getVenue } from "@/lib/venues";
-import { getMatchInfo } from "@/lib/tournament";
+import { getMatchInfo, Venue } from "@/lib/tournament";
 import { buildApiToFifaMapping } from "@/lib/api-client";
 import { notFound } from "next/navigation";
 import { Match, CalculatedStanding } from "@/types/football";
@@ -306,17 +305,14 @@ export default async function UserPredictionsPage({ params }: PageProps) {
   // Build API match ID to FIFA match number mapping for venue lookup
   const apiToFifaMap = buildApiToFifaMapping(matches);
 
-  // Helper to get venue by match - uses FIFA number for knockout, API ID for group stage
-  const getMatchVenue = (match: Match) => {
-    if (match.stage === "GROUP_STAGE") {
-      return getVenue(match.id);
-    }
+  // Helper to get venue by match - uses centralized tournament data
+  const getMatchVenue = (match: Match): Venue | null => {
     const fifaNum = apiToFifaMap.get(match.id);
     if (fifaNum) {
       const matchInfo = getMatchInfo(fifaNum);
       return matchInfo?.venue || null;
     }
-    return getVenue(match.id); // Fallback
+    return null;
   };
 
   // Calculate points

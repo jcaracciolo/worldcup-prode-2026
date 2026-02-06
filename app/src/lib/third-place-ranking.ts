@@ -163,7 +163,7 @@ export function assignThirdPlaceToR32(
     if (availableFromPool.length > 0) {
       // Pick the first available (they're sorted by pool size, so this works)
       const selectedGroup = availableFromPool[0];
-      result.set(match.matchNumber, `GROUP_${selectedGroup}`);
+      result.set(match.matchNumber, selectedGroup);
       assigned.add(selectedGroup);
     }
   }

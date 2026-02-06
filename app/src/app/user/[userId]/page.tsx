@@ -504,16 +504,42 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                 key={match.id}
                                 className="flex items-center gap-2 py-2 text-sm"
                               >
-                                <span className="flex-1 text-right text-white/80">
-                                  {match.homeTeam.tla}
-                                </span>
+                                <div className="flex-1 flex items-center justify-end gap-1.5">
+                                  <span className="text-white/80">
+                                    {match.homeTeam.tla}
+                                  </span>
+                                  {match.homeTeam.crest ? (
+                                    <img
+                                      src={match.homeTeam.crest}
+                                      alt={match.homeTeam.name}
+                                      className="w-5 h-5 object-contain shrink-0"
+                                    />
+                                  ) : (
+                                    <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
+                                      {match.homeTeam.tla?.substring(0, 2)}
+                                    </div>
+                                  )}
+                                </div>
                                 <span className="w-16 text-center font-bold text-white">
                                   {pred?.home_goals ?? "-"} -{" "}
                                   {pred?.away_goals ?? "-"}
                                 </span>
-                                <span className="flex-1 text-white/80">
-                                  {match.awayTeam.tla}
-                                </span>
+                                <div className="flex-1 flex items-center gap-1.5">
+                                  {match.awayTeam.crest ? (
+                                    <img
+                                      src={match.awayTeam.crest}
+                                      alt={match.awayTeam.name}
+                                      className="w-5 h-5 object-contain shrink-0"
+                                    />
+                                  ) : (
+                                    <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
+                                      {match.awayTeam.tla?.substring(0, 2)}
+                                    </div>
+                                  )}
+                                  <span className="text-white/80">
+                                    {match.awayTeam.tla}
+                                  </span>
+                                </div>
                               </div>
                             );
                           })}

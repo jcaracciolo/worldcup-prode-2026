@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import PredictionInput from "@/components/PredictionInput";
 import StandingsTable from "@/components/StandingsTable";
+import R32Preview from "@/components/R32Preview";
 import { createClient } from "@/lib/supabase/client";
 import { Match, CalculatedStanding, Team } from "@/types/football";
 import {
@@ -111,7 +112,7 @@ export default function PredictionsPage() {
   };
 
   const calculateStandings = useCallback(
-    (groupMatches: Match[]): CalculatedStanding[] => {
+    (groupMatches: Match[], groupName?: string): CalculatedStanding[] => {
       const teamStats = new Map<number, CalculatedStanding>();
 
       // Initialize teams
@@ -171,10 +172,61 @@ export default function PredictionsPage() {
         })
         .map((s, i) => ({ ...s, position: i + 1 }));
 
+      // Apply manual position overrides for tiebreakers
+      if (groupName) {
+        const groupOverrides = overrides.filter(o => o.group_name === groupName);
+        if (groupOverrides.length > 0) {
+          // Sort by override positions
+          standings = standings.map(s => {
+            const override = groupOverrides.find(o => o.team_id === s.team.id);
+            return { ...s, position: override?.position || s.position };
+          }).sort((a, b) => a.position - b.position)
+            .map((s, i) => ({ ...s, position: i + 1 }));
+        }
+      }
+
       return standings;
     },
-    [predictions],
+    [predictions, overrides],
   );
+
+  const handleSwapPositions = (groupName: string, teamId1: number, teamId2: number) => {
+    // Find current positions
+    const groupMatches = matches.filter(m => m.group === groupName);
+    const standings = calculateStandings(groupMatches, groupName);
+    
+    const team1Standing = standings.find(s => s.team.id === teamId1);
+    const team2Standing = standings.find(s => s.team.id === teamId2);
+    
+    if (!team1Standing || !team2Standing) return;
+    
+    // Create new overrides swapping positions
+    const newOverrides = overrides.filter(
+      o => !(o.group_name === groupName && (o.team_id === teamId1 || o.team_id === teamId2))
+    );
+    
+    // Add swapped positions
+    newOverrides.push({
+      id: '',
+      user_id: profile?.id || '',
+      group_name: groupName,
+      team_id: teamId1,
+      position: team2Standing.position,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+    newOverrides.push({
+      id: '',
+      user_id: profile?.id || '',
+      group_name: groupName,
+      team_id: teamId2,
+      position: team1Standing.position,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+    
+    setOverrides(newOverrides);
+  };
 
   const handleSave = async () => {
     if (!profile) return;
@@ -227,6 +279,31 @@ export default function PredictionsPage() {
     }
   };
 
+  const handleRandomPredictions = () => {
+    const newPredictions = new Map(predictions);
+    
+    matches.forEach((match) => {
+      // Generate random scores (0-5 each)
+      const homeGoals = Math.floor(Math.random() * 6);
+      const awayGoals = Math.floor(Math.random() * 6);
+      
+      const existing = newPredictions.get(match.id);
+      const updated: Prediction = {
+        id: existing?.id || "",
+        user_id: profile?.id || "",
+        match_id: match.id,
+        home_goals: homeGoals,
+        away_goals: awayGoals,
+        winner_id: existing?.winner_id ?? null,
+        created_at: existing?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      newPredictions.set(match.id, updated);
+    });
+    
+    setPredictions(newPredictions);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -241,6 +318,12 @@ export default function PredictionsPage() {
     if (!m.group) return;
     if (!groups.has(m.group)) groups.set(m.group, []);
     groups.get(m.group)!.push(m);
+  });
+
+  // Calculate standings for each group (for R32 preview)
+  const groupStandings = new Map<string, CalculatedStanding[]>();
+  groups.forEach((groupMatchList, groupName) => {
+    groupStandings.set(groupName, calculateStandings(groupMatchList, groupName));
   });
 
   const knockoutMatches = matches.filter((m) => m.stage !== "GROUP_STAGE");
@@ -264,13 +347,22 @@ export default function PredictionsPage() {
             <h1 className="text-3xl font-bold text-white">My Predictions</h1>
             <p className="text-white/50 mt-1">Set your scores for each match</p>
           </div>
-          <button
-            onClick={handleSave}
-            disabled={saving || (groupLocked && knockoutLocked)}
-            className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold rounded-xl hover:from-emerald-400 hover:to-green-500 transition-all shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? "Saving..." : "Save Predictions"}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleRandomPredictions}
+              disabled={groupLocked && knockoutLocked}
+              className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-400 hover:to-pink-500 transition-all shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              🎲 Random
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving || (groupLocked && knockoutLocked)}
+              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold rounded-xl hover:from-emerald-400 hover:to-green-500 transition-all shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? "Saving..." : "Save Predictions"}
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -301,25 +393,28 @@ export default function PredictionsPage() {
             {Array.from(groups.entries())
               .sort(([a], [b]) => a.localeCompare(b))
               .map(([groupName, groupMatchList]) => {
-                const standings = calculateStandings(groupMatchList);
+                const standings = calculateStandings(groupMatchList, groupName);
                 return (
                   <div
                     key={groupName}
                     className="glass-card p-5"
                   >
                     <div className="flex items-center gap-2 mb-4">
-                      <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 text-sm font-bold rounded-lg">
-                        {groupName}
+                      <span className="px-4 py-2 bg-emerald-500/20 text-emerald-400 text-xl font-bold rounded-lg">
+                        {groupName.replace('GROUP_', 'Group ')}
                       </span>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      {/* Matches */}
                       <div>
                         <h4 className="text-sm font-medium text-white/50 mb-3 uppercase tracking-wider">
                           Matches
                         </h4>
                         <div className="space-y-1">
-                          {groupMatchList.map((match) => (
+                          {groupMatchList
+                            .sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime())
+                            .map((match) => (
                             <PredictionInput
                               key={match.id}
                               match={match}
@@ -331,13 +426,16 @@ export default function PredictionsPage() {
                         </div>
                       </div>
 
+                      {/* Standings Table */}
                       <div>
                         <h4 className="text-sm font-medium text-white/50 mb-3 uppercase tracking-wider">
                           Standings
+                          {!groupLocked && <span className="text-white/30 text-xs ml-2">(↕ swap tied teams)</span>}
                         </h4>
                         <StandingsTable
                           standings={standings}
                           disabled={groupLocked}
+                          onSwapPositions={(team1, team2) => handleSwapPositions(groupName, team1, team2)}
                         />
                       </div>
                     </div>
@@ -360,11 +458,39 @@ export default function PredictionsPage() {
           </div>
 
           {!knockoutOpen ? (
-            <div className="glass-card p-12 text-center">
-              <div className="text-5xl mb-4">🔒</div>
-              <p className="text-white/60 text-lg">
-                Knockout predictions will open after the group stage is complete
-              </p>
+            <div className="space-y-6">
+              {/* R32 Preview - Shows teams based on group predictions */}
+              <R32Preview 
+                matches={knockoutStages.get("LAST_32") || []}
+                groupStandings={groupStandings}
+              />
+
+              {/* Blurred rest of knockout */}
+              <div className="relative">
+                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-10 rounded-xl flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-5xl mb-4">🔒</div>
+                    <p className="text-white/60 text-lg">
+                      Coming soon after group stage
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-6 opacity-50">
+                  {["LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "FINAL"].map((stage) => {
+                    const stageName = stage.replace(/_/g, " ");
+                    return (
+                      <div key={stage} className="glass-card p-5">
+                        <h3 className="font-bold text-lg mb-4 text-white">{stageName}</h3>
+                        <div className="grid md:grid-cols-2 gap-4 h-20">
+                          {/* Placeholder boxes */}
+                          <div className="bg-white/5 rounded-lg h-12"></div>
+                          <div className="bg-white/5 rounded-lg h-12"></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-6">

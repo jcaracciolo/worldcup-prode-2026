@@ -1,16 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary: #0d4a42;
-  --bg-secondary: #0a3d36;
+  --bg-primary: #04201c;
+  --bg-secondary: #09c3a7;
   --bg-card: #115c52;
   --bg-card-hover: #147a6d;
-  --accent: #22c55e;
+  --accent: #7b2d2d;
   --accent-light: #4ade80;
   --text-primary: #ffffff;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
   --border: rgba(255, 255, 255, 0.1);
+  --card-bg: #115c52;
+  --qualifying-bg: #166534;
+  --qualifying-text: #4ade80;
+  --date-color: #deb03b;
+  --venue-color: #6fd2e2;
 }
 
 @theme inline {

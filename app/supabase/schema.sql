@@ -203,3 +203,16 @@ CREATE POLICY "Admins can update tournament settings" ON tournament_settings
   FOR UPDATE USING (
     EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)
   );
+
+:root {
+  --bg-primary: #0d4a42;      /* Main background (dark teal) */
+  --bg-secondary: #0a3d36;    /* Secondary background */
+  --bg-card: #115c52;         /* Card backgrounds */
+  --bg-card-hover: #147a6d;   /* Card hover state */
+  --accent: #22c55e;          /* Main accent (green) */
+  --accent-light: #4ade80;    /* Light accent */
+  --text-primary: #ffffff;    /* Primary text */
+  --text-secondary: #94a3b8;  /* Secondary text (slate) */
+  --text-muted: #64748b;      /* Muted text */
+  --border: rgba(255, 255, 255, 0.1);  /* Borders */
+}

@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import PredictionInput from "@/components/PredictionInput";
-import StandingsTable from "@/components/StandingsTable";
-import R32Preview from "@/components/R32Preview";
 import { GlobalLiveIndicator } from "@/components/MatchStatus";
+import {
+  KnockoutStageSection,
+  GroupStageSection,
+  KnockoutPreviewSection,
+} from "@/components/predictions";
 import { useMatches } from "@/contexts/MatchContext";
 import { useSimulation } from "@/contexts/SimulationContext";
 import { useUser } from "@/contexts/UserContext";
@@ -15,19 +17,6 @@ import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { BracketResolver } from "@/lib/bracket-resolver";
 import { buildApiToFifaMapping } from "@/lib/api-client";
 import { Prediction, GroupStandingsOverride } from "@/types/database";
-
-// Get human-readable stage name
-const getKnockoutStageName = (stage: string): string => {
-  const stageNames: Record<string, string> = {
-    LAST_32: "Round of 32",
-    LAST_16: "Round of 16",
-    QUARTER_FINALS: "Quarter-Finals",
-    SEMI_FINALS: "Semi-Finals",
-    THIRD_PLACE: "3rd Place",
-    FINAL: "Final",
-  };
-  return stageNames[stage] || stage.replace(/_/g, " ");
-};
 
 export default function PredictionsPage() {
   const router = useRouter();
@@ -52,7 +41,7 @@ export default function PredictionsPage() {
   } = useMatches();
 
   // Get stage lock status from simulation context (time-based)
-  const { stageLockStatus, getCurrentTime } = useSimulation();
+  const { stageLockStatus } = useSimulation();
   const {
     groupStageLocked: groupLocked,
     knockoutStageOpen: knockoutOpen,
@@ -417,217 +406,39 @@ export default function PredictionsPage() {
           </div>
         )}
 
-        {/* Group Stage Section */}
+        {/* Knockout Stage Section - when knockout is open */}
         {knockoutOpen && (
-          <section className="mb-10">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
-                <span className="text-xl">⚔️</span>
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-white">
-                  Knockout Stage
-                </h2>
-                <p className="text-white/50 text-sm">
-                  Single elimination rounds
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              {knockoutLocked && (
-                <div className="bg-amber-500/20 border border-amber-500/30 text-amber-300 px-4 py-3 rounded-xl">
-                  Knockout stage predictions are locked
-                </div>
-              )}
-
-              {[
-                "LAST_32",
-                "LAST_16",
-                "QUARTER_FINALS",
-                "SEMI_FINALS",
-                "THIRD_PLACE",
-                "FINAL",
-              ].map((stage) => {
-                const stageMatches = knockoutStages.get(stage) || [];
-                if (stageMatches.length === 0) return null;
-
-                const stageName = getKnockoutStageName(stage);
-
-                return (
-                  <div key={stage} className="glass-card p-5">
-                    <h3 className="font-bold text-lg mb-4 text-white">
-                      {stageName}
-                    </h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {stageMatches.map((match) => {
-                        const resolved = resolvedKnockoutTeams.get(match.id);
-                        const fifaNumber = apiToFifaMap.get(match.id);
-                        const matchHasStarted =
-                          getCurrentTime() >= new Date(match.utcDate);
-                        return (
-                          <PredictionInput
-                            key={match.id}
-                            match={match}
-                            prediction={predictions.get(match.id)}
-                            onChange={handlePredictionChange}
-                            disabled={knockoutLocked || matchHasStarted}
-                            showWinnerSelect={true}
-                            resolvedHomeTeam={resolved?.home}
-                            resolvedAwayTeam={resolved?.away}
-                            fifaMatchNumber={fifaNumber}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+          <KnockoutStageSection
+            knockoutStages={knockoutStages}
+            predictions={predictions}
+            resolvedKnockoutTeams={resolvedKnockoutTeams}
+            apiToFifaMap={apiToFifaMap}
+            knockoutLocked={knockoutLocked}
+            onPredictionChange={handlePredictionChange}
+          />
         )}
 
         {/* Group Stage */}
-        <section className={knockoutOpen ? "" : "mb-10"}>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-              <span className="text-xl">🏆</span>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">Group Stage</h2>
-              <p className="text-white/50 text-sm">48 teams in 12 groups</p>
-            </div>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            {Array.from(groups.entries())
-              .sort(([a], [b]) => a.localeCompare(b))
-              .map(([groupName, groupMatchList]) => {
-                const standings = calculateStandings(groupMatchList, groupName);
-                return (
-                  <div key={groupName} className="glass-card p-5">
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="px-4 py-2 bg-emerald-500/20 text-emerald-400 text-xl font-bold rounded-lg">
-                        {groupName.replace("GROUP_", "Group ")}
-                      </span>
-                    </div>
-
-                    <div className="space-y-4">
-                      {/* Matches */}
-                      <div>
-                        <h4 className="text-sm font-medium text-white/50 mb-3 uppercase tracking-wider">
-                          Matches
-                        </h4>
-                        <div className="space-y-1">
-                          {groupMatchList
-                            .sort(
-                              (a, b) =>
-                                new Date(a.utcDate).getTime() -
-                                new Date(b.utcDate).getTime(),
-                            )
-                            .map((match) => {
-                              const fifaNumber = apiToFifaMap.get(match.id);
-                              const matchHasStarted =
-                                getCurrentTime() >= new Date(match.utcDate);
-                              return (
-                                <PredictionInput
-                                  key={match.id}
-                                  match={match}
-                                  prediction={predictions.get(match.id)}
-                                  onChange={handlePredictionChange}
-                                  disabled={groupLocked || matchHasStarted}
-                                  fifaMatchNumber={fifaNumber}
-                                />
-                              );
-                            })}
-                        </div>
-                      </div>
-
-                      {/* Standings Table */}
-                      <div>
-                        <h4 className="text-sm font-medium text-white/50 mb-3 uppercase tracking-wider">
-                          Standings
-                          {!groupLocked && (
-                            <span className="text-white/30 text-xs ml-2">
-                              (↕ swap tied teams)
-                            </span>
-                          )}
-                        </h4>
-                        <StandingsTable
-                          standings={standings}
-                          disabled={groupLocked}
-                          onSwapPositions={(team1, team2) =>
-                            handleSwapPositions(groupName, team1, team2)
-                          }
-                          thirdPlaceQualifies={
-                            thirdPlaceQualifying.get(groupName) || false
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </section>
+        <div className={knockoutOpen ? "" : "mb-10"}>
+          <GroupStageSection
+            groups={groups}
+            predictions={predictions}
+            apiToFifaMap={apiToFifaMap}
+            groupLocked={groupLocked}
+            thirdPlaceQualifying={thirdPlaceQualifying}
+            calculateStandings={calculateStandings}
+            onPredictionChange={handlePredictionChange}
+            onSwapPositions={handleSwapPositions}
+          />
+        </div>
 
         {/* Knockout Stage - when not yet open */}
         {!knockoutOpen && (
-          <section>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
-                <span className="text-xl">⚔️</span>
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-white">
-                  Knockout Stage
-                </h2>
-                <p className="text-white/50 text-sm">
-                  Single elimination rounds
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              {/* R32 Preview - Shows teams based on group predictions */}
-              <R32Preview
-                matches={knockoutStages.get("LAST_32") || []}
-                groupStandings={groupStandings}
-                thirdPlaceQualifying={thirdPlaceQualifying}
-              />
-
-              {/* Blurred rest of knockout */}
-              <div className="relative">
-                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-10 rounded-xl flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-5xl mb-4">🔒</div>
-                    <p className="text-white/60 text-lg">
-                      Coming soon after group stage
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-6 opacity-50">
-                  {["LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "FINAL"].map(
-                    (stage) => {
-                      const stageName = getKnockoutStageName(stage);
-                      return (
-                        <div key={stage} className="glass-card p-5">
-                          <h3 className="font-bold text-lg mb-4 text-white">
-                            {stageName}
-                          </h3>
-                          <div className="grid md:grid-cols-2 gap-4 h-20">
-                            {/* Placeholder boxes */}
-                            <div className="bg-white/5 rounded-lg h-12"></div>
-                            <div className="bg-white/5 rounded-lg h-12"></div>
-                          </div>
-                        </div>
-                      );
-                    },
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
+          <KnockoutPreviewSection
+            knockoutStages={knockoutStages}
+            groupStandings={groupStandings}
+            thirdPlaceQualifying={thirdPlaceQualifying}
+          />
         )}
       </main>
 

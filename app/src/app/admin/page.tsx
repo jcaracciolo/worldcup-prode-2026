@@ -27,7 +27,9 @@ export default function AdminPage() {
   const { user: profile, loading: userLoading } = useUser();
 
   const [inviteCodes, setInviteCodes] = useState<
-    (InviteCode & { used_by_profile?: { id: string; display_name: string } | null })[]
+    (InviteCode & {
+      used_by_profile?: { id: string; display_name: string } | null;
+    })[]
   >([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -75,7 +77,7 @@ export default function AdminPage() {
       const usedByIds = typedCodes
         .filter((c) => c.used_by)
         .map((c) => c.used_by) as string[];
-      
+
       if (usedByIds.length > 0) {
         const { data: usedByProfiles } = await supabase
           .from("profiles")
@@ -83,16 +85,23 @@ export default function AdminPage() {
           .in("id", usedByIds);
 
         const profileMap = new Map(
-          (usedByProfiles || []).map((p) => [p.id, p as { id: string; display_name: string }])
+          (usedByProfiles || []).map((p) => [
+            p.id,
+            p as { id: string; display_name: string },
+          ]),
         );
         setInviteCodes(
           typedCodes.map((c) => ({
             ...c,
-            used_by_profile: c.used_by ? profileMap.get(c.used_by) || null : null,
+            used_by_profile: c.used_by
+              ? profileMap.get(c.used_by) || null
+              : null,
           })),
         );
       } else {
-        setInviteCodes(typedCodes.map((c) => ({ ...c, used_by_profile: null })));
+        setInviteCodes(
+          typedCodes.map((c) => ({ ...c, used_by_profile: null })),
+        );
       }
 
       setLoading(false);

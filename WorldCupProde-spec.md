@@ -57,6 +57,7 @@ Users get a second chance to predict all knockout matches once group stage is co
 |------------|--------|
 | Correct team wins | 1 × multiplier |
 | Correct team loses | 1 × multiplier |
+| Correct team ties (before penalties) | 1 × multiplier |
 | Exact goals for Team A | 1 |
 | Exact goals for Team B | 1 |
 

@@ -139,6 +139,15 @@ export function calculateKnockoutPoints(
 
   const multiplier = ROUND_MULTIPLIERS[match.stage] || 1;
 
+  // Get human-readable stage name
+  const stageName = match.stage
+    .replace("LAST_32", "R32")
+    .replace("LAST_16", "R16")
+    .replace("QUARTER_FINALS", "Quarter-Final")
+    .replace("SEMI_FINALS", "Semi-Final")
+    .replace("THIRD_PLACE", "3rd Place")
+    .replace("FINAL", "Final");
+
   const predictedResult = getPredictionResult(
     prediction.home_goals,
     prediction.away_goals,
@@ -162,7 +171,7 @@ export function calculateKnockoutPoints(
       // Both teams tie = 1 point each × multiplier
       points.push({
         matchId: match.id,
-        description: `Predicted tie (${multiplier}×)`,
+        description: `${stageName} tie${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
         points: 1 * multiplier,
         type: "knockout_tie",
         team: {
@@ -174,7 +183,7 @@ export function calculateKnockoutPoints(
       });
       points.push({
         matchId: match.id,
-        description: `Predicted tie (${multiplier}×)`,
+        description: `${stageName} tie${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
         points: 1 * multiplier,
         type: "knockout_tie",
         team: {
@@ -193,7 +202,7 @@ export function calculateKnockoutPoints(
 
       points.push({
         matchId: match.id,
-        description: `Predicted winner (${multiplier}×)`,
+        description: `${stageName} winner${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
         points: 1 * multiplier,
         type: "knockout_win",
         team: { tla: winner.tla, crest: winner.crest, name: winner.name },
@@ -201,7 +210,7 @@ export function calculateKnockoutPoints(
       });
       points.push({
         matchId: match.id,
-        description: `Predicted loser (${multiplier}×)`,
+        description: `${stageName} loser${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
         points: 1 * multiplier,
         type: "knockout_lose",
         team: { tla: loser.tla, crest: loser.crest, name: loser.name },

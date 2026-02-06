@@ -78,10 +78,17 @@ export default function PointsBreakdown({
 
   const renderItem = (item: PointBreakdown, index: number) => {
     // For goals, show match with highlighted score
-    const isGoalsType = item.type === "goals_home" || item.type === "goals_away";
-    const isTeamOnlyType = item.type === "group_advance" || item.type === "group_position" || 
-                           item.type === "knockout_win" || item.type === "knockout_lose" || item.type === "knockout_tie";
-    
+    const isGoalsType =
+      item.type === "goals_home" || item.type === "goals_away";
+    // Knockout types should show match info instead of just team (since teams may be TBD)
+    const isKnockoutType =
+      item.type === "knockout_win" ||
+      item.type === "knockout_lose" ||
+      item.type === "knockout_tie";
+    // Group bonus types show just the team (they have proper team data)
+    const isGroupBonusType =
+      item.type === "group_advance" || item.type === "group_position";
+
     return (
       <div
         key={index}
@@ -89,9 +96,12 @@ export default function PointsBreakdown({
       >
         {/* Team or Match display */}
         <div className="flex items-center gap-2 shrink-0">
-          {(item.team && !isGoalsType) || isTeamOnlyType ? (
+          {isGroupBonusType && item.team ? (
             (() => {
-              const teamTla = item.team?.tla || item.team?.name?.substring(0, 3).toUpperCase() || "";
+              const teamTla =
+                item.team?.tla ||
+                item.team?.name?.substring(0, 3).toUpperCase() ||
+                "";
               return (
                 <>
                   {item.team?.crest ? (
@@ -101,60 +111,128 @@ export default function PointsBreakdown({
                       className="w-6 h-6 object-contain"
                     />
                   ) : (
-                    <span className="w-6 h-6 flex items-center justify-center text-base">🏳️</span>
+                    <span className="w-6 h-6 flex items-center justify-center text-base">
+                      🏳️
+                    </span>
                   )}
-                  <span className="font-bold text-white w-10">{teamTla || "⏳"}</span>
+                  <span className="font-bold text-white w-10">
+                    {teamTla || "⏳"}
+                  </span>
                 </>
               );
             })()
           ) : item.matchInfo ? (
             (() => {
-              const homeWon = item.matchInfo.homeGoals > item.matchInfo.awayGoals;
-              const awayWon = item.matchInfo.awayGoals > item.matchInfo.homeGoals;
-              const homeTeam = item.matchInfo.homeTeam as { tla?: string; crest: string; shortName?: string };
-              const awayTeam = item.matchInfo.awayTeam as { tla?: string; crest: string; shortName?: string };
-              const homeTla = homeTeam.tla || homeTeam.shortName?.substring(0, 3).toUpperCase() || "";
-              const awayTla = awayTeam.tla || awayTeam.shortName?.substring(0, 3).toUpperCase() || "";
+              const homeWon =
+                item.matchInfo.homeGoals > item.matchInfo.awayGoals;
+              const awayWon =
+                item.matchInfo.awayGoals > item.matchInfo.homeGoals;
+              const homeTeam = item.matchInfo.homeTeam as {
+                tla?: string;
+                crest: string;
+                shortName?: string;
+              };
+              const awayTeam = item.matchInfo.awayTeam as {
+                tla?: string;
+                crest: string;
+                shortName?: string;
+              };
+              const homeTla =
+                homeTeam.tla ||
+                homeTeam.shortName?.substring(0, 3).toUpperCase() ||
+                "";
+              const awayTla =
+                awayTeam.tla ||
+                awayTeam.shortName?.substring(0, 3).toUpperCase() ||
+                "";
               const homeHasTeam = homeTla !== "";
               const awayHasTeam = awayTla !== "";
               const highlightHome = item.type === "goals_home";
               const highlightAway = item.type === "goals_away";
+              
+              // For knockout types, highlight winner/loser based on score
+              const isKnockoutEntry = isKnockoutType;
+              const knockoutHomeWon = homeWon && isKnockoutEntry;
+              const knockoutAwayWon = awayWon && isKnockoutEntry;
+              
               return (
                 <div className="flex items-center gap-1.5">
                   {homeTeam.crest ? (
                     <img
                       src={homeTeam.crest}
                       alt={homeTla || "TBD"}
-                      className={`w-5 h-5 object-contain ${awayWon && !isGoalsType ? "opacity-50" : ""}`}
+                      className={`w-5 h-5 object-contain ${(awayWon && !isGoalsType) || (knockoutAwayWon && item.type === "knockout_win") ? "opacity-50" : ""}`}
                     />
                   ) : (
-                    <span className="w-5 h-5 flex items-center justify-center text-sm">🏳️</span>
+                    <span className="w-5 h-5 flex items-center justify-center text-sm">
+                      🏳️
+                    </span>
                   )}
-                  <span className={`text-xs font-medium w-8 text-right ${
-                    !homeHasTeam ? "text-white/40" :
-                    isGoalsType ? "text-white/70" : homeWon ? "text-emerald-400 font-bold" : awayWon ? "text-white/40" : "text-white/70"
-                  }`}>
+                  <span
+                    className={`text-xs font-medium w-8 text-right ${
+                      !homeHasTeam
+                        ? "text-white/40"
+                        : isGoalsType
+                          ? "text-white/70"
+                          : knockoutHomeWon
+                            ? "text-emerald-400 font-bold"
+                            : knockoutAwayWon
+                              ? "text-white/40"
+                              : homeWon
+                                ? "text-emerald-400 font-bold"
+                                : awayWon
+                                  ? "text-white/40"
+                                  : "text-white/70"
+                    }`}
+                  >
                     {homeHasTeam ? homeTla : "⏳"}
                   </span>
                   <span className="font-bold px-1.5 py-0.5 bg-white/10 rounded text-sm min-w-[40px] text-center">
-                    <span className={highlightHome ? "text-yellow-400" : "text-white"}>{item.matchInfo.homeGoals}</span>
+                    <span
+                      className={
+                        highlightHome ? "text-yellow-400" : "text-white"
+                      }
+                    >
+                      {item.matchInfo.homeGoals}
+                    </span>
                     <span className="text-white">-</span>
-                    <span className={highlightAway ? "text-yellow-400" : "text-white"}>{item.matchInfo.awayGoals}</span>
+                    <span
+                      className={
+                        highlightAway ? "text-yellow-400" : "text-white"
+                      }
+                    >
+                      {item.matchInfo.awayGoals}
+                    </span>
                   </span>
-                  <span className={`text-xs font-medium w-8 ${
-                    !awayHasTeam ? "text-white/40" :
-                    isGoalsType ? "text-white/70" : awayWon ? "text-emerald-400 font-bold" : homeWon ? "text-white/40" : "text-white/70"
-                  }`}>
+                  <span
+                    className={`text-xs font-medium w-8 ${
+                      !awayHasTeam
+                        ? "text-white/40"
+                        : isGoalsType
+                          ? "text-white/70"
+                          : knockoutAwayWon
+                            ? "text-emerald-400 font-bold"
+                            : knockoutHomeWon
+                              ? "text-white/40"
+                              : awayWon
+                                ? "text-emerald-400 font-bold"
+                                : homeWon
+                                  ? "text-white/40"
+                                  : "text-white/70"
+                    }`}
+                  >
                     {awayHasTeam ? awayTla : "⏳"}
                   </span>
                   {awayTeam.crest ? (
                     <img
                       src={awayTeam.crest}
                       alt={awayTla || "TBD"}
-                      className={`w-5 h-5 object-contain ${homeWon && !isGoalsType ? "opacity-50" : ""}`}
+                      className={`w-5 h-5 object-contain ${(homeWon && !isGoalsType) || (knockoutHomeWon && item.type === "knockout_win") ? "opacity-50" : ""}`}
                     />
                   ) : (
-                    <span className="w-5 h-5 flex items-center justify-center text-sm">🏳️</span>
+                    <span className="w-5 h-5 flex items-center justify-center text-sm">
+                      🏳️
+                    </span>
                   )}
                 </div>
               );

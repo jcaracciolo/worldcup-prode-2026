@@ -20,10 +20,7 @@ function calculateGroupStandings(
   const standings = new Map<string, CalculatedStanding[]>();
 
   groups.forEach((matches, groupName) => {
-    const teamStats = new Map<
-      number,
-      CalculatedStanding & { team: Team }
-    >();
+    const teamStats = new Map<number, CalculatedStanding & { team: Team }>();
 
     // Initialize teams
     matches.forEach((match) => {
@@ -161,7 +158,8 @@ export async function POST(request: NextRequest) {
 
     // For knockout, calculate group standings to resolve R32 teams
     let groupStandings: Map<string, CalculatedStanding[]> | null = null;
-    const knockoutResults: Map<number, { winner: Team; loser: Team }> = new Map();
+    const knockoutResults: Map<number, { winner: Team; loser: Team }> =
+      new Map();
 
     if (stage === "knockout") {
       const groupMatches = matches.filter(
@@ -233,8 +231,14 @@ export async function POST(request: NextRequest) {
 
       // Track knockout results for later rounds
       if (stage === "knockout") {
-        const winner = homeGoals >= awayGoals ? updatedMatch.homeTeam : updatedMatch.awayTeam;
-        const loser = homeGoals >= awayGoals ? updatedMatch.awayTeam : updatedMatch.homeTeam;
+        const winner =
+          homeGoals >= awayGoals
+            ? updatedMatch.homeTeam
+            : updatedMatch.awayTeam;
+        const loser =
+          homeGoals >= awayGoals
+            ? updatedMatch.awayTeam
+            : updatedMatch.homeTeam;
         knockoutResults.set(match.id, { winner, loser });
       }
 

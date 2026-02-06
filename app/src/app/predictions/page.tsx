@@ -351,14 +351,16 @@ export default function PredictionsPage() {
             <button
               onClick={handleRandomPredictions}
               disabled={groupLocked && knockoutLocked}
-              className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-400 hover:to-pink-500 transition-all shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: 'var(--accent)' }}
             >
               🎲 Random
             </button>
             <button
               onClick={handleSave}
               disabled={saving || (groupLocked && knockoutLocked)}
-              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold rounded-xl hover:from-emerald-400 hover:to-green-500 transition-all shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: 'var(--qualifying-text)' }}
             >
               {saving ? "Saving..." : "Save Predictions"}
             </button>

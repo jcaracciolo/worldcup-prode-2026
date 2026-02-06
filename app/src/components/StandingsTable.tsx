@@ -61,11 +61,10 @@ export default function StandingsTable({
             return (
               <tr
                 key={standing.team.id}
-                className={`border-b border-white/5 ${
-                  advances ? "bg-green-500/20" : ""
-                }`}
+                className="border-b border-white/5"
+                style={advances ? { backgroundColor: 'var(--qualifying-bg)' } : undefined}
               >
-                <td className={`px-2 py-2 font-medium ${advances ? "text-green-400" : "text-white/60"}`}>{index + 1}</td>
+                <td className="px-2 py-2 font-medium" style={advances ? { color: 'var(--qualifying-text)' } : { color: 'rgba(255,255,255,0.6)' }}>{index + 1}</td>
                 <td className="px-2 py-2">
                   <div className="flex items-center gap-1.5">
                     {standing.team.crest ? (
@@ -79,18 +78,18 @@ export default function StandingsTable({
                         {standing.team.tla?.substring(0, 2)}
                       </div>
                     )}
-                    <span className={`truncate ${advances ? "text-green-400 font-medium" : "text-white/80"}`}>{standing.team.tla}</span>
+                    <span className={`truncate ${advances ? "font-medium" : "text-white/80"}`} style={advances ? { color: 'var(--qualifying-text)' } : undefined}>{standing.team.tla}</span>
                   </div>
                 </td>
-                <td className={`px-2 py-2 text-center ${advances ? "text-green-400/70" : "text-white/60"}`}>{standing.played}</td>
-                <td className={`px-2 py-2 text-center ${advances ? "text-green-400/70" : "text-white/60"}`}>{standing.won}</td>
-                <td className={`px-2 py-2 text-center ${advances ? "text-green-400/70" : "text-white/60"}`}>{standing.drawn}</td>
-                <td className={`px-2 py-2 text-center ${advances ? "text-green-400/70" : "text-white/60"}`}>{standing.lost}</td>
-                <td className={`px-2 py-2 text-center ${advances ? "text-green-400/70" : "text-white/60"}`}>
+                <td className="px-2 py-2 text-center" style={advances ? { color: 'var(--qualifying-text)', opacity: 0.7 } : { color: 'rgba(255,255,255,0.6)' }}>{standing.played}</td>
+                <td className="px-2 py-2 text-center" style={advances ? { color: 'var(--qualifying-text)', opacity: 0.7 } : { color: 'rgba(255,255,255,0.6)' }}>{standing.won}</td>
+                <td className="px-2 py-2 text-center" style={advances ? { color: 'var(--qualifying-text)', opacity: 0.7 } : { color: 'rgba(255,255,255,0.6)' }}>{standing.drawn}</td>
+                <td className="px-2 py-2 text-center" style={advances ? { color: 'var(--qualifying-text)', opacity: 0.7 } : { color: 'rgba(255,255,255,0.6)' }}>{standing.lost}</td>
+                <td className="px-2 py-2 text-center" style={advances ? { color: 'var(--qualifying-text)', opacity: 0.7 } : { color: 'rgba(255,255,255,0.6)' }}>
                   {standing.goalDifference > 0 ? "+" : ""}
                   {standing.goalDifference}
                 </td>
-                <td className={`px-2 py-2 text-center font-bold ${advances ? "text-green-400" : "text-white"}`}>
+                <td className="px-2 py-2 text-center font-bold" style={advances ? { color: 'var(--qualifying-text)' } : { color: 'white' }}>
                   {standing.points}
                 </td>
                 {onSwapPositions && !disabled && (
@@ -100,11 +99,12 @@ export default function StandingsTable({
                         type="button"
                         onClick={() => handleSwapUp(index)}
                         disabled={!canSwapUp(index)}
-                        className={`w-8 h-3 rounded flex items-center justify-center transition-all ${
-                          canSwapUp(index)
-                            ? "bg-green-400 hover:bg-green-300 cursor-pointer"
-                            : "bg-slate-600 opacity-20 cursor-default"
-                        }`}
+                        className="w-8 h-3 rounded flex items-center justify-center transition-all"
+                        style={{
+                          backgroundColor: canSwapUp(index) ? 'var(--qualifying-text)' : 'rgb(71, 85, 105)',
+                          opacity: canSwapUp(index) ? 1 : 0.2,
+                          cursor: canSwapUp(index) ? 'pointer' : 'default',
+                        }}
                         title="Swap with team above"
                       >
                         <span className="text-[8px] leading-none text-slate-900">▲</span>
@@ -113,11 +113,12 @@ export default function StandingsTable({
                         type="button"
                         onClick={() => handleSwapDown(index)}
                         disabled={!canSwapDown(index)}
-                        className={`w-8 h-3 rounded flex items-center justify-center transition-all ${
-                          canSwapDown(index)
-                            ? "bg-green-400 hover:bg-green-300 cursor-pointer"
-                            : "bg-slate-600 opacity-20 cursor-default"
-                        }`}
+                        className="w-8 h-3 rounded flex items-center justify-center transition-all"
+                        style={{
+                          backgroundColor: canSwapDown(index) ? 'var(--qualifying-text)' : 'rgb(71, 85, 105)',
+                          opacity: canSwapDown(index) ? 1 : 0.2,
+                          cursor: canSwapDown(index) ? 'pointer' : 'default',
+                        }}
                         title="Swap with team below"
                       >
                         <span className="text-[8px] leading-none text-slate-900">▼</span>

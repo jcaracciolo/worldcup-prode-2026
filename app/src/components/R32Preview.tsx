@@ -66,11 +66,11 @@ export default function R32Preview({ matches, groupStandings }: R32PreviewProps)
             >
               {/* Date and venue */}
               <div className="flex justify-between items-center text-xs mb-2">
-                <span className="text-amber-400/80">
+                <span style={{ color: 'var(--date-color)', opacity: 0.8 }}>
                   {matchDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </span>
                 {venue && (
-                  <span className="text-cyan-400/60">{venue.city}</span>
+                  <span style={{ color: 'var(--venue-color)', opacity: 0.6 }}>{venue.city}</span>
                 )}
               </div>
 

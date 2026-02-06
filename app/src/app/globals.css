@@ -3,7 +3,7 @@
 :root {
   --bg-primary: #04201c;
   --bg-secondary: #09c3a7;
-  --bg-card: #115c52;
+  --bg-card: #0f433c;
   --bg-card-hover: #147a6d;
   --accent: #7b2d2d;
   --accent-light: #4ade80;
@@ -11,9 +11,9 @@
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
   --border: rgba(255, 255, 255, 0.1);
-  --card-bg: #115c52;
+  --card-bg: #0f433c;
   --qualifying-bg: #166534;
-  --qualifying-text: #4ade80;
+  --qualifying-text: #edf2ef;
   --date-color: #deb03b;
   --venue-color: #6fd2e2;
 }
@@ -52,11 +52,20 @@ body {
 
 /* Glass card effect */
 .glass-card {
-  background: rgba(17, 92, 82, 0.6);
+  background: var(--card-bg);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
   border-radius: 16px;
 }
+
+/* Theme-aware utility classes */
+.text-date { color: var(--date-color); }
+.text-venue { color: var(--venue-color); }
+.text-qualifying { color: var(--qualifying-text); }
+.bg-qualifying { background-color: var(--qualifying-bg); }
+.bg-accent { background-color: var(--accent); }
+.text-accent { color: var(--accent); }
+.border-theme { border-color: var(--border); }
 
 .glass-card-light {
   background: rgba(255, 255, 255, 0.95);

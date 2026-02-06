@@ -23,12 +23,14 @@ Fantasy predictions app for FIFA World Cup 2026.
 ### Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone <repo-url>
    cd WorldCupProde/app
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
@@ -40,9 +42,11 @@ Fantasy predictions app for FIFA World Cup 2026.
    - Copy your project URL and keys
 
 4. **Configure environment variables**
+
    ```bash
    cp .env.local.example .env.local
    ```
+
    Edit `.env.local` with your credentials:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -76,6 +80,7 @@ Fantasy predictions app for FIFA World Cup 2026.
 ### Azure App Service Configuration
 
 Add these environment variables in Azure Portal → Configuration:
+
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`

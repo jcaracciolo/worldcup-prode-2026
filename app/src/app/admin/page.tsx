@@ -1,163 +1,174 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import Header from '@/components/Header'
-import { createClient } from '@/lib/supabase/client'
-import { Profile, InviteCode, TournamentSettings } from '@/types/database'
-import { format } from 'date-fns'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Header from "@/components/Header";
+import { createClient } from "@/lib/supabase/client";
+import { Profile, InviteCode, TournamentSettings } from "@/types/database";
+import { format } from "date-fns";
 
 function generateCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  let code = ''
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
   for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length))
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  return code
+  return code;
 }
 
 export default function AdminPage() {
-  const router = useRouter()
-  const supabase = createClient()
+  const router = useRouter();
+  const supabase = createClient();
 
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [settings, setSettings] = useState<TournamentSettings | null>(null)
-  const [inviteCodes, setInviteCodes] = useState<(InviteCode & { used_by_profile?: Profile | null })[]>([])
-  const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState(false)
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [settings, setSettings] = useState<TournamentSettings | null>(null);
+  const [inviteCodes, setInviteCodes] = useState<
+    (InviteCode & { used_by_profile?: Profile | null })[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
-        router.push('/login')
-        return
+        router.push("/login");
+        return;
       }
 
       const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
 
       if (profileError || !profileData) {
-        router.push('/')
-        return
+        router.push("/");
+        return;
       }
 
-      const typedProfile = profileData as unknown as Profile
+      const typedProfile = profileData as unknown as Profile;
       if (!typedProfile.is_admin) {
-        router.push('/')
-        return
+        router.push("/");
+        return;
       }
 
-      setProfile(typedProfile)
+      setProfile(typedProfile);
 
       // Load settings
       const { data: settingsData } = await supabase
-        .from('tournament_settings')
-        .select('*')
-        .single()
-      setSettings(settingsData as unknown as TournamentSettings | null)
+        .from("tournament_settings")
+        .select("*")
+        .single();
+      setSettings(settingsData as unknown as TournamentSettings | null);
 
       // Load invite codes
       const { data: codesData } = await supabase
-        .from('invite_codes')
-        .select('*')
-        .order('created_at', { ascending: false })
+        .from("invite_codes")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-      const typedCodes = (codesData || []) as unknown as InviteCode[]
-      
+      const typedCodes = (codesData || []) as unknown as InviteCode[];
+
       // Get used_by profiles
-      const usedByIds = typedCodes.filter(c => c.used_by).map(c => c.used_by) as string[]
+      const usedByIds = typedCodes
+        .filter((c) => c.used_by)
+        .map((c) => c.used_by) as string[];
       const { data: usedByProfiles } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('id', usedByIds)
+        .from("profiles")
+        .select("*")
+        .in("id", usedByIds);
 
-      const typedUsedByProfiles = (usedByProfiles || []) as unknown as Profile[]
-      const profileMap = new Map(typedUsedByProfiles.map(p => [p.id, p]))
+      const typedUsedByProfiles = (usedByProfiles ||
+        []) as unknown as Profile[];
+      const profileMap = new Map(typedUsedByProfiles.map((p) => [p.id, p]));
       setInviteCodes(
-        typedCodes.map(c => ({
+        typedCodes.map((c) => ({
           ...c,
-          used_by_profile: c.used_by ? profileMap.get(c.used_by) : null
-        }))
-      )
+          used_by_profile: c.used_by ? profileMap.get(c.used_by) : null,
+        })),
+      );
 
-      setLoading(false)
-    }
+      setLoading(false);
+    };
 
-    loadData()
-  }, [supabase, router])
+    loadData();
+  }, [supabase, router]);
 
   const handleGenerateCode = async () => {
-    if (!profile) return
-    setGenerating(true)
+    if (!profile) return;
+    setGenerating(true);
 
-    const code = generateCode()
+    const code = generateCode();
     const { data, error } = await supabase
-      .from('invite_codes')
+      .from("invite_codes")
       .insert({
         code,
         created_by: profile.id,
       })
       .select()
-      .single()
+      .single();
 
     if (!error && data) {
-      setInviteCodes([{ ...data, used_by_profile: null }, ...inviteCodes])
+      setInviteCodes([{ ...data, used_by_profile: null }, ...inviteCodes]);
     }
 
-    setGenerating(false)
-  }
+    setGenerating(false);
+  };
 
   const handleUpdateSettings = async (updates: Partial<TournamentSettings>) => {
     const { error } = await supabase
-      .from('tournament_settings')
+      .from("tournament_settings")
       .update(updates)
-      .eq('id', 1)
+      .eq("id", 1);
 
     if (!error) {
-      setSettings(prev => prev ? { ...prev, ...updates } : null)
+      setSettings((prev) => (prev ? { ...prev, ...updates } : null));
     }
-  }
+  };
 
-  const handleGenerateRandomResults = async (stage: 'group' | 'knockout') => {
-    const confirmed = confirm(`Generate random ${stage} stage results? This is for testing only.`)
-    if (!confirmed) return
+  const handleGenerateRandomResults = async (stage: "group" | "knockout") => {
+    const confirmed = confirm(
+      `Generate random ${stage} stage results? This is for testing only.`,
+    );
+    if (!confirmed) return;
 
-    const res = await fetch('/api/admin/generate-results', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/admin/generate-results", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ stage }),
-    })
+    });
 
     if (res.ok) {
-      alert('Random results generated!')
+      alert("Random results generated!");
     } else {
-      alert('Failed to generate results')
+      alert("Failed to generate results");
     }
-  }
+  };
 
   const handleResetTournament = async () => {
-    const confirmed = confirm('Reset tournament state? This will unlock all predictions.')
-    if (!confirmed) return
+    const confirmed = confirm(
+      "Reset tournament state? This will unlock all predictions.",
+    );
+    if (!confirmed) return;
 
     await handleUpdateSettings({
       group_stage_locked: false,
       knockout_stage_open: false,
       knockout_stage_locked: false,
-    })
+    });
 
-    alert('Tournament state reset!')
-  }
+    alert("Tournament state reset!");
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-xl">Loading...</div>
       </div>
-    )
+    );
   }
 
   return (
@@ -176,7 +187,7 @@ export default function AdminPage() {
               disabled={generating}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
             >
-              {generating ? 'Generating...' : 'Generate New Code'}
+              {generating ? "Generating..." : "Generate New Code"}
             </button>
           </div>
 
@@ -191,14 +202,18 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {inviteCodes.map(code => (
+                {inviteCodes.map((code) => (
                   <tr key={code.id} className="border-b hover:bg-gray-50">
-                    <td className="py-2 px-4 font-mono font-bold">{code.code}</td>
-                    <td className="py-2 px-4">
-                      {format(new Date(code.created_at), 'MMM d, yyyy')}
+                    <td className="py-2 px-4 font-mono font-bold">
+                      {code.code}
                     </td>
                     <td className="py-2 px-4">
-                      {code.used_by_profile?.display_name || code.used_by_profile?.email || '-'}
+                      {format(new Date(code.created_at), "MMM d, yyyy")}
+                    </td>
+                    <td className="py-2 px-4">
+                      {code.used_by_profile?.display_name ||
+                        code.used_by_profile?.email ||
+                        "-"}
                     </td>
                     <td className="py-2 px-4">
                       {code.used_by ? (
@@ -227,18 +242,24 @@ export default function AdminPage() {
               <div>
                 <h3 className="font-medium">Group Stage</h3>
                 <p className="text-sm text-gray-500">
-                  {settings?.group_stage_locked ? 'Locked - predictions visible' : 'Open - accepting predictions'}
+                  {settings?.group_stage_locked
+                    ? "Locked - predictions visible"
+                    : "Open - accepting predictions"}
                 </p>
               </div>
               <button
-                onClick={() => handleUpdateSettings({ group_stage_locked: !settings?.group_stage_locked })}
+                onClick={() =>
+                  handleUpdateSettings({
+                    group_stage_locked: !settings?.group_stage_locked,
+                  })
+                }
                 className={`px-4 py-2 rounded-lg transition ${
                   settings?.group_stage_locked
-                    ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                    : 'bg-red-100 text-red-700 hover:bg-red-200'
+                    ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
+                    : "bg-red-100 text-red-700 hover:bg-red-200"
                 }`}
               >
-                {settings?.group_stage_locked ? 'Unlock' : 'Lock Group Stage'}
+                {settings?.group_stage_locked ? "Unlock" : "Lock Group Stage"}
               </button>
             </div>
 
@@ -247,32 +268,39 @@ export default function AdminPage() {
                 <h3 className="font-medium">Knockout Stage</h3>
                 <p className="text-sm text-gray-500">
                   {settings?.knockout_stage_locked
-                    ? 'Locked - predictions visible'
+                    ? "Locked - predictions visible"
                     : settings?.knockout_stage_open
-                    ? 'Open - accepting predictions'
-                    : 'Closed - not yet open'}
+                      ? "Open - accepting predictions"
+                      : "Closed - not yet open"}
                 </p>
               </div>
               <div className="flex gap-2">
                 {!settings?.knockout_stage_open && (
                   <button
-                    onClick={() => handleUpdateSettings({ knockout_stage_open: true })}
+                    onClick={() =>
+                      handleUpdateSettings({ knockout_stage_open: true })
+                    }
                     className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
                   >
                     Open Knockout
                   </button>
                 )}
-                {settings?.knockout_stage_open && !settings?.knockout_stage_locked && (
-                  <button
-                    onClick={() => handleUpdateSettings({ knockout_stage_locked: true })}
-                    className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
-                  >
-                    Lock Knockout Stage
-                  </button>
-                )}
+                {settings?.knockout_stage_open &&
+                  !settings?.knockout_stage_locked && (
+                    <button
+                      onClick={() =>
+                        handleUpdateSettings({ knockout_stage_locked: true })
+                      }
+                      className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
+                    >
+                      Lock Knockout Stage
+                    </button>
+                  )}
                 {settings?.knockout_stage_locked && (
                   <button
-                    onClick={() => handleUpdateSettings({ knockout_stage_locked: false })}
+                    onClick={() =>
+                      handleUpdateSettings({ knockout_stage_locked: false })
+                    }
                     className="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200"
                   >
                     Unlock
@@ -292,13 +320,13 @@ export default function AdminPage() {
 
           <div className="flex flex-wrap gap-4">
             <button
-              onClick={() => handleGenerateRandomResults('group')}
+              onClick={() => handleGenerateRandomResults("group")}
               className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200"
             >
               Generate Random Group Results
             </button>
             <button
-              onClick={() => handleGenerateRandomResults('knockout')}
+              onClick={() => handleGenerateRandomResults("knockout")}
               className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200"
             >
               Generate Random Knockout Results
@@ -319,5 +347,5 @@ export default function AdminPage() {
         </div>
       </footer>
     </div>
-  )
+  );
 }

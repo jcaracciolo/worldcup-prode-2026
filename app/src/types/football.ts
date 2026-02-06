@@ -1,123 +1,140 @@
 // Football-Data.org API Types
 
 export interface Team {
-  id: number
-  name: string
-  shortName: string
-  tla: string
-  crest: string
+  id: number;
+  name: string;
+  shortName: string;
+  tla: string;
+  crest: string;
 }
 
 export interface Score {
-  home: number | null
-  away: number | null
+  home: number | null;
+  away: number | null;
 }
 
 export interface FullTimeScore {
-  home: number | null
-  away: number | null
+  home: number | null;
+  away: number | null;
 }
 
 export interface Match {
-  id: number
-  utcDate: string
-  status: 'SCHEDULED' | 'TIMED' | 'IN_PLAY' | 'PAUSED' | 'FINISHED' | 'SUSPENDED' | 'POSTPONED' | 'CANCELLED' | 'AWARDED'
-  matchday: number
-  stage: string
-  group: string | null
-  homeTeam: Team
-  awayTeam: Team
+  id: number;
+  utcDate: string;
+  status:
+    | "SCHEDULED"
+    | "TIMED"
+    | "IN_PLAY"
+    | "PAUSED"
+    | "FINISHED"
+    | "SUSPENDED"
+    | "POSTPONED"
+    | "CANCELLED"
+    | "AWARDED";
+  matchday: number;
+  stage: string;
+  group: string | null;
+  homeTeam: Team;
+  awayTeam: Team;
   score: {
-    winner: 'HOME_TEAM' | 'AWAY_TEAM' | 'DRAW' | null
-    duration: string
-    fullTime: FullTimeScore
-    halfTime: Score
-  }
-  venue: string | null
-  referees: Array<{ id: number; name: string; nationality: string }>
+    winner: "HOME_TEAM" | "AWAY_TEAM" | "DRAW" | null;
+    duration: string;
+    fullTime: FullTimeScore;
+    halfTime: Score;
+  };
+  venue: string | null;
+  referees: Array<{ id: number; name: string; nationality: string }>;
 }
 
 export interface Competition {
-  id: number
-  name: string
-  code: string
-  type: string
-  emblem: string
+  id: number;
+  name: string;
+  code: string;
+  type: string;
+  emblem: string;
 }
 
 export interface MatchesResponse {
-  count: number
-  filters: Record<string, unknown>
-  competition: Competition
-  matches: Match[]
+  count: number;
+  filters: Record<string, unknown>;
+  competition: Competition;
+  matches: Match[];
 }
 
 export interface StandingsTeam {
-  team: Team
-  position: number
-  playedGames: number
-  won: number
-  draw: number
-  lost: number
-  points: number
-  goalsFor: number
-  goalsAgainst: number
-  goalDifference: number
+  team: Team;
+  position: number;
+  playedGames: number;
+  won: number;
+  draw: number;
+  lost: number;
+  points: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
 }
 
 export interface GroupStanding {
-  stage: string
-  type: string
-  group: string
-  table: StandingsTeam[]
+  stage: string;
+  type: string;
+  group: string;
+  table: StandingsTeam[];
 }
 
 export interface StandingsResponse {
-  competition: Competition
-  season: { id: number; startDate: string; endDate: string }
-  standings: GroupStanding[]
+  competition: Competition;
+  season: { id: number; startDate: string; endDate: string };
+  standings: GroupStanding[];
 }
 
 export interface TeamsResponse {
-  count: number
-  competition: Competition
-  teams: Team[]
+  count: number;
+  competition: Competition;
+  teams: Team[];
 }
 
 // App-specific types
 
 export interface UserPrediction {
-  matchId: number
-  homeGoals: number | null
-  awayGoals: number | null
-  winnerId: number | null
+  matchId: number;
+  homeGoals: number | null;
+  awayGoals: number | null;
+  winnerId: number | null;
 }
 
 export interface CalculatedStanding {
-  team: Team
-  position: number
-  points: number
-  goalsFor: number
-  goalsAgainst: number
-  goalDifference: number
-  played: number
-  won: number
-  drawn: number
-  lost: number
+  team: Team;
+  position: number;
+  points: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
 }
 
 export interface PointBreakdown {
-  matchId: number
-  description: string
-  points: number
-  type: 'result' | 'goals_home' | 'goals_away' | 'group_advance' | 'group_position' | 'knockout_win' | 'knockout_lose' | 'knockout_tie'
+  matchId: number;
+  description: string;
+  points: number;
+  type:
+    | "result"
+    | "goals_home"
+    | "goals_away"
+    | "group_advance"
+    | "group_position"
+    | "knockout_win"
+    | "knockout_lose"
+    | "knockout_tie";
 }
 
 export interface UserScore {
-  userId: string
-  displayName: string
-  totalPoints: number
-  groupStagePoints: number
-  groupBonusPoints: number
-  knockoutPoints: number
+  userId: string;
+  displayName: string;
+  totalPoints: number;
+  groupStagePoints: number;
+  groupBonusPoints: number;
+  knockoutPoints: number;
 }

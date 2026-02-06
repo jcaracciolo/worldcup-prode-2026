@@ -1,53 +1,56 @@
-'use client'
+"use client";
 
-import { PointBreakdown } from '@/types/football'
+import { PointBreakdown } from "@/types/football";
 
 interface PointsBreakdownProps {
-  breakdown: PointBreakdown[]
-  totalPoints: number
+  breakdown: PointBreakdown[];
+  totalPoints: number;
 }
 
-export default function PointsBreakdown({ breakdown, totalPoints }: PointsBreakdownProps) {
-  const getTypeIcon = (type: PointBreakdown['type']) => {
+export default function PointsBreakdown({
+  breakdown,
+  totalPoints,
+}: PointsBreakdownProps) {
+  const getTypeIcon = (type: PointBreakdown["type"]) => {
     switch (type) {
-      case 'result':
-        return '✓'
-      case 'goals_home':
-      case 'goals_away':
-        return '⚽'
-      case 'group_advance':
-        return '📈'
-      case 'group_position':
-        return '🎯'
-      case 'knockout_win':
-        return '🏆'
-      case 'knockout_lose':
-      case 'knockout_tie':
-        return '📊'
+      case "result":
+        return "✓";
+      case "goals_home":
+      case "goals_away":
+        return "⚽";
+      case "group_advance":
+        return "📈";
+      case "group_position":
+        return "🎯";
+      case "knockout_win":
+        return "🏆";
+      case "knockout_lose":
+      case "knockout_tie":
+        return "📊";
       default:
-        return '+'
+        return "+";
     }
-  }
+  };
 
-  const getTypeColor = (type: PointBreakdown['type']) => {
+  const getTypeColor = (type: PointBreakdown["type"]) => {
     switch (type) {
-      case 'result':
-        return 'text-green-600'
-      case 'goals_home':
-      case 'goals_away':
-        return 'text-blue-600'
-      case 'group_advance':
-      case 'group_position':
-        return 'text-purple-600'
-      case 'knockout_win':
-        return 'text-yellow-600'
-      case 'knockout_lose':
-      case 'knockout_tie':
-        return 'text-orange-600'
+      case "result":
+        return "text-green-600";
+      case "goals_home":
+      case "goals_away":
+        return "text-blue-600";
+      case "group_advance":
+      case "group_position":
+        return "text-purple-600";
+      case "knockout_win":
+        return "text-yellow-600";
+      case "knockout_lose":
+      case "knockout_tie":
+        return "text-orange-600";
       default:
-        return 'text-gray-600'
+        return "text-gray-600";
     }
-  }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -83,5 +86,5 @@ export default function PointsBreakdown({ breakdown, totalPoints }: PointsBreakd
         )}
       </div>
     </div>
-  )
+  );
 }

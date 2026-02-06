@@ -8,7 +8,7 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: worldcupprode # Change this to your Azure Web App name
-  NODE_VERSION: '20.x'
+  NODE_VERSION: "20.x"
 
 jobs:
   build-and-deploy:
@@ -22,7 +22,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: app/package-lock.json
 
       - name: Install dependencies

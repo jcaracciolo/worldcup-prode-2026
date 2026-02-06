@@ -305,7 +305,16 @@ export default function PredictionsPage() {
   const handleRandomPredictions = () => {
     const newPredictions = new Map(predictions);
 
+    const groupLocked = settings?.group_stage_locked || false;
+    const knockoutOpen = settings?.knockout_stage_open || false;
+    const knockoutLocked = settings?.knockout_stage_locked || false;
+
     matches.forEach((match) => {
+      // Skip locked sections
+      const isGroupStage = match.stage === "GROUP_STAGE";
+      if (isGroupStage && groupLocked) return;
+      if (!isGroupStage && (!knockoutOpen || knockoutLocked)) return;
+
       // Generate random scores (0-5 each)
       const homeGoals = Math.floor(Math.random() * 6);
       const awayGoals = Math.floor(Math.random() * 6);
@@ -328,11 +337,31 @@ export default function PredictionsPage() {
   };
 
   const handleResetPredictions = () => {
-    if (!confirm("Are you sure you want to reset all predictions? This will clear all your scores.")) {
+    if (!confirm("Are you sure you want to reset predictions? This will clear scores for unlocked sections.")) {
       return;
     }
-    setPredictions(new Map());
-    setOverrides([]);
+
+    const groupLocked = settings?.group_stage_locked || false;
+    const knockoutOpen = settings?.knockout_stage_open || false;
+    const knockoutLocked = settings?.knockout_stage_locked || false;
+
+    // Filter out predictions for unlocked sections only
+    const newPredictions = new Map(predictions);
+    matches.forEach((match) => {
+      const isGroupStage = match.stage === "GROUP_STAGE";
+      if (isGroupStage && !groupLocked) {
+        newPredictions.delete(match.id);
+      }
+      if (!isGroupStage && knockoutOpen && !knockoutLocked) {
+        newPredictions.delete(match.id);
+      }
+    });
+    setPredictions(newPredictions);
+
+    // Clear overrides only if group stage isn't locked
+    if (!groupLocked) {
+      setOverrides([]);
+    }
   };
 
   if (loading) {

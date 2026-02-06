@@ -342,10 +342,12 @@ export default function PointsBreakdown({
             <span className="text-white/50">Group bonus</span>
             <span className="text-white">{groupBonusPts}</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-white/50">Knockout</span>
-            <span className="text-white">{knockoutPts}</span>
-          </div>
+          {knockoutPoints.length > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-white/50">Knockout</span>
+              <span className="text-white">{knockoutPts}</span>
+            </div>
+          )}
         </div>
       )}
     </div>

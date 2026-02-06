@@ -94,7 +94,8 @@ export default function Leaderboard({
                   </div>
                   <div className="text-xs text-white/40 mt-0.5">
                     Group: {score.groupStagePoints} • Bonus:{" "}
-                    {score.groupBonusPoints} • Knockout: {score.knockoutPoints}
+                    {score.groupBonusPoints}
+                    {score.knockoutPoints > 0 && ` • Knockout: ${score.knockoutPoints}`}
                   </div>
                 </div>
                 <div className="text-right">

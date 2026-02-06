@@ -61,11 +61,44 @@ WorldCupProde is a fantasy betting application for the FIFA World Cup. The appli
 
 ---
 
+## API Configuration
+
+### Confirmed Working ✅
+
+**Provider:** Football-Data.org  
+**Base URL:** `https://api.football-data.org/v4/`  
+**Authentication:** API key in `X-Auth-Token` header  
+**Token Storage:** `.secrets` file (git-ignored)
+
+### World Cup 2026 Data
+
+- **Competition Code:** `WC`
+- **Competition ID:** `2000`
+- **Tournament Dates:** June 11 - July 19, 2026
+- **Season ID:** `2398`
+
+### Key Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /competitions/WC` | World Cup competition info |
+| `GET /competitions/WC/matches` | All matches/fixtures |
+| `GET /competitions/WC/teams` | Participating teams |
+| `GET /competitions/WC/standings` | Group standings |
+
+### Example Request
+
+```bash
+curl -H "X-Auth-Token: YOUR_TOKEN" https://api.football-data.org/v4/competitions/WC/matches
+```
+
+---
+
 ## Open Questions
 
-- [ ] Confirm Football-Data.org API access for FIFA World Cup 2026
 - [ ] Determine data refresh frequency needed
 - [ ] Define what match data fields are required (kickoff time, teams, venue, etc.)
+- [ ] Design scoring system for predictions
 
 ---
 
@@ -77,6 +110,7 @@ WorldCupProde is a fantasy betting application for the FIFA World Cup. The appli
 
 ## Next Steps
 
-1. Register for Football-Data.org API key
-2. Test API endpoints for World Cup data availability
+1. ~~Register for Football-Data.org API key~~ ✅
+2. ~~Test API endpoints for World Cup data availability~~ ✅
 3. Define data models based on API response structure
+4. Design prediction/scoring system

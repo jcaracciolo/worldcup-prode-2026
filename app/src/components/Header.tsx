@@ -38,14 +38,17 @@ export default function Header({ user }: HeaderProps) {
         <nav className="flex items-center gap-2">
           {user ? (
             <>
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full mr-2">
+              <Link
+                href={`/user/${user.id}`}
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-full mr-2 transition-all"
+              >
                 <div className="w-6 h-6 bg-gradient-to-br from-emerald-400 to-green-600 rounded-full flex items-center justify-center text-xs font-bold">
                   {user.display_name.charAt(0).toUpperCase()}
                 </div>
                 <span className="text-sm text-emerald-100 font-medium">
                   {user.display_name}
                 </span>
-              </div>
+              </Link>
               <Link
                 href="/predictions"
                 className="px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all"

@@ -88,35 +88,51 @@ export default function PointsBreakdown({
         {/* Team or Match display */}
         <div className="flex items-center gap-2 shrink-0">
           {item.team?.crest && !isGoalsType ? (
-            <>
-              <img
-                src={item.team.crest}
-                alt={item.team.tla || item.team.name}
-                className="w-6 h-6 object-contain"
-              />
-              <span className="font-bold text-white w-10">{item.team.tla || item.team.name?.substring(0, 3).toUpperCase() || "???"}</span>
-            </>
+            (() => {
+              const teamTla = item.team?.tla || item.team?.name?.substring(0, 3).toUpperCase() || "";
+              return (
+                <>
+                  {item.team?.crest ? (
+                    <img
+                      src={item.team.crest}
+                      alt={teamTla || "TBD"}
+                      className="w-6 h-6 object-contain"
+                    />
+                  ) : (
+                    <span className="w-6 h-6 flex items-center justify-center text-base">🏳️</span>
+                  )}
+                  <span className="font-bold text-white w-10">{teamTla || "⏳"}</span>
+                </>
+              );
+            })()
           ) : item.matchInfo ? (
             (() => {
               const homeWon = item.matchInfo.homeGoals > item.matchInfo.awayGoals;
               const awayWon = item.matchInfo.awayGoals > item.matchInfo.homeGoals;
               const homeTeam = item.matchInfo.homeTeam as { tla?: string; crest: string; shortName?: string };
               const awayTeam = item.matchInfo.awayTeam as { tla?: string; crest: string; shortName?: string };
-              const homeTla = homeTeam.tla || homeTeam.shortName?.substring(0, 3).toUpperCase() || "???";
-              const awayTla = awayTeam.tla || awayTeam.shortName?.substring(0, 3).toUpperCase() || "???";
+              const homeTla = homeTeam.tla || homeTeam.shortName?.substring(0, 3).toUpperCase() || "";
+              const awayTla = awayTeam.tla || awayTeam.shortName?.substring(0, 3).toUpperCase() || "";
+              const homeHasTeam = homeTla !== "";
+              const awayHasTeam = awayTla !== "";
               const highlightHome = item.type === "goals_home";
               const highlightAway = item.type === "goals_away";
               return (
                 <div className="flex items-center gap-1.5">
-                  <img
-                    src={item.matchInfo.homeTeam.crest}
-                    alt={homeTla}
-                    className={`w-5 h-5 object-contain ${awayWon && !isGoalsType ? "opacity-50" : ""}`}
-                  />
+                  {homeTeam.crest ? (
+                    <img
+                      src={homeTeam.crest}
+                      alt={homeTla || "TBD"}
+                      className={`w-5 h-5 object-contain ${awayWon && !isGoalsType ? "opacity-50" : ""}`}
+                    />
+                  ) : (
+                    <span className="w-5 h-5 flex items-center justify-center text-sm">🏳️</span>
+                  )}
                   <span className={`text-xs font-medium w-8 text-right ${
+                    !homeHasTeam ? "text-white/40" :
                     isGoalsType ? "text-white/70" : homeWon ? "text-emerald-400 font-bold" : awayWon ? "text-white/40" : "text-white/70"
                   }`}>
-                    {homeTla}
+                    {homeHasTeam ? homeTla : "⏳"}
                   </span>
                   <span className="font-bold px-1.5 py-0.5 bg-white/10 rounded text-sm min-w-[40px] text-center">
                     <span className={highlightHome ? "text-yellow-400" : "text-white"}>{item.matchInfo.homeGoals}</span>
@@ -124,15 +140,20 @@ export default function PointsBreakdown({
                     <span className={highlightAway ? "text-yellow-400" : "text-white"}>{item.matchInfo.awayGoals}</span>
                   </span>
                   <span className={`text-xs font-medium w-8 ${
+                    !awayHasTeam ? "text-white/40" :
                     isGoalsType ? "text-white/70" : awayWon ? "text-emerald-400 font-bold" : homeWon ? "text-white/40" : "text-white/70"
                   }`}>
-                    {awayTla}
+                    {awayHasTeam ? awayTla : "⏳"}
                   </span>
-                  <img
-                    src={item.matchInfo.awayTeam.crest}
-                    alt={awayTla}
-                    className={`w-5 h-5 object-contain ${homeWon && !isGoalsType ? "opacity-50" : ""}`}
-                  />
+                  {awayTeam.crest ? (
+                    <img
+                      src={awayTeam.crest}
+                      alt={awayTla || "TBD"}
+                      className={`w-5 h-5 object-contain ${homeWon && !isGoalsType ? "opacity-50" : ""}`}
+                    />
+                  ) : (
+                    <span className="w-5 h-5 flex items-center justify-center text-sm">🏳️</span>
+                  )}
                 </div>
               );
             })()

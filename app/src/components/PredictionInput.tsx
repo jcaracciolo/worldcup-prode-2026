@@ -52,9 +52,15 @@ export default function PredictionInput({
     onChange(match.id, homeGoals, awayGoals, teamId);
   };
 
-  const isTie =
-    homeGoals !== null && awayGoals !== null && homeGoals === awayGoals;
+  const hasScore = homeGoals !== null && awayGoals !== null;
+  const isTie = hasScore && homeGoals === awayGoals;
   const needsWinnerSelect = showWinnerSelect && isTie;
+
+  // Group stage logic: highlight winner, or both on draw
+  const isGroupStage = !showWinnerSelect;
+  const groupHomeWins = isGroupStage && hasScore && homeGoals > awayGoals;
+  const groupAwayWins = isGroupStage && hasScore && awayGoals > homeGoals;
+  const groupIsDraw = isGroupStage && hasScore && homeGoals === awayGoals;
 
   // Determine score-based winner for non-tie knockout matches
   const homeWinsOnScore =
@@ -69,10 +75,17 @@ export default function PredictionInput({
     awayGoals > homeGoals;
 
   // Determine if each team is the selected winner (for ties) or score-based winner (for non-ties)
+  // For group stage: winner highlighted, or BOTH teams on a draw
   const homeIsWinner =
-    (needsWinnerSelect && winnerId === homeTeam?.id) || homeWinsOnScore;
+    (needsWinnerSelect && winnerId === homeTeam?.id) ||
+    homeWinsOnScore ||
+    groupHomeWins ||
+    groupIsDraw;
   const awayIsWinner =
-    (needsWinnerSelect && winnerId === awayTeam?.id) || awayWinsOnScore;
+    (needsWinnerSelect && winnerId === awayTeam?.id) ||
+    awayWinsOnScore ||
+    groupAwayWins ||
+    groupIsDraw;
 
   // Format date
   const matchDate = new Date(match.utcDate);
@@ -90,7 +103,11 @@ export default function PredictionInput({
 
   return (
     <div
-      className={`flex items-center py-3 px-4 rounded-xl bg-slate-800/60 hover:bg-slate-800/80 transition-colors ${
+      className={`flex items-center py-3 px-4 rounded-xl transition-colors ${
+        disabled
+          ? "bg-slate-900/60 opacity-70"
+          : "bg-slate-800/60 hover:bg-slate-800/80"
+      } ${
         needsWinnerSelect
           ? "border-2 border-amber-400/50"
           : "border border-white/5"
@@ -130,7 +147,7 @@ export default function PredictionInput({
               disabled={disabled || !homeTeam?.id}
               className={`flex items-center gap-2 px-2 py-1 rounded-lg transition-all ${
                 homeIsWinner
-                  ? "bg-amber-400 text-slate-900 font-bold"
+                  ? "bg-amber-500/80 text-slate-900 font-bold"
                   : "hover:bg-white/10"
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
@@ -152,7 +169,7 @@ export default function PredictionInput({
           ) : (
             <div
               className={`flex items-center gap-2 px-2 py-1 rounded-lg ${
-                homeIsWinner ? "bg-amber-400" : ""
+                homeIsWinner ? "bg-amber-500/80" : ""
               }`}
             >
               <span
@@ -219,7 +236,7 @@ export default function PredictionInput({
               disabled={disabled || !awayTeam?.id}
               className={`flex items-center gap-2 px-2 py-1 rounded-lg transition-all ${
                 awayIsWinner
-                  ? "bg-amber-400 text-slate-900 font-bold"
+                  ? "bg-amber-500/80 text-slate-900 font-bold"
                   : "hover:bg-white/10"
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
@@ -241,7 +258,7 @@ export default function PredictionInput({
           ) : (
             <div
               className={`flex items-center gap-2 px-2 py-1 rounded-lg ${
-                awayIsWinner ? "bg-amber-400" : ""
+                awayIsWinner ? "bg-amber-500/80" : ""
               }`}
             >
               {awayTeam?.crest ? (

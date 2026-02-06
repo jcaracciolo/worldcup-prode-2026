@@ -17,16 +17,14 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
   // Determine winner for highlighting
   const homeGoals = match.score.fullTime.home;
   const awayGoals = match.score.fullTime.away;
-  const homeWon =
-    isFinished &&
-    homeGoals !== null &&
-    awayGoals !== null &&
-    homeGoals > awayGoals;
-  const awayWon =
-    isFinished &&
-    homeGoals !== null &&
-    awayGoals !== null &&
-    awayGoals > homeGoals;
+  const hasScore = isFinished && homeGoals !== null && awayGoals !== null;
+  const homeWon = hasScore && homeGoals > awayGoals;
+  const awayWon = hasScore && awayGoals > homeGoals;
+  const isDraw = hasScore && homeGoals === awayGoals;
+  const isGroupStage = match.stage === "GROUP_STAGE";
+  // Highlight both teams on group stage draws
+  const homeHighlight = homeWon || (isGroupStage && isDraw);
+  const awayHighlight = awayWon || (isGroupStage && isDraw);
 
   const getStatusDisplay = () => {
     if (isLive) {
@@ -64,7 +62,7 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
         <div className="flex items-center justify-between gap-4">
           {/* Home Team */}
           <div
-            className={`flex-1 flex flex-col items-center gap-2 ${awayWon ? "opacity-50" : ""}`}
+            className={`flex-1 flex flex-col items-center gap-2 p-2 rounded-lg ${homeHighlight ? "bg-amber-500/80" : ""} ${awayWon ? "opacity-50" : ""}`}
           >
             {match.homeTeam.crest ? (
               <img
@@ -78,7 +76,7 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
               </div>
             )}
             <span
-              className={`font-semibold text-sm text-center ${homeWon ? "text-emerald-600" : "text-slate-700"}`}
+              className={`font-semibold text-sm text-center ${homeHighlight ? "text-slate-900" : "text-slate-700"}`}
             >
               {match.homeTeam.shortName || match.homeTeam.name}
             </span>
@@ -104,7 +102,7 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
 
           {/* Away Team */}
           <div
-            className={`flex-1 flex flex-col items-center gap-2 ${homeWon ? "opacity-50" : ""}`}
+            className={`flex-1 flex flex-col items-center gap-2 p-2 rounded-lg ${awayHighlight ? "bg-amber-500/80" : ""} ${homeWon ? "opacity-50" : ""}`}
           >
             {match.awayTeam.crest ? (
               <img
@@ -118,7 +116,7 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
               </div>
             )}
             <span
-              className={`font-semibold text-sm text-center ${awayWon ? "text-emerald-600" : "text-slate-700"}`}
+              className={`font-semibold text-sm text-center ${awayHighlight ? "text-slate-900" : "text-slate-700"}`}
             >
               {match.awayTeam.shortName || match.awayTeam.name}
             </span>

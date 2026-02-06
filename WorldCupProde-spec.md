@@ -529,3 +529,39 @@ tournament_settings
 - [ ] Create Azure App Service
 - [ ] Set up GitHub Actions for CI/CD
 - [ ] Configure environment variables in Azure
+
+---
+
+## Match Display Components - Data Sources
+
+Match results are displayed in two contexts: showing **user predictions** vs showing **real API results**. The highlighting logic differs based on the data source.
+
+### Prediction-Based Highlighting
+
+Shows winner based on user's predicted scores. For knockout ties, uses `winner_id` to determine the advancing team.
+
+| Component | Route | Description |
+|-----------|-------|-------------|
+| `PredictionInput.tsx` | `/predictions` | User entering/viewing their own predictions |
+| `user/[userId]/page.tsx` (knockout sections) | `/user/:userId` | Viewing user's knockout stage predictions |
+| `user/[userId]/page.tsx` (group stage) | `/user/:userId` | Viewing user's group stage predictions |
+| `match/[matchId]/page.tsx` ("Your Prediction" section) | `/match/:matchId` | Logged-in user's prediction for specific match |
+
+**Highlighting Rules (Predictions):**
+- **Group stage:** Winner highlighted; both teams highlighted on draw
+- **Knockout:** Winner highlighted by score; on ties, `winner_id` determines highlight
+
+### Real API Result Highlighting
+
+Shows winner based on actual match results from Football-Data.org API.
+
+| Component | Route | Description |
+|-----------|-------|-------------|
+| `MatchCard.tsx` | `/` (homepage) | Today's/upcoming matches with live/final scores |
+| `PointsBreakdown.tsx` | `/user/:userId` | Points breakdown showing what actually happened |
+| `match/[matchId]/page.tsx` (main header) | `/match/:matchId` | Actual match result display |
+
+**Highlighting Rules (API Results):**
+- **Group stage:** Winner highlighted; both teams highlighted on draw
+- **Knockout:** Winner highlighted by score (API provides final winner after penalties)
+

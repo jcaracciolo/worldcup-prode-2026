@@ -158,7 +158,7 @@ export default function PointsBreakdown({
               return (
                 <div className="flex items-center gap-1.5">
                   <div
-                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${knockoutHomeWon ? "bg-amber-400" : ""}`}
+                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${knockoutHomeWon ? "bg-amber-500/80" : ""}`}
                   >
                     {homeTeam.crest ? (
                       <img
@@ -209,7 +209,7 @@ export default function PointsBreakdown({
                     </span>
                   </span>
                   <div
-                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${knockoutAwayWon ? "bg-amber-400" : ""}`}
+                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${knockoutAwayWon ? "bg-amber-500/80" : ""}`}
                   >
                     <span
                       className={`text-xs font-medium w-8 ${

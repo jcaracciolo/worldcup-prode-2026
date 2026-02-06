@@ -1,8 +1,11 @@
-// Bracket Resolver - resolves knockout teams based on predictions
-// Simple approach: R32 uses API teams, later rounds use winners from previous rounds
+// Bracket Resolver - resolves knockout teams based on USER PREDICTIONS only
+// R32 teams come from group standings (calculated from user's group predictions)
+// R16+ teams come from winners of previous rounds (based on user's knockout predictions)
+// The FIFA bracket structure defines which matches feed into which
 import { Match, Team } from "@/types/football";
 import { CalculatedStanding } from "@/types/football";
 import { Prediction } from "@/types/database";
+import { r32Bracket, r16Bracket, qfBracket, sfBracket } from "./r32-bracket";
 
 export interface BracketResolverParams {
   matches: Match[];
@@ -23,23 +26,109 @@ function sortByDate(matches: Match[]): Match[] {
   );
 }
 
-// Main resolver class - uses simple positional bracket pairing
+// Main resolver class - uses FIFA bracket structure + user predictions
 export class BracketResolver {
   private matches: Match[];
   private predictions: Map<number, Prediction>;
-  private resolved: Map<number, ResolvedTeams>;
+  private groupStandings: Map<string, CalculatedStanding[]>;
+  private thirdPlaceQualifying: Map<string, boolean>;
+  private resolved: Map<number, ResolvedTeams>; // API match ID -> teams
+
+  // FIFA match number mappings
+  private apiIdToFifaNumber: Map<number, number>; // API ID -> FIFA number
+  private fifaNumberToApiId: Map<number, number>; // FIFA number -> API ID
 
   constructor(params: BracketResolverParams) {
     this.matches = params.matches;
     this.predictions = params.predictions;
+    this.groupStandings = params.groupStandings;
+    this.thirdPlaceQualifying = params.thirdPlaceQualifying;
     this.resolved = new Map();
+    this.apiIdToFifaNumber = new Map();
+    this.fifaNumberToApiId = new Map();
+
+    // Build FIFA match number mappings based on date order
+    this.buildFifaNumberMappings();
   }
 
-  // Get predicted winner of a match by API match ID
-  private getPredictedWinner(apiMatchId: number): Team | null {
-    const pred = this.predictions.get(apiMatchId);
-    const teams = this.resolved.get(apiMatchId);
+  // Map API match IDs to FIFA match numbers based on date ordering within each stage
+  private buildFifaNumberMappings(): void {
+    // R32 matches (FIFA 73-88)
+    const r32Matches = sortByDate(
+      this.matches.filter((m) => m.stage === "LAST_32"),
+    );
+    r32Matches.forEach((m, index) => {
+      const fifaNum = 73 + index;
+      this.apiIdToFifaNumber.set(m.id, fifaNum);
+      this.fifaNumberToApiId.set(fifaNum, m.id);
+    });
+
+    // R16 matches (FIFA 89-96)
+    const r16Matches = sortByDate(
+      this.matches.filter((m) => m.stage === "LAST_16"),
+    );
+    r16Matches.forEach((m, index) => {
+      const fifaNum = 89 + index;
+      this.apiIdToFifaNumber.set(m.id, fifaNum);
+      this.fifaNumberToApiId.set(fifaNum, m.id);
+    });
+
+    // QF matches (FIFA 97-100)
+    const qfMatches = sortByDate(
+      this.matches.filter((m) => m.stage === "QUARTER_FINALS"),
+    );
+    qfMatches.forEach((m, index) => {
+      const fifaNum = 97 + index;
+      this.apiIdToFifaNumber.set(m.id, fifaNum);
+      this.fifaNumberToApiId.set(fifaNum, m.id);
+    });
+
+    // SF matches (FIFA 101-102)
+    const sfMatches = sortByDate(
+      this.matches.filter((m) => m.stage === "SEMI_FINALS"),
+    );
+    sfMatches.forEach((m, index) => {
+      const fifaNum = 101 + index;
+      this.apiIdToFifaNumber.set(m.id, fifaNum);
+      this.fifaNumberToApiId.set(fifaNum, m.id);
+    });
+
+    // Third place (FIFA 103)
+    const thirdPlace = this.matches.find((m) => m.stage === "THIRD_PLACE");
+    if (thirdPlace) {
+      this.apiIdToFifaNumber.set(thirdPlace.id, 103);
+      this.fifaNumberToApiId.set(103, thirdPlace.id);
+    }
+
+    // Final (FIFA 104)
+    const final = this.matches.find((m) => m.stage === "FINAL");
+    if (final) {
+      this.apiIdToFifaNumber.set(final.id, 104);
+      this.fifaNumberToApiId.set(104, final.id);
+    }
+  }
+
+  // Get team from user's predicted group standings
+  private getTeamFromStandings(group: string, position: number): Team | null {
+    const standings = this.groupStandings.get(group);
+    if (!standings || standings.length < position) return null;
+    const standing = standings.find((s) => s.position === position);
+    // For 3rd place, check if they qualify
+    if (position === 3 && !this.thirdPlaceQualifying.get(group)) {
+      return null;
+    }
+    return standing?.team || null;
+  }
+
+  // Get predicted winner of a match by FIFA match number
+  private getPredictedWinnerByFifa(fifaMatchNumber: number): Team | null {
+    const apiId = this.fifaNumberToApiId.get(fifaMatchNumber);
+    if (!apiId) return null;
+
+    const pred = this.predictions.get(apiId);
+    const teams = this.resolved.get(apiId);
     if (!teams) return null;
+
     if (!pred || pred.home_goals === null || pred.away_goals === null) {
       // No prediction - default to home team to avoid null propagation
       return teams.home;
@@ -55,18 +144,20 @@ export class BracketResolver {
         if (teams.home?.id === pred.winner_id) return teams.home;
         if (teams.away?.id === pred.winner_id) return teams.away;
       }
-      // Default to home team for ties without winner selection
       return teams.home;
     }
   }
 
-  // Get predicted loser of a match by API match ID
-  private getPredictedLoser(apiMatchId: number): Team | null {
-    const pred = this.predictions.get(apiMatchId);
-    const teams = this.resolved.get(apiMatchId);
+  // Get predicted loser of a match by FIFA match number
+  private getPredictedLoserByFifa(fifaMatchNumber: number): Team | null {
+    const apiId = this.fifaNumberToApiId.get(fifaMatchNumber);
+    if (!apiId) return null;
+
+    const pred = this.predictions.get(apiId);
+    const teams = this.resolved.get(apiId);
     if (!teams) return null;
+
     if (!pred || pred.home_goals === null || pred.away_goals === null) {
-      // No prediction - default to away team as loser
       return teams.away;
     }
 
@@ -75,28 +166,27 @@ export class BracketResolver {
     } else if (pred.away_goals < pred.home_goals) {
       return teams.away;
     } else {
-      // Tie - loser is the one NOT selected as winner, default to away
+      // Tie - loser is the one NOT selected as winner
       if (pred.winner_id) {
         if (teams.home?.id === pred.winner_id) return teams.away;
         if (teams.away?.id === pred.winner_id) return teams.home;
       }
-      // Default to away team for ties without winner selection
       return teams.away;
     }
   }
 
   // Resolve all knockout teams
   resolve(): Map<number, ResolvedTeams> {
-    // Step 1: R32 - use actual API teams
+    // Step 1: R32 - teams from group standings (user predictions)
     this.resolveR32();
 
-    // Step 2: R16 - winners from R32
+    // Step 2: R16 - winners from R32 (following FIFA bracket)
     this.resolveR16();
 
-    // Step 3: QF - winners from R16
+    // Step 3: QF - winners from R16 (following FIFA bracket)
     this.resolveQF();
 
-    // Step 4: SF - winners from QF
+    // Step 4: SF - winners from QF (following FIFA bracket)
     this.resolveSF();
 
     // Step 5: Third Place - SF losers
@@ -108,140 +198,146 @@ export class BracketResolver {
     return this.resolved;
   }
 
-  // R32: Use actual teams from the API match - these are the real fixtures
+  // R32: Get teams from user's GROUP STAGE predictions (not API!)
   private resolveR32(): void {
     const r32Matches = this.matches.filter((m) => m.stage === "LAST_32");
 
     for (const match of r32Matches) {
-      // Use the actual teams from the API - these ARE the R32 fixtures
-      this.resolved.set(match.id, {
-        home: match.homeTeam,
-        away: match.awayTeam,
-      });
+      const fifaNumber = this.apiIdToFifaNumber.get(match.id);
+      if (!fifaNumber) {
+        this.resolved.set(match.id, { home: null, away: null });
+        continue;
+      }
+
+      // Find the bracket slot for this FIFA match number
+      const bracketSlot = r32Bracket.find((b) => b.matchNumber === fifaNumber);
+      if (!bracketSlot) {
+        this.resolved.set(match.id, { home: null, away: null });
+        continue;
+      }
+
+      // Get teams from USER'S predicted group standings
+      const homeTeam = bracketSlot.homePosition
+        ? this.getTeamFromStandings(
+            bracketSlot.homePosition.group,
+            bracketSlot.homePosition.position,
+          )
+        : null; // 3rd place teams need dynamic resolution
+
+      const awayTeam = bracketSlot.awayPosition
+        ? this.getTeamFromStandings(
+            bracketSlot.awayPosition.group,
+            bracketSlot.awayPosition.position,
+          )
+        : null; // 3rd place teams need dynamic resolution
+
+      this.resolved.set(match.id, { home: homeTeam, away: awayTeam });
     }
   }
 
-  // R16: Each match gets winners from two R32 matches
-  // Bracket pairing: R16[0] gets R32[0] vs R32[1], R16[1] gets R32[2] vs R32[3], etc.
+  // R16: Get teams from R32 winners following FIFA bracket structure
   private resolveR16(): void {
-    const r32Matches = sortByDate(
-      this.matches.filter((m) => m.stage === "LAST_32"),
-    );
-    const r16Matches = sortByDate(
-      this.matches.filter((m) => m.stage === "LAST_16"),
-    );
+    const r16Matches = this.matches.filter((m) => m.stage === "LAST_16");
 
-    for (let i = 0; i < r16Matches.length; i++) {
-      const match = r16Matches[i];
-      const r32HomeIdx = i * 2;
-      const r32AwayIdx = i * 2 + 1;
+    for (const match of r16Matches) {
+      const fifaNumber = this.apiIdToFifaNumber.get(match.id);
+      if (!fifaNumber) {
+        this.resolved.set(match.id, { home: null, away: null });
+        continue;
+      }
 
-      const homeTeam =
-        r32HomeIdx < r32Matches.length
-          ? this.getPredictedWinner(r32Matches[r32HomeIdx].id)
-          : null;
-      const awayTeam =
-        r32AwayIdx < r32Matches.length
-          ? this.getPredictedWinner(r32Matches[r32AwayIdx].id)
-          : null;
+      // Find the bracket slot - tells us which R32 matches feed into this R16 match
+      const bracketSlot = r16Bracket.find((b) => b.matchNumber === fifaNumber);
+      if (!bracketSlot) {
+        this.resolved.set(match.id, { home: null, away: null });
+        continue;
+      }
+
+      // Get winners from the specific R32 matches defined by FIFA bracket
+      const homeTeam = this.getPredictedWinnerByFifa(bracketSlot.homeFromR32);
+      const awayTeam = this.getPredictedWinnerByFifa(bracketSlot.awayFromR32);
 
       this.resolved.set(match.id, { home: homeTeam, away: awayTeam });
     }
   }
 
-  // QF: Each match gets winners from two R16 matches
+  // QF: Get teams from R16 winners following FIFA bracket structure
   private resolveQF(): void {
-    const r16Matches = sortByDate(
-      this.matches.filter((m) => m.stage === "LAST_16"),
-    );
-    const qfMatches = sortByDate(
-      this.matches.filter((m) => m.stage === "QUARTER_FINALS"),
-    );
+    const qfMatches = this.matches.filter((m) => m.stage === "QUARTER_FINALS");
 
-    for (let i = 0; i < qfMatches.length; i++) {
-      const match = qfMatches[i];
-      const r16HomeIdx = i * 2;
-      const r16AwayIdx = i * 2 + 1;
+    for (const match of qfMatches) {
+      const fifaNumber = this.apiIdToFifaNumber.get(match.id);
+      if (!fifaNumber) {
+        this.resolved.set(match.id, { home: null, away: null });
+        continue;
+      }
 
-      const homeTeam =
-        r16HomeIdx < r16Matches.length
-          ? this.getPredictedWinner(r16Matches[r16HomeIdx].id)
-          : null;
-      const awayTeam =
-        r16AwayIdx < r16Matches.length
-          ? this.getPredictedWinner(r16Matches[r16AwayIdx].id)
-          : null;
+      const bracketSlot = qfBracket.find((b) => b.matchNumber === fifaNumber);
+      if (!bracketSlot) {
+        this.resolved.set(match.id, { home: null, away: null });
+        continue;
+      }
+
+      const homeTeam = this.getPredictedWinnerByFifa(bracketSlot.homeFromR16);
+      const awayTeam = this.getPredictedWinnerByFifa(bracketSlot.awayFromR16);
 
       this.resolved.set(match.id, { home: homeTeam, away: awayTeam });
     }
   }
 
-  // SF: Each match gets winners from two QF matches
+  // SF: Get teams from QF winners following FIFA bracket structure
   private resolveSF(): void {
-    const qfMatches = sortByDate(
-      this.matches.filter((m) => m.stage === "QUARTER_FINALS"),
-    );
-    const sfMatches = sortByDate(
-      this.matches.filter((m) => m.stage === "SEMI_FINALS"),
-    );
+    const sfMatches = this.matches.filter((m) => m.stage === "SEMI_FINALS");
 
-    for (let i = 0; i < sfMatches.length; i++) {
-      const match = sfMatches[i];
-      const qfHomeIdx = i * 2;
-      const qfAwayIdx = i * 2 + 1;
+    for (const match of sfMatches) {
+      const fifaNumber = this.apiIdToFifaNumber.get(match.id);
+      if (!fifaNumber) {
+        this.resolved.set(match.id, { home: null, away: null });
+        continue;
+      }
 
-      const homeTeam =
-        qfHomeIdx < qfMatches.length
-          ? this.getPredictedWinner(qfMatches[qfHomeIdx].id)
-          : null;
-      const awayTeam =
-        qfAwayIdx < qfMatches.length
-          ? this.getPredictedWinner(qfMatches[qfAwayIdx].id)
-          : null;
+      const bracketSlot = sfBracket.find((b) => b.matchNumber === fifaNumber);
+      if (!bracketSlot) {
+        this.resolved.set(match.id, { home: null, away: null });
+        continue;
+      }
+
+      const homeTeam = this.getPredictedWinnerByFifa(bracketSlot.homeFromQF);
+      const awayTeam = this.getPredictedWinnerByFifa(bracketSlot.awayFromQF);
 
       this.resolved.set(match.id, { home: homeTeam, away: awayTeam });
     }
   }
 
-  // Third Place: Losers of the two SF matches
+  // Third Place: Losers of the two SF matches (FIFA 101 and 102)
   private resolveThirdPlace(): void {
-    const sfMatches = sortByDate(
-      this.matches.filter((m) => m.stage === "SEMI_FINALS"),
-    );
     const thirdPlaceMatch = this.matches.find((m) => m.stage === "THIRD_PLACE");
+    if (!thirdPlaceMatch) return;
 
-    if (!thirdPlaceMatch || sfMatches.length < 2) return;
-
-    const homeTeam = this.getPredictedLoser(sfMatches[0].id);
-    const awayTeam = this.getPredictedLoser(sfMatches[1].id);
+    const homeTeam = this.getPredictedLoserByFifa(101);
+    const awayTeam = this.getPredictedLoserByFifa(102);
 
     this.resolved.set(thirdPlaceMatch.id, { home: homeTeam, away: awayTeam });
   }
 
-  // Final: Winners of the two SF matches
+  // Final: Winners of the two SF matches (FIFA 101 and 102)
   private resolveFinal(): void {
-    const sfMatches = sortByDate(
-      this.matches.filter((m) => m.stage === "SEMI_FINALS"),
-    );
     const finalMatch = this.matches.find((m) => m.stage === "FINAL");
+    if (!finalMatch) return;
 
-    if (!finalMatch || sfMatches.length < 2) return;
-
-    const homeTeam = this.getPredictedWinner(sfMatches[0].id);
-    const awayTeam = this.getPredictedWinner(sfMatches[1].id);
+    const homeTeam = this.getPredictedWinnerByFifa(101);
+    const awayTeam = this.getPredictedWinnerByFifa(102);
 
     this.resolved.set(finalMatch.id, { home: homeTeam, away: awayTeam });
   }
 }
 
-// Export helper for R32Preview (still needs match number mapping for display labels)
+// Export helper for R32Preview (for display labels)
 export function buildMatchNumberMapping(matches: Match[]): Map<number, number> {
   const mapping = new Map<number, number>();
-
   const r32Matches = sortByDate(matches.filter((m) => m.stage === "LAST_32"));
   r32Matches.forEach((m, index) => {
     mapping.set(m.id, 73 + index);
   });
-
   return mapping;
 }

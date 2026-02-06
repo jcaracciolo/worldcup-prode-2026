@@ -113,6 +113,28 @@ export default async function MatchDetailPage({ params }: PageProps) {
     homeGoals !== null &&
     awayGoals !== null &&
     awayGoals > homeGoals;
+  const isDraw =
+    isFinished &&
+    homeGoals !== null &&
+    awayGoals !== null &&
+    homeGoals === awayGoals;
+  const isGroupStage = match.stage === "GROUP_STAGE";
+
+  // Highlight calculation for actual result
+  const homeHighlight = homeWon || (isDraw && isGroupStage);
+  const awayHighlight = awayWon || (isDraw && isGroupStage);
+
+  // Prediction winner calculation
+  const predHomeGoals = prediction?.home_goals ?? null;
+  const predAwayGoals = prediction?.away_goals ?? null;
+  const predHasScore = predHomeGoals !== null && predAwayGoals !== null;
+  const predHomeWins = predHasScore && predHomeGoals > predAwayGoals;
+  const predAwayWins = predHasScore && predAwayGoals > predHomeGoals;
+  const predIsDraw = predHasScore && predHomeGoals === predAwayGoals;
+  // For knockout ties, check winner_id to determine winner
+  const isKnockout = !isGroupStage;
+  const predHomeHighlight = predHomeWins || (predIsDraw && isGroupStage) || (predIsDraw && isKnockout && prediction?.winner_id === match.homeTeam.id);
+  const predAwayHighlight = predAwayWins || (predIsDraw && isGroupStage) || (predIsDraw && isKnockout && prediction?.winner_id === match.awayTeam.id);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -126,7 +148,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
               <div className="flex items-center justify-center gap-8">
                 {/* Home Team */}
                 <div
-                  className={`text-center flex-1 ${awayWon ? "opacity-50" : ""}`}
+                  className={`text-center flex-1 p-3 rounded-xl ${homeHighlight ? "bg-amber-500/80" : ""} ${awayWon ? "opacity-50" : ""}`}
                 >
                   {match.homeTeam.crest ? (
                     <img
@@ -142,7 +164,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                     </div>
                   )}
                   <div
-                    className={`font-bold text-lg ${homeWon ? "text-yellow-300" : ""}`}
+                    className={`font-bold text-lg ${homeHighlight ? "text-slate-900" : ""}`}
                   >
                     {match.homeTeam.name}
                   </div>
@@ -176,7 +198,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
 
                 {/* Away Team */}
                 <div
-                  className={`text-center flex-1 ${homeWon ? "opacity-50" : ""}`}
+                  className={`text-center flex-1 p-3 rounded-xl ${awayHighlight ? "bg-amber-500/80" : ""} ${homeWon ? "opacity-50" : ""}`}
                 >
                   {match.awayTeam.crest ? (
                     <img
@@ -192,7 +214,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                     </div>
                   )}
                   <div
-                    className={`font-bold text-lg ${awayWon ? "text-yellow-300" : ""}`}
+                    className={`font-bold text-lg ${awayHighlight ? "text-slate-900" : ""}`}
                   >
                     {match.awayTeam.name}
                   </div>
@@ -232,12 +254,16 @@ export default async function MatchDetailPage({ params }: PageProps) {
 
                 <div className="bg-white/10 rounded-xl p-5">
                   <div className="flex items-center justify-center gap-4 text-xl font-bold mb-4 text-white">
-                    <span>{match.homeTeam.tla}</span>
+                    <span className={`px-3 py-1 rounded-lg ${predHomeHighlight ? "bg-amber-500/80 text-slate-900" : ""}`}>
+                      {match.homeTeam.tla}
+                    </span>
                     <span className="px-5 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-xl">
                       {prediction.home_goals ?? "-"} -{" "}
                       {prediction.away_goals ?? "-"}
                     </span>
-                    <span>{match.awayTeam.tla}</span>
+                    <span className={`px-3 py-1 rounded-lg ${predAwayHighlight ? "bg-amber-500/80 text-slate-900" : ""}`}>
+                      {match.awayTeam.tla}
+                    </span>
                   </div>
 
                   {isFinished && (

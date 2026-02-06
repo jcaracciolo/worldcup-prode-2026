@@ -181,56 +181,120 @@ export async function POST(request: NextRequest) {
       "FINAL",
     ];
     const sortedMatches = [...targetMatches].sort((a: Match, b: Match) => {
-      return roundOrder.indexOf(a.stage) - roundOrder.indexOf(b.stage);
+      const aOrder = roundOrder.indexOf(a.stage);
+      const bOrder = roundOrder.indexOf(b.stage);
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      // Within same round, sort by match ID to maintain bracket order
+      return a.id - b.id;
     });
 
-    for (const match of sortedMatches) {
-      const homeGoals = Math.floor(Math.random() * 5);
-      const awayGoals = Math.floor(Math.random() * 5);
+    // Group matches by stage
+    const matchesByStage = new Map<string, Match[]>();
+    sortedMatches.forEach((match) => {
+      if (!matchesByStage.has(match.stage)) {
+        matchesByStage.set(match.stage, []);
+      }
+      matchesByStage.get(match.stage)!.push(match);
+    });
 
-      const resolvedMatch = { ...match };
+    // Process each stage in order
+    for (const stage of roundOrder) {
+      const stageMatches = matchesByStage.get(stage) || [];
+      if (stageMatches.length === 0) continue;
 
-      // For R32 matches, resolve teams from group standings
-      if (match.stage === "LAST_32" && groupStandings) {
-        const bracketSlot = r32Bracket.find((b) => b.matchId === match.id);
-        if (bracketSlot) {
-          const homeTeam = getTeamFromStandings(
-            groupStandings,
-            bracketSlot.homePosition.group,
-            bracketSlot.homePosition.position,
-          );
-          const awayTeam = getTeamFromStandings(
-            groupStandings,
-            bracketSlot.awayPosition.group,
-            bracketSlot.awayPosition.position,
-          );
-          if (homeTeam) resolvedMatch.homeTeam = homeTeam;
-          if (awayTeam) resolvedMatch.awayTeam = awayTeam;
-        }
+      // For R16+, get winners from previous round
+      const prevRoundWinners: Team[] = [];
+      if (stage === "LAST_16") {
+        // Get R32 winners in bracket order
+        const r32Matches = matchesByStage.get("LAST_32") || [];
+        r32Matches.forEach((m) => {
+          const result = knockoutResults.get(m.id);
+          if (result) prevRoundWinners.push(result.winner);
+        });
+      } else if (stage === "QUARTER_FINALS") {
+        const r16Matches = matchesByStage.get("LAST_16") || [];
+        r16Matches.forEach((m) => {
+          const result = knockoutResults.get(m.id);
+          if (result) prevRoundWinners.push(result.winner);
+        });
+      } else if (stage === "SEMI_FINALS") {
+        const qfMatches = matchesByStage.get("QUARTER_FINALS") || [];
+        qfMatches.forEach((m) => {
+          const result = knockoutResults.get(m.id);
+          if (result) prevRoundWinners.push(result.winner);
+        });
+      } else if (stage === "FINAL" || stage === "THIRD_PLACE") {
+        const sfMatches = matchesByStage.get("SEMI_FINALS") || [];
+        sfMatches.forEach((m) => {
+          const result = knockoutResults.get(m.id);
+          if (result) {
+            if (stage === "FINAL") {
+              prevRoundWinners.push(result.winner);
+            } else {
+              prevRoundWinners.push(result.loser);
+            }
+          }
+        });
       }
 
-      // Create a mock match result
-      const updatedMatch = {
-        ...resolvedMatch,
-        status: "FINISHED",
-        score: {
-          winner:
-            homeGoals > awayGoals
-              ? "HOME_TEAM"
-              : awayGoals > homeGoals
-                ? "AWAY_TEAM"
-                : "DRAW",
-          duration: "REGULAR",
-          fullTime: { home: homeGoals, away: awayGoals },
-          halfTime: {
-            home: Math.floor(homeGoals / 2),
-            away: Math.floor(awayGoals / 2),
-          },
-        },
-      };
+      for (let i = 0; i < stageMatches.length; i++) {
+        const match = stageMatches[i];
+        const homeGoals = Math.floor(Math.random() * 5);
+        const awayGoals = Math.floor(Math.random() * 5);
 
-      // Track knockout results for later rounds
-      if (stage === "knockout") {
+        const resolvedMatch = { ...match };
+
+        // For R32 matches, resolve teams from group standings
+        if (match.stage === "LAST_32" && groupStandings) {
+          const bracketSlot = r32Bracket.find((b) => b.matchId === match.id);
+          if (bracketSlot) {
+            const homeTeam = getTeamFromStandings(
+              groupStandings,
+              bracketSlot.homePosition.group,
+              bracketSlot.homePosition.position,
+            );
+            const awayTeam = getTeamFromStandings(
+              groupStandings,
+              bracketSlot.awayPosition.group,
+              bracketSlot.awayPosition.position,
+            );
+            if (homeTeam) resolvedMatch.homeTeam = homeTeam;
+            if (awayTeam) resolvedMatch.awayTeam = awayTeam;
+          }
+        } else if (prevRoundWinners.length > 0) {
+          // For later rounds, assign teams from previous round winners
+          // Each match takes 2 consecutive winners from the bracket
+          const homeIdx = i * 2;
+          const awayIdx = i * 2 + 1;
+          if (prevRoundWinners[homeIdx]) {
+            resolvedMatch.homeTeam = prevRoundWinners[homeIdx];
+          }
+          if (prevRoundWinners[awayIdx]) {
+            resolvedMatch.awayTeam = prevRoundWinners[awayIdx];
+          }
+        }
+
+        // Create a mock match result
+        const updatedMatch = {
+          ...resolvedMatch,
+          status: "FINISHED",
+          score: {
+            winner:
+              homeGoals > awayGoals
+                ? "HOME_TEAM"
+                : awayGoals > homeGoals
+                  ? "AWAY_TEAM"
+                  : "DRAW",
+            duration: "REGULAR",
+            fullTime: { home: homeGoals, away: awayGoals },
+            halfTime: {
+              home: Math.floor(homeGoals / 2),
+              away: Math.floor(awayGoals / 2),
+            },
+          },
+        };
+
+        // Track knockout results for later rounds
         const winner =
           homeGoals >= awayGoals
             ? updatedMatch.homeTeam
@@ -240,14 +304,14 @@ export async function POST(request: NextRequest) {
             ? updatedMatch.awayTeam
             : updatedMatch.homeTeam;
         knockoutResults.set(match.id, { winner, loser });
-      }
 
-      // Store in cache
-      await serviceClient.from("matches_cache").upsert({
-        match_id: match.id,
-        data: updatedMatch,
-        updated_at: new Date().toISOString(),
-      });
+        // Store in cache
+        await serviceClient.from("matches_cache").upsert({
+          match_id: match.id,
+          data: updatedMatch,
+          updated_at: new Date().toISOString(),
+        });
+      }
     }
 
     return NextResponse.json({

@@ -1,5 +1,10 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import Header from "@/components/Header";
-import { createClient } from "@/lib/supabase/server";
+import { useMatches } from "@/contexts/MatchContext";
+import { createClient } from "@/lib/supabase/client";
 import { getMatchInfo } from "@/lib/tournament";
 import { buildApiToFifaMapping } from "@/lib/api-client";
 import {
@@ -7,51 +12,66 @@ import {
   calculateKnockoutPoints,
 } from "@/lib/scoring";
 import { isGroupStageMatch } from "@/lib/football-api";
-import { Match } from "@/types/football";
-import { notFound } from "next/navigation";
+import { Profile, Prediction } from "@/types/database";
 import { format } from "date-fns";
 
-export const dynamic = "force-dynamic";
+export default function MatchDetailPage() {
+  const params = useParams();
+  const matchId = params.matchId as string;
+  const supabase = createClient();
+  
+  const { matches, loading: matchesLoading } = useMatches();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [prediction, setPrediction] = useState<Prediction | null>(null);
+  const [loading, setLoading] = useState(true);
 
-interface PageProps {
-  params: Promise<{ matchId: string }>;
-}
+  useEffect(() => {
+    const loadData = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-export default async function MatchDetailPage({ params }: PageProps) {
-  const { matchId } = await params;
-  const supabase = await createClient();
+      if (user) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+        setProfile(profileData);
 
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  let profile = null;
-  if (user) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-    profile = data;
-  }
+        // Get user's prediction for this match
+        const { data: predData } = await supabase
+          .from("predictions")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("match_id", matchId)
+          .single();
+        setPrediction(predData);
+      }
 
-  // Get all matches from our centralized API
-  let matches: Match[] = [];
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/matches`,
-      { cache: "no-store" },
-    );
-    const data = await res.json();
-    matches = data.matches || [];
-  } catch (error) {
-    console.error("Failed to fetch matches:", error);
-  }
+      setLoading(false);
+    };
+
+    loadData();
+  }, [supabase, matchId]);
 
   // Find the specific match
   const match = matches.find((m) => m.id === parseInt(matchId));
+
+  if (matchesLoading || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl text-white/60">Loading...</div>
+      </div>
+    );
+  }
+
   if (!match) {
-    notFound();
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl text-white/60">Match not found</div>
+      </div>
+    );
   }
 
   // Build FIFA number mapping to get venue from tournament.ts
@@ -87,18 +107,6 @@ export default async function MatchDetailPage({ params }: PageProps) {
 
   const stageDisplay =
     formatGroupName(match.group) || formatStageName(match.stage);
-
-  // Get user's prediction for this match
-  let prediction = null;
-  if (user) {
-    const { data } = await supabase
-      .from("predictions")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("match_id", matchId)
-      .single();
-    prediction = data;
-  }
 
   const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
   const isFinished = match.status === "FINISHED";
@@ -273,7 +281,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
             </div>
 
             {/* User's Prediction & Points */}
-            {user && prediction && (
+            {profile && prediction && (
               <div className="border-t border-white/10 p-6">
                 <h3 className="font-bold text-lg mb-4 text-white">
                   Your Prediction
@@ -332,7 +340,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {!user && (
+            {!profile && (
               <div className="border-t border-white/10 p-6 text-center">
                 <a
                   href="/login"

@@ -53,8 +53,8 @@ export function calculateGroupStagePoints(
   const actualResult = getMatchResult(match);
 
   const matchInfo = {
-    homeTeam: { tla: match.homeTeam.tla, crest: match.homeTeam.crest },
-    awayTeam: { tla: match.awayTeam.tla, crest: match.awayTeam.crest },
+    homeTeam: { tla: match.homeTeam.tla, crest: match.homeTeam.crest, shortName: match.homeTeam.shortName },
+    awayTeam: { tla: match.awayTeam.tla, crest: match.awayTeam.crest, shortName: match.awayTeam.shortName },
     homeGoals: actualHomeGoals,
     awayGoals: actualAwayGoals,
     stage: match.stage,
@@ -151,8 +151,8 @@ export function calculateKnockoutPoints(
   const actualResult = getMatchResult(match);
 
   const matchInfo = {
-    homeTeam: { tla: match.homeTeam.tla, crest: match.homeTeam.crest },
-    awayTeam: { tla: match.awayTeam.tla, crest: match.awayTeam.crest },
+    homeTeam: { tla: match.homeTeam.tla, crest: match.homeTeam.crest, shortName: match.homeTeam.shortName },
+    awayTeam: { tla: match.awayTeam.tla, crest: match.awayTeam.crest, shortName: match.awayTeam.shortName },
     homeGoals: actualHomeGoals,
     awayGoals: actualAwayGoals,
     stage: match.stage,

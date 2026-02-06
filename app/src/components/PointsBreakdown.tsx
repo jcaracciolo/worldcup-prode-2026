@@ -96,8 +96,10 @@ export default function PointsBreakdown({
           (() => {
             const homeWon = item.matchInfo.homeGoals > item.matchInfo.awayGoals;
             const awayWon = item.matchInfo.awayGoals > item.matchInfo.homeGoals;
-            const homeTla = item.matchInfo.homeTeam.tla || "???";
-            const awayTla = item.matchInfo.awayTeam.tla || "???";
+            const homeTeam = item.matchInfo.homeTeam as { tla?: string; crest: string; shortName?: string };
+            const awayTeam = item.matchInfo.awayTeam as { tla?: string; crest: string; shortName?: string };
+            const homeTla = homeTeam.tla || homeTeam.shortName?.substring(0, 3).toUpperCase() || "???";
+            const awayTla = awayTeam.tla || awayTeam.shortName?.substring(0, 3).toUpperCase() || "???";
             return (
               <div className="flex items-center gap-1.5">
                 <img

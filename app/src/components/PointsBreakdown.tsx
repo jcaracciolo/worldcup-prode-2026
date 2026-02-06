@@ -76,81 +76,90 @@ export default function PointsBreakdown({
         b.matchInfo.stage !== "GROUP_STAGE"),
   );
 
-  const renderItem = (item: PointBreakdown, index: number) => (
-    <div
-      key={index}
-      className="px-4 py-3 flex items-center gap-3 hover:bg-white/5 border-b border-white/5 last:border-0"
-    >
-      {/* Team or Match display */}
-      <div className="flex items-center gap-2 shrink-0">
-        {item.team?.crest ? (
-          <>
-            <img
-              src={item.team.crest}
-              alt={item.team.tla || item.team.name}
-              className="w-6 h-6 object-contain"
-            />
-            <span className="font-bold text-white w-10">{item.team.tla || item.team.name?.substring(0, 3).toUpperCase() || "???"}</span>
-          </>
-        ) : item.matchInfo ? (
-          (() => {
-            const homeWon = item.matchInfo.homeGoals > item.matchInfo.awayGoals;
-            const awayWon = item.matchInfo.awayGoals > item.matchInfo.homeGoals;
-            const homeTeam = item.matchInfo.homeTeam as { tla?: string; crest: string; shortName?: string };
-            const awayTeam = item.matchInfo.awayTeam as { tla?: string; crest: string; shortName?: string };
-            const homeTla = homeTeam.tla || homeTeam.shortName?.substring(0, 3).toUpperCase() || "???";
-            const awayTla = awayTeam.tla || awayTeam.shortName?.substring(0, 3).toUpperCase() || "???";
-            return (
-              <div className="flex items-center gap-1.5">
-                <img
-                  src={item.matchInfo.homeTeam.crest}
-                  alt={homeTla}
-                  className={`w-5 h-5 object-contain ${awayWon ? "opacity-50" : ""}`}
-                />
-                <span className={`text-xs font-medium w-8 text-right ${
-                  homeWon ? "text-emerald-400 font-bold" : awayWon ? "text-white/40" : "text-white/70"
-                }`}>
-                  {homeTla}
-                </span>
-                <span className="font-bold text-white px-1.5 py-0.5 bg-white/10 rounded text-sm min-w-[40px] text-center">
-                  {item.matchInfo.homeGoals}-{item.matchInfo.awayGoals}
-                </span>
-                <span className={`text-xs font-medium w-8 ${
-                  awayWon ? "text-emerald-400 font-bold" : homeWon ? "text-white/40" : "text-white/70"
-                }`}>
-                  {awayTla}
-                </span>
-                <img
-                  src={item.matchInfo.awayTeam.crest}
-                  alt={awayTla}
-                  className={`w-5 h-5 object-contain ${homeWon ? "opacity-50" : ""}`}
-                />
-              </div>
-            );
-          })()
-        ) : (
-          <span className="text-lg">📊</span>
-        )}
-      </div>
+  const renderItem = (item: PointBreakdown, index: number) => {
+    // For goals, show match with highlighted score
+    const isGoalsType = item.type === "goals_home" || item.type === "goals_away";
+    
+    return (
+      <div
+        key={index}
+        className="px-4 py-3 flex items-center gap-3 hover:bg-white/5 border-b border-white/5 last:border-0"
+      >
+        {/* Team or Match display */}
+        <div className="flex items-center gap-2 shrink-0">
+          {item.team?.crest && !isGoalsType ? (
+            <>
+              <img
+                src={item.team.crest}
+                alt={item.team.tla || item.team.name}
+                className="w-6 h-6 object-contain"
+              />
+              <span className="font-bold text-white w-10">{item.team.tla || item.team.name?.substring(0, 3).toUpperCase() || "???"}</span>
+            </>
+          ) : item.matchInfo ? (
+            (() => {
+              const homeWon = item.matchInfo.homeGoals > item.matchInfo.awayGoals;
+              const awayWon = item.matchInfo.awayGoals > item.matchInfo.homeGoals;
+              const homeTeam = item.matchInfo.homeTeam as { tla?: string; crest: string; shortName?: string };
+              const awayTeam = item.matchInfo.awayTeam as { tla?: string; crest: string; shortName?: string };
+              const homeTla = homeTeam.tla || homeTeam.shortName?.substring(0, 3).toUpperCase() || "???";
+              const awayTla = awayTeam.tla || awayTeam.shortName?.substring(0, 3).toUpperCase() || "???";
+              const highlightHome = item.type === "goals_home";
+              const highlightAway = item.type === "goals_away";
+              return (
+                <div className="flex items-center gap-1.5">
+                  <img
+                    src={item.matchInfo.homeTeam.crest}
+                    alt={homeTla}
+                    className={`w-5 h-5 object-contain ${awayWon && !isGoalsType ? "opacity-50" : ""}`}
+                  />
+                  <span className={`text-xs font-medium w-8 text-right ${
+                    isGoalsType ? "text-white/70" : homeWon ? "text-emerald-400 font-bold" : awayWon ? "text-white/40" : "text-white/70"
+                  }`}>
+                    {homeTla}
+                  </span>
+                  <span className="font-bold px-1.5 py-0.5 bg-white/10 rounded text-sm min-w-[40px] text-center">
+                    <span className={highlightHome ? "text-yellow-400" : "text-white"}>{item.matchInfo.homeGoals}</span>
+                    <span className="text-white">-</span>
+                    <span className={highlightAway ? "text-yellow-400" : "text-white"}>{item.matchInfo.awayGoals}</span>
+                  </span>
+                  <span className={`text-xs font-medium w-8 ${
+                    isGoalsType ? "text-white/70" : awayWon ? "text-emerald-400 font-bold" : homeWon ? "text-white/40" : "text-white/70"
+                  }`}>
+                    {awayTla}
+                  </span>
+                  <img
+                    src={item.matchInfo.awayTeam.crest}
+                    alt={awayTla}
+                    className={`w-5 h-5 object-contain ${homeWon && !isGoalsType ? "opacity-50" : ""}`}
+                  />
+                </div>
+              );
+            })()
+          ) : (
+            <span className="text-lg">📊</span>
+          )}
+        </div>
 
-      {/* Description and badge */}
-      <div className="flex-1 min-w-0 flex items-center gap-2">
-        <span
-          className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${getTypeBgColor(item.type)}`}
-        >
-          {getTypeLabel(item.type)}
-        </span>
-        <p className="text-xs text-white/50 truncate">{item.description}</p>
-      </div>
+        {/* Description and badge */}
+        <div className="flex-1 min-w-0 flex items-center gap-2">
+          <span
+            className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${getTypeBgColor(item.type)}`}
+          >
+            {getTypeLabel(item.type)}
+          </span>
+          <p className="text-xs text-white/50 truncate">{item.description}</p>
+        </div>
 
-      {/* Points */}
-      <div className="text-right shrink-0">
-        <span className="text-lg font-bold text-emerald-400">
-          +{item.points}
-        </span>
+        {/* Points */}
+        <div className="text-right shrink-0">
+          <span className="text-lg font-bold text-emerald-400">
+            +{item.points}
+          </span>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderSection = (
     title: string,

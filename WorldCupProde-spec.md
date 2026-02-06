@@ -24,14 +24,14 @@ Users predict the score (goals) for all 48 group stage matches before the World 
 
 **Per match scoring:**
 
-| Prediction | Points |
-|------------|--------|
-| Correct result (win/draw/loss) | 2 |
-| Exact goals for Team A | 1 |
-| Exact goals for Team B | 1 |
-| **Max per match** | **4** |
+| Prediction                     | Points |
+| ------------------------------ | ------ |
+| Correct result (win/draw/loss) | 2      |
+| Exact goals for Team A         | 1      |
+| Exact goals for Team B         | 1      |
+| **Max per match**              | **4**  |
 
-*Example: Predict 3-1, actual 0-1 → 2 pts (correct result: away win) + 0 (wrong home goals) + 1 (correct away goals) = 3 points*
+_Example: Predict 3-1, actual 0-1 → 2 pts (correct result: away win) + 0 (wrong home goals) + 1 (correct away goals) = 3 points_
 
 ### Phase 2: Group Standings Bonus (after group stage)
 
@@ -39,13 +39,13 @@ Points awarded based on how group predictions (derived from match predictions) a
 
 **Per team scoring:**
 
-| Prediction | Points |
-|------------|--------|
-| Team survives (advances from group) | 1 |
-| Correct position in group | 1 |
-| **Max per group (3 advancing teams)** | **6** |
+| Prediction                            | Points |
+| ------------------------------------- | ------ |
+| Team survives (advances from group)   | 1      |
+| Correct position in group             | 1      |
+| **Max per group (3 advancing teams)** | **6**  |
 
-*Note: Up to 3 teams per group can advance (1st, 2nd, and potentially 3rd as best third-place).*
+_Note: Up to 3 teams per group can advance (1st, 2nd, and potentially 3rd as best third-place)._
 
 ### Phase 3: Knockout Stage Predictions (after group stage ends)
 
@@ -53,28 +53,28 @@ Users get a second chance to predict all knockout matches once group stage is co
 
 **Per match scoring:**
 
-| Prediction | Points |
-|------------|--------|
-| Correct team wins | 1 × multiplier |
-| Correct team loses | 1 × multiplier |
+| Prediction                           | Points         |
+| ------------------------------------ | -------------- |
+| Correct team wins                    | 1 × multiplier |
+| Correct team loses                   | 1 × multiplier |
 | Correct team ties (before penalties) | 1 × multiplier |
-| Exact goals for Team A | 1 |
-| Exact goals for Team B | 1 |
+| Exact goals for Team A               | 1              |
+| Exact goals for Team B               | 1              |
 
-*Note: For R32 through Semi-finals, predicting a tie is enough (the advancing team is implied). For Third-place match and Final, you must also pick the winner since both teams' tournament ends there.*
+_Note: For R32 through Semi-finals, predicting a tie is enough (the advancing team is implied). For Third-place match and Final, you must also pick the winner since both teams' tournament ends there._
 
-*Note: You can only score points for teams you predicted to reach that stage.*
+_Note: You can only score points for teams you predicted to reach that stage._
 
 **Round multipliers:**
 
-| Round | Result Multiplier | Max Points (result + goals) |
-|-------|-------------------|------------------------------|
-| Round of 32 | 1× | 4 (2+2) |
-| Round of 16 | 1× | 4 (2+2) |
-| Quarter-finals | 1× | 4 (2+2) |
-| Semi-finals | 2× | 6 (4+2) |
-| Third-place match | 3× | 8 (6+2) |
-| Final | 4× | 10 (8+2) |
+| Round             | Result Multiplier | Max Points (result + goals) |
+| ----------------- | ----------------- | --------------------------- |
+| Round of 32       | 1×                | 4 (2+2)                     |
+| Round of 16       | 1×                | 4 (2+2)                     |
+| Quarter-finals    | 1×                | 4 (2+2)                     |
+| Semi-finals       | 2×                | 6 (4+2)                     |
+| Third-place match | 3×                | 8 (6+2)                     |
+| Final             | 4×                | 10 (8+2)                    |
 
 ## API
 
@@ -105,3 +105,120 @@ Users get a second chance to predict all knockout matches once group stage is co
 ```bash
 curl -H "X-Auth-Token: YOUR_TOKEN" https://api.football-data.org/v4/competitions/WC/matches
 ```
+
+## Technical Architecture
+
+### Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js (React) with TypeScript |
+| Auth & Database | Supabase (PostgreSQL + Auth) |
+| Hosting | Azure App Service |
+| Match Data | Football-Data.org API |
+
+### Authentication Flow
+
+1. Admin generates an **invite code** in the admin panel
+2. User visits signup page with invite code (e.g., `/signup?code=ABC123`)
+3. User creates account via Supabase Auth (email/password or OAuth)
+4. Invite code is marked as used, user is activated
+
+### Access Control
+
+| Role | Can View | Can Predict | Can Admin |
+|------|----------|-------------|-----------|
+| Guest (no account) | Standings, all guesses, matches, live scores | No | No |
+| User (invited) | Everything | Yes (before cutoff) | No |
+| Admin | Everything | Yes | Generate invite codes, manage users |
+
+### Database Schema (Supabase PostgreSQL)
+
+```
+users (managed by Supabase Auth)
+├── id (uuid)
+├── email
+├── display_name
+└── is_admin (boolean)
+
+invite_codes
+├── id (uuid)
+├── code (string, unique)
+├── created_by (uuid -> users)
+├── used_by (uuid -> users, nullable)
+├── created_at
+└── used_at (nullable)
+
+predictions
+├── id (uuid)
+├── user_id (uuid -> users)
+├── match_id (int, from Football-Data API)
+├── home_goals (int)
+├── away_goals (int)
+├── winner_id (int, nullable, for Final/3rd place ties)
+├── created_at
+└── updated_at
+
+matches_cache
+├── match_id (int, primary key)
+├── data (jsonb, full API response)
+├── updated_at
+```
+
+### Key Features
+
+**Public (no login required):**
+- View all matches (today's matches highlighted, local timezone)
+- View live/final scores (cached from API)
+- View leaderboard/standings
+- View all users' predictions (after match starts)
+
+**Authenticated users:**
+- Create/edit predictions (locked when tournament starts: June 11, 2026)
+- View own prediction history
+
+**Admin:**
+- Generate invite codes
+- View invite code usage
+- (Optional) Override prediction lock for late entries
+
+### Match Data Sync
+
+- **Cron job** runs every 5 minutes during matches to update scores
+- Cache match data in `matches_cache` table to reduce API calls
+- Client polls for updates every 60 seconds during live matches
+
+### Deployment (Azure App Service)
+
+```
+┌─────────────────────────────────┐
+│     Azure App Service           │
+│     (Next.js SSR)               │
+│     - Frontend                  │
+│     - API Routes                │
+├─────────────────────────────────┤
+│     Environment Variables       │
+│     - SUPABASE_URL              │
+│     - SUPABASE_ANON_KEY         │
+│     - SUPABASE_SERVICE_KEY      │
+│     - FOOTBALL_DATA_API_TOKEN   │
+└─────────────────────────────────┘
+           │
+           ▼
+┌─────────────────────────────────┐
+│     Supabase (hosted)           │
+│     - PostgreSQL                │
+│     - Auth                      │
+│     - Row Level Security        │
+└─────────────────────────────────┘
+```
+
+### Setup Checklist
+
+- [ ] Create Supabase project
+- [ ] Set up database schema and RLS policies
+- [ ] Initialize Next.js project with TypeScript
+- [ ] Configure Supabase client
+- [ ] Create Azure App Service
+- [ ] Set up GitHub Actions for CI/CD
+- [ ] Configure environment variables in Azure

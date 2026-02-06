@@ -3,7 +3,7 @@
 import { Match, CalculatedStanding, Team } from "@/types/football";
 import { getPositionLabel, getR32BracketByNumber } from "@/lib/r32-bracket";
 import { buildMatchNumberMapping } from "@/lib/bracket-resolver";
-import { getThirdPlaceTeamForMatch } from "@/lib/third-place-ranking";
+import { getThirdPlaceTeamForMatch, getThirdPlacePoolForMatch } from "@/lib/third-place-ranking";
 import { getVenue } from "@/lib/venues";
 
 interface R32PreviewProps {
@@ -94,7 +94,13 @@ export default function R32Preview({
               awayTeam = thirdPlaceInfo.team;
               awayLabel = getPositionLabel(thirdPlaceInfo.group, 3);
             } else {
-              awayLabel = "3rd Place";
+              // Show possible groups when team can't be determined yet
+              const pool = getThirdPlacePoolForMatch(fifaMatchNumber);
+              if (pool && pool.length > 0) {
+                awayLabel = `3rd ${pool.join("/")}`;
+              } else {
+                awayLabel = "3rd Place";
+              }
             }
           }
 

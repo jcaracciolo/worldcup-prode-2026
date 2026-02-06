@@ -123,6 +123,14 @@ const R32_THIRD_PLACE_MATCHES = [
 ];
 
 /**
+ * Get the pool of possible groups for a 3rd place team in a specific R32 match
+ */
+export function getThirdPlacePoolForMatch(matchNumber: number): string[] | null {
+  const match = R32_THIRD_PLACE_MATCHES.find((m) => m.matchNumber === matchNumber);
+  return match?.pool || null;
+}
+
+/**
  * Assign qualifying 3rd place teams to R32 matches
  * Uses a greedy assignment that respects the pool constraints
  * Returns map of FIFA match number -> group letter of 3rd place team

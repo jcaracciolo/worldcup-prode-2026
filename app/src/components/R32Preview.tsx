@@ -161,7 +161,7 @@ export default function R32Preview({
                   {/* Home Team */}
                   <div className="flex-1 text-center">
                     {homeTeam ? (
-                      <div className="flex flex-col items-center gap-2">
+                      <div className="flex flex-col items-center gap-2 min-h-[130px] justify-center">
                         {homeTeam.crest ? (
                           <img
                             src={homeTeam.crest}
@@ -188,7 +188,7 @@ export default function R32Preview({
                         </span>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center gap-2">
+                      <div className="flex flex-col items-center gap-2 min-h-[130px] justify-center">
                         <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
                           <span className="text-white/30 text-xl">?</span>
                         </div>
@@ -207,7 +207,7 @@ export default function R32Preview({
                   {/* Away Team */}
                   <div className="flex-1 text-center">
                     {awayTeam ? (
-                      <div className="flex flex-col items-center gap-2">
+                      <div className="flex flex-col items-center gap-2 min-h-[130px] justify-center">
                         {awayTeam.crest ? (
                           <img
                             src={awayTeam.crest}
@@ -234,7 +234,7 @@ export default function R32Preview({
                         </span>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center gap-2">
+                      <div className="flex flex-col items-center gap-2 min-h-[130px] justify-center">
                         <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
                           <span className="text-white/30 text-xl">?</span>
                         </div>

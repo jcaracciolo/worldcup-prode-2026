@@ -37,11 +37,12 @@ export default function ThemeCustomizer() {
   const updateVar = (key: string, value: string) => {
     document.documentElement.style.setProperty(key, value);
     setVars((prev) => ({ ...prev, [key]: value }));
-    
+
     // Update body gradient for bg vars
     if (key === "--bg-primary" || key === "--bg-secondary") {
       const primary = key === "--bg-primary" ? value : vars["--bg-primary"];
-      const secondary = key === "--bg-secondary" ? value : vars["--bg-secondary"];
+      const secondary =
+        key === "--bg-secondary" ? value : vars["--bg-secondary"];
       document.body.style.background = `linear-gradient(135deg, ${primary} 0%, ${secondary} 100%)`;
     }
   };
@@ -61,7 +62,13 @@ export default function ThemeCustomizer() {
     if (color.startsWith("rgb")) {
       const m = color.match(/\d+/g);
       if (m && m.length >= 3) {
-        return "#" + m.slice(0, 3).map(n => parseInt(n).toString(16).padStart(2, "0")).join("");
+        return (
+          "#" +
+          m
+            .slice(0, 3)
+            .map((n) => parseInt(n).toString(16).padStart(2, "0"))
+            .join("")
+        );
       }
     }
     return "#000000";
@@ -80,7 +87,12 @@ export default function ThemeCustomizer() {
         <div className="fixed bottom-20 right-4 z-[9999] w-72 bg-slate-900 rounded-xl shadow-2xl border border-white/20 overflow-hidden">
           <div className="bg-slate-800 px-4 py-3 flex justify-between items-center">
             <span className="font-semibold text-white">Theme</span>
-            <button onClick={() => setIsOpen(false)} className="text-white/60 hover:text-white">✕</button>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="text-white/60 hover:text-white"
+            >
+              ✕
+            </button>
           </div>
 
           <div className="p-4 space-y-3 max-h-80 overflow-y-auto">
@@ -94,7 +106,9 @@ export default function ThemeCustomizer() {
                 />
                 <div className="flex-1">
                   <div className="text-white text-sm">{label}</div>
-                  <div className="text-white/40 text-xs font-mono">{vars[key] || "—"}</div>
+                  <div className="text-white/40 text-xs font-mono">
+                    {vars[key] || "—"}
+                  </div>
                 </div>
               </div>
             ))}

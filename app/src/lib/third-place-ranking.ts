@@ -20,7 +20,7 @@ export interface ThirdPlaceTeam extends CalculatedStanding {
  * @returns Map of group name to boolean (true if 3rd place qualifies)
  */
 export function getQualifyingThirdPlaceTeams(
-  groupStandings: Map<string, CalculatedStanding[]>
+  groupStandings: Map<string, CalculatedStanding[]>,
 ): Map<string, boolean> {
   const thirdPlaceTeams: ThirdPlaceTeam[] = [];
 
@@ -74,7 +74,7 @@ export function getQualifyingThirdPlaceTeams(
  * Get the full ranked list of third-place teams with their standings
  */
 export function getRankedThirdPlaceTeams(
-  groupStandings: Map<string, CalculatedStanding[]>
+  groupStandings: Map<string, CalculatedStanding[]>,
 ): ThirdPlaceTeam[] {
   const thirdPlaceTeams: ThirdPlaceTeam[] = [];
 
@@ -92,7 +92,8 @@ export function getRankedThirdPlaceTeams(
 
   thirdPlaceTeams.sort((a, b) => {
     if (a.points !== b.points) return b.points - a.points;
-    if (a.goalDifference !== b.goalDifference) return b.goalDifference - a.goalDifference;
+    if (a.goalDifference !== b.goalDifference)
+      return b.goalDifference - a.goalDifference;
     if (a.goalsFor !== b.goalsFor) return b.goalsFor - a.goalsFor;
     return a.group.localeCompare(b.group);
   });

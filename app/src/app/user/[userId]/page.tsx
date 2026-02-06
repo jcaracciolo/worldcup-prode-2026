@@ -5,10 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { calculateTotalPoints } from "@/lib/scoring";
 import { notFound } from "next/navigation";
-import {
-  Match,
-  CalculatedStanding,
-} from "@/types/football";
+import { Match, CalculatedStanding } from "@/types/football";
 
 export const dynamic = "force-dynamic";
 
@@ -182,7 +179,9 @@ export default async function UserPredictionsPage({ params }: PageProps) {
   const thirdPlaceQualifying = getQualifyingThirdPlaceTeams(allGroupStandings);
 
   // Calculate actual standings from actual match results (for scoring)
-  const calculateActualStandings = (groupMatches: Match[]): CalculatedStanding[] => {
+  const calculateActualStandings = (
+    groupMatches: Match[],
+  ): CalculatedStanding[] => {
     const teamStats = new Map<number, CalculatedStanding>();
 
     groupMatches.forEach((match) => {
@@ -265,11 +264,15 @@ export default async function UserPredictionsPage({ params }: PageProps) {
   // Calculate actual group standings (from real results)
   const actualGroupStandings = new Map<string, CalculatedStanding[]>();
   groups.forEach((groupMatchList, groupName) => {
-    actualGroupStandings.set(groupName, calculateActualStandings(groupMatchList));
+    actualGroupStandings.set(
+      groupName,
+      calculateActualStandings(groupMatchList),
+    );
   });
 
   // Determine which teams actually advanced (1st, 2nd, + best 8 3rds)
-  const actualThirdPlaceQualifying = getQualifyingThirdPlaceTeams(actualGroupStandings);
+  const actualThirdPlaceQualifying =
+    getQualifyingThirdPlaceTeams(actualGroupStandings);
   const advancingTeamIds = new Set<number>();
   actualGroupStandings.forEach((standings, groupName) => {
     standings.forEach((standing, index) => {
@@ -289,7 +292,7 @@ export default async function UserPredictionsPage({ params }: PageProps) {
     predictions || [],
     groupOverrides || [],
     actualGroupStandings,
-    advancingTeamIds
+    advancingTeamIds,
   );
 
   // Show blurred state for predictions not yet visible
@@ -312,7 +315,9 @@ export default async function UserPredictionsPage({ params }: PageProps) {
 
         {/* Group Stage */}
         <section className="mb-8">
-          <h2 className="text-xl font-bold mb-4 border-b border-white/10 pb-2 text-white">Group Stage</h2>
+          <h2 className="text-xl font-bold mb-4 border-b border-white/10 pb-2 text-white">
+            Group Stage
+          </h2>
 
           {!showGroupPredictions ? (
             <div className="glass-card p-8 text-center blur-sm select-none">
@@ -327,11 +332,10 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                 .map(([groupName, groupMatchList]) => {
                   const standings = calculateStandings(groupMatchList);
                   return (
-                    <div
-                      key={groupName}
-                      className="glass-card p-4"
-                    >
-                      <h3 className="font-bold text-lg mb-3 text-white">{groupName.replace('GROUP_', 'Group ')}</h3>
+                    <div key={groupName} className="glass-card p-4">
+                      <h3 className="font-bold text-lg mb-3 text-white">
+                        {groupName.replace("GROUP_", "Group ")}
+                      </h3>
 
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
@@ -364,10 +368,12 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                           <h4 className="text-sm font-medium text-white/50 mb-2">
                             Standings
                           </h4>
-                          <StandingsTable 
-                            standings={standings} 
-                            disabled 
-                            thirdPlaceQualifies={thirdPlaceQualifying.get(groupName) || false}
+                          <StandingsTable
+                            standings={standings}
+                            disabled
+                            thirdPlaceQualifies={
+                              thirdPlaceQualifying.get(groupName) || false
+                            }
                           />
                         </div>
                       </div>
@@ -391,8 +397,141 @@ export default async function UserPredictionsPage({ params }: PageProps) {
               </p>
             </div>
           ) : (
-            <div className="text-white/50 text-center py-8">
-              Knockout predictions display coming soon
+            <div className="space-y-6">
+              {(() => {
+                const knockoutStages = [
+                  { stage: "LAST_32", name: "Round of 32" },
+                  { stage: "LAST_16", name: "Round of 16" },
+                  { stage: "QUARTER_FINALS", name: "Quarter-Finals" },
+                  { stage: "SEMI_FINALS", name: "Semi-Finals" },
+                  { stage: "THIRD_PLACE", name: "Third Place" },
+                  { stage: "FINAL", name: "Final" },
+                ];
+
+                const knockoutMatches = matches.filter(
+                  (m) => m.stage !== "GROUP_STAGE",
+                );
+
+                if (knockoutMatches.length === 0) {
+                  return (
+                    <div className="text-white/50 text-center py-8">
+                      No knockout matches available yet
+                    </div>
+                  );
+                }
+
+                return knockoutStages.map(({ stage, name }) => {
+                  const stageMatches = knockoutMatches
+                    .filter((m) => m.stage === stage)
+                    .sort(
+                      (a, b) =>
+                        new Date(a.utcDate).getTime() -
+                        new Date(b.utcDate).getTime(),
+                    );
+
+                  if (stageMatches.length === 0) return null;
+
+                  return (
+                    <div key={stage} className="glass-card p-4">
+                      <h3 className="font-bold text-lg mb-3 text-white">
+                        {name}
+                      </h3>
+                      <div className="space-y-2">
+                        {stageMatches.map((match) => {
+                          const pred = predictionMap.get(match.id);
+                          const matchDate = new Date(match.utcDate);
+                          const isTie =
+                            pred?.home_goals !== null &&
+                            pred?.away_goals !== null &&
+                            pred?.home_goals === pred?.away_goals;
+                          const winnerTeam = pred?.winner_id
+                            ? match.homeTeam.id === pred.winner_id
+                              ? match.homeTeam
+                              : match.awayTeam
+                            : null;
+
+                          return (
+                            <div
+                              key={match.id}
+                              className="flex items-center gap-3 py-3 px-4 rounded-xl bg-slate-800/60 border border-white/5"
+                            >
+                              {/* Date */}
+                              <div className="w-16 text-center shrink-0">
+                                <div className="text-xs text-white/50">
+                                  {matchDate.toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                  })}
+                                </div>
+                              </div>
+
+                              {/* Home Team */}
+                              <div className="w-28 flex items-center justify-end gap-2">
+                                <span className="text-sm font-semibold text-white truncate">
+                                  {match.homeTeam.tla || "TBD"}
+                                </span>
+                                {match.homeTeam.crest ? (
+                                  <img
+                                    src={match.homeTeam.crest}
+                                    alt={match.homeTeam.name}
+                                    className="w-6 h-6 object-contain shrink-0"
+                                  />
+                                ) : (
+                                  <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
+                                    ?
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Score */}
+                              <div className="flex items-center gap-2 mx-2">
+                                <span className="w-8 h-8 flex items-center justify-center text-lg font-bold bg-white/10 rounded text-white">
+                                  {pred?.home_goals ?? "-"}
+                                </span>
+                                <span className="text-white/50">-</span>
+                                <span className="w-8 h-8 flex items-center justify-center text-lg font-bold bg-white/10 rounded text-white">
+                                  {pred?.away_goals ?? "-"}
+                                </span>
+                              </div>
+
+                              {/* Away Team */}
+                              <div className="w-28 flex items-center gap-2">
+                                {match.awayTeam.crest ? (
+                                  <img
+                                    src={match.awayTeam.crest}
+                                    alt={match.awayTeam.name}
+                                    className="w-6 h-6 object-contain shrink-0"
+                                  />
+                                ) : (
+                                  <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
+                                    ?
+                                  </div>
+                                )}
+                                <span className="text-sm font-semibold text-white truncate">
+                                  {match.awayTeam.tla || "TBD"}
+                                </span>
+                              </div>
+
+                              {/* Winner indicator for ties */}
+                              {isTie && winnerTeam && (
+                                <div className="ml-auto flex items-center gap-1 px-2 py-1 rounded bg-emerald-600/30 text-emerald-400 text-xs">
+                                  <span>🏆</span>
+                                  <span>{winnerTeam.tla}</span>
+                                </div>
+                              )}
+                              {isTie && !winnerTeam && (
+                                <div className="ml-auto px-2 py-1 rounded bg-yellow-600/30 text-yellow-400 text-xs">
+                                  No winner selected
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           )}
         </section>
@@ -407,7 +546,9 @@ export default async function UserPredictionsPage({ params }: PageProps) {
 
       <footer className="bg-black/20 text-white py-4 mt-8">
         <div className="container mx-auto px-4 text-center text-sm">
-          <p className="text-white/50">WorldCupProde - FIFA World Cup 2026 Predictions</p>
+          <p className="text-white/50">
+            WorldCupProde - FIFA World Cup 2026 Predictions
+          </p>
         </div>
       </footer>
     </div>

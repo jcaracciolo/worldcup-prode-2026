@@ -120,7 +120,9 @@ export default async function MatchDetailPage({ params }: PageProps) {
                     />
                   ) : (
                     <div className="w-20 h-20 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-3">
-                      <span className="text-2xl font-bold">{match.homeTeam.tla}</span>
+                      <span className="text-2xl font-bold">
+                        {match.homeTeam.tla}
+                      </span>
                     </div>
                   )}
                   <div className="font-bold text-lg">{match.homeTeam.name}</div>
@@ -162,7 +164,9 @@ export default async function MatchDetailPage({ params }: PageProps) {
                     />
                   ) : (
                     <div className="w-20 h-20 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-3">
-                      <span className="text-2xl font-bold">{match.awayTeam.tla}</span>
+                      <span className="text-2xl font-bold">
+                        {match.awayTeam.tla}
+                      </span>
                     </div>
                   )}
                   <div className="font-bold text-lg">{match.awayTeam.name}</div>
@@ -196,7 +200,9 @@ export default async function MatchDetailPage({ params }: PageProps) {
             {/* User's Prediction & Points */}
             {user && prediction && (
               <div className="border-t border-white/10 p-6">
-                <h3 className="font-bold text-lg mb-4 text-white">Your Prediction</h3>
+                <h3 className="font-bold text-lg mb-4 text-white">
+                  Your Prediction
+                </h3>
 
                 <div className="bg-white/10 rounded-xl p-5">
                   <div className="flex items-center justify-center gap-4 text-xl font-bold mb-4 text-white">
@@ -211,7 +217,9 @@ export default async function MatchDetailPage({ params }: PageProps) {
                   {isFinished && (
                     <div className="border-t border-white/10 pt-4 mt-4">
                       <div className="flex justify-between items-center mb-3">
-                        <span className="font-medium text-white/70">Points Earned</span>
+                        <span className="font-medium text-white/70">
+                          Points Earned
+                        </span>
                         <span className="text-2xl font-bold text-emerald-400">
                           {pointsEarned} / 4
                         </span>
@@ -219,8 +227,13 @@ export default async function MatchDetailPage({ params }: PageProps) {
                       {pointsBreakdown.length > 0 ? (
                         <ul className="text-sm space-y-2">
                           {pointsBreakdown.map((item, i) => (
-                            <li key={i} className="text-emerald-400 flex items-center gap-2">
-                              <span className="w-5 h-5 bg-emerald-500/20 rounded-full flex items-center justify-center text-xs">✓</span>
+                            <li
+                              key={i}
+                              className="text-emerald-400 flex items-center gap-2"
+                            >
+                              <span className="w-5 h-5 bg-emerald-500/20 rounded-full flex items-center justify-center text-xs">
+                                ✓
+                              </span>
                               {item}
                             </li>
                           ))}
@@ -238,10 +251,15 @@ export default async function MatchDetailPage({ params }: PageProps) {
 
             {!user && (
               <div className="border-t border-white/10 p-6 text-center">
-                <a href="/login" className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors">
+                <a
+                  href="/login"
+                  className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+                >
                   Log in
                 </a>{" "}
-                <span className="text-white/50">to see your prediction for this match</span>
+                <span className="text-white/50">
+                  to see your prediction for this match
+                </span>
               </div>
             )}
           </div>
@@ -250,7 +268,9 @@ export default async function MatchDetailPage({ params }: PageProps) {
 
       <footer className="border-t border-white/10 mt-auto">
         <div className="container mx-auto px-4 py-6 text-center">
-          <p className="text-white/40 text-sm">WorldCupProde - FIFA World Cup 2026 Predictions</p>
+          <p className="text-white/40 text-sm">
+            WorldCupProde - FIFA World Cup 2026 Predictions
+          </p>
         </div>
       </footer>
     </div>

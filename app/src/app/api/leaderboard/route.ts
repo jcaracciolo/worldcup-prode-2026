@@ -47,7 +47,7 @@ export async function GET() {
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/matches`,
-        { cache: "no-store" }
+        { cache: "no-store" },
       );
       const data = await res.json();
       matches = data.matches || [];
@@ -64,7 +64,9 @@ export async function GET() {
       groups.get(m.group)!.push(m);
     });
 
-    const calculateActualStandings = (groupMatchList: Match[]): CalculatedStanding[] => {
+    const calculateActualStandings = (
+      groupMatchList: Match[],
+    ): CalculatedStanding[] => {
       const teamStats = new Map<number, CalculatedStanding>();
 
       groupMatchList.forEach((match) => {
@@ -145,10 +147,14 @@ export async function GET() {
 
     const actualGroupStandings = new Map<string, CalculatedStanding[]>();
     groups.forEach((groupMatchList, groupName) => {
-      actualGroupStandings.set(groupName, calculateActualStandings(groupMatchList));
+      actualGroupStandings.set(
+        groupName,
+        calculateActualStandings(groupMatchList),
+      );
     });
 
-    const actualThirdPlaceQualifying = getQualifyingThirdPlaceTeams(actualGroupStandings);
+    const actualThirdPlaceQualifying =
+      getQualifyingThirdPlaceTeams(actualGroupStandings);
     const advancingTeamIds = new Set<number>();
     actualGroupStandings.forEach((standings, groupName) => {
       standings.forEach((standing, index) => {
@@ -180,7 +186,7 @@ export async function GET() {
           predictions || [],
           groupOverrides || [],
           actualGroupStandings,
-          advancingTeamIds
+          advancingTeamIds,
         );
 
         // Categorize points
@@ -216,7 +222,7 @@ export async function GET() {
           groupBonusPoints,
           knockoutPoints,
         };
-      })
+      }),
     );
 
     // Sort by total points
@@ -227,7 +233,7 @@ export async function GET() {
     console.error("Error calculating leaderboard:", error);
     return NextResponse.json(
       { error: "Failed to calculate leaderboard", scores: [] },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

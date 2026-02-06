@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     if (!code || !userId) {
       return NextResponse.json(
         { error: "Missing code or userId" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       console.error("Failed to mark invite code as used:", error);
       return NextResponse.json(
         { error: "Failed to use invite code" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     console.error("Error in use-invite-code:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

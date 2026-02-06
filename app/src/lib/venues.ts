@@ -21,7 +21,11 @@ export const matchVenues: Record<number, Venue> = {
   537345: { stadium: "AT&T Stadium", city: "Dallas", country: "USA" },
   537346: { stadium: "NRG Stadium", city: "Houston", country: "USA" },
   537351: { stadium: "Mercedes-Benz Stadium", city: "Atlanta", country: "USA" },
-  537352: { stadium: "Lincoln Financial Field", city: "Philadelphia", country: "USA" },
+  537352: {
+    stadium: "Lincoln Financial Field",
+    city: "Philadelphia",
+    country: "USA",
+  },
   537357: { stadium: "Gillette Stadium", city: "Boston", country: "USA" },
   537358: { stadium: "Lumen Field", city: "Seattle", country: "USA" },
   537363: { stadium: "Arrowhead Stadium", city: "Kansas City", country: "USA" },
@@ -35,7 +39,11 @@ export const matchVenues: Record<number, Venue> = {
   537403: { stadium: "AT&T Stadium", city: "Dallas", country: "USA" },
   537404: { stadium: "NRG Stadium", city: "Houston", country: "USA" },
   537409: { stadium: "Mercedes-Benz Stadium", city: "Atlanta", country: "USA" },
-  537410: { stadium: "Lincoln Financial Field", city: "Philadelphia", country: "USA" },
+  537410: {
+    stadium: "Lincoln Financial Field",
+    city: "Philadelphia",
+    country: "USA",
+  },
 
   // Group Stage - Matchday 2
   537329: { stadium: "BC Place", city: "Vancouver", country: "CAN" },
@@ -49,7 +57,11 @@ export const matchVenues: Record<number, Venue> = {
   537353: { stadium: "Mercedes-Benz Stadium", city: "Atlanta", country: "USA" },
   537354: { stadium: "Hard Rock Stadium", city: "Miami", country: "USA" },
   537359: { stadium: "MetLife Stadium", city: "New York", country: "USA" },
-  537360: { stadium: "Lincoln Financial Field", city: "Philadelphia", country: "USA" },
+  537360: {
+    stadium: "Lincoln Financial Field",
+    city: "Philadelphia",
+    country: "USA",
+  },
   537365: { stadium: "Arrowhead Stadium", city: "Kansas City", country: "USA" },
   537366: { stadium: "Lumen Field", city: "Seattle", country: "USA" },
   537371: { stadium: "SoFi Stadium", city: "Los Angeles", country: "USA" },
@@ -60,7 +72,11 @@ export const matchVenues: Record<number, Venue> = {
   537400: { stadium: "AT&T Stadium", city: "Dallas", country: "USA" },
   537405: { stadium: "NRG Stadium", city: "Houston", country: "USA" },
   537406: { stadium: "Mercedes-Benz Stadium", city: "Atlanta", country: "USA" },
-  537411: { stadium: "Lincoln Financial Field", city: "Philadelphia", country: "USA" },
+  537411: {
+    stadium: "Lincoln Financial Field",
+    city: "Philadelphia",
+    country: "USA",
+  },
   537412: { stadium: "Lumen Field", city: "Seattle", country: "USA" },
 
   // Group Stage - Matchday 3
@@ -75,7 +91,11 @@ export const matchVenues: Record<number, Venue> = {
   537355: { stadium: "Mercedes-Benz Stadium", city: "Atlanta", country: "USA" },
   537356: { stadium: "Hard Rock Stadium", city: "Miami", country: "USA" },
   537361: { stadium: "MetLife Stadium", city: "New York", country: "USA" },
-  537362: { stadium: "Lincoln Financial Field", city: "Philadelphia", country: "USA" },
+  537362: {
+    stadium: "Lincoln Financial Field",
+    city: "Philadelphia",
+    country: "USA",
+  },
   537367: { stadium: "Arrowhead Stadium", city: "Kansas City", country: "USA" },
   537368: { stadium: "Lumen Field", city: "Seattle", country: "USA" },
   537373: { stadium: "SoFi Stadium", city: "Los Angeles", country: "USA" },
@@ -86,7 +106,11 @@ export const matchVenues: Record<number, Venue> = {
   537402: { stadium: "AT&T Stadium", city: "Dallas", country: "USA" },
   537407: { stadium: "NRG Stadium", city: "Houston", country: "USA" },
   537408: { stadium: "Mercedes-Benz Stadium", city: "Atlanta", country: "USA" },
-  537413: { stadium: "Lincoln Financial Field", city: "Philadelphia", country: "USA" },
+  537413: {
+    stadium: "Lincoln Financial Field",
+    city: "Philadelphia",
+    country: "USA",
+  },
   537414: { stadium: "Lumen Field", city: "Seattle", country: "USA" },
 
   // Round of 32
@@ -99,7 +123,11 @@ export const matchVenues: Record<number, Venue> = {
   537421: { stadium: "Mercedes-Benz Stadium", city: "Atlanta", country: "USA" },
   537422: { stadium: "Arrowhead Stadium", city: "Kansas City", country: "USA" },
   537423: { stadium: "Levi's Stadium", city: "San Francisco", country: "USA" },
-  537424: { stadium: "Lincoln Financial Field", city: "Philadelphia", country: "USA" },
+  537424: {
+    stadium: "Lincoln Financial Field",
+    city: "Philadelphia",
+    country: "USA",
+  },
   537425: { stadium: "Gillette Stadium", city: "Boston", country: "USA" },
   537426: { stadium: "BC Place", city: "Vancouver", country: "CAN" },
   537427: { stadium: "BMO Field", city: "Toronto", country: "CAN" },

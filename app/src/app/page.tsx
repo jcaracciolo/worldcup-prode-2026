@@ -65,7 +65,8 @@ export default async function HomePage() {
             FIFA World Cup 2026
           </h1>
           <p className="text-emerald-100/80 text-lg max-w-2xl mx-auto">
-            Make your predictions for every match, climb the leaderboard, and compete with friends!
+            Make your predictions for every match, climb the leaderboard, and
+            compete with friends!
           </p>
           {!user && (
             <div className="mt-6">
@@ -97,7 +98,9 @@ export default async function HomePage() {
             {matches.length === 0 ? (
               <div className="glass-card p-12 text-center">
                 <div className="text-6xl mb-4">⚽</div>
-                <p className="text-xl text-white/80 font-medium">No matches scheduled</p>
+                <p className="text-xl text-white/80 font-medium">
+                  No matches scheduled
+                </p>
                 <p className="text-white/50 mt-2">
                   The World Cup starts June 11, 2026!
                 </p>

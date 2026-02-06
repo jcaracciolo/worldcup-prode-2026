@@ -50,13 +50,13 @@ export default function PredictionInput({
 
   // Format date
   const matchDate = new Date(match.utcDate);
-  const formattedDate = matchDate.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
+  const formattedDate = matchDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
   });
-  const formattedTime = matchDate.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
+  const formattedTime = matchDate.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
   });
 
   // Get venue info
@@ -66,15 +66,27 @@ export default function PredictionInput({
     <div className="flex items-center py-3 px-4 rounded-xl bg-slate-800/60 hover:bg-slate-800/80 transition-colors border border-white/5">
       {/* Section 1: Date */}
       <div className="w-20 text-center shrink-0 pr-3 border-r border-white/10">
-        <div className="text-sm uppercase font-bold tracking-wide whitespace-nowrap" style={{ color: 'var(--date-color)' }}>{formattedDate}</div>
+        <div
+          className="text-sm uppercase font-bold tracking-wide whitespace-nowrap"
+          style={{ color: "var(--date-color)" }}
+        >
+          {formattedDate}
+        </div>
       </div>
-      
+
       {/* Section 2: Time & Venue */}
       <div className="w-28 shrink-0 px-3 border-r border-white/10">
         <div className="text-sm text-white/70 font-medium">{formattedTime}</div>
-        {venue && <div className="text-sm font-semibold truncate" style={{ color: 'var(--venue-color)' }}>{venue.city}</div>}
+        {venue && (
+          <div
+            className="text-sm font-semibold truncate"
+            style={{ color: "var(--venue-color)" }}
+          >
+            {venue.city}
+          </div>
+        )}
       </div>
-      
+
       {/* Section 3: Match */}
       <div className="flex-1 flex items-center pl-4">
         {/* Home Team - fixed width for alignment */}

@@ -26,8 +26,12 @@ export default function Header({ user }: HeaderProps) {
             <span className="text-xl">⚽</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-bold text-white tracking-tight">WorldCupProde</span>
-            <span className="text-[10px] text-emerald-400 font-medium tracking-wider uppercase">FIFA 2026</span>
+            <span className="text-lg font-bold text-white tracking-tight">
+              WorldCupProde
+            </span>
+            <span className="text-[10px] text-emerald-400 font-medium tracking-wider uppercase">
+              FIFA 2026
+            </span>
           </div>
         </Link>
 

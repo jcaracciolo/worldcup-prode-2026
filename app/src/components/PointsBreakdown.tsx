@@ -54,16 +54,24 @@ export default function PointsBreakdown({
   };
 
   // Group breakdown by category
-  const groupMatchPoints = breakdown.filter(b => 
-    (b.type === "result" || b.type === "goals_home" || b.type === "goals_away") &&
-    (!b.matchInfo || b.matchInfo.stage === "GROUP_STAGE")
+  const groupMatchPoints = breakdown.filter(
+    (b) =>
+      (b.type === "result" ||
+        b.type === "goals_home" ||
+        b.type === "goals_away") &&
+      (!b.matchInfo || b.matchInfo.stage === "GROUP_STAGE"),
   );
-  const groupBonusPoints = breakdown.filter(b => 
-    b.type === "group_advance" || b.type === "group_position"
+  const groupBonusPoints = breakdown.filter(
+    (b) => b.type === "group_advance" || b.type === "group_position",
   );
-  const knockoutPoints = breakdown.filter(b => 
-    b.type === "knockout_win" || b.type === "knockout_lose" || b.type === "knockout_tie" ||
-    ((b.type === "goals_home" || b.type === "goals_away") && b.matchInfo && b.matchInfo.stage !== "GROUP_STAGE")
+  const knockoutPoints = breakdown.filter(
+    (b) =>
+      b.type === "knockout_win" ||
+      b.type === "knockout_lose" ||
+      b.type === "knockout_tie" ||
+      ((b.type === "goals_home" || b.type === "goals_away") &&
+        b.matchInfo &&
+        b.matchInfo.stage !== "GROUP_STAGE"),
   );
 
   const renderItem = (item: PointBreakdown, index: number) => (
@@ -74,21 +82,21 @@ export default function PointsBreakdown({
       {/* Team crest/flag */}
       <div className="w-8 h-8 flex items-center justify-center shrink-0">
         {item.team?.crest ? (
-          <img 
-            src={item.team.crest} 
-            alt={item.team.tla} 
+          <img
+            src={item.team.crest}
+            alt={item.team.tla}
             className="w-6 h-6 object-contain"
           />
         ) : item.matchInfo ? (
           <div className="flex -space-x-2">
-            <img 
-              src={item.matchInfo.homeTeam.crest} 
-              alt={item.matchInfo.homeTeam.tla} 
+            <img
+              src={item.matchInfo.homeTeam.crest}
+              alt={item.matchInfo.homeTeam.tla}
               className="w-5 h-5 object-contain"
             />
-            <img 
-              src={item.matchInfo.awayTeam.crest} 
-              alt={item.matchInfo.awayTeam.tla} 
+            <img
+              src={item.matchInfo.awayTeam.crest}
+              alt={item.matchInfo.awayTeam.tla}
               className="w-5 h-5 object-contain"
             />
           </div>
@@ -105,10 +113,13 @@ export default function PointsBreakdown({
           )}
           {item.matchInfo && !item.team && (
             <span className="font-medium text-white">
-              {item.matchInfo.homeTeam.tla} {item.matchInfo.homeGoals}-{item.matchInfo.awayGoals} {item.matchInfo.awayTeam.tla}
+              {item.matchInfo.homeTeam.tla} {item.matchInfo.homeGoals}-
+              {item.matchInfo.awayGoals} {item.matchInfo.awayTeam.tla}
             </span>
           )}
-          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${getTypeBgColor(item.type)}`}>
+          <span
+            className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${getTypeBgColor(item.type)}`}
+          >
             {getTypeLabel(item.type)}
           </span>
         </div>
@@ -117,22 +128,31 @@ export default function PointsBreakdown({
 
       {/* Points */}
       <div className="text-right shrink-0">
-        <span className="text-lg font-bold text-emerald-400">+{item.points}</span>
+        <span className="text-lg font-bold text-emerald-400">
+          +{item.points}
+        </span>
       </div>
     </div>
   );
 
-  const renderSection = (title: string, emoji: string, items: PointBreakdown[], sectionPoints: number) => {
+  const renderSection = (
+    title: string,
+    emoji: string,
+    items: PointBreakdown[],
+    sectionPoints: number,
+  ) => {
     if (items.length === 0) return null;
     return (
       <div className="mb-4 last:mb-0">
         <div className="flex items-center justify-between px-4 py-2 bg-white/5">
-          <span className="text-sm font-medium text-white/70">{emoji} {title}</span>
-          <span className="text-sm font-bold text-white">{sectionPoints} pts</span>
+          <span className="text-sm font-medium text-white/70">
+            {emoji} {title}
+          </span>
+          <span className="text-sm font-bold text-white">
+            {sectionPoints} pts
+          </span>
         </div>
-        <div>
-          {items.map((item, index) => renderItem(item, index))}
-        </div>
+        <div>{items.map((item, index) => renderItem(item, index))}</div>
       </div>
     );
   };
@@ -152,17 +172,25 @@ export default function PointsBreakdown({
         {breakdown.length === 0 ? (
           <div className="p-6 text-center">
             <div className="text-4xl mb-3">⏳</div>
-            <p className="text-white/50">
-              No points earned yet
-            </p>
+            <p className="text-white/50">No points earned yet</p>
             <p className="text-white/30 text-sm mt-1">
               Points are calculated when matches finish
             </p>
           </div>
         ) : (
           <div className="py-2">
-            {renderSection("Group Match Predictions", "⚽", groupMatchPoints, groupMatchPts)}
-            {renderSection("Group Standings Bonus", "📈", groupBonusPoints, groupBonusPts)}
+            {renderSection(
+              "Group Match Predictions",
+              "⚽",
+              groupMatchPoints,
+              groupMatchPts,
+            )}
+            {renderSection(
+              "Group Standings Bonus",
+              "📈",
+              groupBonusPoints,
+              groupBonusPts,
+            )}
             {renderSection("Knockout Stage", "⚔️", knockoutPoints, knockoutPts)}
           </div>
         )}

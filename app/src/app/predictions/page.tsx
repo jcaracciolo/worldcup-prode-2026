@@ -175,13 +175,19 @@ export default function PredictionsPage() {
 
       // Apply manual position overrides for tiebreakers
       if (groupName) {
-        const groupOverrides = overrides.filter(o => o.group_name === groupName);
+        const groupOverrides = overrides.filter(
+          (o) => o.group_name === groupName,
+        );
         if (groupOverrides.length > 0) {
           // Sort by override positions
-          standings = standings.map(s => {
-            const override = groupOverrides.find(o => o.team_id === s.team.id);
-            return { ...s, position: override?.position || s.position };
-          }).sort((a, b) => a.position - b.position)
+          standings = standings
+            .map((s) => {
+              const override = groupOverrides.find(
+                (o) => o.team_id === s.team.id,
+              );
+              return { ...s, position: override?.position || s.position };
+            })
+            .sort((a, b) => a.position - b.position)
             .map((s, i) => ({ ...s, position: i + 1 }));
         }
       }
@@ -191,25 +197,33 @@ export default function PredictionsPage() {
     [predictions, overrides],
   );
 
-  const handleSwapPositions = (groupName: string, teamId1: number, teamId2: number) => {
+  const handleSwapPositions = (
+    groupName: string,
+    teamId1: number,
+    teamId2: number,
+  ) => {
     // Find current positions
-    const groupMatches = matches.filter(m => m.group === groupName);
+    const groupMatches = matches.filter((m) => m.group === groupName);
     const standings = calculateStandings(groupMatches, groupName);
-    
-    const team1Standing = standings.find(s => s.team.id === teamId1);
-    const team2Standing = standings.find(s => s.team.id === teamId2);
-    
+
+    const team1Standing = standings.find((s) => s.team.id === teamId1);
+    const team2Standing = standings.find((s) => s.team.id === teamId2);
+
     if (!team1Standing || !team2Standing) return;
-    
+
     // Create new overrides swapping positions
     const newOverrides = overrides.filter(
-      o => !(o.group_name === groupName && (o.team_id === teamId1 || o.team_id === teamId2))
+      (o) =>
+        !(
+          o.group_name === groupName &&
+          (o.team_id === teamId1 || o.team_id === teamId2)
+        ),
     );
-    
+
     // Add swapped positions
     newOverrides.push({
-      id: '',
-      user_id: profile?.id || '',
+      id: "",
+      user_id: profile?.id || "",
       group_name: groupName,
       team_id: teamId1,
       position: team2Standing.position,
@@ -217,15 +231,15 @@ export default function PredictionsPage() {
       updated_at: new Date().toISOString(),
     });
     newOverrides.push({
-      id: '',
-      user_id: profile?.id || '',
+      id: "",
+      user_id: profile?.id || "",
       group_name: groupName,
       team_id: teamId2,
       position: team1Standing.position,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
-    
+
     setOverrides(newOverrides);
   };
 
@@ -282,12 +296,12 @@ export default function PredictionsPage() {
 
   const handleRandomPredictions = () => {
     const newPredictions = new Map(predictions);
-    
+
     matches.forEach((match) => {
       // Generate random scores (0-5 each)
       const homeGoals = Math.floor(Math.random() * 6);
       const awayGoals = Math.floor(Math.random() * 6);
-      
+
       const existing = newPredictions.get(match.id);
       const updated: Prediction = {
         id: existing?.id || "",
@@ -301,7 +315,7 @@ export default function PredictionsPage() {
       };
       newPredictions.set(match.id, updated);
     });
-    
+
     setPredictions(newPredictions);
   };
 
@@ -324,7 +338,10 @@ export default function PredictionsPage() {
   // Calculate standings for each group (for R32 preview)
   const groupStandings = new Map<string, CalculatedStanding[]>();
   groups.forEach((groupMatchList, groupName) => {
-    groupStandings.set(groupName, calculateStandings(groupMatchList, groupName));
+    groupStandings.set(
+      groupName,
+      calculateStandings(groupMatchList, groupName),
+    );
   });
 
   // Calculate which 3rd place teams qualify (best 8 of 12)
@@ -356,7 +373,7 @@ export default function PredictionsPage() {
               onClick={handleRandomPredictions}
               disabled={groupLocked && knockoutLocked}
               className="px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: 'var(--accent)' }}
+              style={{ backgroundColor: "var(--accent)" }}
             >
               🎲 Random
             </button>
@@ -364,7 +381,7 @@ export default function PredictionsPage() {
               onClick={handleSave}
               disabled={saving || (groupLocked && knockoutLocked)}
               className="px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: 'var(--qualifying-bg)' }}
+              style={{ backgroundColor: "var(--qualifying-bg)" }}
             >
               {saving ? "Saving..." : "Save Predictions"}
             </button>
@@ -401,13 +418,10 @@ export default function PredictionsPage() {
               .map(([groupName, groupMatchList]) => {
                 const standings = calculateStandings(groupMatchList, groupName);
                 return (
-                  <div
-                    key={groupName}
-                    className="glass-card p-5"
-                  >
+                  <div key={groupName} className="glass-card p-5">
                     <div className="flex items-center gap-2 mb-4">
                       <span className="px-4 py-2 bg-emerald-500/20 text-emerald-400 text-xl font-bold rounded-lg">
-                        {groupName.replace('GROUP_', 'Group ')}
+                        {groupName.replace("GROUP_", "Group ")}
                       </span>
                     </div>
 
@@ -419,16 +433,20 @@ export default function PredictionsPage() {
                         </h4>
                         <div className="space-y-1">
                           {groupMatchList
-                            .sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime())
+                            .sort(
+                              (a, b) =>
+                                new Date(a.utcDate).getTime() -
+                                new Date(b.utcDate).getTime(),
+                            )
                             .map((match) => (
-                            <PredictionInput
-                              key={match.id}
-                              match={match}
-                              prediction={predictions.get(match.id)}
-                              onChange={handlePredictionChange}
-                              disabled={groupLocked}
-                            />
-                          ))}
+                              <PredictionInput
+                                key={match.id}
+                                match={match}
+                                prediction={predictions.get(match.id)}
+                                onChange={handlePredictionChange}
+                                disabled={groupLocked}
+                              />
+                            ))}
                         </div>
                       </div>
 
@@ -436,13 +454,21 @@ export default function PredictionsPage() {
                       <div>
                         <h4 className="text-sm font-medium text-white/50 mb-3 uppercase tracking-wider">
                           Standings
-                          {!groupLocked && <span className="text-white/30 text-xs ml-2">(↕ swap tied teams)</span>}
+                          {!groupLocked && (
+                            <span className="text-white/30 text-xs ml-2">
+                              (↕ swap tied teams)
+                            </span>
+                          )}
                         </h4>
                         <StandingsTable
                           standings={standings}
                           disabled={groupLocked}
-                          onSwapPositions={(team1, team2) => handleSwapPositions(groupName, team1, team2)}
-                          thirdPlaceQualifies={thirdPlaceQualifying.get(groupName) || false}
+                          onSwapPositions={(team1, team2) =>
+                            handleSwapPositions(groupName, team1, team2)
+                          }
+                          thirdPlaceQualifies={
+                            thirdPlaceQualifying.get(groupName) || false
+                          }
                         />
                       </div>
                     </div>
@@ -467,7 +493,7 @@ export default function PredictionsPage() {
           {!knockoutOpen ? (
             <div className="space-y-6">
               {/* R32 Preview - Shows teams based on group predictions */}
-              <R32Preview 
+              <R32Preview
                 matches={knockoutStages.get("LAST_32") || []}
                 groupStandings={groupStandings}
                 thirdPlaceQualifying={thirdPlaceQualifying}
@@ -484,19 +510,23 @@ export default function PredictionsPage() {
                   </div>
                 </div>
                 <div className="space-y-6 opacity-50">
-                  {["LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "FINAL"].map((stage) => {
-                    const stageName = stage.replace(/_/g, " ");
-                    return (
-                      <div key={stage} className="glass-card p-5">
-                        <h3 className="font-bold text-lg mb-4 text-white">{stageName}</h3>
-                        <div className="grid md:grid-cols-2 gap-4 h-20">
-                          {/* Placeholder boxes */}
-                          <div className="bg-white/5 rounded-lg h-12"></div>
-                          <div className="bg-white/5 rounded-lg h-12"></div>
+                  {["LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "FINAL"].map(
+                    (stage) => {
+                      const stageName = stage.replace(/_/g, " ");
+                      return (
+                        <div key={stage} className="glass-card p-5">
+                          <h3 className="font-bold text-lg mb-4 text-white">
+                            {stageName}
+                          </h3>
+                          <div className="grid md:grid-cols-2 gap-4 h-20">
+                            {/* Placeholder boxes */}
+                            <div className="bg-white/5 rounded-lg h-12"></div>
+                            <div className="bg-white/5 rounded-lg h-12"></div>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    },
+                  )}
                 </div>
               </div>
             </div>
@@ -523,11 +553,10 @@ export default function PredictionsPage() {
                 const needsWinner = ["THIRD_PLACE", "FINAL"].includes(stage);
 
                 return (
-                  <div
-                    key={stage}
-                    className="glass-card p-5"
-                  >
-                    <h3 className="font-bold text-lg mb-4 text-white">{stageName}</h3>
+                  <div key={stage} className="glass-card p-5">
+                    <h3 className="font-bold text-lg mb-4 text-white">
+                      {stageName}
+                    </h3>
                     <div className="grid md:grid-cols-2 gap-4">
                       {stageMatches.map((match) => (
                         <PredictionInput
@@ -550,7 +579,9 @@ export default function PredictionsPage() {
 
       <footer className="border-t border-white/10 mt-auto">
         <div className="container mx-auto px-4 py-6 text-center">
-          <p className="text-white/40 text-sm">WorldCupProde - FIFA World Cup 2026 Predictions</p>
+          <p className="text-white/40 text-sm">
+            WorldCupProde - FIFA World Cup 2026 Predictions
+          </p>
         </div>
       </footer>
     </div>

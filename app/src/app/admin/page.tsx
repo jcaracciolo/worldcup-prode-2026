@@ -203,7 +203,10 @@ export default function AdminPage() {
               </thead>
               <tbody>
                 {inviteCodes.map((code) => (
-                  <tr key={code.id} className="border-b border-white/5 hover:bg-white/5">
+                  <tr
+                    key={code.id}
+                    className="border-b border-white/5 hover:bg-white/5"
+                  >
                     <td className="py-2 px-4 font-mono font-bold text-white">
                       {code.code}
                     </td>
@@ -235,7 +238,9 @@ export default function AdminPage() {
 
         {/* Tournament Controls */}
         <section className="glass-card p-6 mb-6">
-          <h2 className="text-xl font-bold mb-4 text-white">Tournament Controls</h2>
+          <h2 className="text-xl font-bold mb-4 text-white">
+            Tournament Controls
+          </h2>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">

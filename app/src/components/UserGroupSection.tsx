@@ -74,7 +74,9 @@ export default function UserGroupSection({
                 matches={groupMatchList}
                 standings={standings}
                 predictionMap={predictionMap}
-                thirdPlaceQualifies={thirdPlaceQualifying.get(groupName) || false}
+                thirdPlaceQualifies={
+                  thirdPlaceQualifying.get(groupName) || false
+                }
               />
             );
           })}
@@ -106,7 +108,9 @@ function GroupCard({
 
       <div className="grid md:grid-cols-2 gap-4">
         <div>
-          <h4 className="text-sm font-medium text-white/50 mb-2">Predictions</h4>
+          <h4 className="text-sm font-medium text-white/50 mb-2">
+            Predictions
+          </h4>
           {matches.map((match) => (
             <GroupMatchRow
               key={match.id}
@@ -199,7 +203,11 @@ function GroupMatchRow({ match, prediction }: GroupMatchRowProps) {
         </span>
       </div>
       {/* Points earned */}
-      <MatchPointsTooltip match={match} prediction={prediction} className="w-8" />
+      <MatchPointsTooltip
+        match={match}
+        prediction={prediction}
+        className="w-8"
+      />
     </div>
   );
 }

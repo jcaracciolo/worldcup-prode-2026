@@ -1,35 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Header from "@/components/Header";
 import TodaysMatches from "@/components/TodaysMatches";
 import Leaderboard from "@/components/Leaderboard";
 import { createClient } from "@/lib/supabase/client";
+import { useUser } from "@/contexts/UserContext";
 import { UserScore } from "@/types/football";
-import { Profile } from "@/types/database";
 
 export default function HomePage() {
   const supabase = createClient();
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const { user: profile } = useUser();
   const [leaderboard, setLeaderboard] = useState<UserScore[]>([]);
-  const [userId, setUserId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const loadData = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        setUserId(user.id);
-        const { data } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-        setProfile(data);
-      }
-
       // Fetch leaderboard
       const { data: profiles } = await supabase
         .from("profiles")
@@ -54,8 +38,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={profile} />
-
       <main className="flex-1 container mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="glass-card p-8 mb-8 text-center">
@@ -98,7 +80,7 @@ export default function HomePage() {
 
           {/* Leaderboard Section */}
           <div className="lg:col-span-1">
-            <Leaderboard scores={leaderboard} currentUserId={userId} />
+            <Leaderboard scores={leaderboard} currentUserId={profile?.id} />
           </div>
         </div>
       </main>

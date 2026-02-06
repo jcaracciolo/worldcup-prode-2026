@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Header from "@/components/Header";
 import { createClient } from "@/lib/supabase/client";
-import { Profile, InviteCode } from "@/types/database";
+import { InviteCode } from "@/types/database";
 import { useSimulation } from "@/contexts/SimulationContext";
 import { useMatches } from "@/contexts/MatchContext";
+import { useUser } from "@/contexts/UserContext";
 import { format } from "date-fns";
 
 function generateCode(): string {
@@ -24,10 +24,10 @@ export default function AdminPage() {
   const { simulatedDateTime, seed, enableSimulation, disableSimulation } =
     useSimulation();
   const { matches, isSimulated } = useMatches();
+  const { user: profile, loading: userLoading } = useUser();
 
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [inviteCodes, setInviteCodes] = useState<
-    (InviteCode & { used_by_profile?: Profile | null })[]
+    (InviteCode & { used_by_profile?: { id: string; display_name: string } | null })[]
   >([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -50,34 +50,19 @@ export default function AdminPage() {
   const [simSeed, setSimSeed] = useState<string>(seed.toString());
 
   useEffect(() => {
+    // Redirect if not logged in or not admin
+    if (!userLoading && !profile) {
+      router.push("/login");
+      return;
+    }
+    if (!userLoading && profile && !profile.is_admin) {
+      router.push("/");
+      return;
+    }
+
+    if (!profile?.is_admin) return;
+
     const loadData = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (profileError || !profileData) {
-        router.push("/");
-        return;
-      }
-
-      const typedProfile = profileData as unknown as Profile;
-      if (!typedProfile.is_admin) {
-        router.push("/");
-        return;
-      }
-
-      setProfile(typedProfile);
-
       // Load invite codes
       const { data: codesData } = await supabase
         .from("invite_codes")
@@ -90,26 +75,31 @@ export default function AdminPage() {
       const usedByIds = typedCodes
         .filter((c) => c.used_by)
         .map((c) => c.used_by) as string[];
-      const { data: usedByProfiles } = await supabase
-        .from("profiles")
-        .select("*")
-        .in("id", usedByIds);
+      
+      if (usedByIds.length > 0) {
+        const { data: usedByProfiles } = await supabase
+          .from("profiles")
+          .select("id, display_name")
+          .in("id", usedByIds);
 
-      const typedUsedByProfiles = (usedByProfiles ||
-        []) as unknown as Profile[];
-      const profileMap = new Map(typedUsedByProfiles.map((p) => [p.id, p]));
-      setInviteCodes(
-        typedCodes.map((c) => ({
-          ...c,
-          used_by_profile: c.used_by ? profileMap.get(c.used_by) : null,
-        })),
-      );
+        const profileMap = new Map(
+          (usedByProfiles || []).map((p) => [p.id, p as { id: string; display_name: string }])
+        );
+        setInviteCodes(
+          typedCodes.map((c) => ({
+            ...c,
+            used_by_profile: c.used_by ? profileMap.get(c.used_by) || null : null,
+          })),
+        );
+      } else {
+        setInviteCodes(typedCodes.map((c) => ({ ...c, used_by_profile: null })));
+      }
 
       setLoading(false);
     };
 
     loadData();
-  }, [supabase, router]);
+  }, [supabase, router, profile, userLoading]);
 
   const handleGenerateCode = async () => {
     if (!profile) return;
@@ -164,8 +154,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen">
-      <Header user={profile} />
-
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6 text-white">Admin Panel</h1>
 
@@ -328,9 +316,7 @@ export default function AdminPage() {
                       {format(new Date(code.created_at), "MMM d, yyyy")}
                     </td>
                     <td className="py-2 px-4 text-white/70">
-                      {code.used_by_profile?.display_name ||
-                        code.used_by_profile?.email ||
-                        "-"}
+                      {code.used_by_profile?.display_name || "-"}
                     </td>
                     <td className="py-2 px-4">
                       {code.used_by ? (

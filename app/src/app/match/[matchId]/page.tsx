@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import Header from "@/components/Header";
 import { useMatches } from "@/contexts/MatchContext";
+import { useUser } from "@/contexts/UserContext";
 import { createClient } from "@/lib/supabase/client";
 import { getMatchInfo } from "@/lib/tournament";
 import { buildApiToFifaMapping } from "@/lib/api-client";
@@ -12,38 +12,27 @@ import {
   calculateKnockoutPoints,
 } from "@/lib/scoring";
 import { isGroupStageMatch } from "@/lib/football-api";
-import { Profile, Prediction } from "@/types/database";
+import { Prediction } from "@/types/database";
 import { format } from "date-fns";
 
 export default function MatchDetailPage() {
   const params = useParams();
   const matchId = params.matchId as string;
   const supabase = createClient();
+  const { user: profile } = useUser();
 
   const { matches, loading: matchesLoading } = useMatches();
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-        setProfile(profileData);
-
+      if (profile) {
         // Get user's prediction for this match
         const { data: predData } = await supabase
           .from("predictions")
           .select("*")
-          .eq("user_id", user.id)
+          .eq("user_id", profile.id)
           .eq("match_id", matchId)
           .single();
         setPrediction(predData);
@@ -53,7 +42,7 @@ export default function MatchDetailPage() {
     };
 
     loadData();
-  }, [supabase, matchId]);
+  }, [supabase, matchId, profile]);
 
   // Find the specific match
   const match = matches.find((m) => m.id === parseInt(matchId));
@@ -174,8 +163,6 @@ export default function MatchDetailPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={profile} />
-
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           {/* Match Header */}

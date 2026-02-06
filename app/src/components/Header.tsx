@@ -3,17 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Profile } from "@/types/database";
 import { useMatches } from "@/contexts/MatchContext";
+import { useUser } from "@/contexts/UserContext";
 
-interface HeaderProps {
-  user: Profile | null;
-}
-
-export default function Header({ user }: HeaderProps) {
+export default function Header() {
   const router = useRouter();
   const supabase = createClient();
   const { isSimulated } = useMatches();
+  const { user } = useUser();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

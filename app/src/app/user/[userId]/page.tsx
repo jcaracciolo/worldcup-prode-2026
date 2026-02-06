@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useMatches } from "@/contexts/MatchContext";
 import { useSimulation } from "@/contexts/SimulationContext";
+import { useUser } from "@/contexts/UserContext";
 import { getStageLockStatus } from "@/lib/time";
 import { calculateTotalPoints } from "@/lib/scoring";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
@@ -13,7 +14,6 @@ import {
   calculateAllActualStandings,
 } from "@/lib/standings";
 import { Prediction, GroupStandingsOverride, Profile } from "@/types/database";
-import Header from "@/components/Header";
 import PointsBreakdown from "@/components/PointsBreakdown";
 import UserKnockoutSection from "@/components/UserKnockoutSection";
 import UserGroupSection from "@/components/UserGroupSection";
@@ -25,12 +25,14 @@ export default function UserPredictionsPage() {
   const supabase = createClient();
   const { matches, loading: matchesLoading } = useMatches();
   const { getCurrentTime, simulationEnabled } = useSimulation();
+  const { user: currentProfile } = useUser();
 
   // State for data
-  const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const [targetProfile, setTargetProfile] = useState<Profile | null>(null);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
-  const [groupOverrides, setGroupOverrides] = useState<GroupStandingsOverride[]>([]);
+  const [groupOverrides, setGroupOverrides] = useState<
+    GroupStandingsOverride[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -38,20 +40,6 @@ export default function UserPredictionsPage() {
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-
-      // Get current user
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser();
-
-      if (currentUser) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", currentUser.id)
-          .single();
-        setCurrentProfile(profile);
-      }
 
       // Get target user profile
       const { data: target } = await supabase
@@ -93,7 +81,8 @@ export default function UserPredictionsPage() {
     return getStageLockStatus(time);
   }, [getCurrentTime, simulationEnabled]);
 
-  const { groupStageLocked, knockoutStageOpen, knockoutStageLocked } = lockStatus;
+  const { groupStageLocked, knockoutStageOpen, knockoutStageLocked } =
+    lockStatus;
   const isOwnPredictions = currentProfile?.id === userId;
 
   // Calculate predicted standings
@@ -159,7 +148,6 @@ export default function UserPredictionsPage() {
   if (loading || matchesLoading) {
     return (
       <div className="min-h-screen">
-        <Header user={currentProfile} />
         <main className="container mx-auto px-4 py-8">
           <div className="text-center text-white/50 py-12">Loading...</div>
         </main>
@@ -170,10 +158,11 @@ export default function UserPredictionsPage() {
   if (notFound) {
     return (
       <div className="min-h-screen">
-        <Header user={currentProfile} />
         <main className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-white mb-4">User Not Found</h1>
+            <h1 className="text-2xl font-bold text-white mb-4">
+              User Not Found
+            </h1>
             <p className="text-white/50 mb-6">
               The user you&apos;re looking for doesn&apos;t exist.
             </p>
@@ -188,8 +177,6 @@ export default function UserPredictionsPage() {
 
   return (
     <div className="min-h-screen">
-      <Header user={currentProfile} />
-
       <main className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white">

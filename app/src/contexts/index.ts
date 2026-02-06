@@ -4,8 +4,9 @@
  * Provider hierarchy (in Providers.tsx):
  * 1. SimulationProvider - Testing simulation state (admin only)
  * 2. MatchProvider - Global match data with live polling
- * 3. PredictionsProvider - User predictions cache
- * 4. ScoringProvider - Score calculations (depends on 2 & 3)
+ * 3. UserProvider - Current authenticated user
+ * 4. PredictionsProvider - User predictions cache
+ * 5. ScoringProvider - Score calculations (depends on 2 & 4)
  */
 
 // Simulation Context - Testing simulation state
@@ -21,6 +22,9 @@ export {
   useMatches,
   type MatchWithLiveInfo,
 } from "./MatchContext";
+
+// User Context - Current authenticated user
+export { UserProvider, useUser } from "./UserContext";
 
 // Predictions Context - User predictions cache
 export {

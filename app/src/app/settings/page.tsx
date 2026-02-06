@@ -2,46 +2,30 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Header from "@/components/Header";
 import { createClient } from "@/lib/supabase/client";
-import { Profile } from "@/types/database";
+import { useUser } from "@/contexts/UserContext";
 
 export default function SettingsPage() {
   const router = useRouter();
   const supabase = createClient();
+  const { user: profile, loading: userLoading, refetch } = useUser();
 
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
 
   useEffect(() => {
-    const loadProfile = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/login?redirect=/settings");
-        return;
-      }
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      setProfile(data);
-      setDisplayName(data?.display_name || "");
-      setLoading(false);
-    };
-
-    loadProfile();
-  }, [supabase, router]);
+    if (!userLoading && !profile) {
+      router.push("/login?redirect=/settings");
+      return;
+    }
+    if (profile) {
+      setDisplayName(profile.display_name || "");
+    }
+  }, [profile, userLoading, router]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +43,7 @@ export default function SettingsPage() {
       setMessage({ type: "error", text: "Failed to update profile" });
     } else {
       setMessage({ type: "success", text: "Profile updated!" });
-      setProfile({ ...profile, display_name: displayName });
+      refetch(); // Refresh user context
     }
 
     setSaving(false);
@@ -101,7 +85,7 @@ export default function SettingsPage() {
     setSaving(false);
   };
 
-  if (loading) {
+  if (userLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-xl text-white">Loading...</div>
@@ -111,8 +95,6 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={profile} />
-
       <main className="flex-1 container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6 text-white">Settings</h1>
 

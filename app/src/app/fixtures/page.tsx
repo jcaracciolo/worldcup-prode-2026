@@ -1,18 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import Header from "@/components/Header";
 import FixtureRow from "@/components/FixtureRow";
 import StandingsTable from "@/components/StandingsTable";
 import { GlobalLiveIndicator } from "@/components/MatchStatus";
 import { useMatches } from "@/contexts/MatchContext";
 import { useSimulation } from "@/contexts/SimulationContext";
-import { createClient } from "@/lib/supabase/client";
 import { buildApiToFifaMapping } from "@/lib/api-client";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { Match, CalculatedStanding, Team } from "@/types/football";
-import { Profile } from "@/types/database";
-import { useState, useEffect } from "react";
 
 // Get human-readable stage name
 const getKnockoutStageName = (stage: string): string => {
@@ -260,9 +256,6 @@ function GroupStageSection({
 }
 
 export default function FixturesPage() {
-  const supabase = createClient();
-  const [profile, setProfile] = useState<Profile | null>(null);
-
   // Use centralized match context
   const {
     matches,
@@ -276,23 +269,6 @@ export default function FixturesPage() {
   // Get stage lock status to determine section order
   const { stageLockStatus } = useSimulation();
   const showKnockoutFirst = stageLockStatus.knockoutStageLocked;
-
-  useEffect(() => {
-    const loadProfile = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-        setProfile(profileData);
-      }
-    };
-    loadProfile();
-  }, [supabase]);
 
   // Organize matches by groups
   const groups = useMemo(() => {
@@ -356,8 +332,6 @@ export default function FixturesPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={profile} />
-
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="flex justify-between items-start mb-8">
           <div>

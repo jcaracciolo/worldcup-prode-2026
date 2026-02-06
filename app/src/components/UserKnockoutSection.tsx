@@ -221,8 +221,7 @@ function KnockoutMatchRow({
     hasScore && prediction!.home_goals! > prediction!.away_goals!;
   const awayWins =
     hasScore && prediction!.away_goals! > prediction!.home_goals!;
-  const isTie =
-    hasScore && prediction!.home_goals === prediction!.away_goals;
+  const isTie = hasScore && prediction!.home_goals === prediction!.away_goals;
 
   const homeHighlight =
     homeWins || (isTie && prediction?.winner_id === homeTeam?.id);

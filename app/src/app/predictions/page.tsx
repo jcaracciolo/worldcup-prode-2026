@@ -2,19 +2,19 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import Header from "@/components/Header";
 import PredictionInput from "@/components/PredictionInput";
 import StandingsTable from "@/components/StandingsTable";
 import R32Preview from "@/components/R32Preview";
 import { GlobalLiveIndicator } from "@/components/MatchStatus";
 import { useMatches } from "@/contexts/MatchContext";
 import { useSimulation } from "@/contexts/SimulationContext";
+import { useUser } from "@/contexts/UserContext";
 import { createClient } from "@/lib/supabase/client";
 import { CalculatedStanding, Team, Match } from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { BracketResolver } from "@/lib/bracket-resolver";
 import { buildApiToFifaMapping } from "@/lib/api-client";
-import { Profile, Prediction, GroupStandingsOverride } from "@/types/database";
+import { Prediction, GroupStandingsOverride } from "@/types/database";
 
 // Get human-readable stage name
 const getKnockoutStageName = (stage: string): string => {
@@ -32,8 +32,8 @@ const getKnockoutStageName = (stage: string): string => {
 export default function PredictionsPage() {
   const router = useRouter();
   const supabase = createClient();
+  const { user: profile, loading: userLoading } = useUser();
 
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [predictions, setPredictions] = useState<Map<number, Prediction>>(
     new Map(),
   );
@@ -60,28 +60,20 @@ export default function PredictionsPage() {
   } = stageLockStatus;
 
   useEffect(() => {
+    // Redirect if not logged in (after user loading completes)
+    if (!userLoading && !profile) {
+      router.push("/login?redirect=/predictions");
+      return;
+    }
+
+    if (!profile) return;
+
     const loadData = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/login?redirect=/predictions");
-        return;
-      }
-
-      // Load profile
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-      setProfile(profileData);
-
       // Load user predictions
       const { data: predictionsData } = await supabase
         .from("predictions")
         .select("*")
-        .eq("user_id", user.id);
+        .eq("user_id", profile.id);
 
       const predMap = new Map();
       (predictionsData as unknown as Prediction[] | null)?.forEach(
@@ -93,14 +85,14 @@ export default function PredictionsPage() {
       const { data: overridesData } = await supabase
         .from("group_standings_overrides")
         .select("*")
-        .eq("user_id", user.id);
+        .eq("user_id", profile.id);
       setOverrides(overridesData || []);
 
       setLoading(false);
     };
 
     loadData();
-  }, [supabase, router]);
+  }, [supabase, router, profile, userLoading]);
 
   const handlePredictionChange = (
     matchId: number,
@@ -381,8 +373,6 @@ export default function PredictionsPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header user={profile} />
-
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>

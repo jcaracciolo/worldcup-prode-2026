@@ -189,16 +189,21 @@ export function getThirdPlaceTeamForMatch(
 
   // Get assignment
   const assignments = assignThirdPlaceToR32(qualifyingGroups);
-  const assignedGroup = assignments.get(matchNumber);
+  const assignedGroupLetter = assignments.get(matchNumber);
 
-  if (!assignedGroup) return null;
+  if (!assignedGroupLetter) return null;
+
+  // Determine the key format used in groupStandings (could be "A" or "GROUP_A")
+  const firstKey = groupStandings.keys().next().value;
+  const usesPrefix = firstKey?.startsWith("GROUP_");
+  const groupKey = usesPrefix ? `GROUP_${assignedGroupLetter}` : assignedGroupLetter;
 
   // Get the team from standings
-  const standings = groupStandings.get(assignedGroup);
+  const standings = groupStandings.get(groupKey);
   if (!standings || standings.length < 3) return null;
 
   return {
     team: standings[2].team,
-    group: assignedGroup,
+    group: groupKey,
   };
 }

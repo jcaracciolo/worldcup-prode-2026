@@ -76,9 +76,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Clear the main matches cache to force refresh
-    await serviceClient.from("matches_cache").delete().eq("match_id", 0);
-
     return NextResponse.json({
       success: true,
       matchesUpdated: targetMatches.length,

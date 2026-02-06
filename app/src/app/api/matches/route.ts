@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getMatches } from "@/lib/football-api";
+import { Match } from "@/types/football";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,7 @@ export async function GET() {
   try {
     const supabase = await createClient();
 
-    // Check cache first
+    // Check cache first for the full matches list
     const { data: cacheData } = await supabase
       .from("matches_cache")
       .select("*")
@@ -22,23 +23,45 @@ export async function GET() {
       ? now.getTime() - new Date(cacheData.updated_at).getTime()
       : Infinity;
 
+    let matches: Match[];
+
     // Return cached data if fresh
     if (cacheData && cacheAge < CACHE_DURATION_MS) {
-      return NextResponse.json(cacheData.data);
+      matches = cacheData.data.matches || [];
+    } else {
+      // Fetch fresh data from API
+      matches = await getMatches();
+
+      // Update cache (upsert)
+      await supabase.from("matches_cache").upsert({
+        match_id: 0,
+        data: { matches, fetchedAt: now.toISOString() },
+        updated_at: now.toISOString(),
+      });
     }
 
-    // Fetch fresh data from API
-    const matches = await getMatches();
-    const responseData = { matches, fetchedAt: now.toISOString() };
+    // Get any individually cached match results (from generated results)
+    const { data: individualCaches } = await supabase
+      .from("matches_cache")
+      .select("*")
+      .neq("match_id", 0);
 
-    // Update cache (upsert)
-    await supabase.from("matches_cache").upsert({
-      match_id: 0,
-      data: responseData,
-      updated_at: now.toISOString(),
-    });
+    // Merge individual cached results into matches
+    if (individualCaches && individualCaches.length > 0) {
+      const cachedMatchMap = new Map(
+        individualCaches.map((c) => [c.match_id, c.data]),
+      );
 
-    return NextResponse.json(responseData);
+      matches = matches.map((match) => {
+        const cached = cachedMatchMap.get(match.id);
+        if (cached) {
+          return cached as Match;
+        }
+        return match;
+      });
+    }
+
+    return NextResponse.json({ matches, fetchedAt: now.toISOString() });
   } catch (error) {
     console.error("Error fetching matches:", error);
     return NextResponse.json(

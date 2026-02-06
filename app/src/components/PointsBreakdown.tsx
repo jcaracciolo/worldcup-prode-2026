@@ -79,6 +79,8 @@ export default function PointsBreakdown({
   const renderItem = (item: PointBreakdown, index: number) => {
     // For goals, show match with highlighted score
     const isGoalsType = item.type === "goals_home" || item.type === "goals_away";
+    const isTeamOnlyType = item.type === "group_advance" || item.type === "group_position" || 
+                           item.type === "knockout_win" || item.type === "knockout_lose" || item.type === "knockout_tie";
     
     return (
       <div
@@ -87,7 +89,7 @@ export default function PointsBreakdown({
       >
         {/* Team or Match display */}
         <div className="flex items-center gap-2 shrink-0">
-          {item.team?.crest && !isGoalsType ? (
+          {(item.team && !isGoalsType) || isTeamOnlyType ? (
             (() => {
               const teamTla = item.team?.tla || item.team?.name?.substring(0, 3).toUpperCase() || "";
               return (

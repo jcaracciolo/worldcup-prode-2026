@@ -110,12 +110,12 @@ curl -H "X-Auth-Token: YOUR_TOKEN" https://api.football-data.org/v4/competitions
 
 ### Stack
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | Next.js (React) with TypeScript |
-| Auth & Database | Supabase (PostgreSQL + Auth) |
-| Hosting | Azure App Service |
-| Match Data | Football-Data.org API |
+| Layer           | Technology                      |
+| --------------- | ------------------------------- |
+| Frontend        | Next.js (React) with TypeScript |
+| Auth & Database | Supabase (PostgreSQL + Auth)    |
+| Hosting         | Azure App Service               |
+| Match Data      | Football-Data.org API           |
 
 ### Authentication Flow
 
@@ -128,11 +128,11 @@ curl -H "X-Auth-Token: YOUR_TOKEN" https://api.football-data.org/v4/competitions
 
 ### Access Control
 
-| Role | Can View | Can Predict | Can Admin |
-|------|----------|-------------|-----------|
-| Guest (no account) | Standings, all guesses, matches, live scores | No | No |
-| User (invited) | Everything | Yes (before cutoff) | No |
-| Admin | Everything | Yes | Generate invite codes, manage users |
+| Role               | Can View                                     | Can Predict         | Can Admin                           |
+| ------------------ | -------------------------------------------- | ------------------- | ----------------------------------- |
+| Guest (no account) | Standings, all guesses, matches, live scores | No                  | No                                  |
+| User (invited)     | Everything                                   | Yes (before cutoff) | No                                  |
+| Admin              | Everything                                   | Yes                 | Generate invite codes, manage users |
 
 ### Database Schema (Supabase PostgreSQL)
 
@@ -176,9 +176,9 @@ tournament_settings
 
 ### Prediction Windows
 
-| Phase | Opens | Locks | Predictions Visible |
-|-------|-------|-------|---------------------|
-| Group Stage | Immediately | Before first group match | After group stage starts |
+| Phase          | Opens                           | Locks                       | Predictions Visible         |
+| -------------- | ------------------------------- | --------------------------- | --------------------------- |
+| Group Stage    | Immediately                     | Before first group match    | After group stage starts    |
 | Knockout Stage | When knockout teams are defined | Before first knockout match | After knockout stage starts |
 
 **Privacy:** Users can only see their own predictions until that stage begins. Once a stage starts, all predictions for that stage become public.
@@ -186,17 +186,20 @@ tournament_settings
 ### Key Features
 
 **Public (no login required):**
+
 - View all matches (today's matches highlighted, local timezone)
 - View live/final scores (cached from API)
 - View leaderboard/standings
 - View all users' predictions (only after respective stage starts)
 
 **Authenticated users:**
+
 - Create/edit group stage predictions (until group stage locks)
 - Create/edit knockout predictions (when open, until knockout stage locks)
 - View own predictions anytime
 
 **Admin:**
+
 - Generate invite codes
 - View invite code usage
 - **Lock Group Stage** - manually start group stage (locks predictions, makes them public)
@@ -207,9 +210,9 @@ tournament_settings
 
 ### Match Data Sync
 
-- **Cron job** runs every 5 minutes during matches to update scores
-- Cache match data in `matches_cache` table to reduce API calls
-- Client polls for updates every 60 seconds during live matches
+- **Server cron job** runs every 1 minute during matches to fetch scores from Football-Data.org API
+- Results cached in `matches_cache` table (server is the single source fetching from API)
+- **Clients poll our server** (not the API) for updates — reduces API usage to ~1 req/min regardless of user count
 
 ### Deployment (Azure App Service)
 

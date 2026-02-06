@@ -149,44 +149,48 @@ export default function PointsBreakdown({
               const awayHasTeam = awayTla !== "";
               const highlightHome = item.type === "goals_home";
               const highlightAway = item.type === "goals_away";
-              
+
               // For knockout types, highlight winner/loser based on score
               const isKnockoutEntry = isKnockoutType;
               const knockoutHomeWon = homeWon && isKnockoutEntry;
               const knockoutAwayWon = awayWon && isKnockoutEntry;
-              
+
               return (
                 <div className="flex items-center gap-1.5">
-                  {homeTeam.crest ? (
-                    <img
-                      src={homeTeam.crest}
-                      alt={homeTla || "TBD"}
-                      className={`w-5 h-5 object-contain ${(awayWon && !isGoalsType) || (knockoutAwayWon && item.type === "knockout_win") ? "opacity-50" : ""}`}
-                    />
-                  ) : (
-                    <span className="w-5 h-5 flex items-center justify-center text-sm">
-                      🏳️
-                    </span>
-                  )}
-                  <span
-                    className={`text-xs font-medium w-8 text-right ${
-                      !homeHasTeam
-                        ? "text-white/40"
-                        : isGoalsType
-                          ? "text-white/70"
-                          : knockoutHomeWon
-                            ? "text-emerald-400 font-bold"
-                            : knockoutAwayWon
-                              ? "text-white/40"
-                              : homeWon
-                                ? "text-emerald-400 font-bold"
-                                : awayWon
-                                  ? "text-white/40"
-                                  : "text-white/70"
-                    }`}
+                  <div
+                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${knockoutHomeWon ? "bg-amber-400" : ""}`}
                   >
-                    {homeHasTeam ? homeTla : "⏳"}
-                  </span>
+                    {homeTeam.crest ? (
+                      <img
+                        src={homeTeam.crest}
+                        alt={homeTla || "TBD"}
+                        className={`w-5 h-5 object-contain ${(awayWon && !isGoalsType) || (knockoutAwayWon && item.type === "knockout_win") ? "opacity-50" : ""}`}
+                      />
+                    ) : (
+                      <span className="w-5 h-5 flex items-center justify-center text-sm">
+                        🏳️
+                      </span>
+                    )}
+                    <span
+                      className={`text-xs font-medium w-8 text-right ${
+                        !homeHasTeam
+                          ? "text-white/40"
+                          : isGoalsType
+                            ? "text-white/70"
+                            : knockoutHomeWon
+                              ? "text-slate-900 font-bold"
+                              : knockoutAwayWon
+                                ? "text-white/40"
+                                : homeWon
+                                  ? "text-amber-400 font-bold"
+                                  : awayWon
+                                    ? "text-white/40"
+                                    : "text-white/70"
+                      }`}
+                    >
+                      {homeHasTeam ? homeTla : "⏳"}
+                    </span>
+                  </div>
                   <span className="font-bold px-1.5 py-0.5 bg-white/10 rounded text-sm min-w-[40px] text-center">
                     <span
                       className={
@@ -204,36 +208,40 @@ export default function PointsBreakdown({
                       {item.matchInfo.awayGoals}
                     </span>
                   </span>
-                  <span
-                    className={`text-xs font-medium w-8 ${
-                      !awayHasTeam
-                        ? "text-white/40"
-                        : isGoalsType
-                          ? "text-white/70"
-                          : knockoutAwayWon
-                            ? "text-emerald-400 font-bold"
-                            : knockoutHomeWon
-                              ? "text-white/40"
-                              : awayWon
-                                ? "text-emerald-400 font-bold"
-                                : homeWon
-                                  ? "text-white/40"
-                                  : "text-white/70"
-                    }`}
+                  <div
+                    className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${knockoutAwayWon ? "bg-amber-400" : ""}`}
                   >
-                    {awayHasTeam ? awayTla : "⏳"}
-                  </span>
-                  {awayTeam.crest ? (
-                    <img
-                      src={awayTeam.crest}
-                      alt={awayTla || "TBD"}
-                      className={`w-5 h-5 object-contain ${(homeWon && !isGoalsType) || (knockoutHomeWon && item.type === "knockout_win") ? "opacity-50" : ""}`}
-                    />
-                  ) : (
-                    <span className="w-5 h-5 flex items-center justify-center text-sm">
-                      🏳️
+                    <span
+                      className={`text-xs font-medium w-8 ${
+                        !awayHasTeam
+                          ? "text-white/40"
+                          : isGoalsType
+                            ? "text-white/70"
+                            : knockoutAwayWon
+                              ? "text-slate-900 font-bold"
+                              : knockoutHomeWon
+                                ? "text-white/40"
+                                : awayWon
+                                  ? "text-amber-400 font-bold"
+                                  : homeWon
+                                    ? "text-white/40"
+                                    : "text-white/70"
+                      }`}
+                    >
+                      {awayHasTeam ? awayTla : "⏳"}
                     </span>
-                  )}
+                    {awayTeam.crest ? (
+                      <img
+                        src={awayTeam.crest}
+                        alt={awayTla || "TBD"}
+                        className={`w-5 h-5 object-contain ${(homeWon && !isGoalsType) || (knockoutHomeWon && item.type === "knockout_win") ? "opacity-50" : ""}`}
+                      />
+                    ) : (
+                      <span className="w-5 h-5 flex items-center justify-center text-sm">
+                        🏳️
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })()

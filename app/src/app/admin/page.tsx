@@ -158,14 +158,14 @@ export default function AdminPage() {
     if (!confirmed) return;
 
     setGenerating(true);
-    
+
     // Generate group stage first
     const groupRes = await fetch("/api/admin/generate-results", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ stage: "group" }),
     });
-    
+
     if (!groupRes.ok) {
       setGenerating(false);
       alert("Failed to generate group results");
@@ -183,7 +183,9 @@ export default function AdminPage() {
 
     if (knockoutRes.ok) {
       const knockoutData = await knockoutRes.json();
-      alert(`All results generated!\nGroup: ${groupData.matchesUpdated} matches\nKnockout: ${knockoutData.matchesUpdated} matches`);
+      alert(
+        `All results generated!\nGroup: ${groupData.matchesUpdated} matches\nKnockout: ${knockoutData.matchesUpdated} matches`,
+      );
     } else {
       alert("Group results generated, but knockout failed");
     }
@@ -364,8 +366,9 @@ export default function AdminPage() {
             These tools are for testing purposes only. Use with caution.
           </p>
           <p className="text-sm text-amber-400/80 mb-4">
-            ⚠️ To see correct flags in knockout: Generate group stage first, then knockout.
-            Or use &quot;Generate All&quot; which does both in order.
+            ⚠️ To see correct flags in knockout: Generate group stage first,
+            then knockout. Or use &quot;Generate All&quot; which does both in
+            order.
           </p>
 
           <div className="flex flex-wrap gap-4">

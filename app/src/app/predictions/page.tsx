@@ -9,7 +9,7 @@ import R32Preview from "@/components/R32Preview";
 import { createClient } from "@/lib/supabase/client";
 import { Match, CalculatedStanding, Team } from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
-import { r32Bracket } from "@/lib/r32-bracket";
+import { BracketResolver } from "@/lib/bracket-resolver";
 import {
   Profile,
   Prediction,
@@ -362,137 +362,14 @@ export default function PredictionsPage() {
     knockoutStages.get(m.stage)!.push(m);
   });
 
-  // Helper to get team from predicted standings
-  const getTeamFromPredictedStandings = (
-    group: string,
-    position: number,
-  ): Team | null => {
-    const standings = groupStandings.get(group);
-    if (!standings || standings.length < position) return null;
-    const standing = standings.find((s) => s.position === position);
-    // For 3rd place, check if they qualify
-    if (position === 3 && !thirdPlaceQualifying.get(group)) {
-      return null;
-    }
-    return standing?.team || null;
-  };
-
-  // Resolve knockout teams based on predictions
-  const resolveKnockoutTeams = (): Map<
-    number,
-    { home: Team | null; away: Team | null }
-  > => {
-    const resolved = new Map<
-      number,
-      { home: Team | null; away: Team | null }
-    >();
-
-    // Helper to get predicted winner of a match
-    const getPredictedWinner = (matchId: number): Team | null => {
-      const pred = predictions.get(matchId);
-      const teams = resolved.get(matchId);
-      if (!pred || !teams) return null;
-
-      if (pred.home_goals === null || pred.away_goals === null) return null;
-
-      if (pred.home_goals > pred.away_goals) {
-        return teams.home;
-      } else if (pred.away_goals > pred.home_goals) {
-        return teams.away;
-      } else {
-        // Tie - check winner_id
-        if (pred.winner_id) {
-          if (teams.home?.id === pred.winner_id) return teams.home;
-          if (teams.away?.id === pred.winner_id) return teams.away;
-        }
-        return null;
-      }
-    };
-
-    // First pass: resolve R32 matches from group standings
-    const r32Matches = knockoutMatches.filter((m) => m.stage === "LAST_32");
-    for (const match of r32Matches) {
-      const bracketSlot = r32Bracket.find((b) => b.matchId === match.id);
-      if (bracketSlot) {
-        const homeTeam = getTeamFromPredictedStandings(
-          bracketSlot.homePosition.group,
-          bracketSlot.homePosition.position,
-        );
-        const awayTeam = getTeamFromPredictedStandings(
-          bracketSlot.awayPosition.group,
-          bracketSlot.awayPosition.position,
-        );
-        resolved.set(match.id, { home: homeTeam, away: awayTeam });
-      } else {
-        resolved.set(match.id, {
-          home: match.homeTeam?.id ? match.homeTeam : null,
-          away: match.awayTeam?.id ? match.awayTeam : null,
-        });
-      }
-    }
-
-    // Second pass: resolve later rounds based on prediction winners
-    const stageOrder = [
-      "LAST_32",
-      "LAST_16",
-      "QUARTER_FINALS",
-      "SEMI_FINALS",
-      "THIRD_PLACE",
-      "FINAL",
-    ];
-
-    for (const stage of stageOrder.slice(1)) {
-      const stageMatches = knockoutMatches.filter((m) => m.stage === stage);
-
-      for (const match of stageMatches) {
-        let homeTeam: Team | null = null;
-        let awayTeam: Team | null = null;
-
-        // Check if API has teams already
-        if (match.homeTeam?.id) {
-          homeTeam = match.homeTeam;
-        }
-        if (match.awayTeam?.id) {
-          awayTeam = match.awayTeam;
-        }
-
-        // If teams are TBD, resolve from previous round predictions
-        if (!homeTeam || !awayTeam) {
-          const prevStage = stageOrder[stageOrder.indexOf(stage) - 1];
-          const prevMatches = knockoutMatches
-            .filter((m) => m.stage === prevStage)
-            .sort(
-              (a, b) =>
-                new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
-            );
-
-          const currentStageMatches = stageMatches.sort(
-            (a, b) =>
-              new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
-          );
-          const matchIndex = currentStageMatches.findIndex(
-            (m) => m.id === match.id,
-          );
-
-          const feederIndex1 = matchIndex * 2;
-          const feederIndex2 = matchIndex * 2 + 1;
-
-          if (prevMatches[feederIndex1] && !homeTeam) {
-            homeTeam = getPredictedWinner(prevMatches[feederIndex1].id);
-          }
-          if (prevMatches[feederIndex2] && !awayTeam) {
-            awayTeam = getPredictedWinner(prevMatches[feederIndex2].id);
-          }
-        }
-
-        resolved.set(match.id, { home: homeTeam, away: awayTeam });
-      }
-    }
-
-    return resolved;
-  };
-
-  const resolvedKnockoutTeams = resolveKnockoutTeams();
+  // Use BracketResolver to resolve knockout teams based on predictions
+  const resolver = new BracketResolver({
+    matches,
+    predictions,
+    groupStandings,
+    thirdPlaceQualifying,
+  });
+  const resolvedKnockoutTeams = resolver.resolve();
 
   const groupLocked = settings?.group_stage_locked || false;
   const knockoutOpen = settings?.knockout_stage_open || false;
@@ -540,8 +417,74 @@ export default function PredictionsPage() {
           </div>
         )}
 
+        {/* Group Stage Section */}
+        {knockoutOpen && (
+          <section className="mb-10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
+                <span className="text-xl">⚔️</span>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white">
+                  Knockout Stage
+                </h2>
+                <p className="text-white/50 text-sm">
+                  Single elimination rounds
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {knockoutLocked && (
+                <div className="bg-amber-500/20 border border-amber-500/30 text-amber-300 px-4 py-3 rounded-xl">
+                  Knockout stage predictions are locked
+                </div>
+              )}
+
+              {[
+                "LAST_32",
+                "LAST_16",
+                "QUARTER_FINALS",
+                "SEMI_FINALS",
+                "THIRD_PLACE",
+                "FINAL",
+              ].map((stage) => {
+                const stageMatches = knockoutStages.get(stage) || [];
+                if (stageMatches.length === 0) return null;
+
+                const stageName = getKnockoutStageName(stage);
+
+                return (
+                  <div key={stage} className="glass-card p-5">
+                    <h3 className="font-bold text-lg mb-4 text-white">
+                      {stageName}
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {stageMatches.map((match) => {
+                        const resolved = resolvedKnockoutTeams.get(match.id);
+                        return (
+                          <PredictionInput
+                            key={match.id}
+                            match={match}
+                            prediction={predictions.get(match.id)}
+                            onChange={handlePredictionChange}
+                            disabled={knockoutLocked}
+                            showWinnerSelect={true}
+                            resolvedHomeTeam={resolved?.home}
+                            resolvedAwayTeam={resolved?.away}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {/* Group Stage */}
-        <section className="mb-10">
+        <section className={knockoutOpen ? "" : "mb-10"}>
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
               <span className="text-xl">🏆</span>
@@ -618,19 +561,23 @@ export default function PredictionsPage() {
           </div>
         </section>
 
-        {/* Knockout Stage */}
-        <section>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
-              <span className="text-xl">⚔️</span>
+        {/* Knockout Stage - when not yet open */}
+        {!knockoutOpen && (
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
+                <span className="text-xl">⚔️</span>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white">
+                  Knockout Stage
+                </h2>
+                <p className="text-white/50 text-sm">
+                  Single elimination rounds
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">Knockout Stage</h2>
-              <p className="text-white/50 text-sm">Single elimination rounds</p>
-            </div>
-          </div>
 
-          {!knockoutOpen ? (
             <div className="space-y-6">
               {/* R32 Preview - Shows teams based on group predictions */}
               <R32Preview
@@ -670,55 +617,8 @@ export default function PredictionsPage() {
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="space-y-6">
-              {knockoutLocked && (
-                <div className="bg-amber-500/20 border border-amber-500/30 text-amber-300 px-4 py-3 rounded-xl">
-                  Knockout stage predictions are locked
-                </div>
-              )}
-
-              {[
-                "LAST_32",
-                "LAST_16",
-                "QUARTER_FINALS",
-                "SEMI_FINALS",
-                "THIRD_PLACE",
-                "FINAL",
-              ].map((stage) => {
-                const stageMatches = knockoutStages.get(stage) || [];
-                if (stageMatches.length === 0) return null;
-
-                const stageName = getKnockoutStageName(stage);
-
-                return (
-                  <div key={stage} className="glass-card p-5">
-                    <h3 className="font-bold text-lg mb-4 text-white">
-                      {stageName}
-                    </h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {stageMatches.map((match) => {
-                        const resolved = resolvedKnockoutTeams.get(match.id);
-                        return (
-                          <PredictionInput
-                            key={match.id}
-                            match={match}
-                            prediction={predictions.get(match.id)}
-                            onChange={handlePredictionChange}
-                            disabled={knockoutLocked}
-                            showWinnerSelect={true}
-                            resolvedHomeTeam={resolved?.home}
-                            resolvedAwayTeam={resolved?.away}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
+          </section>
+        )}
       </main>
 
       <footer className="border-t border-white/10 mt-auto">

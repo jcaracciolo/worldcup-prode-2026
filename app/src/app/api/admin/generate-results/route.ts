@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { r32Bracket } from "@/lib/r32-bracket";
+import { getR32BracketByNumber } from "@/lib/r32-bracket";
+import { buildMatchNumberMapping } from "@/lib/bracket-resolver";
 import { Match, Team, CalculatedStanding } from "@/types/football";
 
 // Calculate actual group standings from finished matches
@@ -246,8 +247,18 @@ export async function POST(request: NextRequest) {
 
         // For R32 matches, resolve teams from group standings
         if (match.stage === "LAST_32" && groupStandings) {
-          const bracketSlot = r32Bracket.find((b) => b.matchId === match.id);
-          if (bracketSlot) {
+          // Build match number mapping for this set of matches
+          const matchNumberMapping = buildMatchNumberMapping(matches);
+          const fifaMatchNumber = matchNumberMapping.get(match.id);
+          const bracketSlot = fifaMatchNumber
+            ? getR32BracketByNumber(fifaMatchNumber)
+            : undefined;
+
+          if (
+            bracketSlot &&
+            bracketSlot.homePosition &&
+            bracketSlot.awayPosition
+          ) {
             const homeTeam = getTeamFromStandings(
               groupStandings,
               bracketSlot.homePosition.group,

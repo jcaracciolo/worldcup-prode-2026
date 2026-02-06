@@ -14,11 +14,11 @@ import {
 // Round multipliers for knockout stages
 const ROUND_MULTIPLIERS: Record<string, number> = {
   LAST_32: 1,
-  LAST_16: 1,
-  QUARTER_FINALS: 1,
-  SEMI_FINALS: 2,
-  THIRD_PLACE: 3,
-  FINAL: 4,
+  LAST_16: 2,
+  QUARTER_FINALS: 3,
+  SEMI_FINALS: 4,
+  THIRD_PLACE: 5,
+  FINAL: 6,
 };
 
 export function calculateGroupStagePoints(

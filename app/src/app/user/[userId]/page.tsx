@@ -4,11 +4,10 @@ import StandingsTable from "@/components/StandingsTable";
 import { createClient } from "@/lib/supabase/server";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { calculateTotalPoints } from "@/lib/scoring";
-import { r32Bracket } from "@/lib/r32-bracket";
+import { BracketResolver } from "@/lib/bracket-resolver";
 import { getVenue } from "@/lib/venues";
 import { notFound } from "next/navigation";
-import { Match, CalculatedStanding, Team } from "@/types/football";
-import { Prediction } from "@/types/database";
+import { Match, CalculatedStanding } from "@/types/football";
 
 export const dynamic = "force-dynamic";
 
@@ -181,157 +180,14 @@ export default async function UserPredictionsPage({ params }: PageProps) {
   });
   const thirdPlaceQualifying = getQualifyingThirdPlaceTeams(allGroupStandings);
 
-  // Helper to get team from user's predicted standings
-  const getTeamFromPredictedStandings = (
-    group: string,
-    position: number,
-  ): Team | null => {
-    const standings = allGroupStandings.get(group);
-    if (!standings || standings.length < position) return null;
-    // Position is 1-indexed
-    const standing = standings.find((s) => s.position === position);
-    // For 3rd place, check if they qualify
-    if (position === 3 && !thirdPlaceQualifying.get(group)) {
-      return null;
-    }
-    return standing?.team || null;
-  };
-
-  // Resolve predicted teams for knockout matches
-  const resolveKnockoutTeams = (
-    knockoutMatches: Match[],
-    predMap: Map<number, Prediction>,
-  ): Map<number, { home: Team | null; away: Team | null }> => {
-    const resolvedTeams = new Map<
-      number,
-      { home: Team | null; away: Team | null }
-    >();
-
-    // First pass: resolve R32 matches from group standings
-    const r32Matches = knockoutMatches.filter((m) => m.stage === "LAST_32");
-    for (const match of r32Matches) {
-      const bracketSlot = r32Bracket.find((b) => b.matchId === match.id);
-      if (bracketSlot) {
-        const homeTeam = getTeamFromPredictedStandings(
-          bracketSlot.homePosition.group,
-          bracketSlot.homePosition.position,
-        );
-        const awayTeam = getTeamFromPredictedStandings(
-          bracketSlot.awayPosition.group,
-          bracketSlot.awayPosition.position,
-        );
-        resolvedTeams.set(match.id, { home: homeTeam, away: awayTeam });
-      } else {
-        // Fallback to API teams if not in bracket
-        resolvedTeams.set(match.id, {
-          home: match.homeTeam.id ? match.homeTeam : null,
-          away: match.awayTeam.id ? match.awayTeam : null,
-        });
-      }
-    }
-
-    // Helper to get winner of a match based on prediction
-    const getPredictedWinner = (matchId: number): Team | null => {
-      const pred = predMap.get(matchId);
-      const resolved = resolvedTeams.get(matchId);
-      if (!pred || !resolved) return null;
-
-      if (pred.home_goals === null || pred.away_goals === null) return null;
-
-      if (pred.home_goals > pred.away_goals) {
-        return resolved.home;
-      } else if (pred.away_goals > pred.home_goals) {
-        return resolved.away;
-      } else {
-        // Tie - check winner_id
-        if (pred.winner_id) {
-          if (resolved.home?.id === pred.winner_id) return resolved.home;
-          if (resolved.away?.id === pred.winner_id) return resolved.away;
-        }
-        return null;
-      }
-    };
-
-    // Second pass: resolve later rounds based on prediction winners
-    // This requires knowing the bracket structure for each round
-    // For now, use the API match structure and trace back
-
-    // Sort all knockout matches by stage order
-    const stageOrder = [
-      "LAST_32",
-      "LAST_16",
-      "QUARTER_FINALS",
-      "SEMI_FINALS",
-      "THIRD_PLACE",
-      "FINAL",
-    ];
-
-    for (const stage of stageOrder.slice(1)) {
-      // Skip R32
-      const stageMatches = knockoutMatches.filter((m) => m.stage === stage);
-
-      for (const match of stageMatches) {
-        // For matches beyond R32, teams come from winners of previous rounds
-        // The API stores the matchday progression - we need to find feeder matches
-        // Simplified: look for teams based on match ID patterns or use API teams if available
-
-        let homeTeam: Team | null = null;
-        let awayTeam: Team | null = null;
-
-        // Check if API has teams already
-        if (match.homeTeam.id) {
-          homeTeam = match.homeTeam;
-        }
-        if (match.awayTeam.id) {
-          awayTeam = match.awayTeam;
-        }
-
-        // If teams are TBD, try to resolve from previous round predictions
-        // This requires bracket mapping which varies by tournament - simplified approach:
-        // Look at matches from previous stage sorted by time, pair them up
-        if (!homeTeam || !awayTeam) {
-          const prevStage = stageOrder[stageOrder.indexOf(stage) - 1];
-          const prevMatches = knockoutMatches
-            .filter((m) => m.stage === prevStage)
-            .sort(
-              (a, b) =>
-                new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
-            );
-
-          // Match index in current stage
-          const currentStageMatches = stageMatches.sort(
-            (a, b) =>
-              new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
-          );
-          const matchIndex = currentStageMatches.findIndex(
-            (m) => m.id === match.id,
-          );
-
-          // Simple pairing: match i gets winners from prev matches 2i and 2i+1
-          const feederIndex1 = matchIndex * 2;
-          const feederIndex2 = matchIndex * 2 + 1;
-
-          if (prevMatches[feederIndex1] && !homeTeam) {
-            homeTeam = getPredictedWinner(prevMatches[feederIndex1].id);
-          }
-          if (prevMatches[feederIndex2] && !awayTeam) {
-            awayTeam = getPredictedWinner(prevMatches[feederIndex2].id);
-          }
-        }
-
-        resolvedTeams.set(match.id, { home: homeTeam, away: awayTeam });
-      }
-    }
-
-    return resolvedTeams;
-  };
-
-  // Resolve teams for all knockout matches based on predictions
-  const knockoutMatchesList = matches.filter((m) => m.stage !== "GROUP_STAGE");
-  const resolvedKnockoutTeams = resolveKnockoutTeams(
-    knockoutMatchesList,
-    predictionMap,
-  );
+  // Use BracketResolver to resolve knockout teams based on predictions
+  const resolver = new BracketResolver({
+    matches,
+    predictions: predictionMap,
+    groupStandings: allGroupStandings,
+    thirdPlaceQualifying,
+  });
+  const resolvedKnockoutTeams = resolver.resolve();
 
   // Calculate actual standings from actual match results (for scoring)
   const calculateActualStandings = (
@@ -468,6 +324,197 @@ export default async function UserPredictionsPage({ params }: PageProps) {
           )}
         </div>
 
+        {/* Knockout Stage - shown first when knockout is locked */}
+        {knockoutLocked && (
+          <section className="mb-8">
+            <h2 className="text-xl font-bold mb-4 border-b border-white/10 pb-2 text-white">
+              Knockout Stage
+            </h2>
+
+            <div className="space-y-6">
+              {(() => {
+                const knockoutStagesData = [
+                  { stage: "LAST_32", name: "Round of 32" },
+                  { stage: "LAST_16", name: "Round of 16" },
+                  { stage: "QUARTER_FINALS", name: "Quarter-Finals" },
+                  { stage: "SEMI_FINALS", name: "Semi-Finals" },
+                  { stage: "THIRD_PLACE", name: "Third Place" },
+                  { stage: "FINAL", name: "Final" },
+                ];
+
+                const knockoutMatches = matches.filter(
+                  (m) => m.stage !== "GROUP_STAGE",
+                );
+
+                if (knockoutMatches.length === 0) {
+                  return (
+                    <div className="text-white/50 text-center py-8">
+                      No knockout matches available yet
+                    </div>
+                  );
+                }
+
+                return knockoutStagesData.map(({ stage, name }) => {
+                  const stageMatches = knockoutMatches
+                    .filter((m) => m.stage === stage)
+                    .sort(
+                      (a, b) =>
+                        new Date(a.utcDate).getTime() -
+                        new Date(b.utcDate).getTime(),
+                    );
+
+                  if (stageMatches.length === 0) return null;
+
+                  return (
+                    <div key={stage} className="glass-card p-4">
+                      <h3 className="font-bold text-lg mb-3 text-white">
+                        {name}
+                      </h3>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        {stageMatches.map((match) => {
+                          const pred = predictionMap.get(match.id);
+                          const matchDate = new Date(match.utcDate);
+                          const resolved = resolvedKnockoutTeams.get(match.id);
+                          const homeTeam =
+                            resolved?.home ||
+                            (match.homeTeam?.id ? match.homeTeam : null);
+                          const awayTeam =
+                            resolved?.away ||
+                            (match.awayTeam?.id ? match.awayTeam : null);
+                          const venue = getVenue(match.id);
+
+                          const formattedDate = matchDate.toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                            },
+                          );
+                          const formattedTime = matchDate.toLocaleTimeString(
+                            "en-US",
+                            {
+                              hour: "numeric",
+                              minute: "2-digit",
+                            },
+                          );
+
+                          return (
+                            <div
+                              key={match.id}
+                              className="flex items-center py-3 px-4 rounded-xl bg-slate-800/60 border border-white/5"
+                            >
+                              {/* Date */}
+                              <div className="w-20 text-center shrink-0 pr-3 border-r border-white/10">
+                                <div
+                                  className="text-sm uppercase font-bold tracking-wide whitespace-nowrap"
+                                  style={{ color: "var(--date-color)" }}
+                                >
+                                  {formattedDate}
+                                </div>
+                              </div>
+
+                              {/* Time & Venue */}
+                              <div className="w-28 shrink-0 px-3 border-r border-white/10">
+                                <div className="text-sm text-white/70 font-medium">
+                                  {formattedTime}
+                                </div>
+                                {venue && (
+                                  <div
+                                    className="text-sm font-semibold truncate"
+                                    style={{ color: "var(--venue-color)" }}
+                                  >
+                                    {venue.city}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Match */}
+                              <div className="flex-1 flex items-center justify-center pl-4">
+                                {/* Home Team */}
+                                <div
+                                  className={`flex items-center justify-end gap-2 px-2 py-1 rounded-lg ${
+                                    pred?.winner_id === homeTeam?.id
+                                      ? "bg-amber-400 text-slate-900"
+                                      : ""
+                                  }`}
+                                >
+                                  <span
+                                    className={`text-sm font-semibold truncate ${
+                                      pred?.winner_id === homeTeam?.id
+                                        ? "text-slate-900"
+                                        : "text-white"
+                                    }`}
+                                  >
+                                    {homeTeam?.tla || "TBD"}
+                                  </span>
+                                  {homeTeam?.crest ? (
+                                    <img
+                                      src={homeTeam.crest}
+                                      alt={homeTeam.name}
+                                      className="w-7 h-7 object-contain shrink-0"
+                                    />
+                                  ) : (
+                                    <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
+                                      {homeTeam?.tla?.substring(0, 2) || "?"}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Score */}
+                                <div className="flex items-center gap-2 mx-4">
+                                  <span className="w-10 h-9 flex items-center justify-center text-lg font-bold bg-white/90 rounded-lg text-slate-800">
+                                    {pred?.home_goals ?? "-"}
+                                  </span>
+                                  <span className="text-white/50 font-bold">
+                                    -
+                                  </span>
+                                  <span className="w-10 h-9 flex items-center justify-center text-lg font-bold bg-white/90 rounded-lg text-slate-800">
+                                    {pred?.away_goals ?? "-"}
+                                  </span>
+                                </div>
+
+                                {/* Away Team */}
+                                <div
+                                  className={`flex items-center gap-2 px-2 py-1 rounded-lg ${
+                                    pred?.winner_id === awayTeam?.id
+                                      ? "bg-amber-400 text-slate-900"
+                                      : ""
+                                  }`}
+                                >
+                                  {awayTeam?.crest ? (
+                                    <img
+                                      src={awayTeam.crest}
+                                      alt={awayTeam.name}
+                                      className="w-7 h-7 object-contain shrink-0"
+                                    />
+                                  ) : (
+                                    <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
+                                      {awayTeam?.tla?.substring(0, 2) || "?"}
+                                    </div>
+                                  )}
+                                  <span
+                                    className={`text-sm font-semibold truncate ${
+                                      pred?.winner_id === awayTeam?.id
+                                        ? "text-slate-900"
+                                        : "text-white"
+                                    }`}
+                                  >
+                                    {awayTeam?.tla || "TBD"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </section>
+        )}
+
         {/* Group Stage */}
         <section className="mb-8">
           <h2 className="text-xl font-bold mb-4 border-b border-white/10 pb-2 text-white">
@@ -565,200 +612,206 @@ export default async function UserPredictionsPage({ params }: PageProps) {
           )}
         </section>
 
-        {/* Knockout Stage */}
-        <section className="mb-8">
-          <h2 className="text-xl font-bold mb-4 border-b border-white/10 pb-2 text-white">
-            Knockout Stage
-          </h2>
+        {/* Knockout Stage - shown after groups when not locked */}
+        {!knockoutLocked && (
+          <section className="mb-8">
+            <h2 className="text-xl font-bold mb-4 border-b border-white/10 pb-2 text-white">
+              Knockout Stage
+            </h2>
 
-          {!showKnockoutPredictions ? (
-            <div className="glass-card p-8 text-center blur-sm select-none">
-              <p className="text-white/50">
-                Predictions will be visible after knockout stage starts
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {(() => {
-                const knockoutStages = [
-                  { stage: "LAST_32", name: "Round of 32" },
-                  { stage: "LAST_16", name: "Round of 16" },
-                  { stage: "QUARTER_FINALS", name: "Quarter-Finals" },
-                  { stage: "SEMI_FINALS", name: "Semi-Finals" },
-                  { stage: "THIRD_PLACE", name: "Third Place" },
-                  { stage: "FINAL", name: "Final" },
-                ];
+            {!showKnockoutPredictions ? (
+              <div className="glass-card p-8 text-center blur-sm select-none">
+                <p className="text-white/50">
+                  Predictions will be visible after knockout stage starts
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {(() => {
+                  const knockoutStagesData = [
+                    { stage: "LAST_32", name: "Round of 32" },
+                    { stage: "LAST_16", name: "Round of 16" },
+                    { stage: "QUARTER_FINALS", name: "Quarter-Finals" },
+                    { stage: "SEMI_FINALS", name: "Semi-Finals" },
+                    { stage: "THIRD_PLACE", name: "Third Place" },
+                    { stage: "FINAL", name: "Final" },
+                  ];
 
-                const knockoutMatches = matches.filter(
-                  (m) => m.stage !== "GROUP_STAGE",
-                );
-
-                if (knockoutMatches.length === 0) {
-                  return (
-                    <div className="text-white/50 text-center py-8">
-                      No knockout matches available yet
-                    </div>
+                  const knockoutMatches = matches.filter(
+                    (m) => m.stage !== "GROUP_STAGE",
                   );
-                }
 
-                return knockoutStages.map(({ stage, name }) => {
-                  const stageMatches = knockoutMatches
-                    .filter((m) => m.stage === stage)
-                    .sort(
-                      (a, b) =>
-                        new Date(a.utcDate).getTime() -
-                        new Date(b.utcDate).getTime(),
-                    );
-
-                  if (stageMatches.length === 0) return null;
-
-                  return (
-                    <div key={stage} className="glass-card p-4">
-                      <h3 className="font-bold text-lg mb-3 text-white">
-                        {name}
-                      </h3>
-                      <div className="grid md:grid-cols-2 gap-3">
-                        {stageMatches.map((match) => {
-                          const pred = predictionMap.get(match.id);
-                          const matchDate = new Date(match.utcDate);
-                          const resolved = resolvedKnockoutTeams.get(match.id);
-                          const homeTeam =
-                            resolved?.home ||
-                            (match.homeTeam?.id ? match.homeTeam : null);
-                          const awayTeam =
-                            resolved?.away ||
-                            (match.awayTeam?.id ? match.awayTeam : null);
-                          const venue = getVenue(match.id);
-                          const isTie =
-                            pred?.home_goals !== null &&
-                            pred?.away_goals !== null &&
-                            pred?.home_goals === pred?.away_goals;
-                          const winnerTeam = pred?.winner_id
-                            ? homeTeam?.id === pred.winner_id
-                              ? homeTeam
-                              : awayTeam
-                            : null;
-
-                          const formattedDate = matchDate.toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              day: "numeric",
-                            },
-                          );
-                          const formattedTime = matchDate.toLocaleTimeString(
-                            "en-US",
-                            {
-                              hour: "numeric",
-                              minute: "2-digit",
-                            },
-                          );
-
-                          return (
-                            <div
-                              key={match.id}
-                              className="flex items-center py-3 px-4 rounded-xl bg-slate-800/60 border border-white/5"
-                            >
-                              {/* Date */}
-                              <div className="w-20 text-center shrink-0 pr-3 border-r border-white/10">
-                                <div
-                                  className="text-sm uppercase font-bold tracking-wide whitespace-nowrap"
-                                  style={{ color: "var(--date-color)" }}
-                                >
-                                  {formattedDate}
-                                </div>
-                              </div>
-
-                              {/* Time & Venue */}
-                              <div className="w-28 shrink-0 px-3 border-r border-white/10">
-                                <div className="text-sm text-white/70 font-medium">
-                                  {formattedTime}
-                                </div>
-                                {venue && (
-                                  <div
-                                    className="text-sm font-semibold truncate"
-                                    style={{ color: "var(--venue-color)" }}
-                                  >
-                                    {venue.city}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Match */}
-                              <div className="flex-1 flex items-center justify-center pl-4">
-                                {/* Home Team */}
-                                <div className="w-24 flex items-center justify-end gap-2">
-                                  <span className="text-sm font-semibold text-white truncate">
-                                    {homeTeam?.tla || "TBD"}
-                                  </span>
-                                  {homeTeam?.crest ? (
-                                    <img
-                                      src={homeTeam.crest}
-                                      alt={homeTeam.name}
-                                      className="w-7 h-7 object-contain shrink-0"
-                                    />
-                                  ) : (
-                                    <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
-                                      {homeTeam?.tla?.substring(0, 2) || "?"}
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Score */}
-                                <div className="flex items-center gap-2 mx-4">
-                                  <span className="w-10 h-9 flex items-center justify-center text-lg font-bold bg-white/90 rounded-lg text-slate-800">
-                                    {pred?.home_goals ?? "-"}
-                                  </span>
-                                  <span className="text-white/50 font-bold">
-                                    -
-                                  </span>
-                                  <span className="w-10 h-9 flex items-center justify-center text-lg font-bold bg-white/90 rounded-lg text-slate-800">
-                                    {pred?.away_goals ?? "-"}
-                                  </span>
-                                </div>
-
-                                {/* Away Team */}
-                                <div className="w-24 flex items-center gap-2">
-                                  {awayTeam?.crest ? (
-                                    <img
-                                      src={awayTeam.crest}
-                                      alt={awayTeam.name}
-                                      className="w-7 h-7 object-contain shrink-0"
-                                    />
-                                  ) : (
-                                    <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
-                                      {awayTeam?.tla?.substring(0, 2) || "?"}
-                                    </div>
-                                  )}
-                                  <span className="text-sm font-semibold text-white truncate">
-                                    {awayTeam?.tla || "TBD"}
-                                  </span>
-                                </div>
-
-                                {/* Winner indicator for ties */}
-                                {isTie && winnerTeam && (
-                                  <div className="ml-2 flex items-center gap-1 px-2 py-1 rounded bg-emerald-600/30 text-emerald-400 text-xs">
-                                    <span>🏆</span>
-                                    <span>{winnerTeam.tla}</span>
-                                  </div>
-                                )}
-                                {isTie && !winnerTeam && (
-                                  <div className="ml-2 px-2 py-1 rounded bg-yellow-600/30 text-yellow-400 text-xs">
-                                    No winner
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
+                  if (knockoutMatches.length === 0) {
+                    return (
+                      <div className="text-white/50 text-center py-8">
+                        No knockout matches available yet
                       </div>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
-          )}
-        </section>
+                    );
+                  }
+
+                  return knockoutStagesData.map(({ stage, name }) => {
+                    const stageMatches = knockoutMatches
+                      .filter((m) => m.stage === stage)
+                      .sort(
+                        (a, b) =>
+                          new Date(a.utcDate).getTime() -
+                          new Date(b.utcDate).getTime(),
+                      );
+
+                    if (stageMatches.length === 0) return null;
+
+                    return (
+                      <div key={stage} className="glass-card p-4">
+                        <h3 className="font-bold text-lg mb-3 text-white">
+                          {name}
+                        </h3>
+                        <div className="grid md:grid-cols-2 gap-3">
+                          {stageMatches.map((match) => {
+                            const pred = predictionMap.get(match.id);
+                            const matchDate = new Date(match.utcDate);
+                            const resolved = resolvedKnockoutTeams.get(
+                              match.id,
+                            );
+                            const homeTeam =
+                              resolved?.home ||
+                              (match.homeTeam?.id ? match.homeTeam : null);
+                            const awayTeam =
+                              resolved?.away ||
+                              (match.awayTeam?.id ? match.awayTeam : null);
+                            const venue = getVenue(match.id);
+
+                            const formattedDate = matchDate.toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                              },
+                            );
+                            const formattedTime = matchDate.toLocaleTimeString(
+                              "en-US",
+                              {
+                                hour: "numeric",
+                                minute: "2-digit",
+                              },
+                            );
+
+                            return (
+                              <div
+                                key={match.id}
+                                className="flex items-center py-3 px-4 rounded-xl bg-slate-800/60 border border-white/5"
+                              >
+                                {/* Date */}
+                                <div className="w-20 text-center shrink-0 pr-3 border-r border-white/10">
+                                  <div
+                                    className="text-sm uppercase font-bold tracking-wide whitespace-nowrap"
+                                    style={{ color: "var(--date-color)" }}
+                                  >
+                                    {formattedDate}
+                                  </div>
+                                </div>
+
+                                {/* Time & Venue */}
+                                <div className="w-28 shrink-0 px-3 border-r border-white/10">
+                                  <div className="text-sm text-white/70 font-medium">
+                                    {formattedTime}
+                                  </div>
+                                  {venue && (
+                                    <div
+                                      className="text-sm font-semibold truncate"
+                                      style={{ color: "var(--venue-color)" }}
+                                    >
+                                      {venue.city}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Match */}
+                                <div className="flex-1 flex items-center justify-center pl-4">
+                                  {/* Home Team */}
+                                  <div
+                                    className={`flex items-center justify-end gap-2 px-2 py-1 rounded-lg ${
+                                      pred?.winner_id === homeTeam?.id
+                                        ? "bg-amber-400 text-slate-900"
+                                        : ""
+                                    }`}
+                                  >
+                                    <span
+                                      className={`text-sm font-semibold truncate ${
+                                        pred?.winner_id === homeTeam?.id
+                                          ? "text-slate-900"
+                                          : "text-white"
+                                      }`}
+                                    >
+                                      {homeTeam?.tla || "TBD"}
+                                    </span>
+                                    {homeTeam?.crest ? (
+                                      <img
+                                        src={homeTeam.crest}
+                                        alt={homeTeam.name}
+                                        className="w-7 h-7 object-contain shrink-0"
+                                      />
+                                    ) : (
+                                      <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
+                                        {homeTeam?.tla?.substring(0, 2) || "?"}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Score */}
+                                  <div className="flex items-center gap-2 mx-4">
+                                    <span className="w-10 h-9 flex items-center justify-center text-lg font-bold bg-white/90 rounded-lg text-slate-800">
+                                      {pred?.home_goals ?? "-"}
+                                    </span>
+                                    <span className="text-white/50 font-bold">
+                                      -
+                                    </span>
+                                    <span className="w-10 h-9 flex items-center justify-center text-lg font-bold bg-white/90 rounded-lg text-slate-800">
+                                      {pred?.away_goals ?? "-"}
+                                    </span>
+                                  </div>
+
+                                  {/* Away Team */}
+                                  <div
+                                    className={`flex items-center gap-2 px-2 py-1 rounded-lg ${
+                                      pred?.winner_id === awayTeam?.id
+                                        ? "bg-amber-400 text-slate-900"
+                                        : ""
+                                    }`}
+                                  >
+                                    {awayTeam?.crest ? (
+                                      <img
+                                        src={awayTeam.crest}
+                                        alt={awayTeam.name}
+                                        className="w-7 h-7 object-contain shrink-0"
+                                      />
+                                    ) : (
+                                      <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
+                                        {awayTeam?.tla?.substring(0, 2) || "?"}
+                                      </div>
+                                    )}
+                                    <span
+                                      className={`text-sm font-semibold truncate ${
+                                        pred?.winner_id === awayTeam?.id
+                                          ? "text-slate-900"
+                                          : "text-white"
+                                      }`}
+                                    >
+                                      {awayTeam?.tla || "TBD"}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Points Breakdown */}
         {(groupLocked || knockoutLocked) && (

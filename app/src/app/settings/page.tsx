@@ -104,24 +104,24 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading...</div>
+        <div className="text-xl text-white">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Header user={profile} />
 
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Settings</h1>
+      <main className="flex-1 container mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold mb-6 text-white">Settings</h1>
 
         {message.text && (
           <div
             className={`mb-6 px-4 py-3 rounded-lg ${
               message.type === "error"
-                ? "bg-red-50 text-red-600"
-                : "bg-green-50 text-green-600"
+                ? "bg-red-500/20 border border-red-500/30 text-red-300"
+                : "bg-green-500/20 border border-green-500/30 text-green-300"
             }`}
           >
             {message.text}
@@ -130,31 +130,29 @@ export default function SettingsPage() {
 
         <div className="max-w-lg space-y-6">
           {/* Profile Settings */}
-          <section className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-lg font-bold mb-4">Profile</h2>
-
-            <form onSubmit={handleSaveProfile} className="space-y-4">
+          <section className="glass-card p-8">
+            <form onSubmit={handleSaveProfile} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-white/70 mb-2">
                   Email
                 </label>
                 <input
                   type="email"
                   value={profile?.email || ""}
                   disabled
-                  className="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-500"
+                  className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white/50"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-white/70 mb-2">
                   Display Name
                 </label>
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   required
                 />
               </div>
@@ -162,7 +160,7 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                className="px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save Profile"}
               </button>
@@ -170,33 +168,31 @@ export default function SettingsPage() {
           </section>
 
           {/* Password Settings */}
-          <section className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-lg font-bold mb-4">Change Password</h2>
-
-            <form onSubmit={handleChangePassword} className="space-y-4">
+          <section className="glass-card p-8">
+            <form onSubmit={handleChangePassword} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-white/70 mb-2">
                   New Password
                 </label>
                 <input
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   minLength={6}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-white/70 mb-2">
                   Confirm New Password
                 </label>
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   minLength={6}
                   required
                 />
@@ -205,7 +201,7 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+                className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
               >
                 {saving ? "Changing..." : "Change Password"}
               </button>
@@ -214,9 +210,11 @@ export default function SettingsPage() {
         </div>
       </main>
 
-      <footer className="bg-gray-800 text-white py-4 mt-8">
-        <div className="container mx-auto px-4 text-center text-sm">
-          <p>WorldCupProde - FIFA World Cup 2026 Predictions</p>
+      <footer className="border-t border-white/10 mt-auto">
+        <div className="container mx-auto px-4 py-6 text-center">
+          <p className="text-white/40 text-sm">
+            WorldCupProde - FIFA World Cup 2026 Predictions
+          </p>
         </div>
       </footer>
     </div>

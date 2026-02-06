@@ -1,7 +1,8 @@
 "use client";
 
 import { Match, CalculatedStanding, Team } from "@/types/football";
-import { getPositionLabel, getR32BracketInfo } from "@/lib/r32-bracket";
+import { getPositionLabel, getR32BracketByNumber } from "@/lib/r32-bracket";
+import { buildMatchNumberMapping } from "@/lib/bracket-resolver";
 import { getVenue } from "@/lib/venues";
 
 interface R32PreviewProps {
@@ -15,6 +16,9 @@ export default function R32Preview({
   groupStandings,
   thirdPlaceQualifying,
 }: R32PreviewProps) {
+  // Build mapping from API match IDs to FIFA match numbers
+  const matchNumberMapping = buildMatchNumberMapping(matches);
+
   // Get team from standings based on position
   // For 3rd place, only return team if they actually qualify
   const getTeamFromStandings = (
@@ -46,34 +50,49 @@ export default function R32Preview({
       </p>
       <div className="grid md:grid-cols-2 gap-4">
         {sortedMatches.map((match) => {
-          const bracketInfo = getR32BracketInfo(match.id);
+          // Get FIFA match number for this API match ID
+          const fifaMatchNumber = matchNumberMapping.get(match.id);
+          if (!fifaMatchNumber) return null;
+
+          const bracketInfo = getR32BracketByNumber(fifaMatchNumber);
           if (!bracketInfo) return null;
 
-          const homeTeam = getTeamFromStandings(
-            bracketInfo.homePosition.group,
-            bracketInfo.homePosition.position,
-          );
-          const awayTeam = getTeamFromStandings(
-            bracketInfo.awayPosition.group,
-            bracketInfo.awayPosition.position,
-          );
+          // Handle null positions (3rd place teams are dynamic)
+          const homeTeam = bracketInfo.homePosition
+            ? getTeamFromStandings(
+                bracketInfo.homePosition.group,
+                bracketInfo.homePosition.position,
+              )
+            : null; // 3rd place - would need dynamic resolution
+          const awayTeam = bracketInfo.awayPosition
+            ? getTeamFromStandings(
+                bracketInfo.awayPosition.group,
+                bracketInfo.awayPosition.position,
+              )
+            : null; // 3rd place - would need dynamic resolution
 
-          const homeLabel = getPositionLabel(
-            bracketInfo.homePosition.group,
-            bracketInfo.homePosition.position,
-          );
-          const awayLabel = getPositionLabel(
-            bracketInfo.awayPosition.group,
-            bracketInfo.awayPosition.position,
-          );
+          const homeLabel = bracketInfo.homePosition
+            ? getPositionLabel(
+                bracketInfo.homePosition.group,
+                bracketInfo.homePosition.position,
+              )
+            : "3rd Place";
+          const awayLabel = bracketInfo.awayPosition
+            ? getPositionLabel(
+                bracketInfo.awayPosition.group,
+                bracketInfo.awayPosition.position,
+              )
+            : "3rd Place";
 
           const matchDate = new Date(match.utcDate);
           const venue = getVenue(match.id);
 
-          // Check if match involves a 3rd place team
+          // Check if match involves a 3rd place team (null position means 3rd place)
           const isThirdPlace =
-            bracketInfo.homePosition.position === 3 ||
-            bracketInfo.awayPosition.position === 3;
+            !bracketInfo.homePosition ||
+            !bracketInfo.awayPosition ||
+            bracketInfo.homePosition?.position === 3 ||
+            bracketInfo.awayPosition?.position === 3;
 
           const matchTime = matchDate.toLocaleTimeString("en-US", {
             hour: "numeric",

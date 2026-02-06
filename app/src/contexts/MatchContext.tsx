@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import { Match } from "@/types/football";
 import { getMatchInfo, Venue } from "@/lib/tournament";
 import { useSimulation } from "./SimulationContext";
@@ -14,7 +21,13 @@ const POLL_INTERVAL = 60000; // 60 seconds;
 export interface MatchWithLiveInfo extends Match {
   isLive: boolean;
   elapsedMinutes: number | null;
-  period: "FIRST_HALF" | "HALF_TIME" | "SECOND_HALF" | "EXTRA_TIME" | "PENALTIES" | null;
+  period:
+    | "FIRST_HALF"
+    | "HALF_TIME"
+    | "SECOND_HALF"
+    | "EXTRA_TIME"
+    | "PENALTIES"
+    | null;
   /** FIFA match number (1-104) */
   fifaNumber: number | null;
   /** Computed venue display string */
@@ -71,7 +84,10 @@ function calculateElapsedMinutes(match: Match): number | null {
 /**
  * Determine the current period of a live match
  */
-function determinePeriod(match: Match, elapsedMinutes: number | null): MatchWithLiveInfo["period"] {
+function determinePeriod(
+  match: Match,
+  elapsedMinutes: number | null,
+): MatchWithLiveInfo["period"] {
   if (match.status === "PAUSED") {
     // If paused around halftime
     if (elapsedMinutes && elapsedMinutes >= 45 && elapsedMinutes < 60) {
@@ -106,31 +122,38 @@ function determinePeriod(match: Match, elapsedMinutes: number | null): MatchWith
  */
 function buildFifaMapping(matches: Match[]): Map<number, number> {
   const mapping = new Map<number, number>();
-  
+
   // Group stage matches (FIFA 1-72): assign by date order
-  const groupMatches = matches.filter(m => m.stage === "GROUP_STAGE");
+  const groupMatches = matches.filter((m) => m.stage === "GROUP_STAGE");
   const sortedGroupMatches = [...groupMatches].sort(
-    (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
+    (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
   );
   sortedGroupMatches.forEach((match, index) => {
     mapping.set(match.id, index + 1);
   });
 
   // Knockout matches (FIFA 73-104): assign by stage and date
-  const knockoutStages = ["LAST_32", "LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "THIRD_PLACE", "FINAL"];
+  const knockoutStages = [
+    "LAST_32",
+    "LAST_16",
+    "QUARTER_FINALS",
+    "SEMI_FINALS",
+    "THIRD_PLACE",
+    "FINAL",
+  ];
   const stageBaseNumbers: Record<string, number> = {
-    "LAST_32": 73,
-    "LAST_16": 89,
-    "QUARTER_FINALS": 97,
-    "SEMI_FINALS": 101,
-    "THIRD_PLACE": 103,
-    "FINAL": 104,
+    LAST_32: 73,
+    LAST_16: 89,
+    QUARTER_FINALS: 97,
+    SEMI_FINALS: 101,
+    THIRD_PLACE: 103,
+    FINAL: 104,
   };
 
   for (const stage of knockoutStages) {
-    const stageMatches = matches.filter(m => m.stage === stage);
+    const stageMatches = matches.filter((m) => m.stage === stage);
     const sortedStageMatches = [...stageMatches].sort(
-      (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
+      (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
     );
     sortedStageMatches.forEach((match, index) => {
       mapping.set(match.id, stageBaseNumbers[stage] + index);
@@ -145,19 +168,19 @@ function buildFifaMapping(matches: Match[]): Map<number, number> {
  */
 function enhanceMatch(
   match: Match,
-  fifaMapping: Map<number, number>
+  fifaMapping: Map<number, number>,
 ): MatchWithLiveInfo {
   const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
   const elapsedMinutes = calculateElapsedMinutes(match);
   const period = determinePeriod(match, elapsedMinutes);
-  
+
   // Get FIFA number from mapping
   const fifaNumber = fifaMapping.get(match.id) || null;
-  
+
   // Get static venue from tournament data (only available for knockout matches 73-104)
   const matchInfo = fifaNumber ? getMatchInfo(fifaNumber) : null;
   const staticVenue = matchInfo?.venue || null;
-  
+
   // Compute venue display: prefer API venue, fall back to static venue
   let venueDisplay: string | null = null;
   if (match.venue) {
@@ -200,12 +223,15 @@ interface MatchProviderProps {
   initialMatches?: Match[];
 }
 
-export function MatchProvider({ children, initialMatches }: MatchProviderProps) {
+export function MatchProvider({
+  children,
+  initialMatches,
+}: MatchProviderProps) {
   const [rawMatches, setRawMatches] = useState<Match[]>(initialMatches || []);
   const [loading, setLoading] = useState(!initialMatches);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(
-    initialMatches ? new Date() : null
+    initialMatches ? new Date() : null,
   );
 
   // Get simulation context to apply overrides
@@ -213,30 +239,30 @@ export function MatchProvider({ children, initialMatches }: MatchProviderProps) 
 
   // Apply simulation to raw matches (if enabled)
   const processedMatches = useMemo(
-    () => simulationEnabled ? applySimulation(rawMatches) : rawMatches,
-    [rawMatches, simulationEnabled, applySimulation]
+    () => (simulationEnabled ? applySimulation(rawMatches) : rawMatches),
+    [rawMatches, simulationEnabled, applySimulation],
   );
 
   // Build FIFA number mapping once when matches change
-  const fifaMapping = useMemo(() => buildFifaMapping(processedMatches), [processedMatches]);
+  const fifaMapping = useMemo(
+    () => buildFifaMapping(processedMatches),
+    [processedMatches],
+  );
 
   // Transform raw matches to include live info, FIFA number, and venue
   const matches = useMemo(
     () => processedMatches.map((m) => enhanceMatch(m, fifaMapping)),
-    [processedMatches, fifaMapping]
+    [processedMatches, fifaMapping],
   );
 
   // Check if any matches are currently live
   const hasLiveMatches = useMemo(
     () => matches.some((m) => m.isLive),
-    [matches]
+    [matches],
   );
 
   // Get only live matches
-  const liveMatches = useMemo(
-    () => matches.filter((m) => m.isLive),
-    [matches]
-  );
+  const liveMatches = useMemo(() => matches.filter((m) => m.isLive), [matches]);
 
   // Fetch matches from API
   const fetchMatches = useCallback(async () => {
@@ -264,7 +290,7 @@ export function MatchProvider({ children, initialMatches }: MatchProviderProps) 
   // Get a specific match by API ID
   const getMatch = useCallback(
     (apiId: number) => matches.find((m) => m.id === apiId),
-    [matches]
+    [matches],
   );
 
   // Initial fetch
@@ -312,9 +338,7 @@ export function MatchProvider({ children, initialMatches }: MatchProviderProps) 
   };
 
   return (
-    <MatchContext.Provider value={value}>
-      {children}
-    </MatchContext.Provider>
+    <MatchContext.Provider value={value}>{children}</MatchContext.Provider>
   );
 }
 

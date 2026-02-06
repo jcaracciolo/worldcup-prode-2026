@@ -7,7 +7,10 @@
 // 5. Drawing of lots (random at tie)
 
 import { CalculatedStanding } from "@/types/football";
-import { lookupThirdPlaceAssignment, THIRD_PLACE_MATCH_ORDER } from "./fifa-third-place-table";
+import {
+  lookupThirdPlaceAssignment,
+  THIRD_PLACE_MATCH_ORDER,
+} from "./fifa-third-place-table";
 
 export interface ThirdPlaceTeam extends CalculatedStanding {
   group: string;
@@ -126,8 +129,12 @@ const R32_THIRD_PLACE_MATCHES = [
 /**
  * Get the pool of possible groups for a 3rd place team in a specific R32 match
  */
-export function getThirdPlacePoolForMatch(matchNumber: number): string[] | null {
-  const match = R32_THIRD_PLACE_MATCHES.find((m) => m.matchNumber === matchNumber);
+export function getThirdPlacePoolForMatch(
+  matchNumber: number,
+): string[] | null {
+  const match = R32_THIRD_PLACE_MATCHES.find(
+    (m) => m.matchNumber === matchNumber,
+  );
   return match?.pool || null;
 }
 
@@ -135,7 +142,7 @@ export function getThirdPlacePoolForMatch(matchNumber: number): string[] | null 
  * Assign qualifying 3rd place teams to R32 matches using the official FIFA lookup table.
  * FIFA has predetermined all 495 possible combinations of which 8 groups qualify
  * and which 3rd place team plays which group winner.
- * 
+ *
  * @param rankedQualifyingGroups Array of group letters in rank order (best first)
  * @returns Map of FIFA match number -> group letter of 3rd place team
  */
@@ -143,17 +150,22 @@ export function assignThirdPlaceToR32(
   rankedQualifyingGroups: string[],
 ): Map<number, string> {
   const result = new Map<number, string>();
-  
+
   // Convert qualifying groups to single letters (e.g., "GROUP_A" -> "A")
-  const qualifyingLetters = rankedQualifyingGroups.map((g) => g.replace("GROUP_", ""));
-  
+  const qualifyingLetters = rankedQualifyingGroups.map((g) =>
+    g.replace("GROUP_", ""),
+  );
+
   if (qualifyingLetters.length !== 8) {
     return result; // Can't determine assignments with incomplete data
   }
-  
+
   // Use the official FIFA lookup table for each R32 match
   for (const matchNumber of THIRD_PLACE_MATCH_ORDER) {
-    const assignedGroup = lookupThirdPlaceAssignment(qualifyingLetters, matchNumber);
+    const assignedGroup = lookupThirdPlaceAssignment(
+      qualifyingLetters,
+      matchNumber,
+    );
     if (assignedGroup) {
       result.set(matchNumber, assignedGroup);
     }
@@ -174,7 +186,7 @@ export function getThirdPlaceTeamForMatch(
 ): { team: CalculatedStanding["team"]; group: string } | null {
   // Get ranked third place teams (already sorted by points/GD/goals)
   const rankedTeams = getRankedThirdPlaceTeams(groupStandings);
-  
+
   // Get qualifying groups in rank order (top 8)
   const rankedQualifyingGroups = rankedTeams
     .filter((t) => t.qualifies)
@@ -195,9 +207,11 @@ export function getThirdPlaceTeamForMatch(
 
   if (!assignedGroupLetter) return null;
 
-  const groupKey = usesPrefix ? `GROUP_${assignedGroupLetter}` : assignedGroupLetter;
+  const groupKey = usesPrefix
+    ? `GROUP_${assignedGroupLetter}`
+    : assignedGroupLetter;
   const standings = groupStandings.get(groupKey);
-  
+
   if (!standings || standings.length < 3) return null;
 
   return {

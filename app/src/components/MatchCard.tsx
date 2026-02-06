@@ -11,18 +11,20 @@ interface MatchCardProps {
 }
 
 // Type guard to check if match has live info
-function hasLiveInfo(match: Match | MatchWithLiveInfo): match is MatchWithLiveInfo {
+function hasLiveInfo(
+  match: Match | MatchWithLiveInfo,
+): match is MatchWithLiveInfo {
   return "isLive" in match && "elapsedMinutes" in match;
 }
 
 export default function MatchCard({ match, showDate = false }: MatchCardProps) {
   // Support both Match and MatchWithLiveInfo
-  const isLive = hasLiveInfo(match) 
-    ? match.isLive 
+  const isLive = hasLiveInfo(match)
+    ? match.isLive
     : match.status === "IN_PLAY" || match.status === "PAUSED";
   const isFinished = match.status === "FINISHED";
   const matchDate = new Date(match.utcDate);
-  
+
   // Get elapsed minutes if available
   const elapsedMinutes = hasLiveInfo(match) ? match.elapsedMinutes : null;
   const period = hasLiveInfo(match) ? match.period : null;
@@ -54,7 +56,8 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
   // Determine winner for highlighting
   const homeGoals = match.score.fullTime.home;
   const awayGoals = match.score.fullTime.away;
-  const hasScore = (isFinished || isLive) && homeGoals !== null && awayGoals !== null;
+  const hasScore =
+    (isFinished || isLive) && homeGoals !== null && awayGoals !== null;
   const homeWon = isFinished && hasScore && homeGoals > awayGoals;
   const awayWon = isFinished && hasScore && awayGoals > homeGoals;
   const isDraw = isFinished && hasScore && homeGoals === awayGoals;
@@ -65,19 +68,22 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
 
   const getStatusDisplay = () => {
     if (isLive) {
-      const timeDisplay = period === "HALF_TIME" 
-        ? "HT" 
-        : elapsedMinutes !== null 
-          ? `${elapsedMinutes}'` 
-          : "";
-      
+      const timeDisplay =
+        period === "HALF_TIME"
+          ? "HT"
+          : elapsedMinutes !== null
+            ? `${elapsedMinutes}'`
+            : "";
+
       return (
         <div className="flex flex-col items-center gap-1">
           <span className="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full live-pulse">
             LIVE
           </span>
           {timeDisplay && (
-            <span className="text-red-400 text-xs font-semibold">{timeDisplay}</span>
+            <span className="text-red-400 text-xs font-semibold">
+              {timeDisplay}
+            </span>
           )}
         </div>
       );
@@ -132,11 +138,15 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
           <div className="flex flex-col items-center gap-2 min-w-[100px]">
             {isFinished || isLive ? (
               <div className="flex items-center gap-3">
-                <span className={`text-3xl font-bold ${isLive ? "text-red-500" : "text-slate-800"}`}>
+                <span
+                  className={`text-3xl font-bold ${isLive ? "text-red-500" : "text-slate-800"}`}
+                >
                   {match.score.fullTime.home ?? 0}
                 </span>
                 <span className="text-slate-400 text-xl">-</span>
-                <span className={`text-3xl font-bold ${isLive ? "text-red-500" : "text-slate-800"}`}>
+                <span
+                  className={`text-3xl font-bold ${isLive ? "text-red-500" : "text-slate-800"}`}
+                >
                   {match.score.fullTime.away ?? 0}
                 </span>
               </div>
@@ -176,14 +186,14 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
               {formatGroupName(match.group) || formatStageName(match.stage)}
             </span>
             {/* Use venueDisplay from MatchWithLiveInfo if available, otherwise fall back to match.venue */}
-            {(hasLiveInfo(match) && match.venueDisplay) ? (
+            {hasLiveInfo(match) && match.venueDisplay ? (
               <span className="text-slate-400 text-xs">
                 📍 {match.venueDisplay}
               </span>
-            ) : match.venue && (
-              <span className="text-slate-400 text-xs">
-                📍 {match.venue}
-              </span>
+            ) : (
+              match.venue && (
+                <span className="text-slate-400 text-xs">📍 {match.venue}</span>
+              )
             )}
           </div>
         </div>

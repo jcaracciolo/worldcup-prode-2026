@@ -1,11 +1,11 @@
 /**
  * API CLIENT - Single interface to external football data
- * 
+ *
  * This is the ONLY place that interacts with the external football-data.org API.
  * All match lookups use FIFA match numbers. The API ID mapping is internal.
- * 
+ *
  * If we swap APIs in the future, only this file needs to change.
- * 
+ *
  * Usage:
  *   const client = await getApiClient();
  *   const score = client.getMatchScore(86);  // FIFA match number
@@ -25,7 +25,16 @@ export interface MatchScore {
 }
 
 export interface MatchStatus {
-  status: "SCHEDULED" | "TIMED" | "IN_PLAY" | "PAUSED" | "FINISHED" | "SUSPENDED" | "POSTPONED" | "CANCELLED" | "AWARDED";
+  status:
+    | "SCHEDULED"
+    | "TIMED"
+    | "IN_PLAY"
+    | "PAUSED"
+    | "FINISHED"
+    | "SUSPENDED"
+    | "POSTPONED"
+    | "CANCELLED"
+    | "AWARDED";
   utcDate: string;
 }
 
@@ -71,7 +80,7 @@ class ApiClient {
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/matches`,
-        { cache: "no-store" }
+        { cache: "no-store" },
       );
       const data = await res.json();
       this.matches = data.matches || [];
@@ -90,13 +99,13 @@ class ApiClient {
    */
   private buildMappings(): void {
     // Group stage matches (FIFA 1-72): assign by date order within each group
-    const groupMatches = this.matches.filter(m => m.stage === "GROUP_STAGE");
-    
+    const groupMatches = this.matches.filter((m) => m.stage === "GROUP_STAGE");
+
     // Sort all group matches by date
     const sortedGroupMatches = [...groupMatches].sort(
-      (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
+      (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
     );
-    
+
     // Assign FIFA numbers 1-72 in chronological order
     sortedGroupMatches.forEach((match, index) => {
       const fifaNum = index + 1;
@@ -106,20 +115,27 @@ class ApiClient {
     });
 
     // Knockout matches (FIFA 73-104): assign by date order within each stage
-    const knockoutStages = ["LAST_32", "LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "THIRD_PLACE", "FINAL"];
+    const knockoutStages = [
+      "LAST_32",
+      "LAST_16",
+      "QUARTER_FINALS",
+      "SEMI_FINALS",
+      "THIRD_PLACE",
+      "FINAL",
+    ];
     const stageBaseNumbers: Record<string, number> = {
-      "LAST_32": 73,
-      "LAST_16": 89,
-      "QUARTER_FINALS": 97,
-      "SEMI_FINALS": 101,
-      "THIRD_PLACE": 103,
-      "FINAL": 104,
+      LAST_32: 73,
+      LAST_16: 89,
+      QUARTER_FINALS: 97,
+      SEMI_FINALS: 101,
+      THIRD_PLACE: 103,
+      FINAL: 104,
     };
 
     for (const stage of knockoutStages) {
-      const stageMatches = this.matches.filter(m => m.stage === stage);
+      const stageMatches = this.matches.filter((m) => m.stage === stage);
       const sortedStageMatches = [...stageMatches].sort(
-        (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
+        (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
       );
 
       sortedStageMatches.forEach((match, index) => {
@@ -175,7 +191,9 @@ class ApiClient {
    * For group stage, these are always set
    * For knockout, may be TBD (null) until previous rounds complete
    */
-  getMatchTeams(fifaNumber: number): { home: Team | null; away: Team | null } | null {
+  getMatchTeams(
+    fifaNumber: number,
+  ): { home: Team | null; away: Team | null } | null {
     const match = this.getMatchByFifa(fifaNumber);
     if (!match) return null;
 
@@ -392,36 +410,45 @@ export async function refreshApiClient(): Promise<void> {
 /**
  * Build API match ID to FIFA number mapping from Match array
  * Use this when you already have Match[] data and need the mapping
- * 
+ *
  * Prefer using getApiClient() for new code - it handles caching automatically
  */
-export function buildApiToFifaMapping(apiMatches: Match[]): Map<number, number> {
+export function buildApiToFifaMapping(
+  apiMatches: Match[],
+): Map<number, number> {
   const mapping = new Map<number, number>();
 
   // Group stage matches (FIFA 1-72): assign by date order
-  const groupMatches = apiMatches.filter(m => m.stage === "GROUP_STAGE");
+  const groupMatches = apiMatches.filter((m) => m.stage === "GROUP_STAGE");
   const sortedGroupMatches = [...groupMatches].sort(
-    (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
+    (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
   );
   sortedGroupMatches.forEach((match, index) => {
     mapping.set(match.id, index + 1);
   });
 
   // Knockout matches (FIFA 73-104): assign by date order within each stage
-  const knockoutStages = ["LAST_32", "LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "THIRD_PLACE", "FINAL"];
+  const knockoutStages = [
+    "LAST_32",
+    "LAST_16",
+    "QUARTER_FINALS",
+    "SEMI_FINALS",
+    "THIRD_PLACE",
+    "FINAL",
+  ];
   const stageBaseNumbers: Record<string, number> = {
-    "LAST_32": 73,
-    "LAST_16": 89,
-    "QUARTER_FINALS": 97,
-    "SEMI_FINALS": 101,
-    "THIRD_PLACE": 103,
-    "FINAL": 104,
+    LAST_32: 73,
+    LAST_16: 89,
+    QUARTER_FINALS: 97,
+    SEMI_FINALS: 101,
+    THIRD_PLACE: 103,
+    FINAL: 104,
   };
 
   for (const stage of knockoutStages) {
-    const stageMatches = apiMatches.filter(m => m.stage === stage);
+    const stageMatches = apiMatches.filter((m) => m.stage === stage);
     const sortedStageMatches = [...stageMatches].sort(
-      (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
+      (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
     );
     sortedStageMatches.forEach((match, index) => {
       mapping.set(match.id, stageBaseNumbers[stage] + index);

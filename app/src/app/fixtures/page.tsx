@@ -110,10 +110,10 @@ function createEmptyStanding(team: Team): CalculatedStanding {
 }
 
 // Knockout Section Component
-function KnockoutSection({ 
-  knockoutStages, 
-  apiToFifaMap 
-}: { 
+function KnockoutSection({
+  knockoutStages,
+  apiToFifaMap,
+}: {
   knockoutStages: Map<string, Match[]>;
   apiToFifaMap: Map<number, number>;
 }) {
@@ -144,21 +144,19 @@ function KnockoutSection({
           const stageName = getKnockoutStageName(stage);
           const sortedMatches = [...stageMatches].sort(
             (a, b) =>
-              new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
+              new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
           );
 
           return (
             <div key={stage} className="glass-card p-5">
-              <h3 className="font-bold text-lg mb-4 text-white">
-                {stageName}
-              </h3>
+              <h3 className="font-bold text-lg mb-4 text-white">{stageName}</h3>
               <div className="grid md:grid-cols-2 gap-4">
                 {sortedMatches.map((match) => {
                   const fifaNumber = apiToFifaMap.get(match.id);
                   return (
-                    <FixtureRow 
-                      key={match.id} 
-                      match={match} 
+                    <FixtureRow
+                      key={match.id}
+                      match={match}
                       fifaMatchNumber={fifaNumber}
                     />
                   );
@@ -173,12 +171,12 @@ function KnockoutSection({
 }
 
 // Group Stage Section Component
-function GroupStageSection({ 
-  groups, 
+function GroupStageSection({
+  groups,
   groupStandings,
   thirdPlaceQualifying,
-  apiToFifaMap 
-}: { 
+  apiToFifaMap,
+}: {
   groups: Map<string, Match[]>;
   groupStandings: Map<string, CalculatedStanding[]>;
   thirdPlaceQualifying: Map<string, boolean>;
@@ -203,10 +201,10 @@ function GroupStageSection({
             const standings = groupStandings.get(groupName) || [];
             const sortedMatches = [...groupMatchList].sort(
               (a, b) =>
-                new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
+                new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
             );
             const finishedInGroup = sortedMatches.filter(
-              (m) => m.status === "FINISHED"
+              (m) => m.status === "FINISHED",
             ).length;
 
             return (
@@ -227,9 +225,9 @@ function GroupStageSection({
                       {sortedMatches.map((match) => {
                         const fifaNumber = apiToFifaMap.get(match.id);
                         return (
-                          <FixtureRow 
-                            key={match.id} 
-                            match={match} 
+                          <FixtureRow
+                            key={match.id}
+                            match={match}
                             fifaMatchNumber={fifaNumber}
                           />
                         );
@@ -246,7 +244,9 @@ function GroupStageSection({
                       <StandingsTable
                         standings={standings}
                         disabled={true}
-                        thirdPlaceQualifies={thirdPlaceQualifying.get(groupName) || false}
+                        thirdPlaceQualifies={
+                          thirdPlaceQualifying.get(groupName) || false
+                        }
                       />
                     </div>
                   )}
@@ -335,10 +335,10 @@ export default function FixturesPage() {
   const stats = useMemo(() => {
     const finished = matches.filter((m) => m.status === "FINISHED").length;
     const live = matches.filter(
-      (m) => m.status === "IN_PLAY" || m.status === "PAUSED"
+      (m) => m.status === "IN_PLAY" || m.status === "PAUSED",
     ).length;
     const scheduled = matches.filter(
-      (m) => m.status === "SCHEDULED" || m.status === "TIMED"
+      (m) => m.status === "SCHEDULED" || m.status === "TIMED",
     ).length;
     return { finished, live, scheduled, total: matches.length };
   }, [matches]);
@@ -378,7 +378,9 @@ export default function FixturesPage() {
           <div className="flex gap-4 text-sm">
             <div className="glass-card px-4 py-2">
               <span className="text-white/50">Finished</span>
-              <span className="ml-2 text-white font-bold">{stats.finished}</span>
+              <span className="ml-2 text-white font-bold">
+                {stats.finished}
+              </span>
             </div>
             {stats.live > 0 && (
               <div className="glass-card px-4 py-2 bg-red-500/20 border-red-500/30">
@@ -388,7 +390,9 @@ export default function FixturesPage() {
             )}
             <div className="glass-card px-4 py-2">
               <span className="text-white/50">Scheduled</span>
-              <span className="ml-2 text-white font-bold">{stats.scheduled}</span>
+              <span className="ml-2 text-white font-bold">
+                {stats.scheduled}
+              </span>
             </div>
           </div>
         </div>
@@ -403,11 +407,16 @@ export default function FixturesPage() {
         {showKnockoutFirst ? (
           <>
             {/* Knockout Stage */}
-            {knockoutStages.size > 0 && <KnockoutSection knockoutStages={knockoutStages} apiToFifaMap={apiToFifaMap} />}
-            
+            {knockoutStages.size > 0 && (
+              <KnockoutSection
+                knockoutStages={knockoutStages}
+                apiToFifaMap={apiToFifaMap}
+              />
+            )}
+
             {/* Group Stage */}
-            <GroupStageSection 
-              groups={groups} 
+            <GroupStageSection
+              groups={groups}
               groupStandings={groupStandings}
               thirdPlaceQualifying={thirdPlaceQualifying}
               apiToFifaMap={apiToFifaMap}
@@ -416,15 +425,20 @@ export default function FixturesPage() {
         ) : (
           <>
             {/* Group Stage */}
-            <GroupStageSection 
-              groups={groups} 
+            <GroupStageSection
+              groups={groups}
               groupStandings={groupStandings}
               thirdPlaceQualifying={thirdPlaceQualifying}
               apiToFifaMap={apiToFifaMap}
             />
-            
+
             {/* Knockout Stage */}
-            {knockoutStages.size > 0 && <KnockoutSection knockoutStages={knockoutStages} apiToFifaMap={apiToFifaMap} />}
+            {knockoutStages.size > 0 && (
+              <KnockoutSection
+                knockoutStages={knockoutStages}
+                apiToFifaMap={apiToFifaMap}
+              />
+            )}
           </>
         )}
       </main>

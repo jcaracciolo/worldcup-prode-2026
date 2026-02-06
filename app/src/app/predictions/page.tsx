@@ -14,11 +14,7 @@ import { CalculatedStanding, Team, Match } from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { BracketResolver } from "@/lib/bracket-resolver";
 import { buildApiToFifaMapping } from "@/lib/api-client";
-import {
-  Profile,
-  Prediction,
-  GroupStandingsOverride,
-} from "@/types/database";
+import { Profile, Prediction, GroupStandingsOverride } from "@/types/database";
 
 // Get human-readable stage name
 const getKnockoutStageName = (stage: string): string => {
@@ -57,7 +53,11 @@ export default function PredictionsPage() {
 
   // Get stage lock status from simulation context (time-based)
   const { stageLockStatus, getCurrentTime } = useSimulation();
-  const { groupStageLocked: groupLocked, knockoutStageOpen: knockoutOpen, knockoutStageLocked: knockoutLocked } = stageLockStatus;
+  const {
+    groupStageLocked: groupLocked,
+    knockoutStageOpen: knockoutOpen,
+    knockoutStageLocked: knockoutLocked,
+  } = stageLockStatus;
 
   useEffect(() => {
     const loadData = async () => {
@@ -305,7 +305,11 @@ export default function PredictionsPage() {
   };
 
   const handleResetPredictions = () => {
-    if (!confirm("Are you sure you want to reset predictions? This will clear scores for unlocked sections.")) {
+    if (
+      !confirm(
+        "Are you sure you want to reset predictions? This will clear scores for unlocked sections.",
+      )
+    ) {
       return;
     }
 
@@ -469,7 +473,8 @@ export default function PredictionsPage() {
                       {stageMatches.map((match) => {
                         const resolved = resolvedKnockoutTeams.get(match.id);
                         const fifaNumber = apiToFifaMap.get(match.id);
-                        const matchHasStarted = getCurrentTime() >= new Date(match.utcDate);
+                        const matchHasStarted =
+                          getCurrentTime() >= new Date(match.utcDate);
                         return (
                           <PredictionInput
                             key={match.id}
@@ -532,7 +537,8 @@ export default function PredictionsPage() {
                             )
                             .map((match) => {
                               const fifaNumber = apiToFifaMap.get(match.id);
-                              const matchHasStarted = getCurrentTime() >= new Date(match.utcDate);
+                              const matchHasStarted =
+                                getCurrentTime() >= new Date(match.utcDate);
                               return (
                                 <PredictionInput
                                   key={match.id}

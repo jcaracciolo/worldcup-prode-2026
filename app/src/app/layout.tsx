@@ -21,9 +21,7 @@ export default function RootLayout({
       <body
         className={`${inter.className} bg-gray-100 min-h-screen antialiased`}
       >
-        <Providers>
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
         <ThemeCustomizer />
       </body>
     </html>

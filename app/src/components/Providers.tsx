@@ -12,7 +12,7 @@ interface ProvidersProps {
 /**
  * Client-side providers wrapper
  * Wraps the entire app with necessary context providers
- * 
+ *
  * Provider order:
  * 1. SimulationProvider - Testing simulation state (admin only)
  * 2. MatchProvider - Global match data with live polling (uses simulation)
@@ -24,9 +24,7 @@ export function Providers({ children }: ProvidersProps) {
     <SimulationProvider>
       <MatchProvider>
         <PredictionsProvider>
-          <ScoringProvider>
-            {children}
-          </ScoringProvider>
+          <ScoringProvider>{children}</ScoringProvider>
         </PredictionsProvider>
       </MatchProvider>
     </SimulationProvider>

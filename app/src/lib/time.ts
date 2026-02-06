@@ -1,9 +1,9 @@
 /**
  * CENTRALIZED TIME UTILITY
- * 
+ *
  * Single source of truth for all time-related functionality.
  * This module can be injected with simulated time by the SimulationContext.
- * 
+ *
  * IMPORTANT: All code that needs the "current time" should use these functions
  * instead of `new Date()` or `Date.now()`.
  */
@@ -109,11 +109,13 @@ export function isKnockoutStageLocked(now?: Date): boolean {
 /**
  * Check if a specific match is locked (has started or finished)
  */
-export function isMatchLocked(matchUtcDate: string | Date, now?: Date): boolean {
+export function isMatchLocked(
+  matchUtcDate: string | Date,
+  now?: Date,
+): boolean {
   const currentTime = now ?? getCurrentTime();
-  const matchTime = typeof matchUtcDate === "string" 
-    ? new Date(matchUtcDate) 
-    : matchUtcDate;
+  const matchTime =
+    typeof matchUtcDate === "string" ? new Date(matchUtcDate) : matchUtcDate;
   return currentTime >= matchTime;
 }
 
@@ -138,9 +140,9 @@ export function getStageLockStatus(now?: Date): {
  */
 export function getMatchDateTime(fifaNumber: number): Date | null {
   const allSchedule = [...GROUP_STAGE_SCHEDULE, ...KNOCKOUT_SCHEDULE];
-  const matchInfo = allSchedule.find(m => m.fifaNumber === fifaNumber);
+  const matchInfo = allSchedule.find((m) => m.fifaNumber === fifaNumber);
   if (!matchInfo) return null;
-  
+
   const [year, month, day] = matchInfo.date.split("-").map(Number);
   const [hour, minute] = matchInfo.time.split(":").map(Number);
   return new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
@@ -149,7 +151,10 @@ export function getMatchDateTime(fifaNumber: number): Date | null {
 /**
  * Calculate time until a match starts
  */
-export function getTimeUntilMatch(matchUtcDate: string | Date, now?: Date): {
+export function getTimeUntilMatch(
+  matchUtcDate: string | Date,
+  now?: Date,
+): {
   days: number;
   hours: number;
   minutes: number;
@@ -157,19 +162,18 @@ export function getTimeUntilMatch(matchUtcDate: string | Date, now?: Date): {
   hasStarted: boolean;
 } {
   const currentTime = now ?? getCurrentTime();
-  const matchTime = typeof matchUtcDate === "string" 
-    ? new Date(matchUtcDate) 
-    : matchUtcDate;
-  
+  const matchTime =
+    typeof matchUtcDate === "string" ? new Date(matchUtcDate) : matchUtcDate;
+
   const diff = matchTime.getTime() - currentTime.getTime();
-  
+
   if (diff <= 0) {
     return { days: 0, hours: 0, minutes: 0, total: 0, hasStarted: true };
   }
-  
+
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  
+
   return { days, hours, minutes, total: diff, hasStarted: false };
 }

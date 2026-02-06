@@ -1,50 +1,56 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import TodaysMatches from "@/components/TodaysMatches";
 import Leaderboard from "@/components/Leaderboard";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 import { UserScore } from "@/types/football";
+import { Profile } from "@/types/database";
 
-export const dynamic = "force-dynamic";
+export default function HomePage() {
+  const supabase = createClient();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [leaderboard, setLeaderboard] = useState<UserScore[]>([]);
+  const [userId, setUserId] = useState<string | undefined>(undefined);
 
-async function getLeaderboard(): Promise<UserScore[]> {
-  const supabase = await createClient();
+  useEffect(() => {
+    const loadData = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, display_name");
+      if (user) {
+        setUserId(user.id);
+        const { data } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+        setProfile(data);
+      }
 
-  if (!profiles) return [];
+      // Fetch leaderboard
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, display_name");
 
-  // For now, return profiles with 0 points
-  // Full scoring calculation would be done here
-  return profiles.map((profile) => ({
-    userId: profile.id,
-    displayName: profile.display_name,
-    totalPoints: 0,
-    groupStagePoints: 0,
-    groupBonusPoints: 0,
-    knockoutPoints: 0,
-  }));
-}
+      if (profiles) {
+        setLeaderboard(
+          profiles.map((p: { id: string; display_name: string }) => ({
+            userId: p.id,
+            displayName: p.display_name,
+            totalPoints: 0,
+            groupStagePoints: 0,
+            groupBonusPoints: 0,
+            knockoutPoints: 0,
+          })),
+        );
+      }
+    };
 
-export default async function HomePage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let profile = null;
-  if (user) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-    profile = data;
-  }
-
-  const leaderboard = await getLeaderboard();
+    loadData();
+  }, [supabase]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -60,7 +66,7 @@ export default async function HomePage() {
             Make your predictions for every match, climb the leaderboard, and
             compete with friends!
           </p>
-          {!user && (
+          {!profile && (
             <div className="mt-6">
               <a
                 href="/signup"
@@ -80,7 +86,9 @@ export default async function HomePage() {
                 <span className="text-xl">📅</span>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">Today&apos;s Matches</h2>
+                <h2 className="text-2xl font-bold text-white">
+                  Today&apos;s Matches
+                </h2>
                 <p className="text-white/50 text-sm">World Cup 2026</p>
               </div>
             </div>
@@ -90,7 +98,7 @@ export default async function HomePage() {
 
           {/* Leaderboard Section */}
           <div className="lg:col-span-1">
-            <Leaderboard scores={leaderboard} currentUserId={user?.id} />
+            <Leaderboard scores={leaderboard} currentUserId={userId} />
           </div>
         </div>
       </main>

@@ -21,7 +21,8 @@ function generateCode(): string {
 export default function AdminPage() {
   const router = useRouter();
   const supabase = createClient();
-  const { simulatedDateTime, seed, enableSimulation, disableSimulation } = useSimulation();
+  const { simulatedDateTime, seed, enableSimulation, disableSimulation } =
+    useSimulation();
   const { matches, isSimulated } = useMatches();
 
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -145,9 +146,13 @@ export default function AdminPage() {
   };
 
   // Calculate simulation stats
-  const finishedMatches = matches.filter(m => m.status === "FINISHED").length;
-  const liveMatchCount = matches.filter(m => m.status === "IN_PLAY" || m.status === "PAUSED").length;
-  const scheduledMatches = matches.filter(m => m.status === "SCHEDULED" || m.status === "TIMED").length;
+  const finishedMatches = matches.filter((m) => m.status === "FINISHED").length;
+  const liveMatchCount = matches.filter(
+    (m) => m.status === "IN_PLAY" || m.status === "PAUSED",
+  ).length;
+  const scheduledMatches = matches.filter(
+    (m) => m.status === "SCHEDULED" || m.status === "TIMED",
+  ).length;
 
   if (loading) {
     return (
@@ -165,7 +170,9 @@ export default function AdminPage() {
         <h1 className="text-2xl font-bold mb-6 text-white">Admin Panel</h1>
 
         {/* Simulation Mode - Testing Only */}
-        <section className={`glass-card p-6 mb-6 ${isSimulated ? "ring-2 ring-amber-500" : ""}`}>
+        <section
+          className={`glass-card p-6 mb-6 ${isSimulated ? "ring-2 ring-amber-500" : ""}`}
+        >
           <div className="flex justify-between items-center mb-4">
             <div>
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -177,7 +184,8 @@ export default function AdminPage() {
                 )}
               </h2>
               <p className="text-sm text-white/50 mt-1">
-                Generate random match results for testing. API data is overridden.
+                Generate random match results for testing. API data is
+                overridden.
               </p>
             </div>
             {isSimulated && (
@@ -233,7 +241,9 @@ export default function AdminPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-white/50 mb-1">Time (UTC)</label>
+                <label className="block text-sm text-white/50 mb-1">
+                  Time (UTC)
+                </label>
                 <input
                   type="time"
                   value={simTime}
@@ -242,7 +252,9 @@ export default function AdminPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-white/50 mb-1">Seed (for reproducible results)</label>
+                <label className="block text-sm text-white/50 mb-1">
+                  Seed (for reproducible results)
+                </label>
                 <div className="flex gap-2">
                   <input
                     type="number"

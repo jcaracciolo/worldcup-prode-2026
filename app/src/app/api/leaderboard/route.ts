@@ -21,7 +21,10 @@ export async function GET() {
     }
 
     // Get stage lock status based on current time
-    const { groupStageLocked: groupLocked, knockoutStageLocked: knockoutLocked } = getStageLockStatus();
+    const {
+      groupStageLocked: groupLocked,
+      knockoutStageLocked: knockoutLocked,
+    } = getStageLockStatus();
 
     // If nothing is locked, return profiles with 0 points
     if (!groupLocked && !knockoutLocked) {

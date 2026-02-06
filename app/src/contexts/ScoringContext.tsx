@@ -39,18 +39,18 @@ interface ScoringContextValue {
   calculateUserScore: (
     userId: string,
     predictions: Map<number, Prediction>,
-    overrides: GroupStandingsOverride[]
+    overrides: GroupStandingsOverride[],
   ) => ScoreBreakdown;
   /** Get the score for a specific match */
   getMatchScore: (
     matchId: number,
-    prediction: Prediction | undefined
+    prediction: Prediction | undefined,
   ) => PointBreakdown[];
   /** Calculate group standings from predictions */
   calculatePredictedStandings: (
     groupName: string,
     predictions: Map<number, Prediction>,
-    overrides: GroupStandingsOverride[]
+    overrides: GroupStandingsOverride[],
   ) => CalculatedStanding[];
   /** Get actual group standings */
   getActualGroupStandings: (groupName: string) => CalculatedStanding[];
@@ -66,7 +66,13 @@ const ScoringContext = createContext<ScoringContextValue | null>(null);
 // HELPER FUNCTIONS
 // =====================================================================
 
-function createEmptyStanding(team: { id: number; name: string; shortName?: string; tla?: string; crest?: string }): CalculatedStanding {
+function createEmptyStanding(team: {
+  id: number;
+  name: string;
+  shortName?: string;
+  tla?: string;
+  crest?: string;
+}): CalculatedStanding {
   return {
     team: {
       id: team.id,
@@ -87,7 +93,9 @@ function createEmptyStanding(team: { id: number; name: string; shortName?: strin
   };
 }
 
-function calculateStandingsFromResults(groupMatches: Match[]): CalculatedStanding[] {
+function calculateStandingsFromResults(
+  groupMatches: Match[],
+): CalculatedStanding[] {
   const teamStats = new Map<number, CalculatedStanding>();
 
   // Initialize teams from matches
@@ -186,7 +194,7 @@ export function ScoringProvider({ children }: ScoringProviderProps) {
       const groupMatches = matchesByGroup.get(groupName) || [];
       return calculateStandingsFromResults(groupMatches);
     },
-    [matchesByGroup]
+    [matchesByGroup],
   );
 
   // Check if group stage is complete
@@ -225,19 +233,19 @@ export function ScoringProvider({ children }: ScoringProviderProps) {
     (
       groupName: string,
       predictions: Map<number, Prediction>,
-      overrides: GroupStandingsOverride[]
+      overrides: GroupStandingsOverride[],
     ): CalculatedStanding[] => {
       const groupMatches = matchesByGroup.get(groupName) || [];
       const groupOverrides = overrides.filter(
-        (o) => o.group_name === groupName
+        (o) => o.group_name === groupName,
       );
       return calculateStandingsFromPredictions(
         groupMatches,
         predictions,
-        groupOverrides
+        groupOverrides,
       );
     },
-    [matchesByGroup]
+    [matchesByGroup],
   );
 
   // Get score for a specific match
@@ -252,7 +260,7 @@ export function ScoringProvider({ children }: ScoringProviderProps) {
         return calculateKnockoutPoints(match, prediction);
       }
     },
-    [matches]
+    [matches],
   );
 
   // Calculate total user score
@@ -260,7 +268,7 @@ export function ScoringProvider({ children }: ScoringProviderProps) {
     (
       userId: string,
       predictions: Map<number, Prediction>,
-      overrides: GroupStandingsOverride[]
+      overrides: GroupStandingsOverride[],
     ): ScoreBreakdown => {
       const groupStage: PointBreakdown[] = [];
       const knockout: PointBreakdown[] = [];
@@ -284,7 +292,7 @@ export function ScoringProvider({ children }: ScoringProviderProps) {
         const predictedStandings = calculatePredictedStandings(
           groupName,
           predictions,
-          overrides
+          overrides,
         );
         const actualStandings = getActualGroupStandings(groupName);
 
@@ -294,8 +302,8 @@ export function ScoringProvider({ children }: ScoringProviderProps) {
             predictedStandings,
             actualStandings,
             advancingTeamIds,
-            groupComplete
-          )
+            groupComplete,
+          ),
         );
       });
 
@@ -317,7 +325,7 @@ export function ScoringProvider({ children }: ScoringProviderProps) {
       getAdvancingTeamIds,
       calculatePredictedStandings,
       getActualGroupStandings,
-    ]
+    ],
   );
 
   const value: ScoringContextValue = {
@@ -412,11 +420,11 @@ export function useUserScore(userId: string | null): UserScore {
  */
 export function useMatchScore(
   matchId: number,
-  prediction: Prediction | undefined
+  prediction: Prediction | undefined,
 ): PointBreakdown[] {
   const { getMatchScore } = useScoringContext();
   return useMemo(
     () => getMatchScore(matchId, prediction),
-    [matchId, prediction, getMatchScore]
+    [matchId, prediction, getMatchScore],
   );
 }

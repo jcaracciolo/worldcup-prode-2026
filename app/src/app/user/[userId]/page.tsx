@@ -50,7 +50,11 @@ export default async function UserPredictionsPage({ params }: PageProps) {
   }
 
   // Get stage lock status based on current time
-  const { groupStageLocked: groupLocked, knockoutStageOpen: knockoutOpen, knockoutStageLocked: knockoutLocked } = getStageLockStatus();
+  const {
+    groupStageLocked: groupLocked,
+    knockoutStageOpen: knockoutOpen,
+    knockoutStageLocked: knockoutLocked,
+  } = getStageLockStatus();
   const isOwnPredictions = currentUser?.id === userId;
 
   // Get predictions
@@ -478,7 +482,11 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                         : "text-white"
                                     }`}
                                   >
-                                    {getTeamDisplayName(homeTeam, match.id, "home")}
+                                    {getTeamDisplayName(
+                                      homeTeam,
+                                      match.id,
+                                      "home",
+                                    )}
                                   </span>
                                   {homeTeam?.crest ? (
                                     <img
@@ -532,15 +540,19 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                         : "text-white"
                                     }`}
                                   >
-                                    {getTeamDisplayName(awayTeam, match.id, "away")}
+                                    {getTeamDisplayName(
+                                      awayTeam,
+                                      match.id,
+                                      "away",
+                                    )}
                                   </span>
                                 </div>
                               </div>
 
                               {/* Points earned */}
-                              <MatchPointsTooltip 
-                                match={match} 
-                                prediction={pred} 
+                              <MatchPointsTooltip
+                                match={match}
+                                prediction={pred}
                                 predictedHomeTeam={homeTeam}
                                 predictedAwayTeam={awayTeam}
                               />
@@ -658,7 +670,11 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                   </span>
                                 </div>
                                 {/* Points earned */}
-                                <MatchPointsTooltip match={match} prediction={pred} className="w-8" />
+                                <MatchPointsTooltip
+                                  match={match}
+                                  prediction={pred}
+                                  className="w-8"
+                                />
                               </div>
                             );
                           })}
@@ -885,7 +901,11 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                               : "text-white"
                                           }`}
                                         >
-                                          {getTeamDisplayName(homeTeam, match.id, "home")}
+                                          {getTeamDisplayName(
+                                            homeTeam,
+                                            match.id,
+                                            "home",
+                                          )}
                                         </span>
                                         {homeTeam?.crest ? (
                                           <img
@@ -941,7 +961,11 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                               : "text-white"
                                           }`}
                                         >
-                                          {getTeamDisplayName(awayTeam, match.id, "away")}
+                                          {getTeamDisplayName(
+                                            awayTeam,
+                                            match.id,
+                                            "away",
+                                          )}
                                         </span>
                                       </div>
                                     </div>
@@ -949,8 +973,8 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                 })()}
 
                                 {/* Points earned */}
-                                <MatchPointsTooltip 
-                                  match={match} 
+                                <MatchPointsTooltip
+                                  match={match}
                                   prediction={pred}
                                   predictedHomeTeam={homeTeam}
                                   predictedAwayTeam={awayTeam}

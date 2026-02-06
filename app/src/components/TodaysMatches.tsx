@@ -17,11 +17,12 @@ interface TodaysMatchesProps {
  * Client component that displays matches from the global context
  * Shows today's matches by default, with live polling
  */
-export default function TodaysMatches({ 
+export default function TodaysMatches({
   showTodayOnly = true,
-  showNextMatchDay = true 
+  showNextMatchDay = true,
 }: TodaysMatchesProps) {
-  const { matches, loading, hasLiveMatches, liveMatches, refresh } = useMatches();
+  const { matches, loading, hasLiveMatches, liveMatches, refresh } =
+    useMatches();
 
   // Get today's date in ISO format
   const today = new Date();
@@ -29,16 +30,18 @@ export default function TodaysMatches({
 
   // Get today's matches
   const todaysMatches = useMemo(() => {
-    const filtered = matches.filter((m) => m.utcDate.split("T")[0] === todayStr);
+    const filtered = matches.filter(
+      (m) => m.utcDate.split("T")[0] === todayStr,
+    );
     return [...filtered].sort(
-      (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
+      (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
     );
   }, [matches, todayStr]);
 
   // Find the next match day after today
   const nextMatchDay = useMemo(() => {
     if (!showNextMatchDay) return null;
-    
+
     // Get all unique dates after today
     const futureDates = new Set<string>();
     matches.forEach((m) => {
@@ -56,9 +59,11 @@ export default function TodaysMatches({
   // Get matches for the next match day
   const nextDayMatches = useMemo(() => {
     if (!nextMatchDay) return [];
-    const filtered = matches.filter((m) => m.utcDate.split("T")[0] === nextMatchDay);
+    const filtered = matches.filter(
+      (m) => m.utcDate.split("T")[0] === nextMatchDay,
+    );
     return [...filtered].sort(
-      (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
+      (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
     );
   }, [matches, nextMatchDay]);
 
@@ -67,7 +72,7 @@ export default function TodaysMatches({
 
   // Sort by time
   const sortedMatches = [...displayMatches].sort(
-    (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
+    (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
   );
 
   if (loading) {
@@ -101,11 +106,9 @@ export default function TodaysMatches({
       {sortedMatches.length === 0 ? (
         <div className="glass-card p-12 text-center">
           <div className="text-6xl mb-4">⚽</div>
-          <p className="text-xl text-white/80 font-medium">
-            No matches today
-          </p>
+          <p className="text-xl text-white/80 font-medium">No matches today</p>
           <p className="text-white/50 mt-2">
-            {nextMatchDay 
+            {nextMatchDay
               ? `Next matches on ${formatNextMatchDay(nextMatchDay)}`
               : "The World Cup starts June 11, 2026!"}
           </p>
@@ -126,8 +129,12 @@ export default function TodaysMatches({
               <span className="text-lg">📆</span>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white">Next Match Day</h3>
-              <p className="text-white/50 text-sm">{formatNextMatchDay(nextMatchDay)}</p>
+              <h3 className="text-lg font-semibold text-white">
+                Next Match Day
+              </h3>
+              <p className="text-white/50 text-sm">
+                {formatNextMatchDay(nextMatchDay)}
+              </p>
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">

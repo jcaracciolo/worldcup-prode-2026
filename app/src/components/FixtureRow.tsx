@@ -12,15 +12,22 @@ interface FixtureRowProps {
 }
 
 // Type guard for MatchWithLiveInfo
-function hasLiveInfo(match: Match | MatchWithLiveInfo): match is MatchWithLiveInfo {
+function hasLiveInfo(
+  match: Match | MatchWithLiveInfo,
+): match is MatchWithLiveInfo {
   return "isLive" in match;
 }
 
-export default function FixtureRow({ match, fifaMatchNumber }: FixtureRowProps) {
+export default function FixtureRow({
+  match,
+  fifaMatchNumber,
+}: FixtureRowProps) {
   const homeTeam = match.homeTeam;
   const awayTeam = match.awayTeam;
 
-  const isLive = hasLiveInfo(match) ? match.isLive : match.status === "IN_PLAY" || match.status === "PAUSED";
+  const isLive = hasLiveInfo(match)
+    ? match.isLive
+    : match.status === "IN_PLAY" || match.status === "PAUSED";
   const isFinished = match.status === "FINISHED";
   const hasScore = isFinished || isLive;
 
@@ -29,9 +36,21 @@ export default function FixtureRow({ match, fifaMatchNumber }: FixtureRowProps) 
 
   // Group stage logic: highlight winner, or both on draw
   const isGroupStage = match.stage === "GROUP_STAGE";
-  const homeWins = hasScore && homeGoals !== null && awayGoals !== null && homeGoals > awayGoals;
-  const awayWins = hasScore && homeGoals !== null && awayGoals !== null && awayGoals > homeGoals;
-  const isDraw = hasScore && homeGoals !== null && awayGoals !== null && homeGoals === awayGoals;
+  const homeWins =
+    hasScore &&
+    homeGoals !== null &&
+    awayGoals !== null &&
+    homeGoals > awayGoals;
+  const awayWins =
+    hasScore &&
+    homeGoals !== null &&
+    awayGoals !== null &&
+    awayGoals > homeGoals;
+  const isDraw =
+    hasScore &&
+    homeGoals !== null &&
+    awayGoals !== null &&
+    homeGoals === awayGoals;
 
   // Highlight logic: winner highlighted, or BOTH teams on a group stage draw
   const homeIsWinner = homeWins || (isGroupStage && isDraw);
@@ -63,8 +82,8 @@ export default function FixtureRow({ match, fifaMatchNumber }: FixtureRowProps) 
         isLive
           ? "bg-red-900/30 border-2 border-red-500/50"
           : isFinished
-          ? "bg-slate-900/60"
-          : "bg-slate-800/60 hover:bg-slate-800/80"
+            ? "bg-slate-900/60"
+            : "bg-slate-800/60 hover:bg-slate-800/80"
       } border border-white/5`}
     >
       {/* Section 1: Date or Live indicator */}

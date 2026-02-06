@@ -49,7 +49,7 @@ export class BracketResolver {
   // Map API match IDs to FIFA match numbers using central tournament function
   private buildFifaNumberMappings(): void {
     const mapping = buildApiToFifaMapping(this.matches);
-    
+
     // Build both directions
     for (const [apiId, fifaNum] of mapping) {
       this.apiIdToFifaNumber.set(apiId, fifaNum);
@@ -280,4 +280,3 @@ export class BracketResolver {
     this.resolved.set(finalMatch.id, { home: homeTeam, away: awayTeam });
   }
 }
-

@@ -26,7 +26,8 @@ export function MatchStatusBadge({
   };
 
   if (match.isLive) {
-    const elapsedText = match.elapsedMinutes !== null ? `${match.elapsedMinutes}'` : "";
+    const elapsedText =
+      match.elapsedMinutes !== null ? `${match.elapsedMinutes}'` : "";
     const periodText = match.period === "HALF_TIME" ? "HT" : elapsedText;
 
     return (
@@ -37,7 +38,9 @@ export function MatchStatusBadge({
           LIVE
         </span>
         {showElapsed && periodText && (
-          <span className={`text-red-400 font-semibold ${size === "sm" ? "text-xs" : "text-sm"}`}>
+          <span
+            className={`text-red-400 font-semibold ${size === "sm" ? "text-xs" : "text-sm"}`}
+          >
             {periodText}
           </span>
         )}
@@ -58,7 +61,9 @@ export function MatchStatusBadge({
   if (match.status === "SCHEDULED" || match.status === "TIMED") {
     const matchDate = new Date(match.utcDate);
     return (
-      <span className={`text-emerald-400 font-bold ${size === "lg" ? "text-lg" : ""}`}>
+      <span
+        className={`text-emerald-400 font-bold ${size === "lg" ? "text-lg" : ""}`}
+      >
         {format(matchDate, "HH:mm")}
       </span>
     );
@@ -83,7 +88,10 @@ interface MatchScoreDisplayProps {
 /**
  * Component showing the match score with proper styling for live/finished
  */
-export function MatchScoreDisplay({ match, size = "md" }: MatchScoreDisplayProps) {
+export function MatchScoreDisplay({
+  match,
+  size = "md",
+}: MatchScoreDisplayProps) {
   const homeGoals = match.score.fullTime.home;
   const awayGoals = match.score.fullTime.away;
   const hasScore = homeGoals !== null && awayGoals !== null;
@@ -96,9 +104,7 @@ export function MatchScoreDisplay({ match, size = "md" }: MatchScoreDisplayProps
 
   if (!hasScore && !match.isLive) {
     return (
-      <div className={`text-slate-300 font-light ${sizeClasses[size]}`}>
-        vs
-      </div>
+      <div className={`text-slate-300 font-light ${sizeClasses[size]}`}>vs</div>
     );
   }
 
@@ -111,7 +117,9 @@ export function MatchScoreDisplay({ match, size = "md" }: MatchScoreDisplayProps
       >
         {homeGoals ?? 0}
       </span>
-      <span className={`text-slate-400 ${size === "sm" ? "text-sm" : "text-lg"}`}>
+      <span
+        className={`text-slate-400 ${size === "sm" ? "text-sm" : "text-lg"}`}
+      >
         -
       </span>
       <span
@@ -135,7 +143,10 @@ interface LiveIndicatorProps {
 /**
  * Simple live indicator dot with optional pulse animation
  */
-export function LiveIndicator({ pulse = true, size = "md" }: LiveIndicatorProps) {
+export function LiveIndicator({
+  pulse = true,
+  size = "md",
+}: LiveIndicatorProps) {
   const sizeClasses = {
     sm: "w-2 h-2",
     md: "w-3 h-3",

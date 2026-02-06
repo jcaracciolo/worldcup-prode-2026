@@ -1,13 +1,16 @@
 "use client";
 
 import { Match, CalculatedStanding, Team } from "@/types/football";
-import { 
-  getBracketSource, 
+import {
+  getBracketSource,
   getMatchInfo,
-  getPositionLabel 
+  getPositionLabel,
 } from "@/lib/tournament";
 import { buildApiToFifaMapping } from "@/lib/api-client";
-import { getThirdPlaceTeamForMatch, getThirdPlacePoolForMatch } from "@/lib/third-place-ranking";
+import {
+  getThirdPlaceTeamForMatch,
+  getThirdPlacePoolForMatch,
+} from "@/lib/third-place-ranking";
 
 interface R32PreviewProps {
   matches: Match[];
@@ -110,7 +113,7 @@ export default function R32Preview({
           const matchDate = new Date(match.utcDate);
           // Get venue from tournament structure based on FIFA match number
           const matchInfo = getMatchInfo(fifaMatchNumber);
-          const venueDisplay = matchInfo 
+          const venueDisplay = matchInfo
             ? `${matchInfo.venue.stadium}, ${matchInfo.venue.city}`
             : null;
 

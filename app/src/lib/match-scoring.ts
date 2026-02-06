@@ -1,9 +1,9 @@
 /**
  * Match Scoring Utility
- * 
+ *
  * Self-contained module for calculating points from predictions vs actual results.
  * Scoring constants are defined in scoring.ts for centralized modification.
- * 
+ *
  * USAGE:
  * - calculateMatchPoints(): Get total points for a single match
  * - calculateMatchPointsDetailed(): Get breakdown of points earned
@@ -12,10 +12,10 @@
 
 import { Match } from "@/types/football";
 import { Prediction } from "@/types/database";
-import { 
-  POINTS_CORRECT_RESULT, 
-  POINTS_CORRECT_GOALS, 
-  ROUND_MULTIPLIERS 
+import {
+  POINTS_CORRECT_RESULT,
+  POINTS_CORRECT_GOALS,
+  ROUND_MULTIPLIERS,
 } from "./scoring";
 
 // Re-export constants for backwards compatibility
@@ -73,7 +73,10 @@ function getMultiplier(match: Match): number {
   return KNOCKOUT_MULTIPLIERS[match.stage] || 1;
 }
 
-function getPredictedResult(homeGoals: number, awayGoals: number): "home" | "away" | "draw" {
+function getPredictedResult(
+  homeGoals: number,
+  awayGoals: number,
+): "home" | "away" | "draw" {
   if (homeGoals > awayGoals) return "home";
   if (awayGoals > homeGoals) return "away";
   return "draw";
@@ -102,7 +105,13 @@ function getStageName(stage: string): string {
 }
 
 /** Get team abbreviation with fallbacks */
-function getTeamName(team: { tla?: string | null; shortName?: string | null; name?: string | null } | null | undefined, fallback: string = "TBD"): string {
+function getTeamName(
+  team:
+    | { tla?: string | null; shortName?: string | null; name?: string | null }
+    | null
+    | undefined,
+  fallback: string = "TBD",
+): string {
   if (!team) return fallback;
   return team.tla || team.shortName || team.name || fallback;
 }
@@ -117,14 +126,17 @@ export function getTbdLabels(matchId: number): { home: string; away: string } {
   };
 }
 
-/** 
- * Get team display name with consistent TBD fallback 
+/**
+ * Get team display name with consistent TBD fallback
  * Use this in components to display team names
  */
 export function getTeamDisplayName(
-  team: { tla?: string | null; shortName?: string | null; name?: string | null } | null | undefined,
+  team:
+    | { tla?: string | null; shortName?: string | null; name?: string | null }
+    | null
+    | undefined,
   matchId: number,
-  position: "home" | "away"
+  position: "home" | "away",
 ): string {
   if (team?.tla) return team.tla;
   if (team?.shortName) return team.shortName;
@@ -139,7 +151,7 @@ export function getTeamDisplayName(
 
 /**
  * Calculate total points for a single match prediction
- * 
+ *
  * @param match - The match from API
  * @param prediction - User's prediction (can be undefined/null)
  * @param predictedHomeTeam - For knockout: the team user predicted for home slot
@@ -150,21 +162,30 @@ export function calculateMatchPoints(
   match: Match,
   prediction: Prediction | null | undefined,
   predictedHomeTeam?: { id: number } | null,
-  predictedAwayTeam?: { id: number } | null
+  predictedAwayTeam?: { id: number } | null,
 ): MatchPointsResult {
   const multiplier = getMultiplier(match);
   const isKnockout = !isGroupStage(match);
-  
+
   // Max possible: result points × multiplier + 2 goals points
   // For knockout: 2 × multiplier (win + lose or 2 × tie) + 2 goals = 2*mult + 2
   // For group: 2 (result) + 2 (goals) = 4
-  const maxPossible = isKnockout 
-    ? (2 * multiplier) + 2 // knockout: result (×mult) + goals
-    : POINTS_CORRECT_RESULT + (POINTS_CORRECT_GOALS * 2); // group: 4 points
+  const maxPossible = isKnockout
+    ? 2 * multiplier + 2 // knockout: result (×mult) + goals
+    : POINTS_CORRECT_RESULT + POINTS_CORRECT_GOALS * 2; // group: 4 points
 
   // Check if we can calculate
-  if (!prediction || prediction.home_goals === null || prediction.away_goals === null) {
-    return { total: 0, maxPossible, hasPrediction: false, isFinished: match.status === "FINISHED" };
+  if (
+    !prediction ||
+    prediction.home_goals === null ||
+    prediction.away_goals === null
+  ) {
+    return {
+      total: 0,
+      maxPossible,
+      hasPrediction: false,
+      isFinished: match.status === "FINISHED",
+    };
   }
 
   if (match.status !== "FINISHED") {
@@ -181,7 +202,10 @@ export function calculateMatchPoints(
   let total = 0;
 
   // Result points
-  const predictedResult = getPredictedResult(prediction.home_goals, prediction.away_goals);
+  const predictedResult = getPredictedResult(
+    prediction.home_goals,
+    prediction.away_goals,
+  );
   const actualResult = getActualResult(match);
 
   if (predictedResult === actualResult) {
@@ -196,9 +220,15 @@ export function calculateMatchPoints(
 
   // Goals points (always 1 point each, no multiplier)
   // For knockout: only award if the predicted team matches the actual team in that slot
-  const homeTeamMatches = !isKnockout || !predictedHomeTeam || predictedHomeTeam.id === match.homeTeam?.id;
-  const awayTeamMatches = !isKnockout || !predictedAwayTeam || predictedAwayTeam.id === match.awayTeam?.id;
-  
+  const homeTeamMatches =
+    !isKnockout ||
+    !predictedHomeTeam ||
+    predictedHomeTeam.id === match.homeTeam?.id;
+  const awayTeamMatches =
+    !isKnockout ||
+    !predictedAwayTeam ||
+    predictedAwayTeam.id === match.awayTeam?.id;
+
   if (homeTeamMatches && prediction.home_goals === actualHome) {
     total += POINTS_CORRECT_GOALS;
   }
@@ -212,7 +242,7 @@ export function calculateMatchPoints(
 /**
  * Calculate detailed breakdown of points for a match
  * Useful for showing users what they got right/wrong
- * 
+ *
  * @param match - The match from API
  * @param prediction - User's prediction
  * @param predictedHomeTeam - For knockout: the team user predicted for home slot
@@ -222,7 +252,7 @@ export function calculateMatchPointsDetailed(
   match: Match,
   prediction: Prediction | null | undefined,
   predictedHomeTeam?: { id: number } | null,
-  predictedAwayTeam?: { id: number } | null
+  predictedAwayTeam?: { id: number } | null,
 ): MatchPointsBreakdown {
   const multiplier = getMultiplier(match);
   const isKnockout = !isGroupStage(match);
@@ -233,14 +263,20 @@ export function calculateMatchPointsDetailed(
   let awayGoalsPoints = 0;
 
   // Cannot calculate without prediction or finished match
-  if (!prediction || prediction.home_goals === null || prediction.away_goals === null) {
+  if (
+    !prediction ||
+    prediction.home_goals === null ||
+    prediction.away_goals === null
+  ) {
     return {
       resultPoints: 0,
       homeGoalsPoints: 0,
       awayGoalsPoints: 0,
       multiplier,
       total: 0,
-      details: [{ description: "No prediction made", points: 0, earned: false }],
+      details: [
+        { description: "No prediction made", points: 0, earned: false },
+      ],
     };
   }
 
@@ -251,7 +287,9 @@ export function calculateMatchPointsDetailed(
       awayGoalsPoints: 0,
       multiplier,
       total: 0,
-      details: [{ description: "Match not finished", points: 0, earned: false }],
+      details: [
+        { description: "Match not finished", points: 0, earned: false },
+      ],
     };
   }
 
@@ -265,11 +303,16 @@ export function calculateMatchPointsDetailed(
       awayGoalsPoints: 0,
       multiplier,
       total: 0,
-      details: [{ description: "Match result unavailable", points: 0, earned: false }],
+      details: [
+        { description: "Match result unavailable", points: 0, earned: false },
+      ],
     };
   }
 
-  const predictedResult = getPredictedResult(prediction.home_goals, prediction.away_goals);
+  const predictedResult = getPredictedResult(
+    prediction.home_goals,
+    prediction.away_goals,
+  );
   const actualResult = getActualResult(match)!;
   const tbdLabels = getTbdLabels(match.id);
 
@@ -294,8 +337,10 @@ export function calculateMatchPointsDetailed(
       // Winner and loser
       const winner = actualResult === "home" ? match.homeTeam : match.awayTeam;
       const loser = actualResult === "home" ? match.awayTeam : match.homeTeam;
-      const winnerFallback = actualResult === "home" ? tbdLabels.home : tbdLabels.away;
-      const loserFallback = actualResult === "home" ? tbdLabels.away : tbdLabels.home;
+      const winnerFallback =
+        actualResult === "home" ? tbdLabels.home : tbdLabels.away;
+      const loserFallback =
+        actualResult === "home" ? tbdLabels.away : tbdLabels.home;
       resultPoints = correctResult ? 2 * multiplier : 0;
       details.push({
         description: `${getTeamName(winner, winnerFallback)} win${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
@@ -311,11 +356,12 @@ export function calculateMatchPointsDetailed(
   } else {
     // Group stage OR R32: simple "correct result" format
     resultPoints = correctResult ? POINTS_CORRECT_RESULT * multiplier : 0;
-    const resultLabel = actualResult === "draw" 
-      ? "Draw" 
-      : actualResult === "home" 
-        ? `${getTeamName(match.homeTeam, tbdLabels.home)} win` 
-        : `${getTeamName(match.awayTeam, tbdLabels.away)} win`;
+    const resultLabel =
+      actualResult === "draw"
+        ? "Draw"
+        : actualResult === "home"
+          ? `${getTeamName(match.homeTeam, tbdLabels.home)} win`
+          : `${getTeamName(match.awayTeam, tbdLabels.away)} win`;
     details.push({
       description: `Correct result (${resultLabel})${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
       points: POINTS_CORRECT_RESULT * multiplier,
@@ -325,13 +371,20 @@ export function calculateMatchPointsDetailed(
 
   // For knockout: can only get goal points if the predicted team matches the actual team
   // If no predicted team is provided, fall back to checking if team is known
-  const homeTeamMatches = !isKnockout || 
-    (predictedHomeTeam ? predictedHomeTeam.id === match.homeTeam?.id : !!match.homeTeam?.tla);
-  const awayTeamMatches = !isKnockout || 
-    (predictedAwayTeam ? predictedAwayTeam.id === match.awayTeam?.id : !!match.awayTeam?.tla);
+  const homeTeamMatches =
+    !isKnockout ||
+    (predictedHomeTeam
+      ? predictedHomeTeam.id === match.homeTeam?.id
+      : !!match.homeTeam?.tla);
+  const awayTeamMatches =
+    !isKnockout ||
+    (predictedAwayTeam
+      ? predictedAwayTeam.id === match.awayTeam?.id
+      : !!match.awayTeam?.tla);
 
   // Home goals check
-  const correctHomeGoals = homeTeamMatches && prediction.home_goals === actualHome;
+  const correctHomeGoals =
+    homeTeamMatches && prediction.home_goals === actualHome;
   homeGoalsPoints = correctHomeGoals ? POINTS_CORRECT_GOALS : 0;
   details.push({
     description: `${getTeamName(match.homeTeam, tbdLabels.home)} goals (${actualHome})`,
@@ -342,7 +395,8 @@ export function calculateMatchPointsDetailed(
   });
 
   // Away goals check
-  const correctAwayGoals = awayTeamMatches && prediction.away_goals === actualAway;
+  const correctAwayGoals =
+    awayTeamMatches && prediction.away_goals === actualAway;
   awayGoalsPoints = correctAwayGoals ? POINTS_CORRECT_GOALS : 0;
   details.push({
     description: `${getTeamName(match.awayTeam, tbdLabels.away)} goals (${actualAway})`,
@@ -368,10 +422,10 @@ export function calculateMatchPointsDetailed(
 export function getMaxPossiblePoints(match: Match): number {
   const multiplier = getMultiplier(match);
   const isKnockout = !isGroupStage(match);
-  
-  return isKnockout 
-    ? (2 * multiplier) + 2 
-    : POINTS_CORRECT_RESULT + (POINTS_CORRECT_GOALS * 2);
+
+  return isKnockout
+    ? 2 * multiplier + 2
+    : POINTS_CORRECT_RESULT + POINTS_CORRECT_GOALS * 2;
 }
 
 // Note: For total points calculation across all matches (including group bonuses),

@@ -54,21 +54,21 @@ Users get a second chance to predict all knockout matches once group stage is co
 **Per match scoring:**
 
 **Round of 32 (works like group stage):**
-| Prediction                     | Points |
+| Prediction | Points |
 | ------------------------------ | ------ |
-| Correct result (win/draw/loss) | 2      |
-| Exact goals for Team A         | 1      |
-| Exact goals for Team B         | 1      |
-| **Max per match**              | **4**  |
+| Correct result (win/draw/loss) | 2 |
+| Exact goals for Team A | 1 |
+| Exact goals for Team B | 1 |
+| **Max per match** | **4** |
 
 **Round of 16 and beyond (split winner/loser scoring):**
-| Prediction                           | Points         |
+| Prediction | Points |
 | ------------------------------------ | -------------- |
-| Correct team wins                    | 1 × multiplier |
-| Correct team loses                   | 1 × multiplier |
+| Correct team wins | 1 × multiplier |
+| Correct team loses | 1 × multiplier |
 | Correct team ties (before penalties) | 1 × multiplier (each team) |
-| Exact goals for Team A               | 1              |
-| Exact goals for Team B               | 1              |
+| Exact goals for Team A | 1 |
+| Exact goals for Team B | 1 |
 
 _Note: For R32 through Semi-finals, predicting a tie is enough (the advancing team is implied). For Third-place match and Final, you must also pick the winner since both teams' tournament ends there._
 

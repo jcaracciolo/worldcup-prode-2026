@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Prediction, GroupStandingsOverride } from "@/types/database";
 
@@ -27,7 +33,10 @@ interface PredictionsContextValue {
   /** Update a single prediction (optimistic update) */
   updatePrediction: (userId: string, prediction: Prediction) => void;
   /** Update overrides for a user */
-  updateOverrides: (userId: string, overrides: GroupStandingsOverride[]) => void;
+  updateOverrides: (
+    userId: string,
+    overrides: GroupStandingsOverride[],
+  ) => void;
   /** Clear cache for a user */
   clearCache: (userId: string) => void;
   /** Clear all caches */
@@ -53,10 +62,8 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
     async (userId: string): Promise<UserPredictions> => {
       try {
         // Fetch predictions
-        const { data: predictionsData, error: predictionsError } = await supabase
-          .from("predictions")
-          .select("*")
-          .eq("user_id", userId);
+        const { data: predictionsData, error: predictionsError } =
+          await supabase.from("predictions").select("*").eq("user_id", userId);
 
         if (predictionsError) throw predictionsError;
 
@@ -94,7 +101,7 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
         };
       }
     },
-    [supabase]
+    [supabase],
   );
 
   // Get user predictions (loads if not cached)
@@ -129,7 +136,7 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
 
       return result;
     },
-    [cache, fetchPredictions]
+    [cache, fetchPredictions],
   );
 
   // Get cached predictions without fetching
@@ -137,7 +144,7 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
     (userId: string): UserPredictions | undefined => {
       return cache.get(userId);
     },
-    [cache]
+    [cache],
   );
 
   // Refresh predictions for a user
@@ -150,7 +157,7 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
         return newCache;
       });
     },
-    [fetchPredictions]
+    [fetchPredictions],
   );
 
   // Update a single prediction (optimistic update)
@@ -170,7 +177,7 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
         return newCache;
       });
     },
-    []
+    [],
   );
 
   // Update overrides for a user
@@ -188,7 +195,7 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
         return newCache;
       });
     },
-    []
+    [],
   );
 
   // Clear cache for a user
@@ -232,7 +239,9 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
 export function usePredictionsContext(): PredictionsContextValue {
   const context = useContext(PredictionsContext);
   if (!context) {
-    throw new Error("usePredictionsContext must be used within a PredictionsProvider");
+    throw new Error(
+      "usePredictionsContext must be used within a PredictionsProvider",
+    );
   }
   return context;
 }

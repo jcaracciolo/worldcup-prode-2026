@@ -22,8 +22,8 @@ export const POINTS_CORRECT_RESULT = 2;
 /** Points for predicting exact goals for one team */
 export const POINTS_CORRECT_GOALS = 1;
 
-/** 
- * Multipliers for knockout rounds 
+/**
+ * Multipliers for knockout rounds
  * Applied to result prediction points (not goals)
  */
 export const ROUND_MULTIPLIERS: Record<string, number> = {

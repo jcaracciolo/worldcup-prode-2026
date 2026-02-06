@@ -2,7 +2,10 @@
 
 import { Match } from "@/types/football";
 import { Prediction } from "@/types/database";
-import { calculateMatchPoints, calculateMatchPointsDetailed } from "@/lib/match-scoring";
+import {
+  calculateMatchPoints,
+  calculateMatchPointsDetailed,
+} from "@/lib/match-scoring";
 import { useState } from "react";
 
 interface MatchPointsTooltipProps {
@@ -23,11 +26,21 @@ export default function MatchPointsTooltip({
   className = "",
 }: MatchPointsTooltipProps) {
   const [showTooltip, setShowTooltip] = useState(false);
-  const pts = calculateMatchPoints(match, prediction, predictedHomeTeam, predictedAwayTeam);
-  
+  const pts = calculateMatchPoints(
+    match,
+    prediction,
+    predictedHomeTeam,
+    predictedAwayTeam,
+  );
+
   // Only calculate detailed breakdown when tooltip is shown (expensive)
-  const detailed = showTooltip 
-    ? calculateMatchPointsDetailed(match, prediction, predictedHomeTeam, predictedAwayTeam)
+  const detailed = showTooltip
+    ? calculateMatchPointsDetailed(
+        match,
+        prediction,
+        predictedHomeTeam,
+        predictedAwayTeam,
+      )
     : null;
 
   // Don't render if match not finished or no prediction
@@ -51,12 +64,12 @@ export default function MatchPointsTooltip({
   const isSmall = className?.includes("w-8");
 
   return (
-    <div 
+    <div
       className={`${className || "w-12 shrink-0 pl-2"} text-right relative`}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
-      <span 
+      <span
         className={`${isSmall ? "text-xs" : "text-sm"} font-bold cursor-help ${pts.total > 0 ? "text-emerald-400" : "text-white/40"}`}
       >
         +{pts.total}
@@ -74,7 +87,9 @@ export default function MatchPointsTooltip({
             {/* Match result */}
             <div className="flex items-center justify-center gap-3">
               {/* Home team */}
-              <div className={`flex items-center gap-1.5 px-2 py-1 rounded ${actualHomeHighlight ? "bg-amber-500/80" : ""}`}>
+              <div
+                className={`flex items-center gap-1.5 px-2 py-1 rounded ${actualHomeHighlight ? "bg-amber-500/80" : ""}`}
+              >
                 {match.homeTeam.crest ? (
                   <img
                     src={match.homeTeam.crest}
@@ -86,20 +101,28 @@ export default function MatchPointsTooltip({
                     {match.homeTeam.tla?.substring(0, 2)}
                   </div>
                 )}
-                <span className={`text-sm font-semibold ${actualHomeHighlight ? "text-slate-900" : "text-white"}`}>
+                <span
+                  className={`text-sm font-semibold ${actualHomeHighlight ? "text-slate-900" : "text-white"}`}
+                >
                   {match.homeTeam.tla}
                 </span>
               </div>
 
               {/* Score */}
               <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded">
-                <span className="text-white font-bold text-lg">{actualHome}</span>
+                <span className="text-white font-bold text-lg">
+                  {actualHome}
+                </span>
                 <span className="text-white/50">-</span>
-                <span className="text-white font-bold text-lg">{actualAway}</span>
+                <span className="text-white font-bold text-lg">
+                  {actualAway}
+                </span>
               </div>
 
               {/* Away team */}
-              <div className={`flex items-center gap-1.5 px-2 py-1 rounded ${actualAwayHighlight ? "bg-amber-500/80" : ""}`}>
+              <div
+                className={`flex items-center gap-1.5 px-2 py-1 rounded ${actualAwayHighlight ? "bg-amber-500/80" : ""}`}
+              >
                 {match.awayTeam.crest ? (
                   <img
                     src={match.awayTeam.crest}
@@ -111,7 +134,9 @@ export default function MatchPointsTooltip({
                     {match.awayTeam.tla?.substring(0, 2)}
                   </div>
                 )}
-                <span className={`text-sm font-semibold ${actualAwayHighlight ? "text-slate-900" : "text-white"}`}>
+                <span
+                  className={`text-sm font-semibold ${actualAwayHighlight ? "text-slate-900" : "text-white"}`}
+                >
                   {match.awayTeam.tla}
                 </span>
               </div>
@@ -121,17 +146,33 @@ export default function MatchPointsTooltip({
             <div className="mt-2 pt-2 border-t border-white/10 text-xs space-y-1">
               {detailed?.details.map((detail, i) => (
                 <div key={i} className="flex justify-between gap-4">
-                  <span className={detail.earned ? "text-white/80" : "text-white/40"}>
+                  <span
+                    className={
+                      detail.earned ? "text-white/80" : "text-white/40"
+                    }
+                  >
                     {detail.description}
                   </span>
-                  <span className={detail.earned ? "text-emerald-400 font-bold" : "text-white/40"}>
+                  <span
+                    className={
+                      detail.earned
+                        ? "text-emerald-400 font-bold"
+                        : "text-white/40"
+                    }
+                  >
                     {detail.earned ? `+${detail.points}` : "—"}
                   </span>
                 </div>
               ))}
               <div className="flex justify-between gap-4 pt-1 border-t border-white/10 font-semibold">
                 <span className="text-white/60">Total:</span>
-                <span className={pts.total > 0 ? "text-emerald-400 font-bold" : "text-white/40"}>
+                <span
+                  className={
+                    pts.total > 0
+                      ? "text-emerald-400 font-bold"
+                      : "text-white/40"
+                  }
+                >
                   {pts.total} / {pts.maxPossible}
                 </span>
               </div>

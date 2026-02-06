@@ -2,7 +2,10 @@ import Header from "@/components/Header";
 import { createClient } from "@/lib/supabase/server";
 import { getMatchInfo } from "@/lib/tournament";
 import { buildApiToFifaMapping } from "@/lib/api-client";
-import { calculateGroupStagePoints, calculateKnockoutPoints } from "@/lib/scoring";
+import {
+  calculateGroupStagePoints,
+  calculateKnockoutPoints,
+} from "@/lib/scoring";
 import { isGroupStageMatch } from "@/lib/football-api";
 import { Match } from "@/types/football";
 import { notFound } from "next/navigation";
@@ -37,7 +40,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/matches`,
-      { cache: "no-store" }
+      { cache: "no-store" },
     );
     const data = await res.json();
     matches = data.matches || [];
@@ -82,7 +85,8 @@ export default async function MatchDetailPage({ params }: PageProps) {
     return stageNames[stage] || stage.replace(/_/g, " ");
   };
 
-  const stageDisplay = formatGroupName(match.group) || formatStageName(match.stage);
+  const stageDisplay =
+    formatGroupName(match.group) || formatStageName(match.stage);
 
   // Get user's prediction for this match
   let prediction = null;
@@ -111,7 +115,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
       : calculateKnockoutPoints(match, prediction);
 
     pointsEarned = breakdown.reduce((sum, p) => sum + p.points, 0);
-    
+
     // Build breakdown descriptions
     breakdown.forEach((p) => {
       pointsBreakdown.push(`+${p.points} ${p.description}`);

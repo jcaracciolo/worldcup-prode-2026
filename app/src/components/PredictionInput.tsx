@@ -1,6 +1,6 @@
 "use client";
 
-import { Match } from "@/types/football";
+import { Match, Team } from "@/types/football";
 import { Prediction } from "@/types/database";
 import { getVenue } from "@/lib/venues";
 
@@ -15,6 +15,8 @@ interface PredictionInputProps {
   ) => void;
   disabled?: boolean;
   showWinnerSelect?: boolean;
+  resolvedHomeTeam?: Team | null;
+  resolvedAwayTeam?: Team | null;
 }
 
 export default function PredictionInput({
@@ -23,7 +25,13 @@ export default function PredictionInput({
   onChange,
   disabled = false,
   showWinnerSelect = false,
+  resolvedHomeTeam,
+  resolvedAwayTeam,
 }: PredictionInputProps) {
+  // Use resolved teams if provided, otherwise fall back to match teams
+  const homeTeam = resolvedHomeTeam ?? match.homeTeam;
+  const awayTeam = resolvedAwayTeam ?? match.awayTeam;
+  
   const homeGoals = prediction?.home_goals ?? null;
   const awayGoals = prediction?.away_goals ?? null;
   const winnerId = prediction?.winner_id ?? null;
@@ -92,17 +100,17 @@ export default function PredictionInput({
         {/* Home Team - fixed width for alignment */}
         <div className="w-24 flex items-center justify-end gap-2">
           <span className="text-sm font-semibold text-white truncate">
-            {match.homeTeam.tla}
+            {homeTeam?.tla || "TBD"}
           </span>
-          {match.homeTeam.crest ? (
+          {homeTeam?.crest ? (
             <img
-              src={match.homeTeam.crest}
-              alt={match.homeTeam.name}
+              src={homeTeam.crest}
+              alt={homeTeam.name}
               className="w-7 h-7 object-contain shrink-0"
             />
           ) : (
             <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
-              {match.homeTeam.tla?.substring(0, 2)}
+              {homeTeam?.tla?.substring(0, 2) || "?"}
             </div>
           )}
         </div>
@@ -134,19 +142,19 @@ export default function PredictionInput({
 
         {/* Away Team - fixed width for alignment */}
         <div className="w-24 flex items-center gap-2">
-          {match.awayTeam.crest ? (
+          {awayTeam?.crest ? (
             <img
-              src={match.awayTeam.crest}
-              alt={match.awayTeam.name}
+              src={awayTeam.crest}
+              alt={awayTeam.name}
               className="w-7 h-7 object-contain shrink-0"
             />
           ) : (
             <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
-              {match.awayTeam.tla?.substring(0, 2)}
+              {awayTeam?.tla?.substring(0, 2) || "?"}
             </div>
           )}
           <span className="text-sm font-semibold text-white truncate">
-            {match.awayTeam.tla}
+            {awayTeam?.tla || "TBD"}
           </span>
         </div>
 
@@ -155,27 +163,27 @@ export default function PredictionInput({
           <div className="flex gap-1 ml-4">
             <button
               type="button"
-              onClick={() => handleWinnerChange(match.homeTeam.id)}
-              disabled={disabled}
+              onClick={() => homeTeam?.id && handleWinnerChange(homeTeam.id)}
+              disabled={disabled || !homeTeam?.id}
               className={`px-2 py-1 text-xs rounded-lg transition-all ${
-                winnerId === match.homeTeam.id
+                winnerId === homeTeam?.id
                   ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
                   : "bg-white/10 text-white/70 hover:bg-white/20"
               } disabled:opacity-50`}
             >
-              {match.homeTeam.tla}
+              {homeTeam?.tla || "TBD"}
             </button>
             <button
               type="button"
-              onClick={() => handleWinnerChange(match.awayTeam.id)}
-              disabled={disabled}
+              onClick={() => awayTeam?.id && handleWinnerChange(awayTeam.id)}
+              disabled={disabled || !awayTeam?.id}
               className={`px-2 py-1 text-xs rounded-lg transition-all ${
-                winnerId === match.awayTeam.id
+                winnerId === awayTeam?.id
                   ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
                   : "bg-white/10 text-white/70 hover:bg-white/20"
               } disabled:opacity-50`}
             >
-              {match.awayTeam.tla}
+              {awayTeam?.tla || "TBD"}
             </button>
           </div>
         )}

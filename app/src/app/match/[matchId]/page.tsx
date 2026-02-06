@@ -100,6 +100,12 @@ export default async function MatchDetailPage({ params }: PageProps) {
     }
   }
 
+  // Determine winner
+  const homeGoals = match.score.fullTime.home;
+  const awayGoals = match.score.fullTime.away;
+  const homeWon = isFinished && homeGoals !== null && awayGoals !== null && homeGoals > awayGoals;
+  const awayWon = isFinished && homeGoals !== null && awayGoals !== null && awayGoals > homeGoals;
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header user={profile} />
@@ -111,7 +117,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
             <div className="bg-gradient-to-r from-emerald-600 to-green-600 text-white p-8">
               <div className="flex items-center justify-center gap-8">
                 {/* Home Team */}
-                <div className="text-center flex-1">
+                <div className={`text-center flex-1 ${awayWon ? "opacity-50" : ""}`}>
                   {match.homeTeam.crest ? (
                     <img
                       src={match.homeTeam.crest}
@@ -125,7 +131,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                       </span>
                     </div>
                   )}
-                  <div className="font-bold text-lg">{match.homeTeam.name}</div>
+                  <div className={`font-bold text-lg ${homeWon ? "text-yellow-300" : ""}`}>{match.homeTeam.name}</div>
                 </div>
 
                 {/* Score */}
@@ -155,7 +161,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                 </div>
 
                 {/* Away Team */}
-                <div className="text-center flex-1">
+                <div className={`text-center flex-1 ${homeWon ? "opacity-50" : ""}`}>
                   {match.awayTeam.crest ? (
                     <img
                       src={match.awayTeam.crest}
@@ -169,7 +175,7 @@ export default async function MatchDetailPage({ params }: PageProps) {
                       </span>
                     </div>
                   )}
-                  <div className="font-bold text-lg">{match.awayTeam.name}</div>
+                  <div className={`font-bold text-lg ${awayWon ? "text-yellow-300" : ""}`}>{match.awayTeam.name}</div>
                 </div>
               </div>
             </div>

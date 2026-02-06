@@ -13,6 +13,12 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
   const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
   const isFinished = match.status === "FINISHED";
   const matchDate = new Date(match.utcDate);
+  
+  // Determine winner for highlighting
+  const homeGoals = match.score.fullTime.home;
+  const awayGoals = match.score.fullTime.away;
+  const homeWon = isFinished && homeGoals !== null && awayGoals !== null && homeGoals > awayGoals;
+  const awayWon = isFinished && homeGoals !== null && awayGoals !== null && awayGoals > homeGoals;
 
   const getStatusDisplay = () => {
     if (isLive) {
@@ -49,7 +55,7 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
 
         <div className="flex items-center justify-between gap-4">
           {/* Home Team */}
-          <div className="flex-1 flex flex-col items-center gap-2">
+          <div className={`flex-1 flex flex-col items-center gap-2 ${awayWon ? "opacity-50" : ""}`}>
             {match.homeTeam.crest ? (
               <img
                 src={match.homeTeam.crest}
@@ -61,7 +67,7 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
                 {match.homeTeam.shortName?.substring(0, 3) || "???"}
               </div>
             )}
-            <span className="font-semibold text-slate-700 text-sm text-center">
+            <span className={`font-semibold text-sm text-center ${homeWon ? "text-emerald-600" : "text-slate-700"}`}>
               {match.homeTeam.shortName || match.homeTeam.name}
             </span>
           </div>
@@ -85,7 +91,7 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
           </div>
 
           {/* Away Team */}
-          <div className="flex-1 flex flex-col items-center gap-2">
+          <div className={`flex-1 flex flex-col items-center gap-2 ${homeWon ? "opacity-50" : ""}`}>
             {match.awayTeam.crest ? (
               <img
                 src={match.awayTeam.crest}
@@ -97,7 +103,7 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
                 {match.awayTeam.shortName?.substring(0, 3) || "???"}
               </div>
             )}
-            <span className="font-semibold text-slate-700 text-sm text-center">
+            <span className={`font-semibold text-sm text-center ${awayWon ? "text-emerald-600" : "text-slate-700"}`}>
               {match.awayTeam.shortName || match.awayTeam.name}
             </span>
           </div>

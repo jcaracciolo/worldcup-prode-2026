@@ -63,14 +63,10 @@ export function calculateGroupStagePoints(
   // 2 points for correct result
   if (predictedResult === actualResult) {
     const resultText =
-      actualResult === "home"
-        ? "Home win"
-        : actualResult === "away"
-          ? "Away win"
-          : "Draw";
+      actualResult === "draw" ? "Group Stage tie" : "Group Stage win";
     points.push({
       matchId: match.id,
-      description: `Correct result: ${resultText}`,
+      description: resultText,
       points: 2,
       type: "result",
       matchInfo,
@@ -261,12 +257,12 @@ export function calculateGroupStandingsBonusPoints(
   groupComplete: boolean = false, // Whether all group matches are finished
 ): PointBreakdown[] {
   const points: PointBreakdown[] = [];
-  
+
   // Only award group bonus points when group stage is complete
   if (!groupComplete) {
     return points;
   }
-  
+
   const groupLetter = groupName.replace("GROUP_", "");
 
   predictedStandings.forEach((predicted, index) => {
@@ -464,7 +460,9 @@ export function calculateTotalPoints(
     const finishedMatches = groupMatchList.filter(
       (m) => m.status === "FINISHED",
     );
-    const groupComplete = finishedMatches.length === groupMatchList.length && groupMatchList.length > 0;
+    const groupComplete =
+      finishedMatches.length === groupMatchList.length &&
+      groupMatchList.length > 0;
 
     if (actualStandings) {
       allBreakdown.push(

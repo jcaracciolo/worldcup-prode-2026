@@ -622,8 +622,12 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                           const pred = predictionMap.get(match.id);
                           const matchDate = new Date(match.utcDate);
                           const resolved = resolvedKnockoutTeams.get(match.id);
-                          const homeTeam = resolved?.home || (match.homeTeam?.id ? match.homeTeam : null);
-                          const awayTeam = resolved?.away || (match.awayTeam?.id ? match.awayTeam : null);
+                          const homeTeam =
+                            resolved?.home ||
+                            (match.homeTeam?.id ? match.homeTeam : null);
+                          const awayTeam =
+                            resolved?.away ||
+                            (match.awayTeam?.id ? match.awayTeam : null);
                           const venue = getVenue(match.id);
                           const isTie =
                             pred?.home_goals !== null &&
@@ -635,14 +639,20 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                               : awayTeam
                             : null;
 
-                          const formattedDate = matchDate.toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          });
-                          const formattedTime = matchDate.toLocaleTimeString("en-US", {
-                            hour: "numeric",
-                            minute: "2-digit",
-                          });
+                          const formattedDate = matchDate.toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                            },
+                          );
+                          const formattedTime = matchDate.toLocaleTimeString(
+                            "en-US",
+                            {
+                              hour: "numeric",
+                              minute: "2-digit",
+                            },
+                          );
 
                           return (
                             <div
@@ -661,7 +671,9 @@ export default async function UserPredictionsPage({ params }: PageProps) {
 
                               {/* Time & Venue */}
                               <div className="w-28 shrink-0 px-3 border-r border-white/10">
-                                <div className="text-sm text-white/70 font-medium">{formattedTime}</div>
+                                <div className="text-sm text-white/70 font-medium">
+                                  {formattedTime}
+                                </div>
                                 {venue && (
                                   <div
                                     className="text-sm font-semibold truncate"
@@ -697,7 +709,9 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                   <span className="w-10 h-9 flex items-center justify-center text-lg font-bold bg-white/90 rounded-lg text-slate-800">
                                     {pred?.home_goals ?? "-"}
                                   </span>
-                                  <span className="text-white/50 font-bold">-</span>
+                                  <span className="text-white/50 font-bold">
+                                    -
+                                  </span>
                                   <span className="w-10 h-9 flex items-center justify-center text-lg font-bold bg-white/90 rounded-lg text-slate-800">
                                     {pred?.away_goals ?? "-"}
                                   </span>

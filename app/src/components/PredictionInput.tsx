@@ -31,7 +31,7 @@ export default function PredictionInput({
   // Use resolved teams if provided, otherwise fall back to match teams
   const homeTeam = resolvedHomeTeam ?? match.homeTeam;
   const awayTeam = resolvedAwayTeam ?? match.awayTeam;
-  
+
   const homeGoals = prediction?.home_goals ?? null;
   const awayGoals = prediction?.away_goals ?? null;
   const winnerId = prediction?.winner_id ?? null;

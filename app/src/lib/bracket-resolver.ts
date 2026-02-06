@@ -72,7 +72,17 @@ export class BracketResolver {
       
       if (!daySchedule) return null;
       
-      // Try to match using venue from venues.ts mapping
+      // First try using match.venue from API (most accurate source)
+      if (match.venue) {
+        const venueLower = match.venue.toLowerCase();
+        for (const [keyword, fifaNum] of Object.entries(daySchedule)) {
+          if (venueLower.includes(keyword)) {
+            return fifaNum;
+          }
+        }
+      }
+      
+      // Fallback: try using venue from our static venues.ts mapping
       const venue = getVenue(match.id);
       if (venue) {
         const cityLower = venue.city.toLowerCase();
@@ -80,16 +90,6 @@ export class BracketResolver {
         
         for (const [keyword, fifaNum] of Object.entries(daySchedule)) {
           if (cityLower.includes(keyword) || stadiumLower.includes(keyword)) {
-            return fifaNum;
-          }
-        }
-      }
-      
-      // Fallback: try using match.venue if available
-      if (match.venue) {
-        const venueLower = match.venue.toLowerCase();
-        for (const [keyword, fifaNum] of Object.entries(daySchedule)) {
-          if (venueLower.includes(keyword)) {
             return fifaNum;
           }
         }
@@ -490,7 +490,17 @@ export function buildMatchNumberMapping(matches: Match[]): Map<number, number> {
     
     if (!daySchedule) return null;
     
-    // Use venue from venues.ts mapping
+    // First try using match.venue from API (most accurate source)
+    if (match.venue) {
+      const venueLower = match.venue.toLowerCase();
+      for (const [keyword, fifaNum] of Object.entries(daySchedule)) {
+        if (venueLower.includes(keyword)) {
+          return fifaNum;
+        }
+      }
+    }
+    
+    // Fallback: use venue from our static venues.ts mapping
     const venue = getVenue(match.id);
     if (venue) {
       const cityLower = venue.city.toLowerCase();
@@ -498,16 +508,6 @@ export function buildMatchNumberMapping(matches: Match[]): Map<number, number> {
       
       for (const [keyword, fifaNum] of Object.entries(daySchedule)) {
         if (cityLower.includes(keyword) || stadiumLower.includes(keyword)) {
-          return fifaNum;
-        }
-      }
-    }
-    
-    // Fallback to match.venue
-    if (match.venue) {
-      const venueLower = match.venue.toLowerCase();
-      for (const [keyword, fifaNum] of Object.entries(daySchedule)) {
-        if (venueLower.includes(keyword)) {
           return fifaNum;
         }
       }

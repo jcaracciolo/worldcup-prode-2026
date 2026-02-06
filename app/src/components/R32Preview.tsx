@@ -105,7 +105,13 @@ export default function R32Preview({
           }
 
           const matchDate = new Date(match.utcDate);
-          const venue = getVenue(match.id);
+          // Prefer API venue data, fall back to static mapping
+          const staticVenue = getVenue(match.id);
+          const venueDisplay = match.venue 
+            ? match.venue  // API provides venue as string
+            : staticVenue 
+              ? `${staticVenue.stadium}, ${staticVenue.city}`
+              : null;
 
           // Check if match involves a 3rd place team (null position means 3rd place)
           const isThirdPlace =
@@ -149,12 +155,12 @@ export default function R32Preview({
                     Round of 32
                   </span>
                 </div>
-                {venue && (
+                {venueDisplay && (
                   <div
                     className="text-sm mt-1"
                     style={{ color: "var(--venue-color)" }}
                   >
-                    {venue.stadium}, {venue.city}
+                    {venueDisplay}
                   </div>
                 )}
               </div>

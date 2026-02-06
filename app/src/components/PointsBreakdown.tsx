@@ -59,7 +59,7 @@ export default function PointsBreakdown({
       (b.type === "result" ||
         b.type === "goals_home" ||
         b.type === "goals_away") &&
-      (!b.matchInfo || b.matchInfo.stage === "GROUP_STAGE"),
+      b.matchInfo?.stage === "GROUP_STAGE",
   );
   const groupBonusPoints = breakdown.filter(
     (b) => b.type === "group_advance" || b.type === "group_position",
@@ -69,7 +69,9 @@ export default function PointsBreakdown({
       b.type === "knockout_win" ||
       b.type === "knockout_lose" ||
       b.type === "knockout_tie" ||
-      ((b.type === "goals_home" || b.type === "goals_away") &&
+      ((b.type === "result" ||
+        b.type === "goals_home" ||
+        b.type === "goals_away") &&
         b.matchInfo &&
         b.matchInfo.stage !== "GROUP_STAGE"),
   );

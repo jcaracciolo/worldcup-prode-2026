@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { calculateTotalPoints } from "@/lib/scoring";
 import { r32Bracket } from "@/lib/r32-bracket";
+import { getVenue } from "@/lib/venues";
 import { notFound } from "next/navigation";
 import { Match, CalculatedStanding, Team } from "@/types/football";
 import { Prediction } from "@/types/database";
@@ -595,8 +596,9 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                           const pred = predictionMap.get(match.id);
                           const matchDate = new Date(match.utcDate);
                           const resolved = resolvedKnockoutTeams.get(match.id);
-                          const homeTeam = resolved?.home || match.homeTeam;
-                          const awayTeam = resolved?.away || match.awayTeam;
+                          const homeTeam = resolved?.home || (match.homeTeam?.id ? match.homeTeam : null);
+                          const awayTeam = resolved?.away || (match.awayTeam?.id ? match.awayTeam : null);
+                          const venue = getVenue(match.id);
                           const isTie =
                             pred?.home_goals !== null &&
                             pred?.away_goals !== null &&
@@ -607,80 +609,105 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                               : awayTeam
                             : null;
 
+                          const formattedDate = matchDate.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          });
+                          const formattedTime = matchDate.toLocaleTimeString("en-US", {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          });
+
                           return (
                             <div
                               key={match.id}
-                              className="flex items-center gap-3 py-3 px-4 rounded-xl bg-slate-800/60 border border-white/5"
+                              className="flex items-center py-3 px-4 rounded-xl bg-slate-800/60 border border-white/5"
                             >
                               {/* Date */}
-                              <div className="w-16 text-center shrink-0">
-                                <div className="text-xs text-white/50">
-                                  {matchDate.toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                  })}
+                              <div className="w-20 text-center shrink-0 pr-3 border-r border-white/10">
+                                <div
+                                  className="text-sm uppercase font-bold tracking-wide whitespace-nowrap"
+                                  style={{ color: "var(--date-color)" }}
+                                >
+                                  {formattedDate}
                                 </div>
                               </div>
 
-                              {/* Home Team */}
-                              <div className="w-28 flex items-center justify-end gap-2">
-                                <span className="text-sm font-semibold text-white truncate">
-                                  {homeTeam?.tla || "TBD"}
-                                </span>
-                                {homeTeam?.crest ? (
-                                  <img
-                                    src={homeTeam.crest}
-                                    alt={homeTeam.name}
-                                    className="w-6 h-6 object-contain shrink-0"
-                                  />
-                                ) : (
-                                  <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
-                                    ?
+                              {/* Time & Venue */}
+                              <div className="w-28 shrink-0 px-3 border-r border-white/10">
+                                <div className="text-sm text-white/70 font-medium">{formattedTime}</div>
+                                {venue && (
+                                  <div
+                                    className="text-sm font-semibold truncate"
+                                    style={{ color: "var(--venue-color)" }}
+                                  >
+                                    {venue.city}
                                   </div>
                                 )}
                               </div>
 
-                              {/* Score */}
-                              <div className="flex items-center gap-2 mx-2">
-                                <span className="w-8 h-8 flex items-center justify-center text-lg font-bold bg-white/10 rounded text-white">
-                                  {pred?.home_goals ?? "-"}
-                                </span>
-                                <span className="text-white/50">-</span>
-                                <span className="w-8 h-8 flex items-center justify-center text-lg font-bold bg-white/10 rounded text-white">
-                                  {pred?.away_goals ?? "-"}
-                                </span>
-                              </div>
+                              {/* Match */}
+                              <div className="flex-1 flex items-center justify-center pl-4">
+                                {/* Home Team */}
+                                <div className="w-24 flex items-center justify-end gap-2">
+                                  <span className="text-sm font-semibold text-white truncate">
+                                    {homeTeam?.tla || "TBD"}
+                                  </span>
+                                  {homeTeam?.crest ? (
+                                    <img
+                                      src={homeTeam.crest}
+                                      alt={homeTeam.name}
+                                      className="w-7 h-7 object-contain shrink-0"
+                                    />
+                                  ) : (
+                                    <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
+                                      {homeTeam?.tla?.substring(0, 2) || "?"}
+                                    </div>
+                                  )}
+                                </div>
 
-                              {/* Away Team */}
-                              <div className="w-28 flex items-center gap-2">
-                                {awayTeam?.crest ? (
-                                  <img
-                                    src={awayTeam.crest}
-                                    alt={awayTeam.name}
-                                    className="w-6 h-6 object-contain shrink-0"
-                                  />
-                                ) : (
-                                  <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
-                                    ?
+                                {/* Score */}
+                                <div className="flex items-center gap-2 mx-4">
+                                  <span className="w-10 h-9 flex items-center justify-center text-lg font-bold bg-white/90 rounded-lg text-slate-800">
+                                    {pred?.home_goals ?? "-"}
+                                  </span>
+                                  <span className="text-white/50 font-bold">-</span>
+                                  <span className="w-10 h-9 flex items-center justify-center text-lg font-bold bg-white/90 rounded-lg text-slate-800">
+                                    {pred?.away_goals ?? "-"}
+                                  </span>
+                                </div>
+
+                                {/* Away Team */}
+                                <div className="w-24 flex items-center gap-2">
+                                  {awayTeam?.crest ? (
+                                    <img
+                                      src={awayTeam.crest}
+                                      alt={awayTeam.name}
+                                      className="w-7 h-7 object-contain shrink-0"
+                                    />
+                                  ) : (
+                                    <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
+                                      {awayTeam?.tla?.substring(0, 2) || "?"}
+                                    </div>
+                                  )}
+                                  <span className="text-sm font-semibold text-white truncate">
+                                    {awayTeam?.tla || "TBD"}
+                                  </span>
+                                </div>
+
+                                {/* Winner indicator for ties */}
+                                {isTie && winnerTeam && (
+                                  <div className="ml-2 flex items-center gap-1 px-2 py-1 rounded bg-emerald-600/30 text-emerald-400 text-xs">
+                                    <span>🏆</span>
+                                    <span>{winnerTeam.tla}</span>
                                   </div>
                                 )}
-                                <span className="text-sm font-semibold text-white truncate">
-                                  {awayTeam?.tla || "TBD"}
-                                </span>
+                                {isTie && !winnerTeam && (
+                                  <div className="ml-2 px-2 py-1 rounded bg-yellow-600/30 text-yellow-400 text-xs">
+                                    No winner
+                                  </div>
+                                )}
                               </div>
-
-                              {/* Winner indicator for ties */}
-                              {isTie && winnerTeam && (
-                                <div className="ml-auto flex items-center gap-1 px-2 py-1 rounded bg-emerald-600/30 text-emerald-400 text-xs">
-                                  <span>🏆</span>
-                                  <span>{winnerTeam.tla}</span>
-                                </div>
-                              )}
-                              {isTie && !winnerTeam && (
-                                <div className="ml-auto px-2 py-1 rounded bg-yellow-600/30 text-yellow-400 text-xs">
-                                  No winner selected
-                                </div>
-                              )}
                             </div>
                           );
                         })}

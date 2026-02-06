@@ -71,6 +71,8 @@ export interface PointDetail {
   description: string;
   points: number;
   earned: boolean;
+  /** True if this scoring item doesn't apply (e.g., predicted wrong team for knockout slot) */
+  notApplicable?: boolean;
 }
 
 // =============================================================================
@@ -155,11 +157,15 @@ export function getTeamDisplayName(
  * 
  * @param match - The match from API
  * @param prediction - User's prediction (can be undefined/null)
+ * @param predictedHomeTeam - For knockout: the team user predicted for home slot
+ * @param predictedAwayTeam - For knockout: the team user predicted for away slot
  * @returns MatchPointsResult with total and metadata
  */
 export function calculateMatchPoints(
   match: Match,
-  prediction: Prediction | null | undefined
+  prediction: Prediction | null | undefined,
+  predictedHomeTeam?: { id: number } | null,
+  predictedAwayTeam?: { id: number } | null
 ): MatchPointsResult {
   const multiplier = getMultiplier(match);
   const isKnockout = !isGroupStage(match);
@@ -204,10 +210,14 @@ export function calculateMatchPoints(
   }
 
   // Goals points (always 1 point each, no multiplier)
-  if (prediction.home_goals === actualHome) {
+  // For knockout: only award if the predicted team matches the actual team in that slot
+  const homeTeamMatches = !isKnockout || !predictedHomeTeam || predictedHomeTeam.id === match.homeTeam?.id;
+  const awayTeamMatches = !isKnockout || !predictedAwayTeam || predictedAwayTeam.id === match.awayTeam?.id;
+  
+  if (homeTeamMatches && prediction.home_goals === actualHome) {
     total += POINTS_CORRECT_GOALS;
   }
-  if (prediction.away_goals === actualAway) {
+  if (awayTeamMatches && prediction.away_goals === actualAway) {
     total += POINTS_CORRECT_GOALS;
   }
 
@@ -217,10 +227,17 @@ export function calculateMatchPoints(
 /**
  * Calculate detailed breakdown of points for a match
  * Useful for showing users what they got right/wrong
+ * 
+ * @param match - The match from API
+ * @param prediction - User's prediction
+ * @param predictedHomeTeam - For knockout: the team user predicted for home slot
+ * @param predictedAwayTeam - For knockout: the team user predicted for away slot
  */
 export function calculateMatchPointsDetailed(
   match: Match,
-  prediction: Prediction | null | undefined
+  prediction: Prediction | null | undefined,
+  predictedHomeTeam?: { id: number } | null,
+  predictedAwayTeam?: { id: number } | null
 ): MatchPointsBreakdown {
   const multiplier = getMultiplier(match);
   const isKnockout = !isGroupStage(match);
@@ -321,22 +338,33 @@ export function calculateMatchPointsDetailed(
     });
   }
 
+  // For knockout: can only get goal points if the predicted team matches the actual team
+  // If no predicted team is provided, fall back to checking if team is known
+  const homeTeamMatches = !isKnockout || 
+    (predictedHomeTeam ? predictedHomeTeam.id === match.homeTeam?.id : !!match.homeTeam?.tla);
+  const awayTeamMatches = !isKnockout || 
+    (predictedAwayTeam ? predictedAwayTeam.id === match.awayTeam?.id : !!match.awayTeam?.tla);
+
   // Home goals check
-  const correctHomeGoals = prediction.home_goals === actualHome;
+  const correctHomeGoals = homeTeamMatches && prediction.home_goals === actualHome;
   homeGoalsPoints = correctHomeGoals ? POINTS_CORRECT_GOALS : 0;
   details.push({
     description: `${getTeamName(match.homeTeam, tbdLabels.home)} goals (${actualHome})`,
     points: POINTS_CORRECT_GOALS,
     earned: correctHomeGoals,
+    // Show as not applicable if predicted team doesn't match actual team
+    ...(isKnockout && !homeTeamMatches ? { notApplicable: true } : {}),
   });
 
   // Away goals check
-  const correctAwayGoals = prediction.away_goals === actualAway;
+  const correctAwayGoals = awayTeamMatches && prediction.away_goals === actualAway;
   awayGoalsPoints = correctAwayGoals ? POINTS_CORRECT_GOALS : 0;
   details.push({
     description: `${getTeamName(match.awayTeam, tbdLabels.away)} goals (${actualAway})`,
     points: POINTS_CORRECT_GOALS,
     earned: correctAwayGoals,
+    // Show as not applicable if predicted team doesn't match actual team
+    ...(isKnockout && !awayTeamMatches ? { notApplicable: true } : {}),
   });
 
   return {

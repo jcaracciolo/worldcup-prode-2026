@@ -8,17 +8,23 @@ import { useState } from "react";
 interface MatchPointsTooltipProps {
   match: Match;
   prediction: Prediction | null | undefined;
+  /** For knockout: the team user predicted for home slot */
+  predictedHomeTeam?: { id: number } | null;
+  /** For knockout: the team user predicted for away slot */
+  predictedAwayTeam?: { id: number } | null;
   className?: string;
 }
 
 export default function MatchPointsTooltip({
   match,
   prediction,
+  predictedHomeTeam,
+  predictedAwayTeam,
   className = "",
 }: MatchPointsTooltipProps) {
   const [showTooltip, setShowTooltip] = useState(false);
-  const pts = calculateMatchPoints(match, prediction);
-  const detailed = calculateMatchPointsDetailed(match, prediction);
+  const pts = calculateMatchPoints(match, prediction, predictedHomeTeam, predictedAwayTeam);
+  const detailed = calculateMatchPointsDetailed(match, prediction, predictedHomeTeam, predictedAwayTeam);
 
   // Don't render if match not finished or no prediction
   if (!pts.isFinished || !pts.hasPrediction) {

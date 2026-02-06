@@ -528,7 +528,12 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                               </div>
 
                               {/* Points earned */}
-                              <MatchPointsTooltip match={match} prediction={pred} />
+                              <MatchPointsTooltip 
+                                match={match} 
+                                prediction={pred} 
+                                predictedHomeTeam={homeTeam}
+                                predictedAwayTeam={awayTeam}
+                              />
                             </div>
                           );
                         })}
@@ -889,7 +894,12 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                 })()}
 
                                 {/* Points earned */}
-                                <MatchPointsTooltip match={match} prediction={pred} />
+                                <MatchPointsTooltip 
+                                  match={match} 
+                                  prediction={pred}
+                                  predictedHomeTeam={homeTeam}
+                                  predictedAwayTeam={awayTeam}
+                                />
                               </div>
                             );
                           })}

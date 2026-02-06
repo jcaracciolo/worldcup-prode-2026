@@ -1,9 +1,11 @@
 import Header from "@/components/Header";
 import PointsBreakdown from "@/components/PointsBreakdown";
 import StandingsTable from "@/components/StandingsTable";
+import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import { createClient } from "@/lib/supabase/server";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { calculateTotalPoints } from "@/lib/scoring";
+import { getTeamDisplayName } from "@/lib/match-scoring";
 import { BracketResolver } from "@/lib/bracket-resolver";
 import { getVenue } from "@/lib/venues";
 import { notFound } from "next/navigation";
@@ -386,13 +388,23 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                           // Determine winner highlight
                           const homeGoals = pred?.home_goals;
                           const awayGoals = pred?.away_goals;
-                          const hasScore = homeGoals !== null && homeGoals !== undefined && awayGoals !== null && awayGoals !== undefined;
-                          const homeWinsOnScore = hasScore && homeGoals > awayGoals;
-                          const awayWinsOnScore = hasScore && awayGoals > homeGoals;
+                          const hasScore =
+                            homeGoals !== null &&
+                            homeGoals !== undefined &&
+                            awayGoals !== null &&
+                            awayGoals !== undefined;
+                          const homeWinsOnScore =
+                            hasScore && homeGoals > awayGoals;
+                          const awayWinsOnScore =
+                            hasScore && awayGoals > homeGoals;
                           const isTie = hasScore && homeGoals === awayGoals;
                           // For knockout, highlight winner by score or by winner_id selection on ties
-                          const homeHighlight = homeWinsOnScore || (isTie && pred?.winner_id === homeTeam?.id);
-                          const awayHighlight = awayWinsOnScore || (isTie && pred?.winner_id === awayTeam?.id);
+                          const homeHighlight =
+                            homeWinsOnScore ||
+                            (isTie && pred?.winner_id === homeTeam?.id);
+                          const awayHighlight =
+                            awayWinsOnScore ||
+                            (isTie && pred?.winner_id === awayTeam?.id);
 
                           const formattedDate = matchDate.toLocaleDateString(
                             "en-US",
@@ -456,7 +468,7 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                         : "text-white"
                                     }`}
                                   >
-                                    {homeTeam?.tla || "TBD"}
+                                    {getTeamDisplayName(homeTeam, match.id, "home")}
                                   </span>
                                   {homeTeam?.crest ? (
                                     <img
@@ -510,10 +522,13 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                         : "text-white"
                                     }`}
                                   >
-                                    {awayTeam?.tla || "TBD"}
+                                    {getTeamDisplayName(awayTeam, match.id, "away")}
                                   </span>
                                 </div>
                               </div>
+
+                              {/* Points earned */}
+                              <MatchPointsTooltip match={match} prediction={pred} />
                             </div>
                           );
                         })}
@@ -559,7 +574,11 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                             const pred = predictionMap.get(match.id);
                             const homeGoals = pred?.home_goals;
                             const awayGoals = pred?.away_goals;
-                            const hasScore = homeGoals !== null && homeGoals !== undefined && awayGoals !== null && awayGoals !== undefined;
+                            const hasScore =
+                              homeGoals !== null &&
+                              homeGoals !== undefined &&
+                              awayGoals !== null &&
+                              awayGoals !== undefined;
                             const homeWins = hasScore && homeGoals > awayGoals;
                             const awayWins = hasScore && awayGoals > homeGoals;
                             const isDraw = hasScore && homeGoals === awayGoals;
@@ -571,8 +590,16 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                 key={match.id}
                                 className="flex items-center gap-2 py-2 text-sm"
                               >
-                                <div className={`flex-1 flex items-center justify-end gap-1.5 px-1.5 py-0.5 rounded ${homeHighlight ? "bg-amber-500/80" : ""}`}>
-                                  <span className={homeHighlight ? "text-slate-900 font-semibold" : "text-white/80"}>
+                                <div
+                                  className={`flex-1 flex items-center justify-end gap-1.5 px-1.5 py-0.5 rounded ${homeHighlight ? "bg-amber-500/80" : ""}`}
+                                >
+                                  <span
+                                    className={
+                                      homeHighlight
+                                        ? "text-slate-900 font-semibold"
+                                        : "text-white/80"
+                                    }
+                                  >
                                     {match.homeTeam.tla}
                                   </span>
                                   {match.homeTeam.crest ? (
@@ -591,7 +618,9 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                   {pred?.home_goals ?? "-"} -{" "}
                                   {pred?.away_goals ?? "-"}
                                 </span>
-                                <div className={`flex-1 flex items-center gap-1.5 px-1.5 py-0.5 rounded ${awayHighlight ? "bg-amber-500/80" : ""}`}>
+                                <div
+                                  className={`flex-1 flex items-center gap-1.5 px-1.5 py-0.5 rounded ${awayHighlight ? "bg-amber-500/80" : ""}`}
+                                >
                                   {match.awayTeam.crest ? (
                                     <img
                                       src={match.awayTeam.crest}
@@ -603,10 +632,18 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                       {match.awayTeam.tla?.substring(0, 2)}
                                     </div>
                                   )}
-                                  <span className={awayHighlight ? "text-slate-900 font-semibold" : "text-white/80"}>
+                                  <span
+                                    className={
+                                      awayHighlight
+                                        ? "text-slate-900 font-semibold"
+                                        : "text-white/80"
+                                    }
+                                  >
                                     {match.awayTeam.tla}
                                   </span>
                                 </div>
+                                {/* Points earned */}
+                                <MatchPointsTooltip match={match} prediction={pred} className="w-8" />
                               </div>
                             );
                           })}
@@ -747,15 +784,28 @@ export default async function UserPredictionsPage({ params }: PageProps) {
 
                                 {(() => {
                                   // Calculate highlights based on score
-                                  const hasScore = pred?.home_goals !== null && pred?.home_goals !== undefined &&
-                                                   pred?.away_goals !== null && pred?.away_goals !== undefined;
-                                  const homeWins = hasScore && pred.home_goals > pred.away_goals;
-                                  const awayWins = hasScore && pred.away_goals > pred.home_goals;
-                                  const isTie = hasScore && pred.home_goals === pred.away_goals;
-                                  
+                                  const hasScore =
+                                    pred?.home_goals !== null &&
+                                    pred?.home_goals !== undefined &&
+                                    pred?.away_goals !== null &&
+                                    pred?.away_goals !== undefined;
+                                  const homeWins =
+                                    hasScore &&
+                                    pred.home_goals > pred.away_goals;
+                                  const awayWins =
+                                    hasScore &&
+                                    pred.away_goals > pred.home_goals;
+                                  const isTie =
+                                    hasScore &&
+                                    pred.home_goals === pred.away_goals;
+
                                   // Knockout: winner based on score, or winner_id if tie
-                                  const homeHighlight = homeWins || (isTie && pred?.winner_id === homeTeam?.id);
-                                  const awayHighlight = awayWins || (isTie && pred?.winner_id === awayTeam?.id);
+                                  const homeHighlight =
+                                    homeWins ||
+                                    (isTie && pred?.winner_id === homeTeam?.id);
+                                  const awayHighlight =
+                                    awayWins ||
+                                    (isTie && pred?.winner_id === awayTeam?.id);
 
                                   return (
                                     /* Match */
@@ -775,7 +825,7 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                               : "text-white"
                                           }`}
                                         >
-                                          {homeTeam?.tla || "TBD"}
+                                          {getTeamDisplayName(homeTeam, match.id, "home")}
                                         </span>
                                         {homeTeam?.crest ? (
                                           <img
@@ -785,7 +835,8 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                           />
                                         ) : (
                                           <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
-                                            {homeTeam?.tla?.substring(0, 2) || "?"}
+                                            {homeTeam?.tla?.substring(0, 2) ||
+                                              "?"}
                                           </div>
                                         )}
                                       </div>
@@ -819,7 +870,8 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                           />
                                         ) : (
                                           <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
-                                            {awayTeam?.tla?.substring(0, 2) || "?"}
+                                            {awayTeam?.tla?.substring(0, 2) ||
+                                              "?"}
                                           </div>
                                         )}
                                         <span
@@ -829,12 +881,15 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                                               : "text-white"
                                           }`}
                                         >
-                                          {awayTeam?.tla || "TBD"}
+                                          {getTeamDisplayName(awayTeam, match.id, "away")}
                                         </span>
                                       </div>
                                     </div>
                                   );
                                 })()}
+
+                                {/* Points earned */}
+                                <MatchPointsTooltip match={match} prediction={pred} />
                               </div>
                             );
                           })}

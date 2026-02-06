@@ -133,8 +133,14 @@ export default async function MatchDetailPage({ params }: PageProps) {
   const predIsDraw = predHasScore && predHomeGoals === predAwayGoals;
   // For knockout ties, check winner_id to determine winner
   const isKnockout = !isGroupStage;
-  const predHomeHighlight = predHomeWins || (predIsDraw && isGroupStage) || (predIsDraw && isKnockout && prediction?.winner_id === match.homeTeam.id);
-  const predAwayHighlight = predAwayWins || (predIsDraw && isGroupStage) || (predIsDraw && isKnockout && prediction?.winner_id === match.awayTeam.id);
+  const predHomeHighlight =
+    predHomeWins ||
+    (predIsDraw && isGroupStage) ||
+    (predIsDraw && isKnockout && prediction?.winner_id === match.homeTeam.id);
+  const predAwayHighlight =
+    predAwayWins ||
+    (predIsDraw && isGroupStage) ||
+    (predIsDraw && isKnockout && prediction?.winner_id === match.awayTeam.id);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -254,14 +260,18 @@ export default async function MatchDetailPage({ params }: PageProps) {
 
                 <div className="bg-white/10 rounded-xl p-5">
                   <div className="flex items-center justify-center gap-4 text-xl font-bold mb-4 text-white">
-                    <span className={`px-3 py-1 rounded-lg ${predHomeHighlight ? "bg-amber-500/80 text-slate-900" : ""}`}>
+                    <span
+                      className={`px-3 py-1 rounded-lg ${predHomeHighlight ? "bg-amber-500/80 text-slate-900" : ""}`}
+                    >
                       {match.homeTeam.tla}
                     </span>
                     <span className="px-5 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-xl">
                       {prediction.home_goals ?? "-"} -{" "}
                       {prediction.away_goals ?? "-"}
                     </span>
-                    <span className={`px-3 py-1 rounded-lg ${predAwayHighlight ? "bg-amber-500/80 text-slate-900" : ""}`}>
+                    <span
+                      className={`px-3 py-1 rounded-lg ${predAwayHighlight ? "bg-amber-500/80 text-slate-900" : ""}`}
+                    >
                       {match.awayTeam.tla}
                     </span>
                   </div>

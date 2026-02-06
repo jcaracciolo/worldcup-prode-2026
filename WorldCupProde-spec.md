@@ -53,11 +53,20 @@ Users get a second chance to predict all knockout matches once group stage is co
 
 **Per match scoring:**
 
+**Round of 32 (works like group stage):**
+| Prediction                     | Points |
+| ------------------------------ | ------ |
+| Correct result (win/draw/loss) | 2      |
+| Exact goals for Team A         | 1      |
+| Exact goals for Team B         | 1      |
+| **Max per match**              | **4**  |
+
+**Round of 16 and beyond (split winner/loser scoring):**
 | Prediction                           | Points         |
 | ------------------------------------ | -------------- |
 | Correct team wins                    | 1 × multiplier |
 | Correct team loses                   | 1 × multiplier |
-| Correct team ties (before penalties) | 1 × multiplier |
+| Correct team ties (before penalties) | 1 × multiplier (each team) |
 | Exact goals for Team A               | 1              |
 | Exact goals for Team B               | 1              |
 
@@ -69,12 +78,14 @@ _Note: You can only score points for teams you predicted to reach that stage._
 
 | Round             | Result Multiplier | Max Points (result + goals) |
 | ----------------- | ----------------- | --------------------------- |
-| Round of 32       | 1×                | 4 (2+2)                     |
-| Round of 16       | 1×                | 4 (2+2)                     |
-| Quarter-finals    | 1×                | 4 (2+2)                     |
-| Semi-finals       | 2×                | 6 (4+2)                     |
-| Third-place match | 3×                | 8 (6+2)                     |
-| Final             | 4×                | 10 (8+2)                    |
+| Round of 32       | 1× (result-based) | 4 (2+2)                     |
+| Round of 16       | 2×                | 6 (4+2)                     |
+| Quarter-finals    | 3×                | 8 (6+2)                     |
+| Semi-finals       | 4×                | 10 (8+2)                    |
+| Third-place match | 5×                | 12 (10+2)                   |
+| Final             | 6×                | 14 (12+2)                   |
+
+_Implementation note: R32 uses a single "correct result" check (2 pts), while R16+ splits into winner (1 pt) + loser (1 pt), each multiplied separately. Goals are always 1 point each with no multiplier._
 
 ## Views / Screens
 
@@ -540,14 +551,15 @@ Match results are displayed in two contexts: showing **user predictions** vs sho
 
 Shows winner based on user's predicted scores. For knockout ties, uses `winner_id` to determine the advancing team.
 
-| Component | Route | Description |
-|-----------|-------|-------------|
-| `PredictionInput.tsx` | `/predictions` | User entering/viewing their own predictions |
-| `user/[userId]/page.tsx` (knockout sections) | `/user/:userId` | Viewing user's knockout stage predictions |
-| `user/[userId]/page.tsx` (group stage) | `/user/:userId` | Viewing user's group stage predictions |
+| Component                                              | Route             | Description                                    |
+| ------------------------------------------------------ | ----------------- | ---------------------------------------------- |
+| `PredictionInput.tsx`                                  | `/predictions`    | User entering/viewing their own predictions    |
+| `user/[userId]/page.tsx` (knockout sections)           | `/user/:userId`   | Viewing user's knockout stage predictions      |
+| `user/[userId]/page.tsx` (group stage)                 | `/user/:userId`   | Viewing user's group stage predictions         |
 | `match/[matchId]/page.tsx` ("Your Prediction" section) | `/match/:matchId` | Logged-in user's prediction for specific match |
 
 **Highlighting Rules (Predictions):**
+
 - **Group stage:** Winner highlighted; both teams highlighted on draw
 - **Knockout:** Winner highlighted by score; on ties, `winner_id` determines highlight
 
@@ -555,13 +567,13 @@ Shows winner based on user's predicted scores. For knockout ties, uses `winner_i
 
 Shows winner based on actual match results from Football-Data.org API.
 
-| Component | Route | Description |
-|-----------|-------|-------------|
-| `MatchCard.tsx` | `/` (homepage) | Today's/upcoming matches with live/final scores |
-| `PointsBreakdown.tsx` | `/user/:userId` | Points breakdown showing what actually happened |
-| `match/[matchId]/page.tsx` (main header) | `/match/:matchId` | Actual match result display |
+| Component                                | Route             | Description                                     |
+| ---------------------------------------- | ----------------- | ----------------------------------------------- |
+| `MatchCard.tsx`                          | `/` (homepage)    | Today's/upcoming matches with live/final scores |
+| `PointsBreakdown.tsx`                    | `/user/:userId`   | Points breakdown showing what actually happened |
+| `match/[matchId]/page.tsx` (main header) | `/match/:matchId` | Actual match result display                     |
 
 **Highlighting Rules (API Results):**
+
 - **Group stage:** Winner highlighted; both teams highlighted on draw
 - **Knockout:** Winner highlighted by score (API provides final winner after penalties)
-

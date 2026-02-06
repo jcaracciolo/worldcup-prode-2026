@@ -3,6 +3,7 @@
 import { Match, Team } from "@/types/football";
 import { Prediction } from "@/types/database";
 import { getVenue } from "@/lib/venues";
+import { getTeamDisplayName } from "@/lib/match-scoring";
 
 interface PredictionInputProps {
   match: Match;
@@ -152,7 +153,7 @@ export default function PredictionInput({
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               <span className="text-sm font-semibold truncate">
-                {homeTeam?.tla || "TBD"}
+                {getTeamDisplayName(homeTeam, match.id, "home")}
               </span>
               {homeTeam?.crest ? (
                 <img
@@ -177,7 +178,7 @@ export default function PredictionInput({
                   homeIsWinner ? "text-slate-900 font-bold" : "text-white"
                 }`}
               >
-                {homeTeam?.tla || "TBD"}
+                {getTeamDisplayName(homeTeam, match.id, "home")}
               </span>
               {homeTeam?.crest ? (
                 <img
@@ -252,7 +253,7 @@ export default function PredictionInput({
                 </div>
               )}
               <span className="text-sm font-semibold truncate">
-                {awayTeam?.tla || "TBD"}
+                {getTeamDisplayName(awayTeam, match.id, "away")}
               </span>
             </button>
           ) : (
@@ -277,7 +278,7 @@ export default function PredictionInput({
                   awayIsWinner ? "text-slate-900 font-bold" : "text-white"
                 }`}
               >
-                {awayTeam?.tla || "TBD"}
+                {getTeamDisplayName(awayTeam, match.id, "away")}
               </span>
             </div>
           )}

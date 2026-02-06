@@ -87,26 +87,28 @@ export default function PointsBreakdown({
           <>
             <img
               src={item.team.crest}
-              alt={item.team.tla}
+              alt={item.team.tla || item.team.name}
               className="w-6 h-6 object-contain"
             />
-            <span className="font-bold text-white w-10">{item.team.tla}</span>
+            <span className="font-bold text-white w-10">{item.team.tla || item.team.name?.substring(0, 3).toUpperCase() || "???"}</span>
           </>
         ) : item.matchInfo ? (
           (() => {
             const homeWon = item.matchInfo.homeGoals > item.matchInfo.awayGoals;
             const awayWon = item.matchInfo.awayGoals > item.matchInfo.homeGoals;
+            const homeTla = item.matchInfo.homeTeam.tla || "???";
+            const awayTla = item.matchInfo.awayTeam.tla || "???";
             return (
               <div className="flex items-center gap-1.5">
                 <img
                   src={item.matchInfo.homeTeam.crest}
-                  alt={item.matchInfo.homeTeam.tla}
+                  alt={homeTla}
                   className={`w-5 h-5 object-contain ${awayWon ? "opacity-50" : ""}`}
                 />
                 <span className={`text-xs font-medium w-8 text-right ${
                   homeWon ? "text-emerald-400 font-bold" : awayWon ? "text-white/40" : "text-white/70"
                 }`}>
-                  {item.matchInfo.homeTeam.tla}
+                  {homeTla}
                 </span>
                 <span className="font-bold text-white px-1.5 py-0.5 bg-white/10 rounded text-sm min-w-[40px] text-center">
                   {item.matchInfo.homeGoals}-{item.matchInfo.awayGoals}
@@ -114,11 +116,11 @@ export default function PointsBreakdown({
                 <span className={`text-xs font-medium w-8 ${
                   awayWon ? "text-emerald-400 font-bold" : homeWon ? "text-white/40" : "text-white/70"
                 }`}>
-                  {item.matchInfo.awayTeam.tla}
+                  {awayTla}
                 </span>
                 <img
                   src={item.matchInfo.awayTeam.crest}
-                  alt={item.matchInfo.awayTeam.tla}
+                  alt={awayTla}
                   className={`w-5 h-5 object-contain ${homeWon ? "opacity-50" : ""}`}
                 />
               </div>

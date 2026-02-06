@@ -6,7 +6,7 @@ import { Match, Team } from "@/types/football";
 import { CalculatedStanding } from "@/types/football";
 import { Prediction } from "@/types/database";
 import { r32Bracket, r16Bracket, qfBracket, sfBracket } from "./r32-bracket";
-import { R32_FIFA_NUMBERS_BY_DATE } from "./fifa-match-schedule";
+import { buildApiToFifaMapping, getBracketSource } from "./tournament";
 
 export interface BracketResolverParams {
   matches: Match[];
@@ -18,13 +18,6 @@ export interface BracketResolverParams {
 export interface ResolvedTeams {
   home: Team | null;
   away: Team | null;
-}
-
-// Helper to sort matches by date
-function sortByDate(matches: Match[]): Match[] {
-  return [...matches].sort(
-    (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
-  );
 }
 
 // Main resolver class - uses FIFA bracket structure + user predictions
@@ -48,94 +41,18 @@ export class BracketResolver {
     this.apiIdToFifaNumber = new Map();
     this.fifaNumberToApiId = new Map();
 
-    // Build FIFA match number mappings based on date order
+    // Build FIFA match number mappings using central tournament function
     this.buildFifaNumberMappings();
   }
 
-  // Map API match IDs to FIFA match numbers using chronological order
-  // FIFA numbers ARE in chronological order within each stage
+  // Map API match IDs to FIFA match numbers using central tournament function
   private buildFifaNumberMappings(): void {
-    // Helper to assign FIFA numbers to matches grouped by date
-    const assignByDateOrder = (
-      matches: Match[],
-      fifaNumbersByDate: Record<string, number[]>,
-    ): void => {
-      // Group matches by date
-      const matchesByDate = new Map<string, Match[]>();
-      for (const match of matches) {
-        const dateKey = new Date(match.utcDate).toISOString().split("T")[0];
-        if (!matchesByDate.has(dateKey)) {
-          matchesByDate.set(dateKey, []);
-        }
-        matchesByDate.get(dateKey)!.push(match);
-      }
-
-      // For each date, sort matches by time and assign FIFA numbers
-      for (const [dateKey, dayMatches] of matchesByDate) {
-        const fifaNums = fifaNumbersByDate[dateKey];
-        if (!fifaNums) continue;
-
-        // Sort by time within the day
-        const sortedDayMatches = [...dayMatches].sort(
-          (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
-        );
-
-        // Assign FIFA numbers in order
-        for (let i = 0; i < sortedDayMatches.length && i < fifaNums.length; i++) {
-          const match = sortedDayMatches[i];
-          const fifaNum = fifaNums[i];
-          this.apiIdToFifaNumber.set(match.id, fifaNum);
-          this.fifaNumberToApiId.set(fifaNum, match.id);
-        }
-      }
-    };
-
-    // R32 matches (FIFA 73-88) - use date-based mapping
-    const r32Matches = this.matches.filter((m) => m.stage === "LAST_32");
-    assignByDateOrder(r32Matches, R32_FIFA_NUMBERS_BY_DATE);
-
-    // R16 matches (FIFA 89-96) - simple sequential by date
-    const r16Matches = sortByDate(
-      this.matches.filter((m) => m.stage === "LAST_16")
-    );
-    r16Matches.forEach((match, i) => {
-      const fifaNum = 89 + i;
-      this.apiIdToFifaNumber.set(match.id, fifaNum);
-      this.fifaNumberToApiId.set(fifaNum, match.id);
-    });
-
-    // QF matches (FIFA 97-100)
-    const qfMatches = sortByDate(
-      this.matches.filter((m) => m.stage === "QUARTER_FINALS")
-    );
-    qfMatches.forEach((match, i) => {
-      const fifaNum = 97 + i;
-      this.apiIdToFifaNumber.set(match.id, fifaNum);
-      this.fifaNumberToApiId.set(fifaNum, match.id);
-    });
-
-    // SF matches (FIFA 101-102)
-    const sfMatches = sortByDate(
-      this.matches.filter((m) => m.stage === "SEMI_FINALS")
-    );
-    sfMatches.forEach((match, i) => {
-      const fifaNum = 101 + i;
-      this.apiIdToFifaNumber.set(match.id, fifaNum);
-      this.fifaNumberToApiId.set(fifaNum, match.id);
-    });
-
-    // Third place (FIFA 103)
-    const thirdPlace = this.matches.find((m) => m.stage === "THIRD_PLACE");
-    if (thirdPlace) {
-      this.apiIdToFifaNumber.set(thirdPlace.id, 103);
-      this.fifaNumberToApiId.set(103, thirdPlace.id);
-    }
-
-    // Final (FIFA 104)
-    const final = this.matches.find((m) => m.stage === "FINAL");
-    if (final) {
-      this.apiIdToFifaNumber.set(final.id, 104);
-      this.fifaNumberToApiId.set(104, final.id);
+    const mapping = buildApiToFifaMapping(this.matches);
+    
+    // Build both directions
+    for (const [apiId, fifaNum] of mapping) {
+      this.apiIdToFifaNumber.set(apiId, fifaNum);
+      this.fifaNumberToApiId.set(fifaNum, apiId);
     }
   }
 
@@ -363,39 +280,3 @@ export class BracketResolver {
   }
 }
 
-// Export helper for R32Preview (for display labels)
-// Uses date-based mapping to correctly identify FIFA match numbers
-export function buildMatchNumberMapping(matches: Match[]): Map<number, number> {
-  const mapping = new Map<number, number>();
-  
-  // R32 matches - assign by date and time order
-  const r32Matches = matches.filter((m) => m.stage === "LAST_32");
-  
-  // Group by date
-  const matchesByDate = new Map<string, Match[]>();
-  for (const match of r32Matches) {
-    const dateKey = new Date(match.utcDate).toISOString().split("T")[0];
-    if (!matchesByDate.has(dateKey)) {
-      matchesByDate.set(dateKey, []);
-    }
-    matchesByDate.get(dateKey)!.push(match);
-  }
-
-  // For each date, sort by time and assign FIFA numbers
-  for (const [dateKey, dayMatches] of matchesByDate) {
-    const fifaNums = R32_FIFA_NUMBERS_BY_DATE[dateKey];
-    if (!fifaNums) continue;
-
-    // Sort by time within the day
-    const sortedDayMatches = [...dayMatches].sort(
-      (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
-    );
-
-    // Assign FIFA numbers in order
-    for (let i = 0; i < sortedDayMatches.length && i < fifaNums.length; i++) {
-      mapping.set(sortedDayMatches[i].id, fifaNums[i]);
-    }
-  }
-  
-  return mapping;
-}

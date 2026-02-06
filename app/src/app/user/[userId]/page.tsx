@@ -9,6 +9,7 @@ import { calculateTotalPoints } from "@/lib/scoring";
 import { getTeamDisplayName } from "@/lib/match-scoring";
 import { BracketResolver } from "@/lib/bracket-resolver";
 import { getVenue } from "@/lib/venues";
+import { buildApiToFifaMapping, getMatchInfo } from "@/lib/tournament";
 import { notFound } from "next/navigation";
 import { Match, CalculatedStanding } from "@/types/football";
 
@@ -301,6 +302,22 @@ export default async function UserPredictionsPage({ params }: PageProps) {
     });
   });
 
+  // Build API match ID to FIFA match number mapping for venue lookup
+  const apiToFifaMap = buildApiToFifaMapping(matches);
+
+  // Helper to get venue by match - uses FIFA number for knockout, API ID for group stage
+  const getMatchVenue = (match: Match) => {
+    if (match.stage === "GROUP_STAGE") {
+      return getVenue(match.id);
+    }
+    const fifaNum = apiToFifaMap.get(match.id);
+    if (fifaNum) {
+      const matchInfo = getMatchInfo(fifaNum);
+      return matchInfo?.venue || null;
+    }
+    return getVenue(match.id); // Fallback
+  };
+
   // Calculate points
   const { totalPoints, breakdown } = calculateTotalPoints(
     matches,
@@ -385,7 +402,7 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                           const awayTeam =
                             resolved?.away ||
                             (match.awayTeam?.id ? match.awayTeam : null);
-                          const venue = getVenue(match.id);
+                          const venue = getMatchVenue(match);
 
                           // Determine winner highlight
                           const homeGoals = pred?.home_goals;
@@ -787,7 +804,7 @@ export default async function UserPredictionsPage({ params }: PageProps) {
                             const awayTeam =
                               resolved?.away ||
                               (match.awayTeam?.id ? match.awayTeam : null);
-                            const venue = getVenue(match.id);
+                            const venue = getMatchVenue(match);
 
                             const formattedDate = matchDate.toLocaleDateString(
                               "en-US",

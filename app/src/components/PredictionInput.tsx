@@ -4,6 +4,7 @@ import { Match, Team } from "@/types/football";
 import { Prediction } from "@/types/database";
 import { getVenue } from "@/lib/venues";
 import { getTeamDisplayName } from "@/lib/match-scoring";
+import { getMatchInfo } from "@/lib/tournament";
 
 interface PredictionInputProps {
   match: Match;
@@ -18,6 +19,7 @@ interface PredictionInputProps {
   showWinnerSelect?: boolean;
   resolvedHomeTeam?: Team | null;
   resolvedAwayTeam?: Team | null;
+  fifaMatchNumber?: number; // For knockout matches: FIFA number for venue lookup
 }
 
 export default function PredictionInput({
@@ -28,6 +30,7 @@ export default function PredictionInput({
   showWinnerSelect = false,
   resolvedHomeTeam,
   resolvedAwayTeam,
+  fifaMatchNumber,
 }: PredictionInputProps) {
   // Use resolved teams if provided, otherwise fall back to match teams
   const homeTeam = resolvedHomeTeam ?? match.homeTeam;
@@ -99,8 +102,9 @@ export default function PredictionInput({
     minute: "2-digit",
   });
 
-  // Get venue info
-  const venue = getVenue(match.id);
+  // Get venue info - use FIFA number for knockout matches, API ID for group stage
+  const matchInfo = fifaMatchNumber ? getMatchInfo(fifaMatchNumber) : null;
+  const venue = matchInfo ? matchInfo.venue : getVenue(match.id);
 
   return (
     <div

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import PredictionInput from "@/components/PredictionInput";
@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Match, CalculatedStanding, Team } from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { BracketResolver } from "@/lib/bracket-resolver";
+import { buildApiToFifaMapping } from "@/lib/tournament";
 import {
   Profile,
   Prediction,
@@ -399,6 +400,9 @@ export default function PredictionsPage() {
     knockoutStages.get(m.stage)!.push(m);
   });
 
+  // Build API match ID to FIFA match number mapping for knockout matches
+  const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
+
   // Use BracketResolver to resolve knockout teams based on predictions
   const resolver = new BracketResolver({
     matches,
@@ -506,6 +510,7 @@ export default function PredictionsPage() {
                     <div className="grid md:grid-cols-2 gap-4">
                       {stageMatches.map((match) => {
                         const resolved = resolvedKnockoutTeams.get(match.id);
+                        const fifaNumber = apiToFifaMap.get(match.id);
                         return (
                           <PredictionInput
                             key={match.id}
@@ -516,6 +521,7 @@ export default function PredictionsPage() {
                             showWinnerSelect={true}
                             resolvedHomeTeam={resolved?.home}
                             resolvedAwayTeam={resolved?.away}
+                            fifaMatchNumber={fifaNumber}
                           />
                         );
                       })}

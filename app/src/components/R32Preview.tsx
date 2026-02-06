@@ -1,10 +1,13 @@
 "use client";
 
 import { Match, CalculatedStanding, Team } from "@/types/football";
-import { getPositionLabel, getR32BracketByNumber } from "@/lib/r32-bracket";
-import { buildMatchNumberMapping } from "@/lib/bracket-resolver";
+import { 
+  buildApiToFifaMapping, 
+  getBracketSource, 
+  getMatchInfo,
+  getPositionLabel 
+} from "@/lib/tournament";
 import { getThirdPlaceTeamForMatch, getThirdPlacePoolForMatch } from "@/lib/third-place-ranking";
-import { getR32VenueByMatchNumber } from "@/lib/fifa-match-schedule";
 
 interface R32PreviewProps {
   matches: Match[];
@@ -18,7 +21,7 @@ export default function R32Preview({
   thirdPlaceQualifying,
 }: R32PreviewProps) {
   // Build mapping from API match IDs to FIFA match numbers
-  const matchNumberMapping = buildMatchNumberMapping(matches);
+  const matchNumberMapping = buildApiToFifaMapping(matches);
 
   // Get team from standings based on position
   // For 3rd place, only return team if they actually qualify
@@ -55,7 +58,7 @@ export default function R32Preview({
           const fifaMatchNumber = matchNumberMapping.get(match.id);
           if (!fifaMatchNumber) return null;
 
-          const bracketInfo = getR32BracketByNumber(fifaMatchNumber);
+          const bracketInfo = getBracketSource(fifaMatchNumber);
           if (!bracketInfo) return null;
 
           // Handle null positions (3rd place teams need dynamic resolution)
@@ -105,13 +108,11 @@ export default function R32Preview({
           }
 
           const matchDate = new Date(match.utcDate);
-          // Get venue from FIFA schedule based on match number (most accurate)
-          const fifaVenue = getR32VenueByMatchNumber(fifaMatchNumber);
-          const venueDisplay = match.venue 
-            ? match.venue  // API provides venue as string (if available)
-            : fifaVenue 
-              ? `${fifaVenue.stadium}, ${fifaVenue.city}`
-              : null;
+          // Get venue from tournament structure based on FIFA match number
+          const matchInfo = getMatchInfo(fifaMatchNumber);
+          const venueDisplay = matchInfo 
+            ? `${matchInfo.venue.stadium}, ${matchInfo.venue.city}`
+            : null;
 
           // Check if match involves a 3rd place team (null position means 3rd place)
           const isThirdPlace =

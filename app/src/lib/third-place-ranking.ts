@@ -7,6 +7,7 @@
 // 5. Drawing of lots (random at tie)
 
 import { CalculatedStanding } from "@/types/football";
+import { lookupThirdPlaceAssignment, THIRD_PLACE_MATCH_ORDER } from "./fifa-third-place-table";
 
 export interface ThirdPlaceTeam extends CalculatedStanding {
   group: string;
@@ -131,10 +132,9 @@ export function getThirdPlacePoolForMatch(matchNumber: number): string[] | null 
 }
 
 /**
- * Assign qualifying 3rd place teams to R32 matches based on their ranking.
- * Process matches in order of match number.
- * For each match, assign the highest-ranked qualifying 3rd place team
- * from that match's pool that hasn't been assigned yet.
+ * Assign qualifying 3rd place teams to R32 matches using the official FIFA lookup table.
+ * FIFA has predetermined all 495 possible combinations of which 8 groups qualify
+ * and which 3rd place team plays which group winner.
  * 
  * @param rankedQualifyingGroups Array of group letters in rank order (best first)
  * @returns Map of FIFA match number -> group letter of 3rd place team
@@ -143,24 +143,19 @@ export function assignThirdPlaceToR32(
   rankedQualifyingGroups: string[],
 ): Map<number, string> {
   const result = new Map<number, string>();
-  const assigned = new Set<string>();
-
+  
   // Convert qualifying groups to single letters (e.g., "GROUP_A" -> "A")
-  const rankedLetters = rankedQualifyingGroups.map((g) => g.replace("GROUP_", ""));
-
-  // Process matches in order of match number (deterministic)
-  const matchesInOrder = [...R32_THIRD_PLACE_MATCHES].sort(
-    (a, b) => a.matchNumber - b.matchNumber
-  );
-
-  for (const match of matchesInOrder) {
-    // Find the highest-ranked qualifying group from this pool that hasn't been assigned
-    for (const letter of rankedLetters) {
-      if (match.pool.includes(letter) && !assigned.has(letter)) {
-        result.set(match.matchNumber, letter);
-        assigned.add(letter);
-        break;
-      }
+  const qualifyingLetters = rankedQualifyingGroups.map((g) => g.replace("GROUP_", ""));
+  
+  if (qualifyingLetters.length !== 8) {
+    return result; // Can't determine assignments with incomplete data
+  }
+  
+  // Use the official FIFA lookup table for each R32 match
+  for (const matchNumber of THIRD_PLACE_MATCH_ORDER) {
+    const assignedGroup = lookupThirdPlaceAssignment(qualifyingLetters, matchNumber);
+    if (assignedGroup) {
+      result.set(matchNumber, assignedGroup);
     }
   }
 

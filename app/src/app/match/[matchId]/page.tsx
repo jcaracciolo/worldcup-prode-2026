@@ -1,41 +1,126 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { useEffect, useState, useMemo, useRef } from "react";
+import Link from "next/link";
 import { useMatches } from "@/contexts/MatchContext";
 import { useUser } from "@/contexts/UserContext";
-import { useUserPredictions } from "@/contexts/PredictionsContext";
+import { usePredictionsContext } from "@/contexts/PredictionsContext";
 import { getMatchInfo } from "@/lib/tournament";
 import { buildApiToFifaMapping } from "@/lib/api-client";
 import {
   calculateGroupStagePoints,
   calculateKnockoutPoints,
+  getMaxPossiblePoints,
 } from "@/lib/scoring";
 import { isGroupStageMatch } from "@/lib/football-api";
 import { format } from "date-fns";
+import { Profile } from "@/types/database";
+import { FifaMatchId } from "@/types/football";
+
+interface UserMatchPrediction {
+  userId: string;
+  displayName: string;
+  homeGoals: number | null;
+  awayGoals: number | null;
+  winnerId: number | null;
+  pointsEarned: number;
+  maxPoints: number;
+}
 
 export default function MatchDetailPage() {
   const params = useParams();
   const matchId = params.matchId as string;
-  const { user: profile } = useUser();
+  const { user: profile, getAllProfiles } = useUser();
+  const { getAllPredictions } = usePredictionsContext();
 
   const { matches, loading: matchesLoading } = useMatches();
 
-  // Use cached predictions from context
-  const { predictions, loading: predictionsLoading } = useUserPredictions(
-    profile?.id || null,
-  );
+  // All users' predictions for this match
+  const [allUserPredictions, setAllUserPredictions] = useState<UserMatchPrediction[]>([]);
+  const [loadingAllPredictions, setLoadingAllPredictions] = useState(true);
+  const hasLoadedOnce = useRef(false);
 
   // Find the specific match first
   const match = matches.find((m) => m.id === parseInt(matchId));
 
   // Build FIFA number mapping
-  const apiToFifaMap = buildApiToFifaMapping(matches);
+  const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
   const fifaNumber = match ? apiToFifaMap.get(match.id) : undefined;
 
-  // Get prediction for this match using FIFA number
-  const prediction = fifaNumber ? predictions.get(fifaNumber) || null : null;
+  // Load all predictions
+  useEffect(() => {
+    async function loadAllPredictions() {
+      if (!match || !fifaNumber) return;
 
-  const loading = matchesLoading || (profile && predictionsLoading);
+      // Only show loading on initial load, not on refresh
+      if (!hasLoadedOnce.current) {
+        setLoadingAllPredictions(true);
+      }
+      try {
+        const [profiles, allPredictionsMap] = await Promise.all([
+          getAllProfiles(),
+          getAllPredictions(),
+        ]);
+
+        const isFinished = match.status === "FINISHED";
+        const maxPoints = getMaxPossiblePoints(match);
+
+        const userPredictions: UserMatchPrediction[] = [];
+
+        profiles.forEach((profileData: Profile) => {
+          const userData = allPredictionsMap.get(profileData.id);
+          if (!userData) return;
+
+          // Find prediction for this match
+          const pred = userData.predictions.find(
+            (p) => (p.match_id as FifaMatchId) === fifaNumber
+          );
+
+          if (!pred) return;
+
+          // Calculate points if match is finished
+          let pointsEarned = 0;
+          if (isFinished && pred.home_goals !== null && pred.away_goals !== null) {
+            const breakdown = isGroupStageMatch(match)
+              ? calculateGroupStagePoints(match, pred)
+              : calculateKnockoutPoints(match, pred);
+            pointsEarned = breakdown.reduce((sum, p) => sum + p.points, 0);
+          }
+
+          userPredictions.push({
+            userId: profileData.id,
+            displayName: profileData.display_name,
+            homeGoals: pred.home_goals,
+            awayGoals: pred.away_goals,
+            winnerId: pred.winner_id,
+            pointsEarned,
+            maxPoints,
+          });
+        });
+
+        // Sort: current user first, then by points (highest first), then by name
+        userPredictions.sort((a, b) => {
+          // Current user always first
+          if (a.userId === profile?.id) return -1;
+          if (b.userId === profile?.id) return 1;
+          // Then sort by points
+          if (b.pointsEarned !== a.pointsEarned) return b.pointsEarned - a.pointsEarned;
+          return a.displayName.localeCompare(b.displayName);
+        });
+
+        setAllUserPredictions(userPredictions);
+        hasLoadedOnce.current = true;
+      } catch (error) {
+        console.error("Failed to load all predictions:", error);
+      }
+      setLoadingAllPredictions(false);
+    }
+
+    loadAllPredictions();
+  }, [match, fifaNumber, getAllProfiles, getAllPredictions, profile?.id]);
+
+  const loading = matchesLoading;
 
   if (loading) {
     return (
@@ -88,257 +173,206 @@ export default function MatchDetailPage() {
   const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
   const isFinished = match.status === "FINISHED";
   const matchDate = new Date(match.utcDate);
-
-  // Calculate points for this match using centralized scoring
-  let pointsEarned = 0;
-  const pointsBreakdown: string[] = [];
-
-  if (isFinished && prediction) {
-    // Use centralized scoring functions
-    const breakdown = isGroupStageMatch(match)
-      ? calculateGroupStagePoints(match, prediction)
-      : calculateKnockoutPoints(match, prediction);
-
-    pointsEarned = breakdown.reduce((sum, p) => sum + p.points, 0);
-
-    // Build breakdown descriptions
-    breakdown.forEach((p) => {
-      pointsBreakdown.push(`+${p.points} ${p.description}`);
-    });
-  }
+  const isGroupStage = match.stage === "GROUP_STAGE";
 
   // Determine winner
   const homeGoals = match.score.fullTime.home;
   const awayGoals = match.score.fullTime.away;
-  const homeWon =
-    isFinished &&
-    homeGoals !== null &&
-    awayGoals !== null &&
-    homeGoals > awayGoals;
-  const awayWon =
-    isFinished &&
-    homeGoals !== null &&
-    awayGoals !== null &&
-    awayGoals > homeGoals;
-  const isDraw =
-    isFinished &&
-    homeGoals !== null &&
-    awayGoals !== null &&
-    homeGoals === awayGoals;
-  const isGroupStage = match.stage === "GROUP_STAGE";
+  const homeWon = isFinished && homeGoals !== null && awayGoals !== null && homeGoals > awayGoals;
+  const awayWon = isFinished && homeGoals !== null && awayGoals !== null && awayGoals > homeGoals;
+  const isDraw = isFinished && homeGoals !== null && awayGoals !== null && homeGoals === awayGoals;
 
   // Highlight calculation for actual result
   const homeHighlight = homeWon || (isDraw && isGroupStage);
   const awayHighlight = awayWon || (isDraw && isGroupStage);
 
-  // Prediction winner calculation
-  const predHomeGoals = prediction?.home_goals ?? null;
-  const predAwayGoals = prediction?.away_goals ?? null;
-  const predHasScore = predHomeGoals !== null && predAwayGoals !== null;
-  const predHomeWins = predHasScore && predHomeGoals > predAwayGoals;
-  const predAwayWins = predHasScore && predAwayGoals > predHomeGoals;
-  const predIsDraw = predHasScore && predHomeGoals === predAwayGoals;
-  // For knockout ties, check winner_id to determine winner
-  const isKnockout = !isGroupStage;
-  const predHomeHighlight =
-    predHomeWins ||
-    (predIsDraw && isGroupStage) ||
-    (predIsDraw && isKnockout && prediction?.winner_id === match.homeTeam.id);
-  const predAwayHighlight =
-    predAwayWins ||
-    (predIsDraw && isGroupStage) ||
-    (predIsDraw && isKnockout && prediction?.winner_id === match.awayTeam.id);
+  // Prediction highlighting helper
+  const getPredictionHighlight = (pred: UserMatchPrediction) => {
+    const predHasScore = pred.homeGoals !== null && pred.awayGoals !== null;
+    if (!predHasScore) return { home: false, away: false };
+
+    const predHomeWins = pred.homeGoals! > pred.awayGoals!;
+    const predAwayWins = pred.awayGoals! > pred.homeGoals!;
+    const predIsDraw = pred.homeGoals === pred.awayGoals;
+    const isKnockout = !isGroupStage;
+
+    const homeHighlight =
+      predHomeWins ||
+      (predIsDraw && isGroupStage) ||
+      (predIsDraw && isKnockout && pred.winnerId === match.homeTeam.id);
+    const awayHighlight =
+      predAwayWins ||
+      (predIsDraw && isGroupStage) ||
+      (predIsDraw && isKnockout && pred.winnerId === match.awayTeam.id);
+
+    return { home: homeHighlight, away: awayHighlight };
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          {/* Match Header */}
-          <div className="glass-card overflow-hidden">
-            <div className="bg-gradient-to-r from-emerald-600 to-green-600 text-white p-8">
-              <div className="flex items-center justify-center gap-8">
-                {/* Home Team */}
-                <div
-                  className={`text-center flex-1 p-3 rounded-xl ${homeHighlight ? "bg-amber-500/80" : ""} ${awayWon ? "opacity-50" : ""}`}
-                >
-                  {match.homeTeam.crest ? (
-                    <img
-                      src={match.homeTeam.crest}
-                      alt={match.homeTeam.name}
-                      className="w-20 h-20 mx-auto object-contain mb-3 drop-shadow-lg"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-3">
-                      <span className="text-2xl font-bold">
-                        {match.homeTeam.tla}
-                      </span>
-                    </div>
-                  )}
-                  <div
-                    className={`font-bold text-lg ${homeHighlight ? "text-slate-900" : ""}`}
-                  >
-                    {match.homeTeam.name}
-                  </div>
-                </div>
+      <main className="flex-1 container mx-auto px-4 py-4 sm:py-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Match Header Card */}
+          <div className="glass-card overflow-hidden mb-6">
+            {/* Stage Badge */}
+            <div className="bg-gradient-to-r from-slate-700/80 to-slate-600/80 px-4 py-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🏆</span>
+                <span className="text-white font-semibold">{stageDisplay}</span>
+                {fifaNumber && (
+                  <span className="text-xs px-2 py-0.5 bg-blue-500/30 rounded text-blue-300 font-mono">
+                    #{fifaNumber}
+                  </span>
+                )}
+              </div>
+              {isLive && (
+                <span className="px-3 py-1 bg-red-500 rounded-full text-xs font-bold text-white live-pulse">
+                  LIVE
+                </span>
+              )}
+              {isFinished && (
+                <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-semibold text-white/80">
+                  FINAL
+                </span>
+              )}
+            </div>
 
-                {/* Score */}
-                <div className="text-center min-w-[140px]">
-                  {isFinished || isLive ? (
-                    <div className="text-5xl font-bold">
-                      {match.score.fullTime.home} - {match.score.fullTime.away}
-                    </div>
-                  ) : (
-                    <div className="text-3xl font-light text-white/60">vs</div>
-                  )}
-                  <div className="mt-3">
-                    {isLive ? (
-                      <span className="px-4 py-1.5 bg-red-500 rounded-full text-sm font-semibold live-pulse">
-                        LIVE
-                      </span>
-                    ) : isFinished ? (
-                      <span className="px-4 py-1.5 bg-white/20 rounded-full text-sm font-semibold">
-                        FULL TIME
-                      </span>
+            {/* Teams, Score, and Predictions */}
+            <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-4 sm:p-6">
+              <div className="flex flex-col lg:flex-row lg:items-stretch gap-4 lg:gap-6">
+                {/* Left: Teams and Score */}
+                <div className="flex items-center justify-between gap-2 sm:gap-4 flex-1">
+                  {/* Home Team */}
+                  <div className={`text-center flex-1 p-2 sm:p-4 rounded-xl transition-all ${homeHighlight ? "bg-amber-500/80" : ""} ${awayWon ? "opacity-60" : ""}`}>
+                    {match.homeTeam.crest ? (
+                      <img
+                        src={match.homeTeam.crest}
+                        alt={match.homeTeam.name}
+                        className="w-12 h-12 sm:w-16 sm:h-16 mx-auto object-contain mb-2 drop-shadow-lg"
+                      />
                     ) : (
-                      <span className="text-emerald-200 text-xl font-bold">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-2">
+                        <span className="text-lg sm:text-xl font-bold">{match.homeTeam.tla}</span>
+                      </div>
+                    )}
+                    <div className={`font-bold text-sm ${homeHighlight ? "text-slate-900" : "text-white"}`}>
+                      <span className="hidden sm:inline">{match.homeTeam.name}</span>
+                      <span className="sm:hidden">{match.homeTeam.tla}</span>
+                    </div>
+                  </div>
+
+                  {/* Score */}
+                  <div className="text-center min-w-[80px] sm:min-w-[120px]">
+                    {isFinished || isLive ? (
+                      <div className="text-3xl sm:text-4xl font-bold text-white">
+                        {match.score.fullTime.home} - {match.score.fullTime.away}
+                      </div>
+                    ) : (
+                      <div className="text-xl sm:text-2xl font-light text-white/60">vs</div>
+                    )}
+                    {!isFinished && !isLive && (
+                      <div className="mt-1 text-emerald-200 text-base sm:text-lg font-bold">
                         {format(matchDate, "HH:mm")}
-                      </span>
+                      </div>
                     )}
                   </div>
+
+                  {/* Away Team */}
+                  <div className={`text-center flex-1 p-2 sm:p-4 rounded-xl transition-all ${awayHighlight ? "bg-amber-500/80" : ""} ${homeWon ? "opacity-60" : ""}`}>
+                    {match.awayTeam.crest ? (
+                      <img
+                        src={match.awayTeam.crest}
+                        alt={match.awayTeam.name}
+                        className="w-12 h-12 sm:w-16 sm:h-16 mx-auto object-contain mb-2 drop-shadow-lg"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-2">
+                        <span className="text-lg sm:text-xl font-bold">{match.awayTeam.tla}</span>
+                      </div>
+                    )}
+                    <div className={`font-bold text-sm ${awayHighlight ? "text-slate-900" : "text-white"}`}>
+                      <span className="hidden sm:inline">{match.awayTeam.name}</span>
+                      <span className="sm:hidden">{match.awayTeam.tla}</span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Away Team */}
-                <div
-                  className={`text-center flex-1 p-3 rounded-xl ${awayHighlight ? "bg-amber-500/80" : ""} ${homeWon ? "opacity-50" : ""}`}
-                >
-                  {match.awayTeam.crest ? (
-                    <img
-                      src={match.awayTeam.crest}
-                      alt={match.awayTeam.name}
-                      className="w-20 h-20 mx-auto object-contain mb-3 drop-shadow-lg"
-                    />
+                {/* Right: Predictions Panel */}
+                <div className="lg:w-56 xl:w-64 bg-slate-900/70 rounded-xl p-3 backdrop-blur-sm border border-white/10">
+                  <div className="text-xs font-semibold text-white/80 mb-2 flex items-center gap-1.5">
+                    <span>👥</span>
+                    <span>Predictions</span>
+                    {allUserPredictions.length > 0 && (
+                      <span className="text-white/50">({allUserPredictions.length})</span>
+                    )}
+                  </div>
+                  
+                  {loadingAllPredictions ? (
+                    <div className="text-xs text-white/50 text-center py-2">Loading...</div>
+                  ) : allUserPredictions.length === 0 ? (
+                    <div className="text-xs text-white/50 text-center py-2">No predictions yet</div>
                   ) : (
-                    <div className="w-20 h-20 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-3">
-                      <span className="text-2xl font-bold">
-                        {match.awayTeam.tla}
-                      </span>
+                    <div className="space-y-1 max-h-[140px] overflow-y-auto">
+                      {allUserPredictions.map((pred) => {
+                        const highlight = getPredictionHighlight(pred);
+                        const isCurrentUser = profile?.id === pred.userId;
+
+                        return (
+                          <Link
+                            key={pred.userId}
+                            href={`/user/${pred.userId}`}
+                            className={`flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg text-xs transition-all hover:bg-white/10 ${isCurrentUser ? "bg-sky-500/20 border border-sky-400/40" : ""}`}
+                          >
+                            <span className={`truncate flex-1 ${isCurrentUser ? "text-sky-200 font-medium" : "text-white/90"}`}>
+                              {pred.displayName}
+                            </span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className={`px-1 rounded ${highlight.home ? "bg-amber-400 text-slate-900 font-bold" : "text-white/70"}`}>
+                                {pred.homeGoals ?? "-"}
+                              </span>
+                              <span className="text-white/40">-</span>
+                              <span className={`px-1 rounded ${highlight.away ? "bg-amber-400 text-slate-900 font-bold" : "text-white/70"}`}>
+                                {pred.awayGoals ?? "-"}
+                              </span>
+                              {isFinished && (
+                                <span className={`ml-1 font-bold ${pred.pointsEarned > 0 ? "text-sky-300" : "text-white/30"}`}>
+                                  +{pred.pointsEarned}
+                                </span>
+                              )}
+                            </div>
+                          </Link>
+                        );
+                      })}
                     </div>
                   )}
-                  <div
-                    className={`font-bold text-lg ${awayHighlight ? "text-slate-900" : ""}`}
-                  >
-                    {match.awayTeam.name}
-                  </div>
+                  
+                  {!profile && allUserPredictions.length > 0 && (
+                    <Link href="/login" className="block text-center text-xs text-sky-300 hover:text-sky-200 mt-2">
+                      Log in to highlight yours
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Match Info */}
-            <div className="p-6 space-y-4 bg-white/5">
+            {/* Match Details */}
+            <div className="p-4 sm:p-6 bg-white/5 space-y-3 text-sm sm:text-base">
               <div className="flex items-center gap-3 text-white/70">
-                <span className="text-xl">📅</span>
-                <span>{format(matchDate, "EEEE, MMMM d, yyyy - h:mm a")}</span>
+                <span className="text-lg">📅</span>
+                <span className="hidden sm:inline">{format(matchDate, "EEEE, MMMM d, yyyy - h:mm a")}</span>
+                <span className="sm:hidden">{format(matchDate, "EEE, MMM d - h:mm a")}</span>
               </div>
 
               {venueDisplay && (
                 <div className="flex items-center gap-3 text-white/70">
-                  <span className="text-xl">📍</span>
+                  <span className="text-lg">📍</span>
                   <span>{venueDisplay}</span>
                 </div>
               )}
-
-              <div className="flex items-center gap-3 text-white/70">
-                <span className="text-xl">🏆</span>
-                <span>
-                  {stageDisplay} - Matchday {match.matchday}
-                </span>
-              </div>
             </div>
-
-            {/* User's Prediction & Points */}
-            {profile && prediction && (
-              <div className="border-t border-white/10 p-6">
-                <h3 className="font-bold text-lg mb-4 text-white">
-                  Your Prediction
-                </h3>
-
-                <div className="bg-white/10 rounded-xl p-5">
-                  <div className="flex items-center justify-center gap-4 text-xl font-bold mb-4 text-white">
-                    <span
-                      className={`px-3 py-1 rounded-lg ${predHomeHighlight ? "bg-amber-500/80 text-slate-900" : ""}`}
-                    >
-                      {match.homeTeam.tla}
-                    </span>
-                    <span className="px-5 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-xl">
-                      {prediction.home_goals ?? "-"} -{" "}
-                      {prediction.away_goals ?? "-"}
-                    </span>
-                    <span
-                      className={`px-3 py-1 rounded-lg ${predAwayHighlight ? "bg-amber-500/80 text-slate-900" : ""}`}
-                    >
-                      {match.awayTeam.tla}
-                    </span>
-                  </div>
-
-                  {isFinished && (
-                    <div className="border-t border-white/10 pt-4 mt-4">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="font-medium text-white/70">
-                          Points Earned
-                        </span>
-                        <span className="text-2xl font-bold text-emerald-400">
-                          {pointsEarned} / 4
-                        </span>
-                      </div>
-                      {pointsBreakdown.length > 0 ? (
-                        <ul className="text-sm space-y-2">
-                          {pointsBreakdown.map((item, i) => (
-                            <li
-                              key={i}
-                              className="text-emerald-400 flex items-center gap-2"
-                            >
-                              <span className="w-5 h-5 bg-emerald-500/20 rounded-full flex items-center justify-center text-xs">
-                                ✓
-                              </span>
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-sm text-white/40">
-                          No points earned from this match
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {!profile && (
-              <div className="border-t border-white/10 p-6 text-center">
-                <a
-                  href="/login"
-                  className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
-                >
-                  Log in
-                </a>{" "}
-                <span className="text-white/50">
-                  to see your prediction for this match
-                </span>
-              </div>
-            )}
           </div>
         </div>
       </main>
-
-      <footer className="border-t border-white/10 mt-auto">
-        <div className="container mx-auto px-4 py-6 text-center">
-          <p className="text-white/40 text-sm">
-            WorldCupProde - FIFA World Cup 2026 Predictions
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

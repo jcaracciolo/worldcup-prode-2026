@@ -85,8 +85,9 @@ export default function PredictionsPage() {
     }
   }, [userLoading, profile, router]);
 
-  // Derived loading state - only show loading if context is still loading
-  const loading = userLoading || predictionsLoading;
+  // Derived loading state - only show loading on initial load when we have no data
+  const loading = userLoading || (predictionsLoading && predictions.size === 0);
+  const showMatchesLoading = matchesLoading && matches.length === 0;
 
   // Build API match ID to FIFA match number mapping
   const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
@@ -363,7 +364,7 @@ export default function PredictionsPage() {
     setPredictions(newPredictions);
   };
 
-  if (loading || matchesLoading) {
+  if (loading || showMatchesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-xl text-white/60">Loading...</div>

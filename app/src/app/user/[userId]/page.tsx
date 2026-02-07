@@ -83,7 +83,8 @@ export default function UserPredictionsPage() {
   // Use predictions from context
   const predictions: Prediction[] = Array.from(cachedPredictions.values());
   const groupOverrides = cachedOverrides;
-  const isLoading = loading || predictionsLoading;
+  // Only show loading on initial load when we have no data
+  const isLoading = loading || (predictionsLoading && predictions.length === 0);
 
   // Stage lock status from time context (simulation-transparent)
   const { groupStageLocked, knockoutStageOpen, knockoutStageLocked } =
@@ -185,7 +186,7 @@ export default function UserPredictionsPage() {
   const showKnockoutPredictions =
     isOwnPredictions || knockoutStageLocked || isSimulated;
 
-  if (isLoading || matchesLoading) {
+  if (isLoading || (matchesLoading && matches.length === 0)) {
     return (
       <div className="min-h-screen">
         <main className="container mx-auto px-4 py-8">

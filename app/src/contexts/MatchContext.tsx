@@ -246,9 +246,8 @@ export function MatchProvider({
     }
   }, []);
 
-  // Manual refresh function
+  // Manual refresh function (doesn't show loading to avoid flickering)
   const refresh = useCallback(async () => {
-    setLoading(true);
     await fetchMatches();
   }, [fetchMatches]);
 

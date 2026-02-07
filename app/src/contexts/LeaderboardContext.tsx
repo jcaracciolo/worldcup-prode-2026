@@ -7,6 +7,7 @@ import {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
   ReactNode,
 } from "react";
 import { useTime } from "@/contexts/TimeContext";
@@ -51,11 +52,15 @@ export function LeaderboardProvider({ children }: LeaderboardProviderProps) {
   const { getAllPredictions } = usePredictionsContext();
   const [scores, setScores] = useState<UserScore[]>([]);
   const [loading, setLoading] = useState(true);
+  const hasLoadedOnce = useRef(false);
 
   // Calculate leaderboard locally from matches and predictions
   const calculateLeaderboard = useCallback(async () => {
     try {
-      setLoading(true);
+      // Only show loading on initial load, not on recalculation
+      if (!hasLoadedOnce.current) {
+        setLoading(true);
+      }
 
       // Get all profiles and predictions
       const [profiles, allPredictions] = await Promise.all([
@@ -260,6 +265,7 @@ export function LeaderboardProvider({ children }: LeaderboardProviderProps) {
       });
 
       setScores(calculatedScores);
+      hasLoadedOnce.current = true;
     } catch (err) {
       console.error("Failed to calculate local leaderboard:", err);
     } finally {

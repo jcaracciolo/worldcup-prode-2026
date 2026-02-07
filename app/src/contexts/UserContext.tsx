@@ -44,8 +44,11 @@ export function UserProvider({ children }: UserProviderProps) {
   const [allProfiles, setAllProfiles] = useState<Profile[] | null>(null);
   const supabase = createClient();
 
-  const fetchUser = async () => {
-    setLoading(true);
+  const fetchUser = async (isRefresh = false) => {
+    // Only show loading on initial fetch, not on refresh
+    if (!isRefresh) {
+      setLoading(true);
+    }
     try {
       const {
         data: { user: authUser },

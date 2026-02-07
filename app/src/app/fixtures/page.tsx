@@ -180,7 +180,8 @@ export default function FixturesPage() {
   // Build API match ID to FIFA match number mapping
   const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
 
-  if (matchesLoading) {
+  // Only show loading on initial load when we have no data
+  if (matchesLoading && matches.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-xl text-white/60">Loading fixtures...</div>

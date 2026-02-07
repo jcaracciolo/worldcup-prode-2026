@@ -45,15 +45,15 @@ interface LeaderboardProviderProps {
 }
 
 export function LeaderboardProvider({ children }: LeaderboardProviderProps) {
-  const { tick, stageLockStatus, isSimulated } = useTime();
+  const { tick, stageLockStatus } = useTime();
   const { matches } = useMatches();
   const { getAllProfiles } = useUser();
   const { getAllPredictions } = usePredictionsContext();
   const [scores, setScores] = useState<UserScore[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Calculate leaderboard locally (used in simulation mode)
-  const calculateLocalLeaderboard = useCallback(async () => {
+  // Calculate leaderboard locally from matches and predictions
+  const calculateLeaderboard = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -267,32 +267,11 @@ export function LeaderboardProvider({ children }: LeaderboardProviderProps) {
     }
   }, [matches, stageLockStatus, getAllProfiles, getAllPredictions]);
 
-  // Fetch leaderboard from API (normal mode)
-  const fetchLeaderboard = useCallback(async () => {
-    try {
-      const res = await fetch("/api/leaderboard");
-      const data = await res.json();
-      if (data.scores) {
-        setScores(data.scores);
-      }
-    } catch (err) {
-      console.error("Failed to fetch leaderboard:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Use local calculation in simulation mode, API in normal mode
+  // Calculate leaderboard on mount and when matches/tick changes
   useEffect(() => {
-    if (isSimulated) {
-      calculateLocalLeaderboard();
-    } else {
-      fetchLeaderboard();
-    }
+    calculateLeaderboard();
   }, [
-    isSimulated,
-    calculateLocalLeaderboard,
-    fetchLeaderboard,
+    calculateLeaderboard,
     tick,
     stageLockStatus.groupStageLocked,
     stageLockStatus.knockoutStageLocked,
@@ -315,14 +294,10 @@ export function LeaderboardProvider({ children }: LeaderboardProviderProps) {
     [scores],
   );
 
-  // Unified refresh function
+  // Manual refresh function
   const refresh = useCallback(async () => {
-    if (isSimulated) {
-      await calculateLocalLeaderboard();
-    } else {
-      await fetchLeaderboard();
-    }
-  }, [isSimulated, calculateLocalLeaderboard, fetchLeaderboard]);
+    await calculateLeaderboard();
+  }, [calculateLeaderboard]);
 
   const value: LeaderboardContextValue = useMemo(
     () => ({

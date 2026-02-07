@@ -35,9 +35,9 @@ export default function PredictionsPage() {
   const [predictions, setPredictions] = useState<Map<FifaMatchId, Prediction>>(
     () => new Map(cachedPredictions),
   );
-  const [overrides, setOverrides] = useState<GroupStandingsOverride[]>(
-    () => [...cachedOverrides],
-  );
+  const [overrides, setOverrides] = useState<GroupStandingsOverride[]>(() => [
+    ...cachedOverrides,
+  ]);
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -122,7 +122,7 @@ export default function PredictionsPage() {
       groupMatches.forEach((match) => {
         const fifaNumber = apiToFifaMap.get(match.id);
         if (!fifaNumber) return;
-        
+
         const prediction = predictions.get(fifaNumber);
         if (
           !prediction ||
@@ -271,7 +271,7 @@ export default function PredictionsPage() {
     matches.forEach((match) => {
       const fifaNumber = apiToFifaMap.get(match.id);
       if (!fifaNumber) return;
-      
+
       const isGroupStage = match.stage === "GROUP_STAGE";
       if (isGroupStage && !groupLocked) {
         newPredictions.delete(fifaNumber);
@@ -337,8 +337,12 @@ export default function PredictionsPage() {
       <main className="flex-1 container mx-auto px-4 py-4 sm:py-8">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white">My Predictions</h1>
-            <p className="text-white/50 mt-1 text-sm sm:text-base">Set your scores for each match</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">
+              My Predictions
+            </h1>
+            <p className="text-white/50 mt-1 text-sm sm:text-base">
+              Set your scores for each match
+            </p>
             <div className="mt-2">
               <GlobalLiveIndicator
                 hasLiveMatches={hasLiveMatches}

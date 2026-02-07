@@ -119,14 +119,46 @@ export interface R16BracketSlot {
 }
 
 export const r16Bracket: R16BracketSlot[] = [
-  { matchNumber: 89 as FifaMatchId, homeFromR32: 74 as FifaMatchId, awayFromR32: 77 as FifaMatchId },
-  { matchNumber: 90 as FifaMatchId, homeFromR32: 73 as FifaMatchId, awayFromR32: 75 as FifaMatchId },
-  { matchNumber: 91 as FifaMatchId, homeFromR32: 76 as FifaMatchId, awayFromR32: 78 as FifaMatchId },
-  { matchNumber: 92 as FifaMatchId, homeFromR32: 79 as FifaMatchId, awayFromR32: 80 as FifaMatchId },
-  { matchNumber: 93 as FifaMatchId, homeFromR32: 83 as FifaMatchId, awayFromR32: 84 as FifaMatchId },
-  { matchNumber: 94 as FifaMatchId, homeFromR32: 81 as FifaMatchId, awayFromR32: 82 as FifaMatchId },
-  { matchNumber: 95 as FifaMatchId, homeFromR32: 86 as FifaMatchId, awayFromR32: 88 as FifaMatchId },
-  { matchNumber: 96 as FifaMatchId, homeFromR32: 85 as FifaMatchId, awayFromR32: 87 as FifaMatchId },
+  {
+    matchNumber: 89 as FifaMatchId,
+    homeFromR32: 74 as FifaMatchId,
+    awayFromR32: 77 as FifaMatchId,
+  },
+  {
+    matchNumber: 90 as FifaMatchId,
+    homeFromR32: 73 as FifaMatchId,
+    awayFromR32: 75 as FifaMatchId,
+  },
+  {
+    matchNumber: 91 as FifaMatchId,
+    homeFromR32: 76 as FifaMatchId,
+    awayFromR32: 78 as FifaMatchId,
+  },
+  {
+    matchNumber: 92 as FifaMatchId,
+    homeFromR32: 79 as FifaMatchId,
+    awayFromR32: 80 as FifaMatchId,
+  },
+  {
+    matchNumber: 93 as FifaMatchId,
+    homeFromR32: 83 as FifaMatchId,
+    awayFromR32: 84 as FifaMatchId,
+  },
+  {
+    matchNumber: 94 as FifaMatchId,
+    homeFromR32: 81 as FifaMatchId,
+    awayFromR32: 82 as FifaMatchId,
+  },
+  {
+    matchNumber: 95 as FifaMatchId,
+    homeFromR32: 86 as FifaMatchId,
+    awayFromR32: 88 as FifaMatchId,
+  },
+  {
+    matchNumber: 96 as FifaMatchId,
+    homeFromR32: 85 as FifaMatchId,
+    awayFromR32: 87 as FifaMatchId,
+  },
 ];
 
 // QF Bracket - which R16 matches feed into each QF match
@@ -137,10 +169,26 @@ export interface QFBracketSlot {
 }
 
 export const qfBracket: QFBracketSlot[] = [
-  { matchNumber: 97 as FifaMatchId, homeFromR16: 89 as FifaMatchId, awayFromR16: 90 as FifaMatchId },
-  { matchNumber: 98 as FifaMatchId, homeFromR16: 93 as FifaMatchId, awayFromR16: 94 as FifaMatchId },
-  { matchNumber: 99 as FifaMatchId, homeFromR16: 91 as FifaMatchId, awayFromR16: 92 as FifaMatchId },
-  { matchNumber: 100 as FifaMatchId, homeFromR16: 95 as FifaMatchId, awayFromR16: 96 as FifaMatchId },
+  {
+    matchNumber: 97 as FifaMatchId,
+    homeFromR16: 89 as FifaMatchId,
+    awayFromR16: 90 as FifaMatchId,
+  },
+  {
+    matchNumber: 98 as FifaMatchId,
+    homeFromR16: 93 as FifaMatchId,
+    awayFromR16: 94 as FifaMatchId,
+  },
+  {
+    matchNumber: 99 as FifaMatchId,
+    homeFromR16: 91 as FifaMatchId,
+    awayFromR16: 92 as FifaMatchId,
+  },
+  {
+    matchNumber: 100 as FifaMatchId,
+    homeFromR16: 95 as FifaMatchId,
+    awayFromR16: 96 as FifaMatchId,
+  },
 ];
 
 // SF Bracket - which QF matches feed into each SF match
@@ -151,8 +199,16 @@ export interface SFBracketSlot {
 }
 
 export const sfBracket: SFBracketSlot[] = [
-  { matchNumber: 101 as FifaMatchId, homeFromQF: 97 as FifaMatchId, awayFromQF: 98 as FifaMatchId },
-  { matchNumber: 102 as FifaMatchId, homeFromQF: 99 as FifaMatchId, awayFromQF: 100 as FifaMatchId },
+  {
+    matchNumber: 101 as FifaMatchId,
+    homeFromQF: 97 as FifaMatchId,
+    awayFromQF: 98 as FifaMatchId,
+  },
+  {
+    matchNumber: 102 as FifaMatchId,
+    homeFromQF: 99 as FifaMatchId,
+    awayFromQF: 100 as FifaMatchId,
+  },
 ];
 
 // Third place: Match 103 = Loser 101 vs Loser 102

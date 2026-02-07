@@ -19,7 +19,9 @@ export default function Leaderboard({
           <span className="text-xl sm:text-2xl">🏆</span>
         </div>
         <div>
-          <h2 className="text-lg sm:text-xl font-bold text-white">Leaderboard</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-white">
+            Leaderboard
+          </h2>
           <p className="text-emerald-100 text-xs sm:text-sm">Top predictions</p>
         </div>
       </div>
@@ -28,15 +30,17 @@ export default function Leaderboard({
         {scores.length === 0 ? (
           <div className="p-6 sm:p-8 text-center">
             <div className="text-3xl sm:text-4xl mb-3">📊</div>
-            <p className="text-white/60 text-sm sm:text-base">No predictions yet</p>
+            <p className="text-white/60 text-sm sm:text-base">
+              No predictions yet
+            </p>
             <p className="text-white/40 text-xs sm:text-sm mt-1">
               Be the first to make predictions!
             </p>
           </div>
         ) : (
-          scores.map((score, index) => {
+          scores.map((score) => {
             const isCurrentUser = score.userId === currentUserId;
-            const position = index + 1;
+            const position = score.position;
 
             const getBadge = () => {
               if (position === 1)
@@ -101,16 +105,20 @@ export default function Leaderboard({
                 </div>
                 <div className="text-right shrink-0">
                   <div className="flex items-baseline justify-end gap-1">
-                    <div className="text-xl sm:text-2xl font-bold text-white">
-                      {score.totalPoints}
-                    </div>
                     {score.livePoints > 0 && (
-                      <span className="text-xs sm:text-sm font-bold text-red-400 animate-pulse">
+                      <span className="text-xs sm:text-sm font-bold text-red-400 live-pulse">
                         +{score.livePoints}
                       </span>
                     )}
+                    <div
+                      className={`text-xl sm:text-2xl font-bold ${score.livePoints > 0 ? "text-red-400 live-pulse" : "text-white"}`}
+                    >
+                      {score.totalPoints}
+                    </div>
                   </div>
-                  <div className="text-[10px] sm:text-xs text-white/40">points</div>
+                  <div className="text-[10px] sm:text-xs text-white/40">
+                    points
+                  </div>
                 </div>
               </Link>
             );

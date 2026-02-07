@@ -41,7 +41,10 @@ export default function UserKnockoutSection({
 }: UserKnockoutSectionProps) {
   // Predictions from DB have match_id as number, but they ARE FIFA match IDs
   const predictionMap = useMemo(
-    () => new Map<FifaMatchId, Prediction>(predictions.map((p) => [p.match_id as FifaMatchId, p])),
+    () =>
+      new Map<FifaMatchId, Prediction>(
+        predictions.map((p) => [p.match_id as FifaMatchId, p]),
+      ),
     [predictions],
   );
 
@@ -172,8 +175,14 @@ export default function UserKnockoutSection({
                       <KnockoutMatchRow
                         key={match.id}
                         match={match}
-                        prediction={fifaNumber ? predictionMap.get(fifaNumber) : undefined}
-                        resolvedTeams={fifaNumber ? resolvedKnockoutTeams.get(fifaNumber) : undefined}
+                        prediction={
+                          fifaNumber ? predictionMap.get(fifaNumber) : undefined
+                        }
+                        resolvedTeams={
+                          fifaNumber
+                            ? resolvedKnockoutTeams.get(fifaNumber)
+                            : undefined
+                        }
                         venue={getMatchVenue(match)}
                       />
                     );

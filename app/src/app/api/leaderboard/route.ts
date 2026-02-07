@@ -51,7 +51,7 @@ export async function GET() {
       );
       const data = await res.json();
       const rawMatches: Match[] = data.matches || [];
-      
+
       // Add FIFA numbers to each match
       const fifaMapping = buildApiToFifaMapping(rawMatches);
       matches = rawMatches.map((m) => ({
@@ -229,12 +229,29 @@ export async function GET() {
           groupStagePoints,
           groupBonusPoints,
           knockoutPoints,
+          position: 0, // Will be assigned after sorting
         };
       }),
     );
 
     // Sort by total points
     scores.sort((a, b) => b.totalPoints - a.totalPoints);
+
+    // Assign positions with tie handling
+    // Users with same score share position, next user gets position = index + 1
+    let currentPosition = 1;
+    let previousScore: number | null = null;
+    scores.forEach((score, index) => {
+      if (previousScore !== null && score.totalPoints === previousScore) {
+        // Same score as previous - share position
+        score.position = currentPosition;
+      } else {
+        // Different score - position is index + 1
+        currentPosition = index + 1;
+        score.position = currentPosition;
+      }
+      previousScore = score.totalPoints;
+    });
 
     return NextResponse.json({ scores });
   } catch (error) {

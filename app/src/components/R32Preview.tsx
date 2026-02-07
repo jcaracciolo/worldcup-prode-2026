@@ -159,9 +159,6 @@ export default function R32Preview({
                     <span className="text-xs px-2 py-0.5 bg-blue-500/30 rounded text-blue-300 font-mono">
                       #{fifaMatchNumber}
                     </span>
-                    <span className="text-xs px-1 py-0.5 bg-gray-500/30 rounded text-gray-400 font-mono">
-                      id:{match.id}
-                    </span>
                     <span className="text-xs px-2 py-0.5 bg-white/10 rounded text-white/70">
                       Round of 32
                     </span>

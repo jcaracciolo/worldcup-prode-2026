@@ -27,7 +27,7 @@ export default function MatchDetailPage() {
 
   // Find the specific match first
   const match = matches.find((m) => m.id === parseInt(matchId));
-  
+
   // Build FIFA number mapping
   const apiToFifaMap = buildApiToFifaMapping(matches);
   const fifaNumber = match ? apiToFifaMap.get(match.id) : undefined;

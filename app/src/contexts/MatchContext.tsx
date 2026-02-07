@@ -70,7 +70,10 @@ const MatchContext = createContext<MatchContextValue | null>(null);
  * Calculate elapsed minutes for a live match
  * Football data API doesn't always provide minute, so we estimate based on kick-off time
  */
-function calculateElapsedMinutes(match: Match, currentTime: Date): number | null {
+function calculateElapsedMinutes(
+  match: Match,
+  currentTime: Date,
+): number | null {
   if (match.status !== "IN_PLAY" && match.status !== "PAUSED") {
     return null;
   }
@@ -191,7 +194,7 @@ export function MatchProvider({
 
   // Get simulation context to apply overrides to match data
   const { applySimulation } = useSimulation();
-  
+
   // Get time context for current time and tick-based updates
   const { getCurrentTime, tick, isSimulated } = useTime();
 
@@ -212,7 +215,8 @@ export function MatchProvider({
 
   // Transform raw matches to include live info, FIFA number, and venue
   const matches = useMemo(
-    () => processedMatches.map((m) => enhanceMatch(m, fifaMapping, currentTime)),
+    () =>
+      processedMatches.map((m) => enhanceMatch(m, fifaMapping, currentTime)),
     [processedMatches, fifaMapping, currentTime],
   );
 
@@ -256,7 +260,8 @@ export function MatchProvider({
 
   // Get a specific match by FIFA number (preferred)
   const getMatchByFifa = useCallback(
-    (fifaNumber: FifaMatchId) => matches.find((m) => m.fifaNumber === fifaNumber),
+    (fifaNumber: FifaMatchId) =>
+      matches.find((m) => m.fifaNumber === fifaNumber),
     [matches],
   );
 

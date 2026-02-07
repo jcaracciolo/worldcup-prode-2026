@@ -9,6 +9,7 @@ import {
   usePredictionsContext,
 } from "@/contexts/PredictionsContext";
 import { ScoringProvider } from "@/contexts/ScoringContext";
+import { LeaderboardProvider } from "@/contexts/LeaderboardContext";
 import { UserProvider, useUser } from "@/contexts/UserContext";
 import Header from "@/components/Header";
 import { PageTransition } from "@/components/PageTransition";
@@ -46,10 +47,11 @@ function PredictionsPreloader({ children }: { children: React.ReactNode }) {
  * 4. UserProvider - Current authenticated user
  * 5. PredictionsProvider - User predictions cache
  * 6. ScoringProvider - Score calculations (depends on 3 & 5)
+ * 7. LeaderboardProvider - Centralized leaderboard with positions (auto-refreshes with time)
  *
  * Note: Components should use useTime() for time functions, NOT useSimulation().
  * Only the admin page uses useSimulation() directly to control simulation.
- * 
+ *
  * Header is rendered here so it persists across page navigations
  */
 export function Providers({ children }: ProvidersProps) {
@@ -61,8 +63,10 @@ export function Providers({ children }: ProvidersProps) {
             <PredictionsProvider>
               <PredictionsPreloader>
                 <ScoringProvider>
-                  <Header />
-                  <PageTransition>{children}</PageTransition>
+                  <LeaderboardProvider>
+                    <Header />
+                    <PageTransition>{children}</PageTransition>
+                  </LeaderboardProvider>
                 </ScoringProvider>
               </PredictionsPreloader>
             </PredictionsProvider>

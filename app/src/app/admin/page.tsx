@@ -40,8 +40,8 @@ export default function AdminPage() {
       // Format as YYYY-MM-DD in local time
       const d = new Date(simulatedDateTime);
       const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
     }
     return "2026-06-15"; // Middle of group stage
@@ -50,8 +50,8 @@ export default function AdminPage() {
     if (simulatedDateTime) {
       // Format as HH:mm in local time
       const d = new Date(simulatedDateTime);
-      const hours = String(d.getHours()).padStart(2, '0');
-      const minutes = String(d.getMinutes()).padStart(2, '0');
+      const hours = String(d.getHours()).padStart(2, "0");
+      const minutes = String(d.getMinutes()).padStart(2, "0");
       return `${hours}:${minutes}`;
     }
     return "18:00";
@@ -341,31 +341,31 @@ export default function AdminPage() {
                   </tr>
                 ) : (
                   inviteCodes.map((code) => (
-                  <tr
-                    key={code.id}
-                    className="border-b border-white/5 hover:bg-white/5"
-                  >
-                    <td className="py-2 px-4 font-mono font-bold text-white">
-                      {code.code}
-                    </td>
-                    <td className="py-2 px-4 text-white/70">
-                      {format(new Date(code.created_at), "MMM d, yyyy")}
-                    </td>
-                    <td className="py-2 px-4 text-white/70">
-                      {code.used_by_profile?.display_name || "-"}
-                    </td>
-                    <td className="py-2 px-4">
-                      {code.used_by ? (
-                        <span className="px-2 py-1 bg-white/10 text-white/50 rounded text-xs">
-                          Used
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">
-                          Available
-                        </span>
-                      )}
-                    </td>
-                  </tr>
+                    <tr
+                      key={code.id}
+                      className="border-b border-white/5 hover:bg-white/5"
+                    >
+                      <td className="py-2 px-4 font-mono font-bold text-white">
+                        {code.code}
+                      </td>
+                      <td className="py-2 px-4 text-white/70">
+                        {format(new Date(code.created_at), "MMM d, yyyy")}
+                      </td>
+                      <td className="py-2 px-4 text-white/70">
+                        {code.used_by_profile?.display_name || "-"}
+                      </td>
+                      <td className="py-2 px-4">
+                        {code.used_by ? (
+                          <span className="px-2 py-1 bg-white/10 text-white/50 rounded text-xs">
+                            Used
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">
+                            Available
+                          </span>
+                        )}
+                      </td>
+                    </tr>
                   ))
                 )}
               </tbody>

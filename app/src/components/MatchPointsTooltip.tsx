@@ -86,9 +86,13 @@ export default function MatchPointsTooltip({
       {/* Tooltip */}
       {showTooltip && hasActualScore && (
         <div className="absolute right-0 bottom-full mb-2 z-50 whitespace-nowrap">
-          <div className={`bg-slate-800 border rounded-lg shadow-xl p-3 ${isLive ? "border-red-500 border-2" : "border-white/20"}`}>
+          <div
+            className={`bg-slate-800 border rounded-lg shadow-xl p-3 ${isLive ? "border-red-500 border-2" : "border-white/20"}`}
+          >
             {/* Header */}
-            <div className={`text-[10px] uppercase tracking-wider mb-2 text-center ${isLive ? "text-red-400" : "text-white/50"}`}>
+            <div
+              className={`text-[10px] uppercase tracking-wider mb-2 text-center ${isLive ? "text-red-400" : "text-white/50"}`}
+            >
               {isLive ? "🔴 Live Score" : "Actual Result"}
             </div>
 

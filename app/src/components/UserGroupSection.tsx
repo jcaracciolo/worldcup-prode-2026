@@ -25,7 +25,7 @@ export default function UserGroupSection({
 }: UserGroupSectionProps) {
   // Build API ID to FIFA number mapping
   const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
-  
+
   // Predictions are keyed by FIFA number
   const predictionMap = useMemo(
     () => new Map(predictions.map((p) => [p.match_id, p])),
@@ -128,7 +128,9 @@ function GroupCard({
               <GroupMatchRow
                 key={match.id}
                 match={match}
-                prediction={fifaNumber ? predictionMap.get(fifaNumber) : undefined}
+                prediction={
+                  fifaNumber ? predictionMap.get(fifaNumber) : undefined
+                }
               />
             );
           })}

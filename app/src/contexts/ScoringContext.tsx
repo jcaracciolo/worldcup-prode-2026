@@ -4,7 +4,12 @@ import React, { createContext, useContext, useMemo, useCallback } from "react";
 import { useMatches } from "./MatchContext";
 import { useUserPredictions } from "./PredictionsContext";
 import { Prediction, GroupStandingsOverride } from "@/types/database";
-import { Match, PointBreakdown, CalculatedStanding, FifaMatchId } from "@/types/football";
+import {
+  Match,
+  PointBreakdown,
+  CalculatedStanding,
+  FifaMatchId,
+} from "@/types/football";
 import {
   calculateGroupStagePoints,
   calculateKnockoutPoints,
@@ -276,7 +281,9 @@ export function ScoringProvider({ children }: ScoringProviderProps) {
 
       // Calculate match points - use fifaNumber for prediction lookup
       matches.forEach((match) => {
-        const prediction = match.fifaNumber ? predictions.get(match.fifaNumber) : undefined;
+        const prediction = match.fifaNumber
+          ? predictions.get(match.fifaNumber)
+          : undefined;
         if (isGroupStageMatch(match)) {
           groupStage.push(...calculateGroupStagePoints(match, prediction));
         } else {

@@ -67,8 +67,8 @@ Users get a second chance to predict all knockout matches once group stage is co
 | Correct team wins | 1 × multiplier |
 | Correct team loses | 1 × multiplier |
 | Correct team ties (before penalties) | 1 × multiplier (each team) |
-| Exact goals for Team A | 1 |
-| Exact goals for Team B | 1 |
+| Exact goals for Team A | 2 |
+| Exact goals for Team B | 2 |
 
 _Note: For R32 through Semi-finals, predicting a tie is enough (the advancing team is implied). For Third-place match and Final, you must also pick the winner since both teams' tournament ends there._
 
@@ -78,14 +78,14 @@ _Note: You can only score points for teams you predicted to reach that stage._
 
 | Round             | Result Multiplier | Max Points (result + goals) |
 | ----------------- | ----------------- | --------------------------- |
-| Round of 32       | 1× (result-based) | 4 (2+2)                     |
-| Round of 16       | 2×                | 6 (4+2)                     |
-| Quarter-finals    | 3×                | 8 (6+2)                     |
-| Semi-finals       | 4×                | 10 (8+2)                    |
-| Third-place match | 5×                | 12 (10+2)                   |
-| Final             | 6×                | 14 (12+2)                   |
+| Round of 32       | 1× (result-based) | 6 (2+4)                     |
+| Round of 16       | 2×                | 8 (4+4)                     |
+| Quarter-finals    | 3×                | 10 (6+4)                    |
+| Semi-finals       | 4×                | 12 (8+4)                    |
+| Third-place match | 5×                | 14 (10+4)                   |
+| Final             | 6×                | 16 (12+4)                   |
 
-_Implementation note: R32 uses a single "correct result" check (2 pts), while R16+ splits into winner (1 pt) + loser (1 pt), each multiplied separately. Goals are always 1 point each with no multiplier._
+_Implementation note: R32 uses a single "correct result" check (2 pts), while R16+ splits into winner (1 pt) + loser (1 pt), each multiplied separately. Goals are 2 points each with no multiplier._
 
 ## Views / Screens
 

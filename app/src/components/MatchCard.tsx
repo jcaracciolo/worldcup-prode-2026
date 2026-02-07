@@ -104,9 +104,11 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
 
   return (
     <Link href={`/match/${match.id}`}>
-      <div className="match-card glass-card-light p-3 sm:p-5 cursor-pointer group">
+      <div
+        className={`match-card glass-card-light p-3 sm:p-5 cursor-pointer group hover:ring-2 hover:ring-emerald-500/30 transition-all border-2 ${isLive ? "border-red-500" : "border-white/20"}`}
+      >
         {showDate && (
-          <div className="text-center text-[10px] sm:text-xs font-medium text-slate-500 mb-3 sm:mb-4 uppercase tracking-wider">
+          <div className="text-center text-[10px] sm:text-xs font-medium text-white/50 mb-3 sm:mb-4 uppercase tracking-wider">
             {format(matchDate, "EEE, MMM d")}
           </div>
         )}
@@ -123,14 +125,16 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
                 className="w-9 h-9 sm:w-12 sm:h-12 object-contain drop-shadow-md"
               />
             ) : (
-              <div className="w-9 h-9 sm:w-12 sm:h-12 bg-slate-200 rounded-full flex items-center justify-center text-slate-500 font-bold text-xs sm:text-sm">
+              <div className="w-9 h-9 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center text-white/60 font-bold text-xs sm:text-sm">
                 {match.homeTeam.shortName?.substring(0, 3) || "???"}
               </div>
             )}
             <span
-              className={`font-semibold text-xs sm:text-sm text-center ${homeHighlight ? "text-slate-900" : "text-slate-700"}`}
+              className={`font-semibold text-xs sm:text-sm text-center ${homeHighlight ? "text-slate-900" : "text-white"}`}
             >
-              {match.homeTeam.tla || match.homeTeam.shortName || match.homeTeam.name}
+              {match.homeTeam.tla ||
+                match.homeTeam.shortName ||
+                match.homeTeam.name}
             </span>
           </div>
 
@@ -139,19 +143,21 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
             {isFinished || isLive ? (
               <div className="flex items-center gap-2 sm:gap-3">
                 <span
-                  className={`text-2xl sm:text-3xl font-bold ${isLive ? "text-red-500" : "text-slate-800"}`}
+                  className={`text-2xl sm:text-3xl font-bold ${isLive ? "text-red-500" : "text-white"}`}
                 >
                   {match.score.fullTime.home ?? 0}
                 </span>
-                <span className="text-slate-400 text-lg sm:text-xl">-</span>
+                <span className="text-white/40 text-lg sm:text-xl">-</span>
                 <span
-                  className={`text-2xl sm:text-3xl font-bold ${isLive ? "text-red-500" : "text-slate-800"}`}
+                  className={`text-2xl sm:text-3xl font-bold ${isLive ? "text-red-500" : "text-white"}`}
                 >
                   {match.score.fullTime.away ?? 0}
                 </span>
               </div>
             ) : (
-              <div className="text-slate-300 text-xl sm:text-2xl font-light">vs</div>
+              <div className="text-white/30 text-xl sm:text-2xl font-light">
+                vs
+              </div>
             )}
             {getStatusDisplay()}
           </div>
@@ -167,32 +173,36 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
                 className="w-9 h-9 sm:w-12 sm:h-12 object-contain drop-shadow-md"
               />
             ) : (
-              <div className="w-9 h-9 sm:w-12 sm:h-12 bg-slate-200 rounded-full flex items-center justify-center text-slate-500 font-bold text-xs sm:text-sm">
+              <div className="w-9 h-9 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center text-white/60 font-bold text-xs sm:text-sm">
                 {match.awayTeam.shortName?.substring(0, 3) || "???"}
               </div>
             )}
             <span
-              className={`font-semibold text-xs sm:text-sm text-center ${awayHighlight ? "text-slate-900" : "text-slate-700"}`}
+              className={`font-semibold text-xs sm:text-sm text-center ${awayHighlight ? "text-slate-900" : "text-white"}`}
             >
-              {match.awayTeam.tla || match.awayTeam.shortName || match.awayTeam.name}
+              {match.awayTeam.tla ||
+                match.awayTeam.shortName ||
+                match.awayTeam.name}
             </span>
           </div>
         </div>
 
         {/* Group/Stage info and Venue */}
-        <div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-slate-100">
+        <div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-white/10">
           <div className="flex flex-col items-center gap-1">
-            <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-emerald-50 text-emerald-700 text-[10px] sm:text-xs font-semibold rounded-full">
+            <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-emerald-500/20 text-emerald-400 text-[10px] sm:text-xs font-semibold rounded-full">
               {formatGroupName(match.group) || formatStageName(match.stage)}
             </span>
             {/* Use venueDisplay from MatchWithLiveInfo if available, otherwise fall back to match.venue */}
             {hasLiveInfo(match) && match.venueDisplay ? (
-              <span className="text-slate-400 text-[10px] sm:text-xs">
+              <span className="text-white/40 text-[10px] sm:text-xs">
                 📍 {match.venueDisplay}
               </span>
             ) : (
               match.venue && (
-                <span className="text-slate-400 text-[10px] sm:text-xs">📍 {match.venue}</span>
+                <span className="text-white/40 text-[10px] sm:text-xs">
+                  📍 {match.venue}
+                </span>
               )
             )}
           </div>

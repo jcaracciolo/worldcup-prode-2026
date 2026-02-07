@@ -186,11 +186,11 @@ export function calculateMatchPoints(
   const isKnockout = !isGroupStageMatch(match);
   const isLive = isMatchLive(match);
 
-  // Max possible: result points × multiplier + 2 goals points
-  // For knockout: 2 × multiplier (win + lose or 2 × tie) + 2 goals = 2*mult + 2
+  // Max possible: result points × multiplier + 4 goals points (2 per team)
+  // For knockout: 2 × multiplier (win + lose or 2 × tie) + 4 goals = 2*mult + 4
   // For group: 2 (result) + 2 (goals) = 4
   const maxPossible = isKnockout
-    ? 2 * multiplier + 2 // knockout: result (×mult) + goals
+    ? 2 * multiplier + 4 // knockout: result (×mult) + goals (2 per team)
     : POINTS_CORRECT_RESULT + POINTS_CORRECT_GOALS * 2; // group: 4 points
 
   // Check if we can calculate
@@ -210,14 +210,26 @@ export function calculateMatchPoints(
 
   // Only calculate for finished or live matches
   if (!isMatchScorable(match)) {
-    return { total: 0, maxPossible, hasPrediction: true, isFinished: false, isLive: false };
+    return {
+      total: 0,
+      maxPossible,
+      hasPrediction: true,
+      isFinished: false,
+      isLive: false,
+    };
   }
 
   const actualHome = match.score.fullTime.home;
   const actualAway = match.score.fullTime.away;
 
   if (actualHome === null || actualAway === null) {
-    return { total: 0, maxPossible, hasPrediction: true, isFinished: false, isLive: false };
+    return {
+      total: 0,
+      maxPossible,
+      hasPrediction: true,
+      isFinished: false,
+      isLive: false,
+    };
   }
 
   let total = 0;
@@ -257,7 +269,13 @@ export function calculateMatchPoints(
     total += POINTS_CORRECT_GOALS;
   }
 
-  return { total, maxPossible, hasPrediction: true, isFinished: match.status === "FINISHED", isLive };
+  return {
+    total,
+    maxPossible,
+    hasPrediction: true,
+    isFinished: match.status === "FINISHED",
+    isLive,
+  };
 }
 
 /**
@@ -312,9 +330,7 @@ export function calculateMatchPointsDetailed(
       awayGoalsPoints: 0,
       multiplier,
       total: 0,
-      details: [
-        { description: "Match not started", points: 0, earned: false },
-      ],
+      details: [{ description: "Match not started", points: 0, earned: false }],
     };
   }
 
@@ -697,12 +713,12 @@ export function calculateKnockoutPoints(
     }
   }
 
-  // 1 point for exact goals (no multiplier for goals)
+  // 2 points for exact goals in knockout (no multiplier for goals)
   if (prediction.home_goals === actualHomeGoals) {
     points.push({
       matchId: match.id,
       description: `Correct goals`,
-      points: 1,
+      points: 2,
       type: "goals_home",
       isLive,
       team: {
@@ -719,7 +735,7 @@ export function calculateKnockoutPoints(
     points.push({
       matchId: match.id,
       description: `Correct goals`,
-      points: 1,
+      points: 2,
       type: "goals_away",
       isLive,
       team: {
@@ -909,7 +925,7 @@ export function calculateTotalPoints(
 ): { totalPoints: number; livePoints: number; breakdown: PointBreakdown[] } {
   // Predictions are keyed by FIFA match number
   const predictionMap = new Map<FifaMatchId, Prediction>(
-    predictions.map((p) => [p.match_id as FifaMatchId, p])
+    predictions.map((p) => [p.match_id as FifaMatchId, p]),
   );
   const allBreakdown: PointBreakdown[] = [];
 

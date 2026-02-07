@@ -57,7 +57,8 @@ export function calculateStandingsFromPredictions(
   groupMatches.forEach((match) => {
     // Look up prediction by FIFA number if mapping provided, otherwise by match.id
     const lookupKey = apiToFifaMap ? apiToFifaMap.get(match.id) : match.id;
-    const prediction = lookupKey !== undefined ? predictionMap.get(lookupKey) : undefined;
+    const prediction =
+      lookupKey !== undefined ? predictionMap.get(lookupKey) : undefined;
     if (
       !prediction ||
       prediction.home_goals === null ||

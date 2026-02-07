@@ -288,6 +288,73 @@ export default function PredictionsPage() {
     }
   };
 
+  const handleRandomFill = () => {
+    if (
+      !confirm(
+        "This will fill all empty prediction slots with random scores. Continue?",
+      )
+    ) {
+      return;
+    }
+
+    setHasLocalEdits(true);
+    const newPredictions = new Map(predictions);
+
+    matches.forEach((match) => {
+      const fifaNumber = apiToFifaMap.get(match.id);
+      if (!fifaNumber) return;
+
+      // Check if already has a prediction
+      const existing = newPredictions.get(fifaNumber);
+      if (
+        existing &&
+        existing.home_goals !== null &&
+        existing.away_goals !== null
+      ) {
+        return; // Skip if already predicted
+      }
+
+      const isGroupStage = match.stage === "GROUP_STAGE";
+
+      // Only fill if section is unlocked
+      if (isGroupStage && groupLocked) return;
+      if (!isGroupStage && (!knockoutOpen || knockoutLocked)) return;
+
+      // Generate random scores (0-4 range, weighted toward lower scores)
+      const randomScore = () => {
+        const r = Math.random();
+        if (r < 0.4) return 0;
+        if (r < 0.7) return 1;
+        if (r < 0.85) return 2;
+        if (r < 0.95) return 3;
+        return 4;
+      };
+
+      const homeGoals = randomScore();
+      const awayGoals = randomScore();
+
+      // For knockout ties, randomly pick a winner
+      let winnerId: number | null = null;
+      if (!isGroupStage && homeGoals === awayGoals) {
+        winnerId = Math.random() < 0.5 ? match.homeTeam.id : match.awayTeam.id;
+      }
+
+      const updated: Prediction = {
+        id: existing?.id || "",
+        user_id: profile?.id || "",
+        match_id: fifaNumber,
+        home_goals: homeGoals,
+        away_goals: awayGoals,
+        winner_id: winnerId,
+        created_at: existing?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      newPredictions.set(fifaNumber, updated);
+    });
+
+    setPredictions(newPredictions);
+  };
+
   if (loading || matchesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -354,6 +421,12 @@ export default function PredictionsPage() {
           {/* Show buttons only when there's something to edit */}
           {(!groupLocked || (knockoutOpen && !knockoutLocked)) && (
             <div className="flex gap-2 sm:gap-3">
+              <button
+                onClick={handleRandomFill}
+                className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base text-white font-semibold rounded-xl transition-all shadow-lg bg-purple-600 hover:bg-purple-700"
+              >
+                🎲 Random
+              </button>
               <button
                 onClick={handleResetPredictions}
                 className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base text-white font-semibold rounded-xl transition-all shadow-lg bg-red-600 hover:bg-red-700"

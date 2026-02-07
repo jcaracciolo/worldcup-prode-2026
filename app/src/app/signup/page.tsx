@@ -81,7 +81,7 @@ function SignupForm() {
 
     // Mark invite code as used via API (needs service role)
     try {
-      await fetch("/api/auth/use-invite-code", {
+      const codeResponse = await fetch("/api/auth/use-invite-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -89,6 +89,11 @@ function SignupForm() {
           userId: authData.user.id,
         }),
       });
+
+      if (!codeResponse.ok) {
+        const errorData = await codeResponse.json();
+        console.error("Failed to mark invite code as used:", errorData);
+      }
     } catch (codeError) {
       console.error("Failed to mark invite code as used:", codeError);
     }

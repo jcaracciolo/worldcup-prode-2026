@@ -128,6 +128,8 @@ export interface PointBreakdown {
     | "knockout_win"
     | "knockout_lose"
     | "knockout_tie";
+  /** Whether this is from a live match */
+  isLive?: boolean;
   // Optional team info for display
   team?: {
     tla: string;
@@ -142,12 +144,18 @@ export interface PointBreakdown {
     awayGoals: number;
     stage: string;
   };
+  // Optional prediction info for display (what the user predicted)
+  prediction?: {
+    homeGoals: number | null;
+    awayGoals: number | null;
+  };
 }
 
 export interface UserScore {
   userId: string;
   displayName: string;
   totalPoints: number;
+  livePoints: number;
   groupStagePoints: number;
   groupBonusPoints: number;
   knockoutPoints: number;

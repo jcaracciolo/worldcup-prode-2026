@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Match, Team, CalculatedStanding } from "@/types/football";
 import { Prediction } from "@/types/database";
 import { getTeamDisplayName } from "@/lib/scoring";
@@ -229,7 +230,10 @@ function KnockoutMatchRow({
     awayWins || (isTie && prediction?.winner_id === awayTeam?.id);
 
   return (
-    <div className="flex items-center py-3 px-4 rounded-xl bg-slate-800/60 border border-white/5">
+    <Link
+      href={`/match/${match.id}`}
+      className="flex items-center py-3 px-4 rounded-xl bg-slate-800/60 border border-white/5 hover:bg-slate-800/80 transition-colors cursor-pointer"
+    >
       {/* Date */}
       <div className="w-20 text-center shrink-0 pr-3 border-r border-white/10">
         <div
@@ -326,6 +330,6 @@ function KnockoutMatchRow({
         predictedHomeTeam={homeTeam}
         predictedAwayTeam={awayTeam}
       />
-    </div>
+    </Link>
   );
 }

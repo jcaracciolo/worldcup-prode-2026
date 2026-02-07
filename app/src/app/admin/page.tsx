@@ -34,16 +34,25 @@ export default function AdminPage() {
   const [codesLoading, setCodesLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
-  // Simulation form state - initialized directly from context values
+  // Simulation form state - initialized directly from context values (using local time)
   const getInitialSimDate = () => {
     if (simulatedDateTime) {
-      return new Date(simulatedDateTime).toISOString().split("T")[0];
+      // Format as YYYY-MM-DD in local time
+      const d = new Date(simulatedDateTime);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
     }
     return "2026-06-15"; // Middle of group stage
   };
   const getInitialSimTime = () => {
     if (simulatedDateTime) {
-      return new Date(simulatedDateTime).toTimeString().slice(0, 5);
+      // Format as HH:mm in local time
+      const d = new Date(simulatedDateTime);
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
     }
     return "18:00";
   };
@@ -134,7 +143,8 @@ export default function AdminPage() {
     if (!simDate || !simTime) return;
     const [year, month, day] = simDate.split("-").map(Number);
     const [hour, minute] = simTime.split(":").map(Number);
-    const dateTime = new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
+    // Create date in local timezone (not UTC)
+    const dateTime = new Date(year, month - 1, day, hour, minute, 0);
     const seedNumber = simSeed ? parseInt(simSeed, 10) : undefined;
     enableSimulation(dateTime, seedNumber);
   };
@@ -205,7 +215,7 @@ export default function AdminPage() {
                 <div>
                   <span className="text-white/50">Simulated Time:</span>
                   <span className="ml-2 text-amber-400 font-mono">
-                    {format(simulatedDateTime, "PPP 'at' HH:mm")} UTC
+                    {format(simulatedDateTime, "PPP 'at' HH:mm")}
                   </span>
                 </div>
                 <div>
@@ -243,7 +253,7 @@ export default function AdminPage() {
               </div>
               <div>
                 <label className="block text-sm text-white/50 mb-1">
-                  Time (UTC)
+                  Time (Local)
                 </label>
                 <input
                   type="time"

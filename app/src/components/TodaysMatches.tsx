@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { format } from "date-fns";
 import { useMatches } from "@/contexts/MatchContext";
+import { useTime } from "@/contexts/TimeContext";
 import MatchCard from "@/components/MatchCard";
 import { GlobalLiveIndicator } from "@/components/MatchStatus";
 
@@ -23,9 +24,10 @@ export default function TodaysMatches({
 }: TodaysMatchesProps) {
   const { matches, loading, hasLiveMatches, liveMatches, refresh } =
     useMatches();
+  const { getCurrentTime } = useTime();
 
   // Get today's date in ISO format
-  const today = new Date();
+  const today = getCurrentTime();
   const todayStr = today.toISOString().split("T")[0];
 
   // Get today's matches

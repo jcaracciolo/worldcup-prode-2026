@@ -100,8 +100,15 @@ export default function Leaderboard({
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-white">
-                    {score.totalPoints}
+                  <div className="flex items-baseline justify-end gap-1">
+                    <div className="text-2xl font-bold text-white">
+                      {score.totalPoints}
+                    </div>
+                    {score.livePoints > 0 && (
+                      <span className="text-sm font-bold text-red-400 animate-pulse">
+                        +{score.livePoints}
+                      </span>
+                    )}
                   </div>
                   <div className="text-xs text-white/40">points</div>
                 </div>

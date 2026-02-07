@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { SimulationProvider } from "@/contexts/SimulationContext";
+import { TimeProvider } from "@/contexts/TimeContext";
 import { MatchProvider } from "@/contexts/MatchContext";
 import {
   PredictionsProvider,
@@ -39,29 +40,35 @@ function PredictionsPreloader({ children }: { children: React.ReactNode }) {
  * Wraps the entire app with necessary context providers
  *
  * Provider order:
- * 1. SimulationProvider - Testing simulation state (admin only)
- * 2. MatchProvider - Global match data with live polling (uses simulation)
- * 3. UserProvider - Current authenticated user
- * 4. PredictionsProvider - User predictions cache
- * 5. ScoringProvider - Score calculations (depends on 2 & 4)
+ * 1. SimulationProvider - Testing simulation state (admin only, controls time/data)
+ * 2. TimeProvider - Time functions facade (transparent to components)
+ * 3. MatchProvider - Global match data with live polling (uses simulation)
+ * 4. UserProvider - Current authenticated user
+ * 5. PredictionsProvider - User predictions cache
+ * 6. ScoringProvider - Score calculations (depends on 3 & 5)
  *
+ * Note: Components should use useTime() for time functions, NOT useSimulation().
+ * Only the admin page uses useSimulation() directly to control simulation.
+ * 
  * Header is rendered here so it persists across page navigations
  */
 export function Providers({ children }: ProvidersProps) {
   return (
     <SimulationProvider>
-      <MatchProvider>
-        <UserProvider>
-          <PredictionsProvider>
-            <PredictionsPreloader>
-              <ScoringProvider>
-                <Header />
-                <PageTransition>{children}</PageTransition>
-              </ScoringProvider>
-            </PredictionsPreloader>
-          </PredictionsProvider>
-        </UserProvider>
-      </MatchProvider>
+      <TimeProvider>
+        <MatchProvider>
+          <UserProvider>
+            <PredictionsProvider>
+              <PredictionsPreloader>
+                <ScoringProvider>
+                  <Header />
+                  <PageTransition>{children}</PageTransition>
+                </ScoringProvider>
+              </PredictionsPreloader>
+            </PredictionsProvider>
+          </UserProvider>
+        </MatchProvider>
+      </TimeProvider>
     </SimulationProvider>
   );
 }

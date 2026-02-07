@@ -7,12 +7,12 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
 } from "react";
 import { Match } from "@/types/football";
 import { getMatchInfo, Venue } from "@/lib/tournament";
 import { useSimulation } from "./SimulationContext";
-
-const POLL_INTERVAL = 60000; // 60 seconds;
+import { useTime } from "./TimeContext";
 
 // =====================================================================
 // TYPES
@@ -67,14 +67,13 @@ const MatchContext = createContext<MatchContextValue | null>(null);
  * Calculate elapsed minutes for a live match
  * Football data API doesn't always provide minute, so we estimate based on kick-off time
  */
-function calculateElapsedMinutes(match: Match): number | null {
+function calculateElapsedMinutes(match: Match, currentTime: Date): number | null {
   if (match.status !== "IN_PLAY" && match.status !== "PAUSED") {
     return null;
   }
 
   const kickOff = new Date(match.utcDate);
-  const now = new Date();
-  const elapsedMs = now.getTime() - kickOff.getTime();
+  const elapsedMs = currentTime.getTime() - kickOff.getTime();
   const elapsedMinutes = Math.floor(elapsedMs / 60000);
 
   // Clamp to reasonable values (0-120 for extra time)
@@ -169,9 +168,10 @@ function buildFifaMapping(matches: Match[]): Map<number, number> {
 function enhanceMatch(
   match: Match,
   fifaMapping: Map<number, number>,
+  currentTime: Date,
 ): MatchWithLiveInfo {
   const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
-  const elapsedMinutes = calculateElapsedMinutes(match);
+  const elapsedMinutes = calculateElapsedMinutes(match, currentTime);
   const period = determinePeriod(match, elapsedMinutes);
 
   // Get FIFA number from mapping
@@ -234,13 +234,19 @@ export function MatchProvider({
     initialMatches ? new Date() : null,
   );
 
-  // Get simulation context to apply overrides
-  const { simulationEnabled, applySimulation } = useSimulation();
+  // Get simulation context to apply overrides to match data
+  const { applySimulation } = useSimulation();
+  
+  // Get time context for current time and tick-based updates
+  const { getCurrentTime, tick, isSimulated } = useTime();
+
+  // Get current time
+  const currentTime = getCurrentTime();
 
   // Apply simulation to raw matches (if enabled)
   const processedMatches = useMemo(
-    () => (simulationEnabled ? applySimulation(rawMatches) : rawMatches),
-    [rawMatches, simulationEnabled, applySimulation],
+    () => (isSimulated ? applySimulation(rawMatches) : rawMatches),
+    [rawMatches, isSimulated, applySimulation],
   );
 
   // Build FIFA number mapping once when matches change
@@ -251,8 +257,8 @@ export function MatchProvider({
 
   // Transform raw matches to include live info, FIFA number, and venue
   const matches = useMemo(
-    () => processedMatches.map((m) => enhanceMatch(m, fifaMapping)),
-    [processedMatches, fifaMapping],
+    () => processedMatches.map((m) => enhanceMatch(m, fifaMapping, currentTime)),
+    [processedMatches, fifaMapping, currentTime],
   );
 
   // Check if any matches are currently live
@@ -300,30 +306,39 @@ export function MatchProvider({
     }
   }, [fetchMatches, initialMatches]);
 
-  // Polling effect - poll when there are live matches or during match day
+  // Track if initial fetch is done to avoid double-fetching
+  const initialFetchDone = useRef(false);
   useEffect(() => {
-    // Don't poll during simulation mode
-    if (simulationEnabled) return;
+    if (!initialMatches) {
+      initialFetchDone.current = false;
+    } else {
+      initialFetchDone.current = true;
+    }
+  }, [initialMatches]);
 
-    const shouldPoll = hasLiveMatches || hasMatchesToday(rawMatches);
+  // Tick-based updates - controlled by TimeContext
+  // In real mode: fetches every 60 seconds (when there are live/today matches)
+  // In simulation mode: doesn't fetch (simulation generates data), but tick still triggers re-renders
+  useEffect(() => {
+    // Skip the first tick (initial fetch already handled)
+    if (tick === 0) return;
 
-    if (!shouldPoll) return;
+    // In simulation mode, we don't need to fetch - simulation generates matches
+    if (isSimulated) {
+      console.log("[MatchProvider] Simulation tick, skipping API fetch");
+      return;
+    }
 
-    console.log("[MatchProvider] Starting polling...", {
-      hasLiveMatches,
-      isTournamentDay: hasMatchesToday(rawMatches),
-    });
+    // Only fetch in real mode when there's a reason to
+    const shouldFetch = hasLiveMatches || hasMatchesToday(rawMatches);
+    if (!shouldFetch) {
+      console.log("[MatchProvider] No live/today matches, skipping fetch");
+      return;
+    }
 
-    const intervalId = setInterval(() => {
-      console.log("[MatchProvider] Polling for updates...");
-      fetchMatches();
-    }, POLL_INTERVAL);
-
-    return () => {
-      console.log("[MatchProvider] Stopping polling");
-      clearInterval(intervalId);
-    };
-  }, [hasLiveMatches, rawMatches, fetchMatches, simulationEnabled]);
+    console.log("[MatchProvider] Tick fetch...", { tick, hasLiveMatches });
+    fetchMatches();
+  }, [tick, isSimulated, hasLiveMatches, rawMatches, fetchMatches]);
 
   const value: MatchContextValue = {
     matches,
@@ -334,7 +349,7 @@ export function MatchProvider({
     error,
     lastUpdated,
     refresh,
-    isSimulated: simulationEnabled,
+    isSimulated,
   };
 
   return (

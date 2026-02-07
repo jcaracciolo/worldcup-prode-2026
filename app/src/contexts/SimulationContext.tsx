@@ -39,6 +39,10 @@ export interface SimulationState {
   seed: number; // For reproducible random results
 }
 
+// Simulation tick interval (5 seconds) and time advance per tick (1 minute of game time)
+const SIMULATION_TICK_INTERVAL = 5000; // 5 seconds
+const SIMULATION_TIME_ADVANCE = 1 * 60 * 1000; // 1 minute in milliseconds
+
 interface SimulationContextValue {
   /** Whether simulation mode is active */
   simulationEnabled: boolean;
@@ -89,45 +93,39 @@ function mulberry32(seed: number): () => number {
 /**
  * Generate a random score for a match
  * Uses seeded random for reproducibility
+ * NOTE: High-scoring distribution for testing live updates
  */
 function generateRandomScore(random: () => number): {
   home: number;
   away: number;
 } {
-  // Most common scores weighted by probability
+  // High-scoring distribution for testing
   const scoreDistribution = [
-    [1, 0],
-    [0, 1],
-    [1, 1],
-    [2, 1],
-    [1, 2],
-    [2, 0],
-    [0, 2],
-    [2, 2],
-    [3, 1],
-    [1, 3],
-    [3, 0],
-    [0, 3],
     [3, 2],
     [2, 3],
-    [0, 0],
-    [4, 1],
-    [1, 4],
-    [4, 0],
-    [0, 4],
     [4, 2],
     [2, 4],
     [3, 3],
-    [5, 0],
-    [0, 5],
-    [5, 1],
-    [1, 5],
+    [4, 3],
+    [3, 4],
+    [5, 2],
+    [2, 5],
+    [4, 4],
+    [5, 3],
+    [3, 5],
+    [6, 2],
+    [2, 6],
+    [5, 4],
+    [4, 5],
+    [6, 3],
+    [3, 6],
+    [7, 2],
+    [2, 7],
   ];
 
-  // Weight towards lower scores
+  // Equal weights for variety
   const weights = [
-    12, 12, 10, 10, 10, 8, 8, 6, 6, 6, 5, 5, 5, 5, 8, 3, 3, 2, 2, 2, 2, 2, 1, 1,
-    1, 1,
+    10, 10, 10, 10, 8, 8, 8, 6, 6, 6, 5, 5, 4, 4, 4, 4, 3, 3, 2, 2,
   ];
 
   const totalWeight = weights.reduce((a, b) => a + b, 0);
@@ -140,7 +138,33 @@ function generateRandomScore(random: () => number): {
     }
   }
 
-  return { home: 1, away: 1 }; // Fallback
+  return { home: 4, away: 3 }; // Fallback
+}
+
+/**
+ * Generate random goal times for a match
+ * Returns arrays of minute values when each team scores
+ */
+function generateGoalTimes(
+  random: () => number,
+  homeGoals: number,
+  awayGoals: number,
+): { homeMinutes: number[]; awayMinutes: number[] } {
+  const homeMinutes: number[] = [];
+  const awayMinutes: number[] = [];
+
+  for (let i = 0; i < homeGoals; i++) {
+    // Goals can happen between minute 1-90 (plus some injury time up to 95)
+    homeMinutes.push(Math.floor(random() * 94) + 1);
+  }
+  for (let i = 0; i < awayGoals; i++) {
+    awayMinutes.push(Math.floor(random() * 94) + 1);
+  }
+
+  return {
+    homeMinutes: homeMinutes.sort((a, b) => a - b),
+    awayMinutes: awayMinutes.sort((a, b) => a - b),
+  };
 }
 
 /**
@@ -221,6 +245,26 @@ function getInitialState(): SimulationState {
 
 export function SimulationProvider({ children }: SimulationProviderProps) {
   const [state, setState] = useState<SimulationState>(getInitialState);
+
+  // Auto-advance simulation time every 30 seconds when enabled
+  useEffect(() => {
+    if (!state.enabled || !state.simulatedDateTime) return;
+
+    const intervalId = setInterval(() => {
+      setState((prev) => {
+        if (!prev.enabled || !prev.simulatedDateTime) return prev;
+        const newTime = new Date(
+          new Date(prev.simulatedDateTime).getTime() + SIMULATION_TIME_ADVANCE,
+        );
+        return {
+          ...prev,
+          simulatedDateTime: newTime.toISOString(),
+        };
+      });
+    }, SIMULATION_TICK_INTERVAL);
+
+    return () => clearInterval(intervalId);
+  }, [state.enabled, state.simulatedDateTime]);
 
   // Get current time function that respects simulation
   const getCurrentTime = useCallback((): Date => {
@@ -337,10 +381,14 @@ export function SimulationProvider({ children }: SimulationProviderProps) {
 
         const status = getMatchStatus(matchDateTime, simulatedDate);
 
-        // For matches not started yet, keep original data
+        // Use the scheduled time from tournament data (not API) for consistency
+        const scheduledUtcDate = matchDateTime.toISOString();
+
+        // For matches not started yet, keep original data but use scheduled time
         if (status === "SCHEDULED") {
           return {
             ...match,
+            utcDate: scheduledUtcDate,
             status,
             score: {
               ...match.score,
@@ -351,48 +399,68 @@ export function SimulationProvider({ children }: SimulationProviderProps) {
           };
         }
 
-        // Generate score (use match ID + seed for per-match consistency)
+        // Generate final score (use match ID + seed for per-match consistency)
         const matchRandom = mulberry32(state.seed + match.id);
-        const score = generateRandomScore(matchRandom);
+        const finalScore = generateRandomScore(matchRandom);
 
-        // For live matches, potentially show partial score
+        // Generate goal times for this match
+        const goalTimesRandom = mulberry32(state.seed + match.id + 1000);
+        const goalTimes = generateGoalTimes(
+          goalTimesRandom,
+          finalScore.home,
+          finalScore.away,
+        );
+
+        // For live matches, show goals scored up to current elapsed time
         if (status === "IN_PLAY" || status === "PAUSED") {
           const matchTime = matchDateTime.getTime();
           const simTime = simulatedDate.getTime();
           const elapsedMin = (simTime - matchTime) / 60000;
 
-          // Show half-time score if in first half, full score otherwise
-          const homeScore =
-            elapsedMin >= 45 ? score.home : Math.floor(score.home * 0.5);
-          const awayScore =
-            elapsedMin >= 45 ? score.away : Math.floor(score.away * 0.5);
+          // Count goals that have happened by this minute
+          const homeScore = goalTimes.homeMinutes.filter(
+            (min) => min <= elapsedMin,
+          ).length;
+          const awayScore = goalTimes.awayMinutes.filter(
+            (min) => min <= elapsedMin,
+          ).length;
+
+          // Half-time score (goals up to minute 45)
+          const halfTimeHome = goalTimes.homeMinutes.filter(
+            (min) => min <= 45,
+          ).length;
+          const halfTimeAway = goalTimes.awayMinutes.filter(
+            (min) => min <= 45,
+          ).length;
 
           return {
             ...match,
+            utcDate: scheduledUtcDate,
             status,
             score: {
               winner: getWinner(homeScore, awayScore),
               duration: "REGULAR",
               fullTime: { home: homeScore, away: awayScore },
               halfTime: {
-                home: Math.floor(score.home * 0.5),
-                away: Math.floor(score.away * 0.5),
+                home: elapsedMin >= 45 ? halfTimeHome : homeScore,
+                away: elapsedMin >= 45 ? halfTimeAway : awayScore,
               },
             },
           };
         }
 
-        // Finished match
+        // Finished match - show full score
         return {
           ...match,
+          utcDate: scheduledUtcDate,
           status,
           score: {
-            winner: getWinner(score.home, score.away),
+            winner: getWinner(finalScore.home, finalScore.away),
             duration: "REGULAR",
-            fullTime: { home: score.home, away: score.away },
+            fullTime: { home: finalScore.home, away: finalScore.away },
             halfTime: {
-              home: Math.floor(score.home * 0.5),
-              away: Math.floor(score.away * 0.5),
+              home: goalTimes.homeMinutes.filter((min) => min <= 45).length,
+              away: goalTimes.awayMinutes.filter((min) => min <= 45).length,
             },
           },
         };

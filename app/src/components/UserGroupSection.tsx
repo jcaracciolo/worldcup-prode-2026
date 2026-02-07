@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Match, CalculatedStanding } from "@/types/football";
 import { Prediction } from "@/types/database";
 import { calculateStandingsFromPredictions } from "@/lib/standings";
@@ -154,7 +155,10 @@ function GroupMatchRow({ match, prediction }: GroupMatchRowProps) {
   const awayHighlight = awayWins || isDraw;
 
   return (
-    <div className="flex items-center gap-2 py-2 text-sm">
+    <Link
+      href={`/match/${match.id}`}
+      className="flex items-center gap-2 py-2 text-sm hover:bg-white/5 transition-colors rounded px-1 -mx-1 cursor-pointer"
+    >
       <div
         className={`flex-1 flex items-center justify-end gap-1.5 px-1.5 py-0.5 rounded ${homeHighlight ? "bg-amber-500/80" : ""}`}
       >
@@ -208,6 +212,6 @@ function GroupMatchRow({ match, prediction }: GroupMatchRowProps) {
         prediction={prediction}
         className="w-8"
       />
-    </div>
+    </Link>
   );
 }

@@ -48,6 +48,8 @@ interface PredictionsContextValue {
   clearCache: (userId: string) => void;
   /** Clear all caches */
   clearAllCaches: () => void;
+  /** Get all users' predictions at once (for leaderboard) */
+  getAllPredictions: () => Promise<Map<string, { predictions: Prediction[]; overrides: GroupStandingsOverride[] }>>;
 }
 
 const PredictionsContext = createContext<PredictionsContextValue | null>(null);
@@ -224,6 +226,45 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
     setCache(new Map());
   }, []);
 
+  // Get all users' predictions at once (for leaderboard)
+  const getAllPredictions = useCallback(
+    async (): Promise<Map<string, { predictions: Prediction[]; overrides: GroupStandingsOverride[] }>> => {
+      try {
+        // Fetch all predictions and overrides in one go
+        const [predictionsResult, overridesResult] = await Promise.all([
+          supabase.from("predictions").select("*"),
+          supabase.from("group_standings_overrides").select("*"),
+        ]);
+
+        if (predictionsResult.error) throw predictionsResult.error;
+        if (overridesResult.error) throw overridesResult.error;
+
+        // Group by user_id
+        const userDataMap = new Map<string, { predictions: Prediction[]; overrides: GroupStandingsOverride[] }>();
+
+        (predictionsResult.data || []).forEach((p: Prediction) => {
+          if (!userDataMap.has(p.user_id)) {
+            userDataMap.set(p.user_id, { predictions: [], overrides: [] });
+          }
+          userDataMap.get(p.user_id)!.predictions.push(p);
+        });
+
+        (overridesResult.data || []).forEach((o: GroupStandingsOverride) => {
+          if (!userDataMap.has(o.user_id)) {
+            userDataMap.set(o.user_id, { predictions: [], overrides: [] });
+          }
+          userDataMap.get(o.user_id)!.overrides.push(o);
+        });
+
+        return userDataMap;
+      } catch (error) {
+        console.error("Failed to fetch all predictions:", error);
+        return new Map();
+      }
+    },
+    [supabase],
+  );
+
   // Save predictions to database
   const savePredictions = useCallback(
     async (
@@ -302,6 +343,7 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
     savePredictions,
     clearCache,
     clearAllCaches,
+    getAllPredictions,
   };
 
   return (

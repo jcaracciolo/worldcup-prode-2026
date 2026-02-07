@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { GlobalLiveIndicator } from "@/components/MatchStatus";
 import {
   KnockoutStageSection,
@@ -9,7 +10,7 @@ import {
   KnockoutPreviewSection,
 } from "@/components/predictions";
 import { useMatches } from "@/contexts/MatchContext";
-import { useSimulation } from "@/contexts/SimulationContext";
+import { useTime } from "@/contexts/TimeContext";
 import { useUser } from "@/contexts/UserContext";
 import { useUserPredictions } from "@/contexts/PredictionsContext";
 import { CalculatedStanding, Team, Match } from "@/types/football";
@@ -61,8 +62,8 @@ export default function PredictionsPage() {
     refresh: refreshMatches,
   } = useMatches();
 
-  // Get stage lock status from simulation context (time-based)
-  const { stageLockStatus } = useSimulation();
+  // Get stage lock status from time context (simulation-transparent)
+  const { stageLockStatus } = useTime();
   const {
     groupStageLocked: groupLocked,
     knockoutStageOpen: knockoutOpen,
@@ -363,6 +364,16 @@ export default function PredictionsPage() {
           <div className="bg-red-500/20 border border-red-500/30 text-red-300 px-4 py-3 rounded-xl mb-6">
             {error}
           </div>
+        )}
+
+        {/* Link to see score on profile - shown when any stage is locked */}
+        {(groupLocked || knockoutLocked) && profile && (
+          <Link
+            href={`/user/${profile.id}`}
+            className="block w-full mb-6 px-6 py-4 bg-gradient-to-r from-emerald-600/80 to-green-600/80 hover:from-emerald-500 hover:to-green-500 text-white font-semibold rounded-xl transition-all shadow-lg text-center border border-emerald-400/30"
+          >
+            <span className="text-lg">📊 See your score on your profile →</span>
+          </Link>
         )}
 
         {groupLocked && (

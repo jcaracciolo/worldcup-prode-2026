@@ -1,6 +1,6 @@
 "use client";
 
-import { useSimulation } from "@/contexts/SimulationContext";
+import { useTime } from "@/contexts/TimeContext";
 import { Match, Team } from "@/types/football";
 import { Prediction } from "@/types/database";
 import PredictionInput from "@/components/PredictionInput";
@@ -57,7 +57,7 @@ export default function KnockoutStageSection({
   onPredictionChange,
   readOnly = false,
 }: KnockoutStageSectionProps) {
-  const { getCurrentTime } = useSimulation();
+  const { getCurrentTime } = useTime();
 
   return (
     <section className="mb-10">

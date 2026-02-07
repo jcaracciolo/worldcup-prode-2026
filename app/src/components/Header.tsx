@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -11,6 +12,10 @@ export default function Header() {
   const supabase = createClient();
   const { isSimulated } = useMatches();
   const { user } = useUser();
+  
+  // Defer simulation banner to avoid hydration mismatch
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -19,8 +24,8 @@ export default function Header() {
 
   return (
     <>
-      {/* Simulation Banner */}
-      {isSimulated && (
+      {/* Simulation Banner - only show after client hydration */}
+      {mounted && isSimulated && (
         <div className="bg-amber-500 text-black text-center py-1.5 text-sm font-medium">
           🧪 Simulation Mode Active — Match data is not real
         </div>

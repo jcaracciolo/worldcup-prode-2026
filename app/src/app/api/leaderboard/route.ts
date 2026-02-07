@@ -33,6 +33,7 @@ export async function GET() {
           userId: p.id,
           displayName: p.display_name,
           totalPoints: 0,
+          livePoints: 0,
           groupStagePoints: 0,
           groupBonusPoints: 0,
           knockoutPoints: 0,
@@ -179,7 +180,7 @@ export async function GET() {
           .select("*")
           .eq("user_id", profile.id);
 
-        const { totalPoints, breakdown } = calculateTotalPoints(
+        const { totalPoints, livePoints, breakdown } = calculateTotalPoints(
           matches,
           predictions || [],
           groupOverrides || [],
@@ -216,6 +217,7 @@ export async function GET() {
           userId: profile.id,
           displayName: profile.display_name,
           totalPoints,
+          livePoints,
           groupStagePoints,
           groupBonusPoints,
           knockoutPoints,

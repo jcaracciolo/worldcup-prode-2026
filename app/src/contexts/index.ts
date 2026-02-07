@@ -3,13 +3,20 @@
  *
  * Provider hierarchy (in Providers.tsx):
  * 1. SimulationProvider - Testing simulation state (admin only)
- * 2. MatchProvider - Global match data with live polling
- * 3. UserProvider - Current authenticated user
- * 4. PredictionsProvider - User predictions cache
- * 5. ScoringProvider - Score calculations (depends on 2 & 4)
+ * 2. TimeProvider - Time functions facade (transparent to components)
+ * 3. MatchProvider - Global match data with live polling
+ * 4. UserProvider - Current authenticated user
+ * 5. PredictionsProvider - User predictions cache
+ * 6. ScoringProvider - Score calculations (depends on 3 & 5)
+ *
+ * NOTE: Components should use useTime() for time functions, NOT useSimulation().
+ * Only the admin page uses useSimulation() directly to control simulation.
  */
 
-// Simulation Context - Testing simulation state
+// Time Context - Application time (simulation-transparent)
+export { TimeProvider, useTime } from "./TimeContext";
+
+// Simulation Context - Testing simulation state (admin only)
 export {
   SimulationProvider,
   useSimulation,

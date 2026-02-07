@@ -1,6 +1,6 @@
 "use client";
 
-import { useSimulation } from "@/contexts/SimulationContext";
+import { useTime } from "@/contexts/TimeContext";
 import { Match, CalculatedStanding } from "@/types/football";
 import { Prediction } from "@/types/database";
 import PredictionInput from "@/components/PredictionInput";
@@ -39,7 +39,7 @@ export default function GroupStageSection({
   onSwapPositions,
   readOnly = false,
 }: GroupStageSectionProps) {
-  const { getCurrentTime } = useSimulation();
+  const { getCurrentTime } = useTime();
 
   return (
     <section>
@@ -62,12 +62,6 @@ export default function GroupStageSection({
               (a, b) =>
                 new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
             );
-            const finishedInGroup = sortedMatches.filter(
-              (m) => m.status === "FINISHED",
-            ).length;
-            // In read-only mode, only show standings if there are finished matches
-            // In edit mode, always show standings based on predictions
-            const showStandings = readOnly ? finishedInGroup > 0 : true;
 
             return (
               <div key={groupName} className="glass-card p-5">
@@ -114,7 +108,7 @@ export default function GroupStageSection({
                   </div>
 
                   {/* Standings Table */}
-                  {showStandings && standings.length > 0 && (
+                  {standings.length > 0 && (
                     <div>
                       <h4 className="text-sm font-medium text-white/50 mb-3 uppercase tracking-wider">
                         Standings

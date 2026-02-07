@@ -3,10 +3,9 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useMatches } from "@/contexts/MatchContext";
-import { useSimulation } from "@/contexts/SimulationContext";
+import { useTime } from "@/contexts/TimeContext";
 import { useUser } from "@/contexts/UserContext";
 import { useUserPredictions } from "@/contexts/PredictionsContext";
-import { getStageLockStatus } from "@/lib/time";
 import { calculateTotalPoints } from "@/lib/scoring";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import {
@@ -14,6 +13,7 @@ import {
   calculateAllActualStandings,
 } from "@/lib/standings";
 import { Prediction, Profile } from "@/types/database";
+import { UserScore } from "@/types/football";
 import PointsBreakdown from "@/components/PointsBreakdown";
 import UserKnockoutSection from "@/components/UserKnockoutSection";
 import UserGroupSection from "@/components/UserGroupSection";
@@ -23,7 +23,7 @@ export default function UserPredictionsPage() {
   const params = useParams();
   const userId = params.userId as string;
   const { matches, loading: matchesLoading } = useMatches();
-  const { getCurrentTime } = useSimulation();
+  const { stageLockStatus } = useTime();
   const { user: currentProfile, getProfile } = useUser();
 
   // Check if viewing own profile
@@ -83,14 +83,9 @@ export default function UserPredictionsPage() {
   const groupOverrides = cachedOverrides;
   const isLoading = loading || predictionsLoading;
 
-  // Stage lock status (uses simulation time if enabled)
-  const lockStatus = useMemo(() => {
-    const time = getCurrentTime();
-    return getStageLockStatus(time);
-  }, [getCurrentTime]);
-
+  // Stage lock status from time context (simulation-transparent)
   const { groupStageLocked, knockoutStageOpen, knockoutStageLocked } =
-    lockStatus;
+    stageLockStatus;
 
   // Calculate predicted standings
   const predictionMap = useMemo(
@@ -135,9 +130,9 @@ export default function UserPredictionsPage() {
   }, [actualStandings, actualThirdPlaceQualifying]);
 
   // Calculate points
-  const { totalPoints, breakdown } = useMemo(() => {
+  const { totalPoints, livePoints, breakdown } = useMemo(() => {
     if (predictions.length === 0 || matches.length === 0) {
-      return { totalPoints: 0, breakdown: [] };
+      return { totalPoints: 0, livePoints: 0, breakdown: [] };
     }
     return calculateTotalPoints(
       matches,
@@ -147,6 +142,71 @@ export default function UserPredictionsPage() {
       advancingTeamIds,
     );
   }, [matches, predictions, groupOverrides, actualStandings, advancingTeamIds]);
+
+  // Fetch leaderboard for position info
+  const [leaderboard, setLeaderboard] = useState<UserScore[]>([]);
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      try {
+        const res = await fetch("/api/leaderboard");
+        const data = await res.json();
+        if (data.scores) {
+          setLeaderboard(data.scores);
+        }
+      } catch (err) {
+        console.error("Failed to fetch leaderboard:", err);
+      }
+    }
+    if (groupStageLocked || knockoutStageLocked) {
+      fetchLeaderboard();
+    }
+  }, [groupStageLocked, knockoutStageLocked]);
+
+  // Calculate user's position and neighbors
+  const positionInfo = useMemo(() => {
+    if (leaderboard.length === 0) return null;
+    const sorted = [...leaderboard].sort((a, b) => b.totalPoints - a.totalPoints);
+    const position = sorted.findIndex((s) => s.userId === userId);
+    if (position === -1) return null;
+    const userScore = sorted[position];
+    const above = position > 0 ? sorted[position - 1] : null;
+    const below = position < sorted.length - 1 ? sorted[position + 1] : null;
+    return {
+      position: position + 1,
+      total: sorted.length,
+      userScore,
+      above,
+      below,
+    };
+  }, [leaderboard, userId]);
+
+  // Calculate point breakdown from breakdown items
+  const pointBreakdown = useMemo(() => {
+    let groupStagePoints = 0;
+    let groupBonusPoints = 0;
+    let knockoutPoints = 0;
+
+    breakdown.forEach((item) => {
+      if (item.type === "group_advance" || item.type === "group_position") {
+        groupBonusPoints += item.points;
+      } else if (
+        item.type === "knockout_win" ||
+        item.type === "knockout_lose" ||
+        item.type === "knockout_tie"
+      ) {
+        knockoutPoints += item.points;
+      } else if (item.matchId) {
+        const match = matches.find((m) => m.id === item.matchId);
+        if (match?.stage === "GROUP_STAGE") {
+          groupStagePoints += item.points;
+        } else {
+          knockoutPoints += item.points;
+        }
+      }
+    });
+
+    return { groupStagePoints, groupBonusPoints, knockoutPoints };
+  }, [breakdown, matches]);
 
   // Visibility rules
   const showGroupPredictions = isOwnPredictions || groupStageLocked;
@@ -185,6 +245,7 @@ export default function UserPredictionsPage() {
   return (
     <div className="min-h-screen">
       <main className="container mx-auto px-4 py-8">
+        {/* Header with name */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white">
             {targetProfile?.display_name}&apos;s Predictions
@@ -193,6 +254,128 @@ export default function UserPredictionsPage() {
             <p className="text-white/50 text-sm mt-1">This is you!</p>
           )}
         </div>
+
+        {/* Score Summary Card - only shown when predictions are locked */}
+        {(groupStageLocked || knockoutStageLocked) && (
+          <div
+            className="mb-8 glass-card overflow-hidden cursor-pointer hover:ring-2 hover:ring-emerald-500/50 transition-all"
+            onClick={() => {
+              document.getElementById("points-breakdown")?.scrollIntoView({ behavior: "smooth" });
+            }}
+          >
+            {/* Main Score Display */}
+            <div className="bg-gradient-to-r from-emerald-600/30 to-green-600/30 p-6 border-b border-white/10">
+              <div className="flex items-center justify-between">
+                {/* Position Badge */}
+                <div className="flex items-center gap-4">
+                  {positionInfo && (
+                    <div className="relative">
+                      <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-black ${
+                        positionInfo.position === 1
+                          ? "bg-gradient-to-br from-yellow-400 to-amber-500 text-yellow-900"
+                          : positionInfo.position === 2
+                            ? "bg-gradient-to-br from-gray-300 to-gray-400 text-gray-700"
+                            : positionInfo.position === 3
+                              ? "bg-gradient-to-br from-orange-400 to-orange-600 text-orange-900"
+                              : "bg-white/10 text-white"
+                      }`}>
+                        #{positionInfo.position}
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 px-2 py-0.5 bg-slate-800 rounded-full text-xs text-white/70 border border-white/10">
+                        of {positionInfo.total}
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-white/50 text-sm uppercase tracking-wider">Total Points</div>
+                    <div className="flex items-baseline gap-2">
+                      <div className="text-5xl font-black text-white">{totalPoints}</div>
+                      {livePoints > 0 && (
+                        <div className="text-xl font-bold text-red-400 animate-pulse">
+                          +{livePoints} 🔴
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Trophy Icon */}
+                <div className="text-6xl opacity-30">
+                  {positionInfo?.position === 1 ? "🏆" : positionInfo?.position === 2 ? "🥈" : positionInfo?.position === 3 ? "🥉" : "⚽"}
+                </div>
+              </div>
+              {/* Click hint */}
+              <div className="mt-3 text-center text-xs text-white/40">
+                Click for detailed breakdown ↓
+              </div>
+            </div>
+
+            {/* Point Breakdown */}
+            <div className="p-4 grid grid-cols-3 gap-4">
+              <div className="text-center p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                <div className="text-xs text-emerald-400 uppercase tracking-wider mb-1">Group Stage</div>
+                <div className="text-2xl font-bold text-white">{pointBreakdown.groupStagePoints}</div>
+              </div>
+              <div className="text-center p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                <div className="text-xs text-blue-400 uppercase tracking-wider mb-1">Group Bonus</div>
+                <div className="text-2xl font-bold text-white">{pointBreakdown.groupBonusPoints}</div>
+              </div>
+              <div className="text-center p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <div className="text-xs text-amber-400 uppercase tracking-wider mb-1">Knockout</div>
+                <div className="text-2xl font-bold text-white">{pointBreakdown.knockoutPoints}</div>
+              </div>
+            </div>
+
+            {/* Neighbors on Leaderboard */}
+            {positionInfo && (positionInfo.above || positionInfo.below) && (
+              <div className="px-4 pb-4">
+                <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                  <div className="text-xs text-white/50 uppercase tracking-wider mb-2 text-center">Leaderboard Neighbors</div>
+                  <div className="space-y-2">
+                    {positionInfo.above && (
+                      <Link
+                        href={`/user/${positionInfo.above.userId}`}
+                        className="flex items-center justify-between p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-white/50 text-sm">#{positionInfo.position - 1}</span>
+                          <span className="text-white font-medium">{positionInfo.above.displayName}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-emerald-400 font-bold">{positionInfo.above.totalPoints} pts</span>
+                          <span className="text-xs text-red-400">▲ {positionInfo.above.totalPoints - totalPoints} ahead</span>
+                        </div>
+                      </Link>
+                    )}
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30">
+                      <div className="flex items-center gap-2">
+                        <span className="text-emerald-400 text-sm font-bold">#{positionInfo.position}</span>
+                        <span className="text-white font-bold">{targetProfile?.display_name}</span>
+                        {isOwnPredictions && <span className="text-xs text-emerald-400">(You)</span>}
+                      </div>
+                      <span className="text-emerald-400 font-bold">{totalPoints} pts</span>
+                    </div>
+                    {positionInfo.below && (
+                      <Link
+                        href={`/user/${positionInfo.below.userId}`}
+                        className="flex items-center justify-between p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-white/50 text-sm">#{positionInfo.position + 1}</span>
+                          <span className="text-white font-medium">{positionInfo.below.displayName}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-amber-400 font-bold">{positionInfo.below.totalPoints} pts</span>
+                          <span className="text-xs text-emerald-400">▼ {totalPoints - positionInfo.below.totalPoints} behind</span>
+                        </div>
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Knockout Stage - shown first when knockout is locked */}
         {knockoutStageLocked && (
@@ -230,8 +413,8 @@ export default function UserPredictionsPage() {
 
         {/* Points Breakdown */}
         {(groupStageLocked || knockoutStageLocked) && (
-          <section>
-            <PointsBreakdown breakdown={breakdown} totalPoints={totalPoints} />
+          <section id="points-breakdown">
+            <PointsBreakdown breakdown={breakdown} totalPoints={totalPoints} livePoints={livePoints} />
           </section>
         )}
       </main>

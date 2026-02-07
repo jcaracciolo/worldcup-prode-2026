@@ -35,7 +35,10 @@ export async function POST(request: NextRequest) {
 
     // Check if any row was actually updated
     if (!data || data.length === 0) {
-      console.error("No invite code was updated - code may not exist or already used:", code);
+      console.error(
+        "No invite code was updated - code may not exist or already used:",
+        code,
+      );
       return NextResponse.json(
         { error: "Invite code not found or already used" },
         { status: 400 },

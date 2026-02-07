@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { InviteCode } from "@/types/database";
+import { Profile, InviteCode } from "@/types/database";
 import { useSimulation } from "@/contexts/SimulationContext";
 import { useMatches } from "@/contexts/MatchContext";
 import { useUser } from "@/contexts/UserContext";
@@ -33,6 +33,11 @@ export default function AdminPage() {
   >([]);
   const [codesLoading, setCodesLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+
+  // Users management state
+  const [users, setUsers] = useState<Profile[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [togglingAdmin, setTogglingAdmin] = useState<string | null>(null);
 
   // Simulation form state - initialized directly from context values (using local time)
   const getInitialSimDate = () => {
@@ -113,6 +118,15 @@ export default function AdminPage() {
       }
 
       setCodesLoading(false);
+
+      // Load all users
+      const { data: usersData } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("display_name", { ascending: true });
+
+      setUsers((usersData || []) as Profile[]);
+      setUsersLoading(false);
     };
 
     loadData();
@@ -137,6 +151,30 @@ export default function AdminPage() {
     }
 
     setGenerating(false);
+  };
+
+  const handleToggleAdmin = async (userId: string, currentIsAdmin: boolean) => {
+    if (userId === profile?.id) {
+      alert("You cannot remove your own admin status");
+      return;
+    }
+
+    setTogglingAdmin(userId);
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_admin: !currentIsAdmin })
+      .eq("id", userId);
+
+    if (!error) {
+      setUsers(
+        users.map((u) =>
+          u.id === userId ? { ...u, is_admin: !currentIsAdmin } : u
+        )
+      );
+    }
+
+    setTogglingAdmin(null);
   };
 
   const handleEnableSimulation = () => {
@@ -363,6 +401,97 @@ export default function AdminPage() {
                           <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">
                             Available
                           </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Users Management */}
+        <section className="glass-card p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-white">Users Management</h2>
+            <span className="text-sm text-white/50">
+              {users.length} users
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left py-2 px-4 text-white/60">Name</th>
+                  <th className="text-left py-2 px-4 text-white/60">Email</th>
+                  <th className="text-left py-2 px-4 text-white/60">Joined</th>
+                  <th className="text-left py-2 px-4 text-white/60">Admin</th>
+                  <th className="text-left py-2 px-4 text-white/60">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usersLoading ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-white/50">
+                      Loading users...
+                    </td>
+                  </tr>
+                ) : users.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-white/50">
+                      No users found
+                    </td>
+                  </tr>
+                ) : (
+                  users.map((user) => (
+                    <tr
+                      key={user.id}
+                      className={`border-b border-white/5 hover:bg-white/5 ${
+                        user.id === profile?.id ? "bg-emerald-500/10" : ""
+                      }`}
+                    >
+                      <td className="py-2 px-4 font-medium text-white">
+                        {user.display_name}
+                        {user.id === profile?.id && (
+                          <span className="ml-2 text-xs text-emerald-400">(you)</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-4 text-white/70">{user.email}</td>
+                      <td className="py-2 px-4 text-white/70">
+                        {format(new Date(user.created_at), "MMM d, yyyy")}
+                      </td>
+                      <td className="py-2 px-4">
+                        {user.is_admin ? (
+                          <span className="px-2 py-1 bg-amber-500/20 text-amber-400 rounded text-xs">
+                            Admin
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 bg-white/10 text-white/50 rounded text-xs">
+                            User
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2 px-4">
+                        {user.id === profile?.id ? (
+                          <span className="text-white/30 text-xs">-</span>
+                        ) : (
+                          <button
+                            onClick={() => handleToggleAdmin(user.id, user.is_admin)}
+                            disabled={togglingAdmin === user.id}
+                            className={`px-3 py-1 rounded text-xs transition ${
+                              user.is_admin
+                                ? "bg-red-600/20 text-red-400 hover:bg-red-600/30"
+                                : "bg-amber-600/20 text-amber-400 hover:bg-amber-600/30"
+                            } disabled:opacity-50`}
+                          >
+                            {togglingAdmin === user.id
+                              ? "..."
+                              : user.is_admin
+                                ? "Remove Admin"
+                                : "Make Admin"}
+                          </button>
                         )}
                       </td>
                     </tr>

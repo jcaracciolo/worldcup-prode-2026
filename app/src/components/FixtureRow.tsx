@@ -78,7 +78,7 @@ export default function FixtureRow({
   return (
     <Link
       href={`/match/${match.id}`}
-      className={`flex items-center py-3 px-4 rounded-xl transition-colors ${
+      className={`block py-3 px-3 sm:px-4 rounded-xl transition-colors ${
         isLive
           ? "bg-red-900/30 border-2 border-red-500/50"
           : isFinished
@@ -86,6 +86,88 @@ export default function FixtureRow({
             : "bg-slate-800/60 hover:bg-slate-800/80"
       } border border-white/5`}
     >
+      {/* Mobile Layout - Single row */}
+      <div className="sm:hidden flex items-center gap-1.5">
+        {/* Status: FT/Live/Time */}
+        <div className="w-12 shrink-0 text-center">
+          {isLive ? (
+            <span className="px-1.5 py-0.5 bg-red-500 text-white text-[8px] font-bold rounded-full live-pulse">
+              LIVE
+            </span>
+          ) : isFinished ? (
+            <span style={{ color: "var(--date-color, #888)" }} className="text-[10px] font-bold">FT</span>
+          ) : (
+            <span style={{ color: "var(--date-color)" }} className="text-[10px] font-bold">
+              {formattedTime}
+            </span>
+          )}
+        </div>
+
+        {/* Home Team */}
+        <div className="flex-1 min-w-0 flex items-center justify-end gap-1">
+          <span className={`text-xs font-semibold truncate px-1 py-0.5 rounded ${homeIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}>
+            {homeTeam?.tla || getTeamDisplayName(homeTeam, match.id, "home")}
+          </span>
+          {homeTeam?.crest ? (
+            <img src={homeTeam.crest} alt={homeTeam.name} className="w-5 h-5 object-contain shrink-0" />
+          ) : (
+            <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
+              {homeTeam?.tla?.substring(0, 2) || "?"}
+            </div>
+          )}
+        </div>
+
+        {/* Score Display */}
+        <div className="flex items-center gap-1 shrink-0">
+          {hasScore && homeGoals !== null && awayGoals !== null ? (
+            <>
+              <div className={`w-7 h-6 flex items-center justify-center text-sm font-bold rounded ${
+                isLive ? "bg-red-500/20 text-white border border-red-500/50" : "bg-white/90 text-slate-800"
+              }`}>
+                {homeGoals}
+              </div>
+              <span className="text-white/50 font-bold text-xs">-</span>
+              <div className={`w-7 h-6 flex items-center justify-center text-sm font-bold rounded ${
+                isLive ? "bg-red-500/20 text-white border border-red-500/50" : "bg-white/90 text-slate-800"
+              }`}>
+                {awayGoals}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="w-7 h-6 flex items-center justify-center text-sm font-bold bg-white/10 rounded text-white/30">-</div>
+              <span className="text-white/50 font-bold text-xs">-</span>
+              <div className="w-7 h-6 flex items-center justify-center text-sm font-bold bg-white/10 rounded text-white/30">-</div>
+            </>
+          )}
+        </div>
+
+        {/* Away Team */}
+        <div className="flex-1 min-w-0 flex items-center gap-1">
+          {awayTeam?.crest ? (
+            <img src={awayTeam.crest} alt={awayTeam.name} className="w-5 h-5 object-contain shrink-0" />
+          ) : (
+            <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
+              {awayTeam?.tla?.substring(0, 2) || "?"}
+            </div>
+          )}
+          <span className={`text-xs font-semibold truncate px-1 py-0.5 rounded ${awayIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}>
+            {awayTeam?.tla || getTeamDisplayName(awayTeam, match.id, "away")}
+          </span>
+        </div>
+
+        {/* Venue */}
+        {venue && (
+          <div className="w-16 shrink-0 text-right">
+            <span style={{ color: "var(--venue-color)" }} className="text-[10px] font-medium truncate block">
+              {venue.city}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden sm:flex items-center">
       {/* Section 1: Date or Live indicator */}
       <div className="w-20 text-center shrink-0 pr-3 border-r border-white/10">
         {isLive ? (
@@ -225,6 +307,7 @@ export default function FixtureRow({
             </span>
           </div>
         </div>
+      </div>
       </div>
     </Link>
   );

@@ -1,5 +1,21 @@
 // Football-Data.org API Types
 
+/**
+ * Branded type for FIFA Match IDs (official match numbers 1-104).
+ * Use this to prevent confusion with API IDs (large numbers from football-data.org).
+ * 
+ * FIFA IDs are deterministic: match #1 is always the opening game, match #64 is always the final.
+ * API IDs are assigned by the data provider and can change.
+ */
+export type FifaMatchId = number & { readonly __brand: 'FifaMatchId' };
+
+/** Create a FifaMatchId from a number (use only when you know it's a valid FIFA match number) */
+export const asFifaMatchId = (n: number): FifaMatchId => n as FifaMatchId;
+
+/** Type guard to check if a value could be a FifaMatchId (1-104) */
+export const isValidFifaMatchId = (n: number): n is FifaMatchId => 
+  Number.isInteger(n) && n >= 1 && n <= 104;
+
 export interface Team {
   id: number;
   name: string;

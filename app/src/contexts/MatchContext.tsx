@@ -9,8 +9,9 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { Match } from "@/types/football";
+import { Match, FifaMatchId } from "@/types/football";
 import { getMatchInfo, Venue } from "@/lib/tournament";
+import { buildApiToFifaMapping } from "@/lib/api-client";
 import { useSimulation } from "./SimulationContext";
 import { useTime } from "./TimeContext";
 
@@ -29,7 +30,7 @@ export interface MatchWithLiveInfo extends Match {
     | "PENALTIES"
     | null;
   /** FIFA match number (1-104) */
-  fifaNumber: number | null;
+  fifaNumber: FifaMatchId | null;
   /** Computed venue display string */
   venueDisplay: string | null;
   /** Static venue info from tournament data */
@@ -39,8 +40,10 @@ export interface MatchWithLiveInfo extends Match {
 interface MatchContextValue {
   /** All matches with live info attached */
   matches: MatchWithLiveInfo[];
-  /** Get a specific match by API ID */
+  /** Get a specific match by API ID (INTERNAL USE ONLY - prefer getMatchByFifa) */
   getMatch: (apiId: number) => MatchWithLiveInfo | undefined;
+  /** Get a specific match by FIFA match number (1-104) - PREFERRED */
+  getMatchByFifa: (fifaNumber: FifaMatchId) => MatchWithLiveInfo | undefined;
   /** Whether any match is currently live */
   hasLiveMatches: boolean;
   /** List of currently live matches */
@@ -115,59 +118,11 @@ function determinePeriod(
 }
 
 /**
- * Build the mapping from API match ID to FIFA number
- * Group matches (1-72) are assigned by chronological order
- * Knockout matches (73-104) are assigned by stage and date
- */
-function buildFifaMapping(matches: Match[]): Map<number, number> {
-  const mapping = new Map<number, number>();
-
-  // Group stage matches (FIFA 1-72): assign by date order
-  const groupMatches = matches.filter((m) => m.stage === "GROUP_STAGE");
-  const sortedGroupMatches = [...groupMatches].sort(
-    (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
-  );
-  sortedGroupMatches.forEach((match, index) => {
-    mapping.set(match.id, index + 1);
-  });
-
-  // Knockout matches (FIFA 73-104): assign by stage and date
-  const knockoutStages = [
-    "LAST_32",
-    "LAST_16",
-    "QUARTER_FINALS",
-    "SEMI_FINALS",
-    "THIRD_PLACE",
-    "FINAL",
-  ];
-  const stageBaseNumbers: Record<string, number> = {
-    LAST_32: 73,
-    LAST_16: 89,
-    QUARTER_FINALS: 97,
-    SEMI_FINALS: 101,
-    THIRD_PLACE: 103,
-    FINAL: 104,
-  };
-
-  for (const stage of knockoutStages) {
-    const stageMatches = matches.filter((m) => m.stage === stage);
-    const sortedStageMatches = [...stageMatches].sort(
-      (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
-    );
-    sortedStageMatches.forEach((match, index) => {
-      mapping.set(match.id, stageBaseNumbers[stage] + index);
-    });
-  }
-
-  return mapping;
-}
-
-/**
  * Enhance a match with live info, FIFA number, and venue
  */
 function enhanceMatch(
   match: Match,
-  fifaMapping: Map<number, number>,
+  fifaMapping: Map<number, FifaMatchId>,
   currentTime: Date,
 ): MatchWithLiveInfo {
   const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
@@ -251,7 +206,7 @@ export function MatchProvider({
 
   // Build FIFA number mapping once when matches change
   const fifaMapping = useMemo(
-    () => buildFifaMapping(processedMatches),
+    () => buildApiToFifaMapping(processedMatches),
     [processedMatches],
   );
 
@@ -293,9 +248,15 @@ export function MatchProvider({
     await fetchMatches();
   }, [fetchMatches]);
 
-  // Get a specific match by API ID
+  // Get a specific match by API ID (internal use)
   const getMatch = useCallback(
     (apiId: number) => matches.find((m) => m.id === apiId),
+    [matches],
+  );
+
+  // Get a specific match by FIFA number (preferred)
+  const getMatchByFifa = useCallback(
+    (fifaNumber: FifaMatchId) => matches.find((m) => m.fifaNumber === fifaNumber),
     [matches],
   );
 
@@ -343,6 +304,7 @@ export function MatchProvider({
   const value: MatchContextValue = {
     matches,
     getMatch,
+    getMatchByFifa,
     hasLiveMatches,
     liveMatches,
     loading,

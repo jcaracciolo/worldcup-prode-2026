@@ -10,6 +10,7 @@ import React, {
 } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Prediction, GroupStandingsOverride } from "@/types/database";
+import { FifaMatchId } from "@/types/football";
 
 // =====================================================================
 // TYPES
@@ -17,7 +18,7 @@ import { Prediction, GroupStandingsOverride } from "@/types/database";
 
 export interface UserPredictions {
   userId: string;
-  predictions: Map<number, Prediction>;
+  predictions: Map<FifaMatchId, Prediction>;
   overrides: GroupStandingsOverride[];
   loading: boolean;
   error: string | null;
@@ -41,7 +42,7 @@ interface PredictionsContextValue {
   /** Save all predictions to database */
   savePredictions: (
     userId: string,
-    predictions: Map<number, Prediction>,
+    predictions: Map<FifaMatchId, Prediction>,
     overrides: GroupStandingsOverride[],
   ) => Promise<{ success: boolean; error?: string }>;
   /** Clear cache for a user */
@@ -88,10 +89,10 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
 
         if (overridesError) throw overridesError;
 
-        // Build predictions map
-        const predictionsMap = new Map<number, Prediction>();
+        // Build predictions map - match_id in DB is stored as FIFA match number
+        const predictionsMap = new Map<FifaMatchId, Prediction>();
         (predictionsData || []).forEach((p: Prediction) => {
-          predictionsMap.set(p.match_id, p);
+          predictionsMap.set(p.match_id as FifaMatchId, p);
         });
 
         return {
@@ -182,7 +183,7 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
         const existing = newCache.get(userId);
         if (existing) {
           const newPredictions = new Map(existing.predictions);
-          newPredictions.set(prediction.match_id, prediction);
+          newPredictions.set(prediction.match_id as FifaMatchId, prediction);
           newCache.set(userId, {
             ...existing,
             predictions: newPredictions,
@@ -269,7 +270,7 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
   const savePredictions = useCallback(
     async (
       userId: string,
-      predictions: Map<number, Prediction>,
+      predictions: Map<FifaMatchId, Prediction>,
       overrides: GroupStandingsOverride[],
     ): Promise<{ success: boolean; error?: string }> => {
       try {
@@ -375,7 +376,7 @@ export function usePredictionsContext(): PredictionsContextValue {
  * Automatically fetches if not cached
  */
 export function useUserPredictions(userId: string | null): {
-  predictions: Map<number, Prediction>;
+  predictions: Map<FifaMatchId, Prediction>;
   overrides: GroupStandingsOverride[];
   loading: boolean;
   error: string | null;
@@ -383,7 +384,7 @@ export function useUserPredictions(userId: string | null): {
   updatePrediction: (prediction: Prediction) => void;
   updateOverrides: (overrides: GroupStandingsOverride[]) => void;
   savePredictions: (
-    predictions: Map<number, Prediction>,
+    predictions: Map<FifaMatchId, Prediction>,
     overrides: GroupStandingsOverride[],
   ) => Promise<{ success: boolean; error?: string }>;
 } {
@@ -456,7 +457,7 @@ export function useUserPredictions(userId: string | null): {
       setState((prev) => {
         if (!prev) return prev;
         const newPredictions = new Map(prev.predictions);
-        newPredictions.set(prediction.match_id, prediction);
+        newPredictions.set(prediction.match_id as FifaMatchId, prediction);
         return { ...prev, predictions: newPredictions };
       });
     },
@@ -474,7 +475,7 @@ export function useUserPredictions(userId: string | null): {
 
   const savePredictions = useCallback(
     async (
-      predictions: Map<number, Prediction>,
+      predictions: Map<FifaMatchId, Prediction>,
       overrides: GroupStandingsOverride[],
     ): Promise<{ success: boolean; error?: string }> => {
       if (!userId) return { success: false, error: "Not logged in" };

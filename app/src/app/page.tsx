@@ -115,19 +115,19 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <main className="flex-1 container mx-auto px-4 py-4 sm:py-8">
+        <div className="grid lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Matches Section */}
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                <span className="text-xl">📅</span>
+            <div className="flex items-center gap-3 mb-4 sm:mb-6">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+                <span className="text-lg sm:text-xl">📅</span>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">
+                <h2 className="text-xl sm:text-2xl font-bold text-white">
                   Today&apos;s Matches
                 </h2>
-                <p className="text-white/50 text-sm">World Cup 2026</p>
+                <p className="text-white/50 text-xs sm:text-sm">World Cup 2026</p>
               </div>
             </div>
 
@@ -142,15 +142,15 @@ export default function HomePage() {
       </main>
 
       <footer className="border-t border-white/10 mt-auto">
-        <div className="container mx-auto px-4 py-6 text-center">
+        <div className="container mx-auto px-4 py-4 sm:py-6 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="text-2xl">⚽</span>
-            <span className="text-lg font-bold text-white">WorldCupProde</span>
+            <span className="text-xl sm:text-2xl">⚽</span>
+            <span className="text-base sm:text-lg font-bold text-white">WorldCupProde</span>
           </div>
-          <p className="text-white/40 text-sm">
+          <p className="text-white/40 text-xs sm:text-sm">
             FIFA World Cup 2026 Predictions
           </p>
-          <p className="text-white/30 text-xs mt-1">
+          <p className="text-white/30 text-[10px] sm:text-xs mt-1">
             Not a real betting application
           </p>
         </div>

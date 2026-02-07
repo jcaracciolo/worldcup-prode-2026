@@ -25,11 +25,15 @@ export default function MatchDetailPage() {
     profile?.id || null,
   );
 
-  // Get prediction for this match
-  const prediction = predictions.get(parseInt(matchId)) || null;
-
-  // Find the specific match
+  // Find the specific match first
   const match = matches.find((m) => m.id === parseInt(matchId));
+  
+  // Build FIFA number mapping
+  const apiToFifaMap = buildApiToFifaMapping(matches);
+  const fifaNumber = match ? apiToFifaMap.get(match.id) : undefined;
+
+  // Get prediction for this match using FIFA number
+  const prediction = fifaNumber ? predictions.get(fifaNumber) || null : null;
 
   const loading = matchesLoading || (profile && predictionsLoading);
 
@@ -49,9 +53,7 @@ export default function MatchDetailPage() {
     );
   }
 
-  // Build FIFA number mapping to get venue from tournament.ts
-  const apiToFifaMap = buildApiToFifaMapping(matches);
-  const fifaNumber = apiToFifaMap.get(match.id);
+  // Get venue from tournament.ts using FIFA number
   const matchInfo = fifaNumber ? getMatchInfo(fifaNumber) : null;
   const venueDisplay = matchInfo
     ? `${matchInfo.venue.stadium}, ${matchInfo.venue.city}`

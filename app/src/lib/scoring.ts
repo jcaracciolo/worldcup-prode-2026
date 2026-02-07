@@ -3,6 +3,7 @@ import {
   PointBreakdown,
   CalculatedStanding,
   Team,
+  FifaMatchId,
 } from "@/types/football";
 import { Prediction, GroupStandingsOverride } from "@/types/database";
 import {
@@ -799,8 +800,8 @@ export function calculateGroupStandingsBonusPoints(
 }
 
 export function calculateStandingsFromPredictions(
-  groupMatches: Match[],
-  predictions: Map<number, Prediction>,
+  groupMatches: (Match & { fifaNumber?: FifaMatchId | null })[],
+  predictions: Map<FifaMatchId, Prediction>, // Keyed by FIFA match number
   overrides: GroupStandingsOverride[],
 ): CalculatedStanding[] {
   const teamStats = new Map<number, CalculatedStanding>();
@@ -815,9 +816,10 @@ export function calculateStandingsFromPredictions(
     }
   });
 
-  // Calculate stats from predictions
+  // Calculate stats from predictions (use fifaNumber for lookup)
   groupMatches.forEach((match) => {
-    const prediction = predictions.get(match.id);
+    const fifaNumber = match.fifaNumber;
+    const prediction = fifaNumber ? predictions.get(fifaNumber) : undefined;
     if (
       !prediction ||
       prediction.home_goals === null ||
@@ -899,18 +901,23 @@ function createEmptyStanding(team: Team): CalculatedStanding {
 }
 
 export function calculateTotalPoints(
-  matches: Match[],
-  predictions: Prediction[],
+  matches: (Match & { fifaNumber?: FifaMatchId | null })[],
+  predictions: Prediction[], // Keyed by FIFA match number (match_id)
   groupOverrides: GroupStandingsOverride[],
   actualGroupStandings: Map<string, CalculatedStanding[]>,
   advancingTeamIds: Set<number>,
 ): { totalPoints: number; livePoints: number; breakdown: PointBreakdown[] } {
-  const predictionMap = new Map(predictions.map((p) => [p.match_id, p]));
+  // Predictions are keyed by FIFA match number
+  const predictionMap = new Map<FifaMatchId, Prediction>(
+    predictions.map((p) => [p.match_id as FifaMatchId, p])
+  );
   const allBreakdown: PointBreakdown[] = [];
 
-  // Calculate match points
+  // Calculate match points - use fifaNumber for prediction lookup
   matches.forEach((match) => {
-    const prediction = predictionMap.get(match.id);
+    // Use fifaNumber to look up prediction (it's keyed by FIFA number now)
+    const fifaNumber = match.fifaNumber;
+    const prediction = fifaNumber ? predictionMap.get(fifaNumber) : undefined;
 
     if (isGroupStageMatch(match)) {
       allBreakdown.push(...calculateGroupStagePoints(match, prediction));

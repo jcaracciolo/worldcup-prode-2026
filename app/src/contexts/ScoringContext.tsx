@@ -4,7 +4,7 @@ import React, { createContext, useContext, useMemo, useCallback } from "react";
 import { useMatches } from "./MatchContext";
 import { useUserPredictions } from "./PredictionsContext";
 import { Prediction, GroupStandingsOverride } from "@/types/database";
-import { Match, PointBreakdown, CalculatedStanding } from "@/types/football";
+import { Match, PointBreakdown, CalculatedStanding, FifaMatchId } from "@/types/football";
 import {
   calculateGroupStagePoints,
   calculateKnockoutPoints,
@@ -38,7 +38,7 @@ interface ScoringContextValue {
   /** Calculate score for a user given their predictions */
   calculateUserScore: (
     userId: string,
-    predictions: Map<number, Prediction>,
+    predictions: Map<FifaMatchId, Prediction>,
     overrides: GroupStandingsOverride[],
   ) => ScoreBreakdown;
   /** Get the score for a specific match */
@@ -49,7 +49,7 @@ interface ScoringContextValue {
   /** Calculate group standings from predictions */
   calculatePredictedStandings: (
     groupName: string,
-    predictions: Map<number, Prediction>,
+    predictions: Map<FifaMatchId, Prediction>,
     overrides: GroupStandingsOverride[],
   ) => CalculatedStanding[];
   /** Get actual group standings */
@@ -232,7 +232,7 @@ export function ScoringProvider({ children }: ScoringProviderProps) {
   const calculatePredictedStandings = useCallback(
     (
       groupName: string,
-      predictions: Map<number, Prediction>,
+      predictions: Map<FifaMatchId, Prediction>,
       overrides: GroupStandingsOverride[],
     ): CalculatedStanding[] => {
       const groupMatches = matchesByGroup.get(groupName) || [];
@@ -267,16 +267,16 @@ export function ScoringProvider({ children }: ScoringProviderProps) {
   const calculateUserScore = useCallback(
     (
       userId: string,
-      predictions: Map<number, Prediction>,
+      predictions: Map<FifaMatchId, Prediction>,
       overrides: GroupStandingsOverride[],
     ): ScoreBreakdown => {
       const groupStage: PointBreakdown[] = [];
       const knockout: PointBreakdown[] = [];
       const groupBonus: PointBreakdown[] = [];
 
-      // Calculate match points
+      // Calculate match points - use fifaNumber for prediction lookup
       matches.forEach((match) => {
-        const prediction = predictions.get(match.id);
+        const prediction = match.fifaNumber ? predictions.get(match.fifaNumber) : undefined;
         if (isGroupStageMatch(match)) {
           groupStage.push(...calculateGroupStagePoints(match, prediction));
         } else {

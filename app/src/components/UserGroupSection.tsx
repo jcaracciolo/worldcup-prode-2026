@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Match, CalculatedStanding } from "@/types/football";
 import { Prediction } from "@/types/database";
 import { calculateStandingsFromPredictions } from "@/lib/standings";
+import { getTeamDisplayName } from "@/lib/scoring";
+import { buildApiToFifaMapping } from "@/lib/api-client";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import StandingsTable from "@/components/StandingsTable";
 import { useMemo } from "react";
@@ -21,6 +23,10 @@ export default function UserGroupSection({
   thirdPlaceQualifying,
   showPredictions,
 }: UserGroupSectionProps) {
+  // Build API ID to FIFA number mapping
+  const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
+  
+  // Predictions are keyed by FIFA number
   const predictionMap = useMemo(
     () => new Map(predictions.map((p) => [p.match_id, p])),
     [predictions],
@@ -67,6 +73,7 @@ export default function UserGroupSection({
             const standings = calculateStandingsFromPredictions(
               groupMatchList,
               predictionMap,
+              apiToFifaMap,
             );
             return (
               <GroupCard
@@ -75,6 +82,7 @@ export default function UserGroupSection({
                 matches={groupMatchList}
                 standings={standings}
                 predictionMap={predictionMap}
+                apiToFifaMap={apiToFifaMap}
                 thirdPlaceQualifies={
                   thirdPlaceQualifying.get(groupName) || false
                 }
@@ -91,6 +99,7 @@ interface GroupCardProps {
   matches: Match[];
   standings: CalculatedStanding[];
   predictionMap: Map<number, Prediction>;
+  apiToFifaMap: Map<number, number>;
   thirdPlaceQualifies: boolean;
 }
 
@@ -99,6 +108,7 @@ function GroupCard({
   matches,
   standings,
   predictionMap,
+  apiToFifaMap,
   thirdPlaceQualifies,
 }: GroupCardProps) {
   return (
@@ -108,17 +118,20 @@ function GroupCard({
       </h3>
 
       <div className="grid md:grid-cols-2 gap-4">
-        <div>
+        <div className="bg-slate-800/50 rounded-lg p-3">
           <h4 className="text-sm font-medium text-white/50 mb-2">
             Predictions
           </h4>
-          {matches.map((match) => (
-            <GroupMatchRow
-              key={match.id}
-              match={match}
-              prediction={predictionMap.get(match.id)}
-            />
-          ))}
+          {matches.map((match) => {
+            const fifaNumber = apiToFifaMap.get(match.id);
+            return (
+              <GroupMatchRow
+                key={match.id}
+                match={match}
+                prediction={fifaNumber ? predictionMap.get(fifaNumber) : undefined}
+              />
+            );
+          })}
         </div>
 
         <div>
@@ -167,7 +180,7 @@ function GroupMatchRow({ match, prediction }: GroupMatchRowProps) {
             homeHighlight ? "text-slate-900 font-semibold" : "text-white/80"
           }
         >
-          {match.homeTeam.tla}
+          {getTeamDisplayName(match.homeTeam, match.id, "home")}
         </span>
         {match.homeTeam.crest ? (
           <img
@@ -177,7 +190,7 @@ function GroupMatchRow({ match, prediction }: GroupMatchRowProps) {
           />
         ) : (
           <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-            {match.homeTeam.tla?.substring(0, 2)}
+            ?
           </div>
         )}
       </div>
@@ -195,7 +208,7 @@ function GroupMatchRow({ match, prediction }: GroupMatchRowProps) {
           />
         ) : (
           <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-            {match.awayTeam.tla?.substring(0, 2)}
+            ?
           </div>
         )}
         <span
@@ -203,7 +216,7 @@ function GroupMatchRow({ match, prediction }: GroupMatchRowProps) {
             awayHighlight ? "text-slate-900 font-semibold" : "text-white/80"
           }
         >
-          {match.awayTeam.tla}
+          {getTeamDisplayName(match.awayTeam, match.id, "away")}
         </span>
       </div>
       {/* Points earned */}

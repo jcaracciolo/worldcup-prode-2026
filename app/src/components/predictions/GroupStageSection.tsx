@@ -1,7 +1,7 @@
 "use client";
 
 import { useTime } from "@/contexts/TimeContext";
-import { Match, CalculatedStanding } from "@/types/football";
+import { Match, CalculatedStanding, FifaMatchId } from "@/types/football";
 import { Prediction } from "@/types/database";
 import PredictionInput from "@/components/PredictionInput";
 import FixtureRow from "@/components/FixtureRow";
@@ -9,8 +9,8 @@ import StandingsTable from "@/components/StandingsTable";
 
 interface GroupStageSectionProps {
   groups: Map<string, Match[]>;
-  predictions?: Map<number, Prediction>;
-  apiToFifaMap: Map<number, number>;
+  predictions?: Map<FifaMatchId, Prediction>; // Keyed by FIFA match number (1-72)
+  apiToFifaMap: Map<number, FifaMatchId>;
   groupLocked?: boolean;
   thirdPlaceQualifying: Map<string, boolean>;
   calculateStandings: (
@@ -18,7 +18,7 @@ interface GroupStageSectionProps {
     groupName?: string,
   ) => CalculatedStanding[];
   onPredictionChange?: (
-    matchId: number,
+    fifaMatchId: FifaMatchId,
     homeGoals: number | null,
     awayGoals: number | null,
     winnerId?: number | null,
@@ -43,17 +43,17 @@ export default function GroupStageSection({
 
   return (
     <section>
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-          <span className="text-xl">🏆</span>
+      <div className="flex items-center gap-3 mb-4 sm:mb-6">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+          <span className="text-lg sm:text-xl">🏆</span>
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-white">Group Stage</h2>
-          <p className="text-white/50 text-sm">48 teams in 12 groups</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">Group Stage</h2>
+          <p className="text-white/50 text-xs sm:text-sm">48 teams in 12 groups</p>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         {Array.from(groups.entries())
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([groupName, groupMatchList]) => {
@@ -64,9 +64,9 @@ export default function GroupStageSection({
             );
 
             return (
-              <div key={groupName} className="glass-card p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="px-4 py-2 bg-emerald-500/20 text-emerald-400 text-xl font-bold rounded-lg">
+              <div key={groupName} className="glass-card p-3 sm:p-5">
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <span className="px-3 sm:px-4 py-1.5 sm:py-2 bg-emerald-500/20 text-emerald-400 text-lg sm:text-xl font-bold rounded-lg">
                     {groupName.replace("GROUP_", "Group ")}
                   </span>
                 </div>
@@ -91,13 +91,18 @@ export default function GroupStageSection({
                           );
                         }
 
+                        if (!fifaNumber) {
+                          console.warn(`No FIFA number for match ${match.id}`);
+                          return null;
+                        }
+
                         const matchHasStarted =
                           getCurrentTime() >= new Date(match.utcDate);
                         return (
                           <PredictionInput
                             key={match.id}
                             match={match}
-                            prediction={predictions?.get(match.id)}
+                            prediction={predictions?.get(fifaNumber)}
                             onChange={onPredictionChange!}
                             disabled={groupLocked || matchHasStarted}
                             fifaMatchNumber={fifaNumber}

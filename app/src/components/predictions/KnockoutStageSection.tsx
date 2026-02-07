@@ -1,7 +1,7 @@
 "use client";
 
 import { useTime } from "@/contexts/TimeContext";
-import { Match, Team } from "@/types/football";
+import { Match, Team, FifaMatchId } from "@/types/football";
 import { Prediction } from "@/types/database";
 import PredictionInput from "@/components/PredictionInput";
 import FixtureRow from "@/components/FixtureRow";
@@ -13,12 +13,12 @@ interface ResolvedTeams {
 
 interface KnockoutStageSectionProps {
   knockoutStages: Map<string, Match[]>;
-  predictions?: Map<number, Prediction>;
-  resolvedKnockoutTeams?: Map<number, ResolvedTeams>;
-  apiToFifaMap: Map<number, number>;
+  predictions?: Map<FifaMatchId, Prediction>; // Keyed by FIFA match number (73-104)
+  resolvedKnockoutTeams?: Map<FifaMatchId, ResolvedTeams>; // Keyed by FIFA match number
+  apiToFifaMap: Map<number, FifaMatchId>;
   knockoutLocked?: boolean;
   onPredictionChange?: (
-    matchId: number,
+    fifaMatchId: FifaMatchId,
     homeGoals: number | null,
     awayGoals: number | null,
     winnerId?: number | null,
@@ -105,14 +105,19 @@ export default function KnockoutStageSection({
                     );
                   }
 
-                  const resolved = resolvedKnockoutTeams?.get(match.id);
+                  if (!fifaNumber) {
+                    console.warn(`No FIFA number for match ${match.id}`);
+                    return null;
+                  }
+
+                  const resolved = resolvedKnockoutTeams?.get(fifaNumber);
                   const matchHasStarted =
                     getCurrentTime() >= new Date(match.utcDate);
                   return (
                     <PredictionInput
                       key={match.id}
                       match={match}
-                      prediction={predictions?.get(match.id)}
+                      prediction={predictions?.get(fifaNumber)}
                       onChange={onPredictionChange!}
                       disabled={knockoutLocked || matchHasStarted}
                       showWinnerSelect={true}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Match, Team, CalculatedStanding } from "@/types/football";
+import { Match, Team, CalculatedStanding, FifaMatchId } from "@/types/football";
 import { Prediction } from "@/types/database";
 import { getTeamDisplayName } from "@/lib/scoring";
 import { getMatchInfo, Venue } from "@/lib/tournament";
@@ -39,8 +39,9 @@ export default function UserKnockoutSection({
   knockoutLocked,
   showPredictions,
 }: UserKnockoutSectionProps) {
+  // Predictions from DB have match_id as number, but they ARE FIFA match IDs
   const predictionMap = useMemo(
-    () => new Map(predictions.map((p) => [p.match_id, p])),
+    () => new Map<FifaMatchId, Prediction>(predictions.map((p) => [p.match_id as FifaMatchId, p])),
     [predictions],
   );
 
@@ -165,15 +166,18 @@ export default function UserKnockoutSection({
               <div key={stage} className="glass-card p-4">
                 <h3 className="font-bold text-lg mb-3 text-white">{name}</h3>
                 <div className="grid md:grid-cols-2 gap-3">
-                  {stageMatches.map((match) => (
-                    <KnockoutMatchRow
-                      key={match.id}
-                      match={match}
-                      prediction={predictionMap.get(match.id)}
-                      resolvedTeams={resolvedKnockoutTeams.get(match.id)}
-                      venue={getMatchVenue(match)}
-                    />
-                  ))}
+                  {stageMatches.map((match) => {
+                    const fifaNumber = apiToFifaMap.get(match.id);
+                    return (
+                      <KnockoutMatchRow
+                        key={match.id}
+                        match={match}
+                        prediction={fifaNumber ? predictionMap.get(fifaNumber) : undefined}
+                        resolvedTeams={fifaNumber ? resolvedKnockoutTeams.get(fifaNumber) : undefined}
+                        venue={getMatchVenue(match)}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             );

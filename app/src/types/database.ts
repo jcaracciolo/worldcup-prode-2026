@@ -1,3 +1,5 @@
+import { FifaMatchId } from "./football";
+
 export type Json =
   | string
   | number
@@ -168,7 +170,10 @@ export interface Database {
 
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type InviteCode = Database["public"]["Tables"]["invite_codes"]["Row"];
+/** Raw prediction type from database - use TypedPrediction for type-safe match_id */
 export type Prediction = Database["public"]["Tables"]["predictions"]["Row"];
+/** Prediction with match_id typed as FifaMatchId (use this in most code) */
+export type TypedPrediction = Omit<Prediction, "match_id"> & { match_id: FifaMatchId };
 export type GroupStandingsOverride =
   Database["public"]["Tables"]["group_standings_overrides"]["Row"];
 export type MatchCache = Database["public"]["Tables"]["matches_cache"]["Row"];

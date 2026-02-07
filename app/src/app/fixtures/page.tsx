@@ -182,11 +182,11 @@ export default function FixturesPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="flex justify-between items-start mb-8">
+      <main className="flex-1 container mx-auto px-4 py-4 sm:py-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">Fixtures</h1>
-            <p className="text-white/50 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">Fixtures</h1>
+            <p className="text-white/50 mt-1 text-sm sm:text-base">
               All World Cup 2026 matches and results
             </p>
             <div className="mt-2">
@@ -199,20 +199,20 @@ export default function FixturesPage() {
           </div>
 
           {/* Stats Summary */}
-          <div className="flex gap-4 text-sm">
-            <div className="glass-card px-4 py-2">
+          <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm">
+            <div className="glass-card px-3 sm:px-4 py-1.5 sm:py-2">
               <span className="text-white/50">Finished</span>
               <span className="ml-2 text-white font-bold">
                 {stats.finished}
               </span>
             </div>
             {stats.live > 0 && (
-              <div className="glass-card px-4 py-2 bg-red-500/20 border-red-500/30">
+              <div className="glass-card px-3 sm:px-4 py-1.5 sm:py-2 bg-red-500/20 border-red-500/30">
                 <span className="text-red-400">Live</span>
                 <span className="ml-2 text-white font-bold">{stats.live}</span>
               </div>
             )}
-            <div className="glass-card px-4 py-2">
+            <div className="glass-card px-3 sm:px-4 py-1.5 sm:py-2">
               <span className="text-white/50">Scheduled</span>
               <span className="ml-2 text-white font-bold">
                 {stats.scheduled}

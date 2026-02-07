@@ -104,14 +104,14 @@ export default function StandingsTable({
                       />
                     ) : (
                       <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-                        {standing.team.tla?.substring(0, 2)}
+                        ?
                       </div>
                     )}
                     <span
                       className={`${definitelyAdvances || thirdAdvances ? "font-medium" : "text-white/80"}`}
                       style={{ color: textColor }}
                     >
-                      {standing.team.tla}
+                      {standing.team.tla || standing.team.shortName || "TBD"}
                     </span>
                     {thirdDoesNotAdvance && (
                       <span className="text-[9px] text-red-400 ml-0.5">✗</span>

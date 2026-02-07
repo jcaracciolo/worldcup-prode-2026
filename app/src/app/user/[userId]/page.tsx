@@ -86,6 +86,9 @@ export default function UserPredictionsPage() {
   // Stage lock status from time context (simulation-transparent)
   const { groupStageLocked, knockoutStageOpen, knockoutStageLocked } =
     stageLockStatus;
+  
+  // Also get isSimulated from time context
+  const { isSimulated } = useTime();
 
   // Calculate predicted standings
   const predictionMap = useMemo(
@@ -208,9 +211,9 @@ export default function UserPredictionsPage() {
     return { groupStagePoints, groupBonusPoints, knockoutPoints };
   }, [breakdown, matches]);
 
-  // Visibility rules
-  const showGroupPredictions = isOwnPredictions || groupStageLocked;
-  const showKnockoutPredictions = isOwnPredictions || knockoutStageLocked;
+  // Visibility rules - also show predictions when in simulation mode
+  const showGroupPredictions = isOwnPredictions || groupStageLocked || isSimulated;
+  const showKnockoutPredictions = isOwnPredictions || knockoutStageLocked || isSimulated;
 
   if (isLoading || matchesLoading) {
     return (

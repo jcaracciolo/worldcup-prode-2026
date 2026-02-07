@@ -13,7 +13,7 @@ import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
 import { useUser } from "@/contexts/UserContext";
 import { useUserPredictions } from "@/contexts/PredictionsContext";
-import { CalculatedStanding, Team, Match } from "@/types/football";
+import { CalculatedStanding, Team, Match, FifaMatchId } from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { BracketResolver } from "@/lib/bracket-resolver";
 import { buildApiToFifaMapping } from "@/lib/api-client";
@@ -32,7 +32,7 @@ export default function PredictionsPage() {
   } = useUserPredictions(profile?.id || null);
 
   // Local state for editing - initialize directly from cache
-  const [predictions, setPredictions] = useState<Map<number, Prediction>>(
+  const [predictions, setPredictions] = useState<Map<FifaMatchId, Prediction>>(
     () => new Map(cachedPredictions),
   );
   const [overrides, setOverrides] = useState<GroupStandingsOverride[]>(
@@ -80,25 +80,28 @@ export default function PredictionsPage() {
   // Derived loading state - only show loading if context is still loading
   const loading = userLoading || predictionsLoading;
 
+  // Build API match ID to FIFA match number mapping
+  const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
+
   const handlePredictionChange = (
-    matchId: number,
+    fifaMatchId: FifaMatchId,
     homeGoals: number | null,
     awayGoals: number | null,
     winnerId?: number | null,
   ) => {
     setHasLocalEdits(true);
-    const existing = predictions.get(matchId);
+    const existing = predictions.get(fifaMatchId);
     const updated: Prediction = {
       id: existing?.id || "",
       user_id: profile?.id || "",
-      match_id: matchId,
+      match_id: fifaMatchId, // FIFA number, not API ID
       home_goals: homeGoals,
       away_goals: awayGoals,
       winner_id: winnerId ?? existing?.winner_id ?? null,
       created_at: existing?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    setPredictions(new Map(predictions.set(matchId, updated)));
+    setPredictions(new Map(predictions.set(fifaMatchId, updated)));
   };
 
   const calculateStandings = useCallback(
@@ -115,9 +118,12 @@ export default function PredictionsPage() {
         }
       });
 
-      // Calculate from predictions
+      // Calculate from predictions (lookup by FIFA number)
       groupMatches.forEach((match) => {
-        const prediction = predictions.get(match.id);
+        const fifaNumber = apiToFifaMap.get(match.id);
+        if (!fifaNumber) return;
+        
+        const prediction = predictions.get(fifaNumber);
         if (
           !prediction ||
           prediction.home_goals === null ||
@@ -263,12 +269,15 @@ export default function PredictionsPage() {
     // Filter out predictions for unlocked sections only
     const newPredictions = new Map(predictions);
     matches.forEach((match) => {
+      const fifaNumber = apiToFifaMap.get(match.id);
+      if (!fifaNumber) return;
+      
       const isGroupStage = match.stage === "GROUP_STAGE";
       if (isGroupStage && !groupLocked) {
-        newPredictions.delete(match.id);
+        newPredictions.delete(fifaNumber);
       }
       if (!isGroupStage && knockoutOpen && !knockoutLocked) {
-        newPredictions.delete(match.id);
+        newPredictions.delete(fifaNumber);
       }
     });
     setPredictions(newPredictions);
@@ -278,9 +287,6 @@ export default function PredictionsPage() {
       setOverrides([]);
     }
   };
-
-  // Build API match ID to FIFA match number mapping for knockout matches
-  const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
 
   if (loading || matchesLoading) {
     return (
@@ -328,11 +334,11 @@ export default function PredictionsPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
+      <main className="flex-1 container mx-auto px-4 py-4 sm:py-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">My Predictions</h1>
-            <p className="text-white/50 mt-1">Set your scores for each match</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">My Predictions</h1>
+            <p className="text-white/50 mt-1 text-sm sm:text-base">Set your scores for each match</p>
             <div className="mt-2">
               <GlobalLiveIndicator
                 hasLiveMatches={hasLiveMatches}
@@ -341,23 +347,25 @@ export default function PredictionsPage() {
               />
             </div>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={handleResetPredictions}
-              disabled={groupLocked && knockoutLocked}
-              className="px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed bg-red-600 hover:bg-red-700"
-            >
-              🗑️ Reset
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving || (groupLocked && knockoutLocked)}
-              className="px-6 py-3 text-white font-semibold rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: "var(--qualifying-bg)" }}
-            >
-              {saving ? "Saving..." : "Save Predictions"}
-            </button>
-          </div>
+          {/* Show buttons only when there's something to edit */}
+          {(!groupLocked || (knockoutOpen && !knockoutLocked)) && (
+            <div className="flex gap-2 sm:gap-3">
+              <button
+                onClick={handleResetPredictions}
+                className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base text-white font-semibold rounded-xl transition-all shadow-lg bg-red-600 hover:bg-red-700"
+              >
+                🗑️ Reset
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base text-white font-semibold rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: "var(--qualifying-bg)" }}
+              >
+                {saving ? "Saving..." : "Save Predictions"}
+              </button>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -366,8 +374,8 @@ export default function PredictionsPage() {
           </div>
         )}
 
-        {/* Link to see score on profile - shown when any stage is locked */}
-        {(groupLocked || knockoutLocked) && profile && (
+        {/* Link to see score on profile - shown when buttons are hidden (all editable sections locked) */}
+        {groupLocked && (!knockoutOpen || knockoutLocked) && profile && (
           <Link
             href={`/user/${profile.id}`}
             className="block w-full mb-6 px-6 py-4 bg-gradient-to-r from-emerald-600/80 to-green-600/80 hover:from-emerald-500 hover:to-green-500 text-white font-semibold rounded-xl transition-all shadow-lg text-center border border-emerald-400/30"

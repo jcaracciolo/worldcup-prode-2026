@@ -10,10 +10,14 @@ import { Prediction } from "@/types/database";
 
 /**
  * Calculate standings from user predictions
+ * @param groupMatches - matches in the group
+ * @param predictionMap - predictions keyed by FIFA match number
+ * @param apiToFifaMap - optional mapping from API match ID to FIFA match number
  */
 export function calculateStandingsFromPredictions(
   groupMatches: Match[],
   predictionMap: Map<number, Prediction>,
+  apiToFifaMap?: Map<number, number>,
 ): CalculatedStanding[] {
   const teamStats = new Map<number, CalculatedStanding>();
 
@@ -51,7 +55,9 @@ export function calculateStandingsFromPredictions(
 
   // Apply predictions
   groupMatches.forEach((match) => {
-    const prediction = predictionMap.get(match.id);
+    // Look up prediction by FIFA number if mapping provided, otherwise by match.id
+    const lookupKey = apiToFifaMap ? apiToFifaMap.get(match.id) : match.id;
+    const prediction = lookupKey !== undefined ? predictionMap.get(lookupKey) : undefined;
     if (
       !prediction ||
       prediction.home_goals === null ||

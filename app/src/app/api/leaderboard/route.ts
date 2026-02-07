@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { calculateTotalPoints } from "@/lib/scoring";
-import { Match, CalculatedStanding } from "@/types/football";
+import { Match, CalculatedStanding, FifaMatchId } from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { getStageLockStatus } from "@/lib/time";
+import { buildApiToFifaMapping } from "@/lib/api-client";
 
 export const dynamic = "force-dynamic";
 
@@ -42,14 +43,21 @@ export async function GET() {
     }
 
     // Fetch matches
-    let matches: Match[] = [];
+    let matches: (Match & { fifaNumber: FifaMatchId | null })[] = [];
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/matches`,
         { cache: "no-store" },
       );
       const data = await res.json();
-      matches = data.matches || [];
+      const rawMatches: Match[] = data.matches || [];
+      
+      // Add FIFA numbers to each match
+      const fifaMapping = buildApiToFifaMapping(rawMatches);
+      matches = rawMatches.map((m) => ({
+        ...m,
+        fifaNumber: fifaMapping.get(m.id) ?? null,
+      }));
     } catch (error) {
       console.error("Failed to fetch matches:", error);
     }

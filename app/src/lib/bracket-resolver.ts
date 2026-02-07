@@ -2,7 +2,7 @@
 // R32 teams come from group standings (calculated from user's group predictions)
 // R16+ teams come from winners of previous rounds (based on user's knockout predictions)
 // The FIFA bracket structure defines which matches feed into which
-import { Match, Team } from "@/types/football";
+import { Match, Team, FifaMatchId } from "@/types/football";
 import { CalculatedStanding } from "@/types/football";
 import { Prediction } from "@/types/database";
 import { r32Bracket, r16Bracket, qfBracket, sfBracket } from "./r32-bracket";
@@ -11,7 +11,7 @@ import { buildApiToFifaMapping } from "./api-client";
 
 export interface BracketResolverParams {
   matches: Match[];
-  predictions: Map<number, Prediction>;
+  predictions: Map<FifaMatchId, Prediction>;
   groupStandings: Map<string, CalculatedStanding[]>;
   thirdPlaceQualifying: Map<string, boolean>;
 }
@@ -24,14 +24,14 @@ export interface ResolvedTeams {
 // Main resolver class - uses FIFA bracket structure + user predictions
 export class BracketResolver {
   private matches: Match[];
-  private predictions: Map<number, Prediction>;
+  private predictions: Map<FifaMatchId, Prediction>; // Keyed by FIFA match number
   private groupStandings: Map<string, CalculatedStanding[]>;
   private thirdPlaceQualifying: Map<string, boolean>;
-  private resolved: Map<number, ResolvedTeams>; // API match ID -> teams
+  private resolved: Map<FifaMatchId, ResolvedTeams>; // FIFA match number -> teams
 
   // FIFA match number mappings
-  private apiIdToFifaNumber: Map<number, number>; // API ID -> FIFA number
-  private fifaNumberToApiId: Map<number, number>; // FIFA number -> API ID
+  private apiIdToFifaNumber: Map<number, FifaMatchId>; // API ID -> FIFA number
+  private fifaNumberToApiId: Map<FifaMatchId, number>; // FIFA number -> API ID
 
   constructor(params: BracketResolverParams) {
     this.matches = params.matches;
@@ -70,12 +70,11 @@ export class BracketResolver {
   }
 
   // Get predicted winner of a match by FIFA match number
-  private getPredictedWinnerByFifa(fifaMatchNumber: number): Team | null {
-    const apiId = this.fifaNumberToApiId.get(fifaMatchNumber);
-    if (!apiId) return null;
-
-    const pred = this.predictions.get(apiId);
-    const teams = this.resolved.get(apiId);
+  private getPredictedWinnerByFifa(fifaMatchNumber: FifaMatchId): Team | null {
+    // Predictions are keyed by FIFA number
+    const pred = this.predictions.get(fifaMatchNumber);
+    // Resolved teams are also keyed by FIFA number
+    const teams = this.resolved.get(fifaMatchNumber);
     if (!teams) return null;
 
     if (!pred || pred.home_goals === null || pred.away_goals === null) {
@@ -98,12 +97,11 @@ export class BracketResolver {
   }
 
   // Get predicted loser of a match by FIFA match number
-  private getPredictedLoserByFifa(fifaMatchNumber: number): Team | null {
-    const apiId = this.fifaNumberToApiId.get(fifaMatchNumber);
-    if (!apiId) return null;
-
-    const pred = this.predictions.get(apiId);
-    const teams = this.resolved.get(apiId);
+  private getPredictedLoserByFifa(fifaMatchNumber: FifaMatchId): Team | null {
+    // Predictions are keyed by FIFA number
+    const pred = this.predictions.get(fifaMatchNumber);
+    // Resolved teams are also keyed by FIFA number
+    const teams = this.resolved.get(fifaMatchNumber);
     if (!teams) return null;
 
     if (!pred || pred.home_goals === null || pred.away_goals === null) {
@@ -125,7 +123,7 @@ export class BracketResolver {
   }
 
   // Resolve all knockout teams
-  resolve(): Map<number, ResolvedTeams> {
+  resolve(): Map<FifaMatchId, ResolvedTeams> {
     // Step 1: R32 - teams from group standings (user predictions)
     this.resolveR32();
 
@@ -154,14 +152,13 @@ export class BracketResolver {
     for (const match of r32Matches) {
       const fifaNumber = this.apiIdToFifaNumber.get(match.id);
       if (!fifaNumber) {
-        this.resolved.set(match.id, { home: null, away: null });
         continue;
       }
 
       // Find the bracket slot for this FIFA match number
       const bracketSlot = r32Bracket.find((b) => b.matchNumber === fifaNumber);
       if (!bracketSlot) {
-        this.resolved.set(match.id, { home: null, away: null });
+        this.resolved.set(fifaNumber, { home: null, away: null });
         continue;
       }
 
@@ -180,7 +177,7 @@ export class BracketResolver {
           )
         : null; // 3rd place teams need dynamic resolution
 
-      this.resolved.set(match.id, { home: homeTeam, away: awayTeam });
+      this.resolved.set(fifaNumber, { home: homeTeam, away: awayTeam });
     }
   }
 
@@ -191,14 +188,13 @@ export class BracketResolver {
     for (const match of r16Matches) {
       const fifaNumber = this.apiIdToFifaNumber.get(match.id);
       if (!fifaNumber) {
-        this.resolved.set(match.id, { home: null, away: null });
         continue;
       }
 
       // Find the bracket slot - tells us which R32 matches feed into this R16 match
       const bracketSlot = r16Bracket.find((b) => b.matchNumber === fifaNumber);
       if (!bracketSlot) {
-        this.resolved.set(match.id, { home: null, away: null });
+        this.resolved.set(fifaNumber, { home: null, away: null });
         continue;
       }
 
@@ -206,7 +202,7 @@ export class BracketResolver {
       const homeTeam = this.getPredictedWinnerByFifa(bracketSlot.homeFromR32);
       const awayTeam = this.getPredictedWinnerByFifa(bracketSlot.awayFromR32);
 
-      this.resolved.set(match.id, { home: homeTeam, away: awayTeam });
+      this.resolved.set(fifaNumber, { home: homeTeam, away: awayTeam });
     }
   }
 
@@ -217,20 +213,19 @@ export class BracketResolver {
     for (const match of qfMatches) {
       const fifaNumber = this.apiIdToFifaNumber.get(match.id);
       if (!fifaNumber) {
-        this.resolved.set(match.id, { home: null, away: null });
         continue;
       }
 
       const bracketSlot = qfBracket.find((b) => b.matchNumber === fifaNumber);
       if (!bracketSlot) {
-        this.resolved.set(match.id, { home: null, away: null });
+        this.resolved.set(fifaNumber, { home: null, away: null });
         continue;
       }
 
       const homeTeam = this.getPredictedWinnerByFifa(bracketSlot.homeFromR16);
       const awayTeam = this.getPredictedWinnerByFifa(bracketSlot.awayFromR16);
 
-      this.resolved.set(match.id, { home: homeTeam, away: awayTeam });
+      this.resolved.set(fifaNumber, { home: homeTeam, away: awayTeam });
     }
   }
 
@@ -241,20 +236,19 @@ export class BracketResolver {
     for (const match of sfMatches) {
       const fifaNumber = this.apiIdToFifaNumber.get(match.id);
       if (!fifaNumber) {
-        this.resolved.set(match.id, { home: null, away: null });
         continue;
       }
 
       const bracketSlot = sfBracket.find((b) => b.matchNumber === fifaNumber);
       if (!bracketSlot) {
-        this.resolved.set(match.id, { home: null, away: null });
+        this.resolved.set(fifaNumber, { home: null, away: null });
         continue;
       }
 
       const homeTeam = this.getPredictedWinnerByFifa(bracketSlot.homeFromQF);
       const awayTeam = this.getPredictedWinnerByFifa(bracketSlot.awayFromQF);
 
-      this.resolved.set(match.id, { home: homeTeam, away: awayTeam });
+      this.resolved.set(fifaNumber, { home: homeTeam, away: awayTeam });
     }
   }
 
@@ -263,10 +257,14 @@ export class BracketResolver {
     const thirdPlaceMatch = this.matches.find((m) => m.stage === "THIRD_PLACE");
     if (!thirdPlaceMatch) return;
 
-    const homeTeam = this.getPredictedLoserByFifa(101);
-    const awayTeam = this.getPredictedLoserByFifa(102);
+    const fifaNumber = this.apiIdToFifaNumber.get(thirdPlaceMatch.id);
+    if (!fifaNumber) return;
 
-    this.resolved.set(thirdPlaceMatch.id, { home: homeTeam, away: awayTeam });
+    // SF matches are 101 and 102 - get from sfBracket for type safety
+    const homeTeam = this.getPredictedLoserByFifa(sfBracket[0].matchNumber);
+    const awayTeam = this.getPredictedLoserByFifa(sfBracket[1].matchNumber);
+
+    this.resolved.set(fifaNumber, { home: homeTeam, away: awayTeam });
   }
 
   // Final: Winners of the two SF matches (FIFA 101 and 102)
@@ -274,9 +272,13 @@ export class BracketResolver {
     const finalMatch = this.matches.find((m) => m.stage === "FINAL");
     if (!finalMatch) return;
 
-    const homeTeam = this.getPredictedWinnerByFifa(101);
-    const awayTeam = this.getPredictedWinnerByFifa(102);
+    const fifaNumber = this.apiIdToFifaNumber.get(finalMatch.id);
+    if (!fifaNumber) return;
 
-    this.resolved.set(finalMatch.id, { home: homeTeam, away: awayTeam });
+    // SF matches are 101 and 102 - get from sfBracket for type safety
+    const homeTeam = this.getPredictedWinnerByFifa(sfBracket[0].matchNumber);
+    const awayTeam = this.getPredictedWinnerByFifa(sfBracket[1].matchNumber);
+
+    this.resolved.set(fifaNumber, { home: homeTeam, away: awayTeam });
   }
 }

@@ -100,7 +100,7 @@ export default function FixtureRow({
       href={`/match/${match.id}`}
       className={`block py-3 px-3 sm:px-4 rounded-xl transition-colors ${
         isLive
-          ? "bg-red-900/30 border-2 border-red-500/50"
+          ? "bg-red-900/30 border-2 border-red-500/50 live-match"
           : isFinished
             ? "bg-slate-900/60"
             : "bg-slate-800/60 hover:bg-slate-800/80"

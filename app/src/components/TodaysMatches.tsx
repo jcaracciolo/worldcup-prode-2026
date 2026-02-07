@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
@@ -25,6 +25,14 @@ export default function TodaysMatches({
   const { matches, loading, hasLiveMatches, liveMatches, refresh } =
     useMatches();
   const { getCurrentTime } = useTime();
+
+  // Scroll to first live match
+  const scrollToFirstLiveMatch = useCallback(() => {
+    const firstLiveMatch = document.querySelector('.live-match');
+    if (firstLiveMatch) {
+      firstLiveMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, []);
 
   // Get today's date in ISO format
   const today = getCurrentTime();
@@ -99,7 +107,7 @@ export default function TodaysMatches({
           <GlobalLiveIndicator
             hasLiveMatches={hasLiveMatches}
             liveCount={liveMatches.length}
-            onClick={refresh}
+            onClick={scrollToFirstLiveMatch}
           />
         </div>
       )}

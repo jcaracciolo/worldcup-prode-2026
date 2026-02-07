@@ -105,6 +105,14 @@ export default function FixturesPage() {
     isSimulated,
   } = useMatches();
 
+  // Scroll to first live match
+  const scrollToFirstLiveMatch = useCallback(() => {
+    const firstLiveMatch = document.querySelector('.live-match');
+    if (firstLiveMatch) {
+      firstLiveMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, []);
+
   // Get stage lock status to determine section order
   const { stageLockStatus } = useSimulation();
   const showKnockoutFirst = stageLockStatus.knockoutStageLocked;
@@ -193,7 +201,7 @@ export default function FixturesPage() {
               <GlobalLiveIndicator
                 hasLiveMatches={hasLiveMatches}
                 liveCount={liveMatches.length}
-                onClick={refreshMatches}
+                onClick={scrollToFirstLiveMatch}
               />
             </div>
           </div>

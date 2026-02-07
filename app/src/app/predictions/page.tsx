@@ -62,6 +62,14 @@ export default function PredictionsPage() {
     refresh: refreshMatches,
   } = useMatches();
 
+  // Scroll to first live match
+  const scrollToFirstLiveMatch = useCallback(() => {
+    const firstLiveMatch = document.querySelector('.live-match');
+    if (firstLiveMatch) {
+      firstLiveMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, []);
+
   // Get stage lock status from time context (simulation-transparent)
   const { stageLockStatus } = useTime();
   const {
@@ -414,7 +422,7 @@ export default function PredictionsPage() {
               <GlobalLiveIndicator
                 hasLiveMatches={hasLiveMatches}
                 liveCount={liveMatches.length}
-                onClick={refreshMatches}
+                onClick={scrollToFirstLiveMatch}
               />
             </div>
           </div>

@@ -153,23 +153,18 @@ export default function AdminPage() {
     setGenerating(false);
   };
 
-  const handleToggleAdmin = async (userId: string, currentIsAdmin: boolean) => {
-    if (userId === profile?.id) {
-      alert("You cannot remove your own admin status");
-      return;
-    }
-
+  const handleMakeAdmin = async (userId: string) => {
     setTogglingAdmin(userId);
 
     const { error } = await supabase
       .from("profiles")
-      .update({ is_admin: !currentIsAdmin })
+      .update({ is_admin: true })
       .eq("id", userId);
 
     if (!error) {
       setUsers(
         users.map((u) =>
-          u.id === userId ? { ...u, is_admin: !currentIsAdmin } : u
+          u.id === userId ? { ...u, is_admin: true } : u
         )
       );
     }
@@ -474,23 +469,15 @@ export default function AdminPage() {
                         )}
                       </td>
                       <td className="py-2 px-4">
-                        {user.id === profile?.id ? (
+                        {user.is_admin ? (
                           <span className="text-white/30 text-xs">-</span>
                         ) : (
                           <button
-                            onClick={() => handleToggleAdmin(user.id, user.is_admin)}
+                            onClick={() => handleMakeAdmin(user.id)}
                             disabled={togglingAdmin === user.id}
-                            className={`px-3 py-1 rounded text-xs transition ${
-                              user.is_admin
-                                ? "bg-red-600/20 text-red-400 hover:bg-red-600/30"
-                                : "bg-amber-600/20 text-amber-400 hover:bg-amber-600/30"
-                            } disabled:opacity-50`}
+                            className="px-3 py-1 rounded text-xs transition bg-amber-600/20 text-amber-400 hover:bg-amber-600/30 disabled:opacity-50"
                           >
-                            {togglingAdmin === user.id
-                              ? "..."
-                              : user.is_admin
-                                ? "Remove Admin"
-                                : "Make Admin"}
+                            {togglingAdmin === user.id ? "..." : "Make Admin"}
                           </button>
                         )}
                       </td>

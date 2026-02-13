@@ -3,12 +3,13 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { useDatabaseService } from "@/contexts/DatabaseContext";
 
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const codeFromUrl = searchParams.get("code") || "";
+  const db = useDatabaseService();
 
   const [inviteCode, setInviteCode] = useState(codeFromUrl);
   const [displayName, setDisplayName] = useState("");
@@ -29,19 +30,13 @@ function SignupForm() {
         return;
       }
 
-      const supabase = createClient();
-      const { data } = await supabase
-        .from("invite_codes")
-        .select("id")
-        .eq("code", inviteCode)
-        .is("used_by", null)
-        .single();
-
+      // Use database service for invite code check
+      const { data } = await db.inviteCodes.checkInviteCode(inviteCode);
       setCodeValid(!!data);
     };
 
     checkCode();
-  }, [inviteCode]);
+  }, [inviteCode, db]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,26 +49,20 @@ function SignupForm() {
       return;
     }
 
-    const supabase = createClient();
-
     // Sign up the user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await db.auth.signUp(
       email,
       password,
-      options: {
-        data: {
-          display_name: displayName,
-        },
-      },
-    });
+      { display_name: displayName }
+    );
 
     if (authError) {
-      setError(authError.message);
+      setError(authError);
       setLoading(false);
       return;
     }
 
-    if (!authData.user) {
+    if (!authData) {
       setError("Failed to create account");
       setLoading(false);
       return;
@@ -86,7 +75,7 @@ function SignupForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code: inviteCode,
-          userId: authData.user.id,
+          userId: authData.id,
         }),
       });
 

@@ -3,12 +3,13 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { useDatabaseService } from "@/contexts/DatabaseContext";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
+  const db = useDatabaseService();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,15 +21,10 @@ function LoginForm() {
     setError("");
     setLoading(true);
 
-    const supabase = createClient();
+    const { error: authError } = await db.auth.signInWithPassword(email, password);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setError(error.message);
+    if (authError) {
+      setError(authError);
       setLoading(false);
       return;
     }

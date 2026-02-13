@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServerDatabaseService } from "@/lib/services/database-service";
 import { getMatches } from "@/lib/football-api";
 import { Match } from "@/types/football";
 
@@ -9,14 +9,10 @@ const CACHE_DURATION_MS = 60 * 1000; // 1 minute
 
 export async function GET() {
   try {
-    const supabase = await createClient();
+    const db = await createServerDatabaseService();
 
     // Check cache first for the full matches list
-    const { data: cacheData } = await supabase
-      .from("matches_cache")
-      .select("*")
-      .eq("match_id", 0) // Use match_id 0 for the full matches list cache
-      .single();
+    const { data: cacheData } = await db.matchesCache.getCachedMatches();
 
     const now = new Date();
     const cacheAge = cacheData?.updated_at
@@ -27,24 +23,18 @@ export async function GET() {
 
     // Return cached data if fresh
     if (cacheData && cacheAge < CACHE_DURATION_MS) {
-      matches = cacheData.data.matches || [];
+      const cachedData = cacheData.data as unknown as { matches: Match[] };
+      matches = cachedData.matches || [];
     } else {
       // Fetch fresh data from API
       matches = await getMatches();
 
-      // Update cache (upsert)
-      await supabase.from("matches_cache").upsert({
-        match_id: 0,
-        data: { matches, fetchedAt: now.toISOString() },
-        updated_at: now.toISOString(),
-      });
+      // Update cache using database service
+      await db.matchesCache.updateMatchesCache(matches);
     }
 
     // Get any individually cached match results (from generated results)
-    const { data: individualCaches } = await supabase
-      .from("matches_cache")
-      .select("*")
-      .neq("match_id", 0);
+    const { data: individualCaches } = await db.matchesCache.getIndividualCachedMatches();
 
     // Merge individual cached results into matches
     if (individualCaches && individualCaches.length > 0) {
@@ -55,7 +45,7 @@ export async function GET() {
       matches = matches.map((match) => {
         const cached = cachedMatchMap.get(match.id);
         if (cached) {
-          return cached as Match;
+          return cached as unknown as Match;
         }
         return match;
       });

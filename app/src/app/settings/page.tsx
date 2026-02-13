@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/contexts/UserContext";
+import { useDatabaseService } from "@/contexts/DatabaseContext";
 
 export default function SettingsPage() {
   const router = useRouter();
-  const supabase = createClient(); // Only used for password change (auth)
+  const db = useDatabaseService();
   const { user: profile, loading: userLoading, updateProfile } = useUser();
 
   const [displayName, setDisplayName] = useState("");
@@ -71,12 +71,10 @@ export default function SettingsPage() {
       return;
     }
 
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
+    const { error } = await db.auth.updatePassword(newPassword);
 
     if (error) {
-      setMessage({ type: "error", text: error.message });
+      setMessage({ type: "error", text: error });
     } else {
       setMessage({ type: "success", text: "Password changed!" });
       setCurrentPassword("");

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { DatabaseProvider } from "@/contexts/DatabaseContext";
 import { SimulationProvider } from "@/contexts/SimulationContext";
 import { TimeProvider } from "@/contexts/TimeContext";
 import { MatchProvider } from "@/contexts/MatchContext";
@@ -41,6 +42,7 @@ function PredictionsPreloader({ children }: { children: React.ReactNode }) {
  * Wraps the entire app with necessary context providers
  *
  * Provider order:
+ * 0. DatabaseProvider - Centralized database access (all DB operations go through this)
  * 1. SimulationProvider - Testing simulation state (admin only, controls time/data)
  * 2. TimeProvider - Time functions facade (transparent to components)
  * 3. MatchProvider - Global match data with live polling (uses simulation)
@@ -56,23 +58,25 @@ function PredictionsPreloader({ children }: { children: React.ReactNode }) {
  */
 export function Providers({ children }: ProvidersProps) {
   return (
-    <SimulationProvider>
-      <TimeProvider>
-        <MatchProvider>
-          <UserProvider>
-            <PredictionsProvider>
-              <PredictionsPreloader>
-                <ScoringProvider>
-                  <LeaderboardProvider>
-                    <Header />
-                    <PageTransition>{children}</PageTransition>
-                  </LeaderboardProvider>
-                </ScoringProvider>
-              </PredictionsPreloader>
-            </PredictionsProvider>
-          </UserProvider>
-        </MatchProvider>
-      </TimeProvider>
-    </SimulationProvider>
+    <DatabaseProvider>
+      <SimulationProvider>
+        <TimeProvider>
+          <MatchProvider>
+            <UserProvider>
+              <PredictionsProvider>
+                <PredictionsPreloader>
+                  <ScoringProvider>
+                    <LeaderboardProvider>
+                      <Header />
+                      <PageTransition>{children}</PageTransition>
+                    </LeaderboardProvider>
+                  </ScoringProvider>
+                </PredictionsPreloader>
+              </PredictionsProvider>
+            </UserProvider>
+          </MatchProvider>
+        </TimeProvider>
+      </SimulationProvider>
+    </DatabaseProvider>
   );
 }

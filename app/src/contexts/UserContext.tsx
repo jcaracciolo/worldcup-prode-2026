@@ -8,7 +8,7 @@ import {
   useCallback,
   ReactNode,
 } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useDatabaseService } from "@/contexts/DatabaseContext";
 import { Profile } from "@/types/database";
 
 interface UserContextValue {
@@ -42,7 +42,9 @@ export function UserProvider({ children }: UserProviderProps) {
     new Map(),
   );
   const [allProfiles, setAllProfiles] = useState<Profile[] | null>(null);
-  const supabase = createClient();
+  
+  // Database service for all operations (auth + data)
+  const db = useDatabaseService();
 
   const fetchUser = async (isRefresh = false) => {
     // Only show loading on initial fetch, not on refresh
@@ -50,16 +52,12 @@ export function UserProvider({ children }: UserProviderProps) {
       setLoading(true);
     }
     try {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
+      // Use database service for auth
+      const { data: authUser } = await db.auth.getUser();
 
       if (authUser) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", authUser.id)
-          .single();
+        // Use database service for profile fetch
+        const { data: profile } = await db.profiles.getProfile(authUser.id);
         setUser(profile);
         // Also cache the current user's profile
         if (profile) {
@@ -84,12 +82,12 @@ export function UserProvider({ children }: UserProviderProps) {
       if (!user) return { success: false, error: "Not logged in" };
 
       try {
-        const { error } = await supabase
-          .from("profiles")
-          .update(updates)
-          .eq("id", user.id);
+        // Use database service for profile update
+        const result = await db.profiles.updateProfile(user.id, updates);
 
-        if (error) throw error;
+        if (!result.success) {
+          throw new Error(result.error || "Failed to update profile");
+        }
 
         // Update local state
         const updatedUser = { ...user, ...updates };
@@ -106,7 +104,7 @@ export function UserProvider({ children }: UserProviderProps) {
         };
       }
     },
-    [user, supabase],
+    [user, db],
   );
 
   // Get a profile by user ID (cached)
@@ -117,11 +115,8 @@ export function UserProvider({ children }: UserProviderProps) {
       if (cached) return cached;
 
       try {
-        const { data } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", userId)
-          .single();
+        // Use database service for profile fetch
+        const { data } = await db.profiles.getProfile(userId);
 
         if (data) {
           setProfileCache((prev) => new Map(prev).set(userId, data));
@@ -132,7 +127,7 @@ export function UserProvider({ children }: UserProviderProps) {
         return null;
       }
     },
-    [profileCache, supabase],
+    [profileCache, db],
   );
 
   // Get all profiles (for leaderboard, cached)
@@ -141,8 +136,9 @@ export function UserProvider({ children }: UserProviderProps) {
     if (allProfiles) return allProfiles;
 
     try {
-      const { data } = await supabase.from("profiles").select("*");
-      const profiles = (data || []) as Profile[];
+      // Use database service for all profiles fetch
+      const { data } = await db.profiles.getAllProfiles();
+      const profiles = data || [];
       setAllProfiles(profiles);
       // Also populate individual cache
       profiles.forEach((p) => {
@@ -153,21 +149,19 @@ export function UserProvider({ children }: UserProviderProps) {
       console.error("Failed to fetch all profiles:", error);
       return [];
     }
-  }, [allProfiles, supabase]);
+  }, [allProfiles, db]);
 
   useEffect(() => {
     fetchUser();
 
-    // Listen for auth changes (login/logout)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event: string) => {
+    // Listen for auth changes (login/logout) via database service
+    const { unsubscribe } = db.auth.onAuthStateChange((event: string) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
         fetchUser();
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

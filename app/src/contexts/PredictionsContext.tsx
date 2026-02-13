@@ -5,10 +5,9 @@ import React, {
   useContext,
   useState,
   useCallback,
-  useMemo,
   useRef,
 } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useDatabaseService } from "@/contexts/DatabaseContext";
 import { Prediction, GroupStandingsOverride } from "@/types/database";
 import { FifaMatchId } from "@/types/football";
 
@@ -74,25 +73,24 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
   const cacheRef = useRef<Map<string, UserPredictions>>(cache);
   cacheRef.current = cache;
 
-  const supabase = useMemo(() => createClient(), []);
+  // Use centralized database service
+  const db = useDatabaseService();
 
-  // Fetch predictions for a user from Supabase
+  // Fetch predictions for a user from database
   const fetchPredictions = useCallback(
     async (userId: string): Promise<UserPredictions> => {
       try {
-        // Fetch predictions
+        // Fetch predictions using database service
         const { data: predictionsData, error: predictionsError } =
-          await supabase.from("predictions").select("*").eq("user_id", userId);
+          await db.predictions.getUserPredictions(userId);
 
-        if (predictionsError) throw predictionsError;
+        if (predictionsError) throw new Error(predictionsError);
 
-        // Fetch overrides
-        const { data: overridesData, error: overridesError } = await supabase
-          .from("group_standings_overrides")
-          .select("*")
-          .eq("user_id", userId);
+        // Fetch overrides using database service
+        const { data: overridesData, error: overridesError } =
+          await db.overrides.getUserOverrides(userId);
 
-        if (overridesError) throw overridesError;
+        if (overridesError) throw new Error(overridesError);
 
         // Build predictions map - match_id in DB is stored as FIFA match number
         const predictionsMap = new Map<FifaMatchId, Prediction>();
@@ -120,7 +118,7 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
         };
       }
     },
-    [supabase],
+    [db],
   );
 
   // Get user predictions (loads if not cached)
@@ -240,14 +238,14 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
     >
   > => {
     try {
-      // Fetch all predictions and overrides in one go
+      // Fetch all predictions and overrides using database service
       const [predictionsResult, overridesResult] = await Promise.all([
-        supabase.from("predictions").select("*"),
-        supabase.from("group_standings_overrides").select("*"),
+        db.predictions.getAllPredictions(),
+        db.overrides.getAllOverrides(),
       ]);
 
-      if (predictionsResult.error) throw predictionsResult.error;
-      if (overridesResult.error) throw overridesResult.error;
+      if (predictionsResult.error) throw new Error(predictionsResult.error);
+      if (overridesResult.error) throw new Error(overridesResult.error);
 
       // Group by user_id
       const userDataMap = new Map<
@@ -274,7 +272,7 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
       console.error("Failed to fetch all predictions:", error);
       return new Map();
     }
-  }, [supabase]);
+  }, [db]);
 
   // Save predictions to database
   const savePredictions = useCallback(
@@ -284,39 +282,36 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
       overrides: GroupStandingsOverride[],
     ): Promise<{ success: boolean; error?: string }> => {
       try {
-        // Convert predictions to array for upsert
+        // Convert predictions to array for save
         const predictionsArray = Array.from(predictions.values())
           .filter((p) => p.home_goals !== null || p.away_goals !== null)
           .map((p) => ({
-            user_id: userId,
             match_id: p.match_id,
             home_goals: p.home_goals,
             away_goals: p.away_goals,
             winner_id: p.winner_id,
           }));
 
-        // Upsert predictions
-        const { error: predError } = await supabase
-          .from("predictions")
-          .upsert(predictionsArray, { onConflict: "user_id,match_id" });
+        // Save predictions using database service
+        const predResult = await db.predictions.savePredictions(
+          userId,
+          predictionsArray
+        );
 
-        if (predError) throw predError;
+        if (!predResult.success) throw new Error(predResult.error || "Failed to save predictions");
 
-        // Upsert overrides
+        // Save overrides using database service
         if (overrides.length > 0) {
-          const { error: overrideError } = await supabase
-            .from("group_standings_overrides")
-            .upsert(
-              overrides.map((o) => ({
-                user_id: userId,
-                group_name: o.group_name,
-                team_id: o.team_id,
-                position: o.position,
-              })),
-              { onConflict: "user_id,group_name,team_id" },
-            );
+          const overrideResult = await db.overrides.saveOverrides(
+            userId,
+            overrides.map((o) => ({
+              group_name: o.group_name,
+              team_id: o.team_id,
+              position: o.position,
+            }))
+          );
 
-          if (overrideError) throw overrideError;
+          if (!overrideResult.success) throw new Error(overrideResult.error || "Failed to save overrides");
         }
 
         // Update cache with saved data
@@ -342,7 +337,7 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
         };
       }
     },
-    [supabase],
+    [db],
   );
 
   const value: PredictionsContextValue = {

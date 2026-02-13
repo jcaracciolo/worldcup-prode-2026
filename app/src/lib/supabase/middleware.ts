@@ -1,6 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+/**
+ * Middleware session management
+ * 
+ * Note: This file directly uses Supabase client for auth and basic profile checks
+ * because middleware runs before the React component tree and can't use the
+ * DatabaseContext hook. The profile check here is minimal (just is_admin) and
+ * is an exception to the rule that all database access should go through the
+ * database service.
+ */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -47,7 +56,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Admin-only routes
+  // Admin-only routes - minimal profile check for authorization
+  // This is an intentional exception to keep middleware fast
   if (request.nextUrl.pathname.startsWith("/admin") && user) {
     const { data: profile } = await supabase
       .from("profiles")

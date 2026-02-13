@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useDatabaseService } from "@/contexts/DatabaseContext";
 import { useMatches } from "@/contexts/MatchContext";
 import { useUser } from "@/contexts/UserContext";
 
 export default function Header() {
   const router = useRouter();
-  const supabase = createClient();
+  const db = useDatabaseService();
   const { isSimulated } = useMatches();
   const { user } = useUser();
 
@@ -19,7 +19,7 @@ export default function Header() {
   useEffect(() => setMounted(true), []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await db.auth.signOut();
     setMenuOpen(false);
     router.refresh();
   };

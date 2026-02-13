@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { Profile, InviteCode } from "@/types/database";
+import { useDatabaseService } from "@/contexts/DatabaseContext";
+import { Profile } from "@/types/database";
+import { InviteCodeWithUsedBy } from "@/lib/services/database-types";
 import { useSimulation } from "@/contexts/SimulationContext";
 import { useMatches } from "@/contexts/MatchContext";
 import { useUser } from "@/contexts/UserContext";
@@ -20,17 +21,13 @@ function generateCode(): string {
 
 export default function AdminPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const db = useDatabaseService();
   const { simulatedDateTime, seed, enableSimulation, disableSimulation } =
     useSimulation();
   const { matches, isSimulated } = useMatches();
   const { user: profile, loading: userLoading } = useUser();
 
-  const [inviteCodes, setInviteCodes] = useState<
-    (InviteCode & {
-      used_by_profile?: { id: string; display_name: string } | null;
-    })[]
-  >([]);
+  const [inviteCodes, setInviteCodes] = useState<InviteCodeWithUsedBy[]>([]);
   const [codesLoading, setCodesLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
@@ -79,72 +76,29 @@ export default function AdminPage() {
     if (!profile?.is_admin) return;
 
     const loadData = async () => {
-      // Load invite codes
-      const { data: codesData } = await supabase
-        .from("invite_codes")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      const typedCodes = (codesData || []) as unknown as InviteCode[];
-
-      // Get used_by profiles
-      const usedByIds = typedCodes
-        .filter((c) => c.used_by)
-        .map((c) => c.used_by) as string[];
-
-      if (usedByIds.length > 0) {
-        const { data: usedByProfiles } = await supabase
-          .from("profiles")
-          .select("id, display_name")
-          .in("id", usedByIds);
-
-        const profileMap = new Map(
-          (
-            (usedByProfiles || []) as { id: string; display_name: string }[]
-          ).map((p) => [p.id, p]),
-        );
-        setInviteCodes(
-          typedCodes.map((c) => ({
-            ...c,
-            used_by_profile: c.used_by
-              ? profileMap.get(c.used_by) || null
-              : null,
-          })),
-        );
-      } else {
-        setInviteCodes(
-          typedCodes.map((c) => ({ ...c, used_by_profile: null })),
-        );
-      }
-
+      // Load invite codes using database service
+      const { data: codesData } = await db.inviteCodes.getAllInviteCodes();
+      setInviteCodes(codesData || []);
       setCodesLoading(false);
 
-      // Load all users
-      const { data: usersData } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("display_name", { ascending: true });
-
-      setUsers((usersData || []) as Profile[]);
+      // Load all users using database service
+      const { data: usersData } = await db.profiles.getAllProfiles();
+      setUsers(usersData || []);
       setUsersLoading(false);
     };
 
     loadData();
-  }, [supabase, router, profile, userLoading]);
+  }, [db, router, profile, userLoading]);
 
   const handleGenerateCode = async () => {
     if (!profile) return;
     setGenerating(true);
 
     const code = generateCode();
-    const { data, error } = await supabase
-      .from("invite_codes")
-      .insert({
-        code,
-        created_by: profile.id,
-      })
-      .select()
-      .single();
+    const { data, error } = await db.inviteCodes.createInviteCode(
+      code,
+      profile.id
+    );
 
     if (!error && data) {
       setInviteCodes([{ ...data, used_by_profile: null }, ...inviteCodes]);
@@ -156,12 +110,9 @@ export default function AdminPage() {
   const handleMakeAdmin = async (userId: string) => {
     setTogglingAdmin(userId);
 
-    const { error } = await supabase
-      .from("profiles")
-      .update({ is_admin: true })
-      .eq("id", userId);
+    const result = await db.profiles.updateProfile(userId, { is_admin: true });
 
-    if (!error) {
+    if (result.success) {
       setUsers(
         users.map((u) =>
           u.id === userId ? { ...u, is_admin: true } : u

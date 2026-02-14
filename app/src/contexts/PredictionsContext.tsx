@@ -6,8 +6,9 @@ import React, {
   useState,
   useCallback,
   useRef,
+  useEffect,
 } from "react";
-import { useDatabaseService } from "@/contexts/DatabaseContext";
+import { useDatabaseService, useDatabase } from "@/contexts/DatabaseContext";
 import { Prediction, GroupStandingsOverride } from "@/types/database";
 import { FifaMatchId } from "@/types/football";
 
@@ -75,6 +76,14 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
 
   // Use centralized database service
   const db = useDatabaseService();
+  const { currentCompetitionId } = useDatabase();
+
+  // Clear cache when competition changes
+  useEffect(() => {
+    // Clear all cached predictions when competition switches
+    setCache(new Map());
+    cacheRef.current = new Map();
+  }, [currentCompetitionId]);
 
   // Fetch predictions for a user from database
   const fetchPredictions = useCallback(

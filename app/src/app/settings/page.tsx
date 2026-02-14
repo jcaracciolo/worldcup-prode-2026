@@ -17,7 +17,7 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
-  
+
   // Join competition state
   const [inviteLink, setInviteLink] = useState("");
   const [joiningCompetition, setJoiningCompetition] = useState(false);
@@ -93,7 +93,7 @@ export default function SettingsPage() {
   const handleJoinCompetition = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
-    
+
     setJoiningCompetition(true);
     setMessage({ type: "", text: "" });
 
@@ -101,7 +101,7 @@ export default function SettingsPage() {
       // Parse the invite link to extract code and competition
       let code = "";
       let competitionId = "";
-      
+
       try {
         const url = new URL(inviteLink);
         code = url.searchParams.get("code") || "";
@@ -120,7 +120,10 @@ export default function SettingsPage() {
       // Verify the invite code is valid
       const { data: codeData } = await db.inviteCodes.checkInviteCode(code);
       if (!codeData) {
-        setMessage({ type: "error", text: "Invalid or already used invite code" });
+        setMessage({
+          type: "error",
+          text: "Invalid or already used invite code",
+        });
         setJoiningCompetition(false);
         return;
       }
@@ -129,9 +132,14 @@ export default function SettingsPage() {
       const targetCompetitionId = competitionId || codeData.competition_id;
 
       // Check if already a member
-      const alreadyMember = userCompetitions.some(c => c.id === targetCompetitionId);
+      const alreadyMember = userCompetitions.some(
+        (c) => c.id === targetCompetitionId,
+      );
       if (alreadyMember) {
-        setMessage({ type: "error", text: "You are already a member of this competition" });
+        setMessage({
+          type: "error",
+          text: "You are already a member of this competition",
+        });
         setJoiningCompetition(false);
         return;
       }
@@ -149,7 +157,10 @@ export default function SettingsPage() {
 
       if (!response.ok) {
         const error = await response.json();
-        setMessage({ type: "error", text: error.error || "Failed to join competition" });
+        setMessage({
+          type: "error",
+          text: error.error || "Failed to join competition",
+        });
         setJoiningCompetition(false);
         return;
       }
@@ -273,16 +284,18 @@ export default function SettingsPage() {
 
           {/* Join Competition */}
           <section className="glass-card p-8">
-            <h2 className="text-lg font-semibold text-white mb-4">Join Another Competition</h2>
+            <h2 className="text-lg font-semibold text-white mb-4">
+              Join Another Competition
+            </h2>
             <p className="text-white/60 text-sm mb-4">
               Paste an invite link or code to join another competition.
             </p>
-            
+
             {userCompetitions.length > 0 && (
               <div className="mb-4">
                 <p className="text-white/50 text-sm mb-2">Your competitions:</p>
                 <ul className="space-y-1">
-                  {userCompetitions.map(comp => (
+                  {userCompetitions.map((comp) => (
                     <li key={comp.id} className="text-white/70 text-sm">
                       • {comp.name}
                     </li>

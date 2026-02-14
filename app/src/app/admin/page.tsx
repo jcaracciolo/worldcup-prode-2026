@@ -30,7 +30,9 @@ export default function AdminPage() {
   // Competition management state
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [competitionsLoading, setCompetitionsLoading] = useState(true);
-  const [selectedCompetitionId, setSelectedCompetitionId] = useState<string | null>(null);
+  const [selectedCompetitionId, setSelectedCompetitionId] = useState<
+    string | null
+  >(null);
   const [newCompetitionName, setNewCompetitionName] = useState("");
   const [newCompetitionDesc, setNewCompetitionDesc] = useState("");
   const [creatingCompetition, setCreatingCompetition] = useState(false);
@@ -115,7 +117,10 @@ export default function AdminPage() {
 
     const loadCodes = async () => {
       setCodesLoading(true);
-      const { data: codesData } = await db.inviteCodes.getAllInviteCodesForCompetition(selectedCompetitionId);
+      const { data: codesData } =
+        await db.inviteCodes.getAllInviteCodesForCompetition(
+          selectedCompetitionId,
+        );
       setInviteCodes(codesData || []);
       setCodesLoading(false);
     };
@@ -158,7 +163,10 @@ export default function AdminPage() {
     );
 
     if (!error && data) {
-      setInviteCodes([{ ...data, used_by_profile: null, competition: null }, ...inviteCodes]);
+      setInviteCodes([
+        { ...data, used_by_profile: null, competition: null },
+        ...inviteCodes,
+      ]);
     }
 
     setGenerating(false);
@@ -167,7 +175,7 @@ export default function AdminPage() {
   const handleCopyInviteLink = async (code: string) => {
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const inviteLink = `${baseUrl}/signup?code=${code}&competition=${selectedCompetitionId}`;
-    
+
     try {
       await navigator.clipboard.writeText(inviteLink);
       setCopiedCode(code);
@@ -184,9 +192,7 @@ export default function AdminPage() {
 
     if (result.success) {
       setUsers(
-        users.map((u) =>
-          u.id === userId ? { ...u, is_admin: true } : u
-        )
+        users.map((u) => (u.id === userId ? { ...u, is_admin: true } : u)),
       );
     }
 
@@ -362,13 +368,16 @@ export default function AdminPage() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-white">Competitions</h2>
             <span className="text-sm text-white/50">
-              {competitions.length} competition{competitions.length !== 1 ? "s" : ""}
+              {competitions.length} competition
+              {competitions.length !== 1 ? "s" : ""}
             </span>
           </div>
 
           {/* Create new competition */}
           <div className="bg-white/5 rounded-lg p-4 mb-4">
-            <h3 className="text-sm font-medium text-white/70 mb-3">Create New Competition</h3>
+            <h3 className="text-sm font-medium text-white/70 mb-3">
+              Create New Competition
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <input
@@ -402,9 +411,13 @@ export default function AdminPage() {
 
           {/* Competition list */}
           {competitionsLoading ? (
-            <div className="py-8 text-center text-white/50">Loading competitions...</div>
+            <div className="py-8 text-center text-white/50">
+              Loading competitions...
+            </div>
           ) : competitions.length === 0 ? (
-            <div className="py-8 text-center text-white/50">No competitions yet. Create one above.</div>
+            <div className="py-8 text-center text-white/50">
+              No competitions yet. Create one above.
+            </div>
           ) : (
             <div className="space-y-2">
               {competitions.map((comp) => (
@@ -421,7 +434,9 @@ export default function AdminPage() {
                     <div>
                       <h3 className="font-medium text-white">{comp.name}</h3>
                       {comp.description && (
-                        <p className="text-sm text-white/50">{comp.description}</p>
+                        <p className="text-sm text-white/50">
+                          {comp.description}
+                        </p>
                       )}
                     </div>
                     <div className="text-xs text-white/40">
@@ -441,7 +456,11 @@ export default function AdminPage() {
               <h2 className="text-xl font-bold text-white">Invite Codes</h2>
               {selectedCompetitionId && (
                 <p className="text-sm text-white/50">
-                  For: {competitions.find(c => c.id === selectedCompetitionId)?.name}
+                  For:{" "}
+                  {
+                    competitions.find((c) => c.id === selectedCompetitionId)
+                      ?.name
+                  }
                 </p>
               )}
             </div>
@@ -464,22 +483,36 @@ export default function AdminPage() {
                 <thead>
                   <tr className="border-b border-white/10">
                     <th className="text-left py-2 px-4 text-white/60">Code</th>
-                    <th className="text-left py-2 px-4 text-white/60">Created</th>
-                    <th className="text-left py-2 px-4 text-white/60">Used By</th>
-                    <th className="text-left py-2 px-4 text-white/60">Status</th>
-                    <th className="text-left py-2 px-4 text-white/60">Actions</th>
+                    <th className="text-left py-2 px-4 text-white/60">
+                      Created
+                    </th>
+                    <th className="text-left py-2 px-4 text-white/60">
+                      Used By
+                    </th>
+                    <th className="text-left py-2 px-4 text-white/60">
+                      Status
+                    </th>
+                    <th className="text-left py-2 px-4 text-white/60">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {codesLoading ? (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-white/50">
+                      <td
+                        colSpan={5}
+                        className="py-8 text-center text-white/50"
+                      >
                         Loading invite codes...
                       </td>
                     </tr>
                   ) : inviteCodes.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-white/50">
+                      <td
+                        colSpan={5}
+                        className="py-8 text-center text-white/50"
+                      >
                         No invite codes yet for this competition
                       </td>
                     </tr>
@@ -515,7 +548,9 @@ export default function AdminPage() {
                               onClick={() => handleCopyInviteLink(code.code)}
                               className="px-3 py-1 rounded text-xs transition bg-blue-600/20 text-blue-400 hover:bg-blue-600/30"
                             >
-                              {copiedCode === code.code ? "Copied!" : "Copy Link"}
+                              {copiedCode === code.code
+                                ? "Copied!"
+                                : "Copy Link"}
                             </button>
                           )}
                         </td>
@@ -532,9 +567,7 @@ export default function AdminPage() {
         <section className="glass-card p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-white">Users Management</h2>
-            <span className="text-sm text-white/50">
-              {users.length} users
-            </span>
+            <span className="text-sm text-white/50">{users.length} users</span>
           </div>
 
           <div className="overflow-x-auto">
@@ -572,7 +605,9 @@ export default function AdminPage() {
                       <td className="py-2 px-4 font-medium text-white">
                         {user.display_name}
                         {user.id === profile?.id && (
-                          <span className="ml-2 text-xs text-emerald-400">(you)</span>
+                          <span className="ml-2 text-xs text-emerald-400">
+                            (you)
+                          </span>
                         )}
                       </td>
                       <td className="py-2 px-4 text-white/70">{user.email}</td>

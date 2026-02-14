@@ -30,7 +30,7 @@ function SignupForm() {
   useEffect(() => {
     const loadCompetition = async () => {
       if (!competitionFromUrl) return;
-      
+
       const result = await db.competitions.getById(competitionFromUrl);
       if (result.data) {
         setCompetition(result.data);
@@ -69,7 +69,7 @@ function SignupForm() {
     const { data: authData, error: authError } = await db.auth.signUp(
       email,
       password,
-      { display_name: displayName }
+      { display_name: displayName },
     );
 
     if (authError) {

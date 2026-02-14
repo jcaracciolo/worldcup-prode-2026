@@ -228,7 +228,8 @@ export interface Database {
 
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Competition = Database["public"]["Tables"]["competitions"]["Row"];
-export type CompetitionMember = Database["public"]["Tables"]["competition_members"]["Row"];
+export type CompetitionMember =
+  Database["public"]["Tables"]["competition_members"]["Row"];
 export type InviteCode = Database["public"]["Tables"]["invite_codes"]["Row"];
 /** Raw prediction type from database - use TypedPrediction for type-safe match_id */
 export type Prediction = Database["public"]["Tables"]["predictions"]["Row"];

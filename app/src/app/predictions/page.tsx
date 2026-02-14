@@ -66,9 +66,9 @@ export default function PredictionsPage() {
 
   // Scroll to first live match
   const scrollToFirstLiveMatch = useCallback(() => {
-    const firstLiveMatch = document.querySelector('.live-match');
+    const firstLiveMatch = document.querySelector(".live-match");
     if (firstLiveMatch) {
-      firstLiveMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      firstLiveMatch.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, []);
 

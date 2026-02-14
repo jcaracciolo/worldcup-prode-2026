@@ -14,6 +14,7 @@ import { useTime } from "@/contexts/TimeContext";
 import { useMatches } from "@/contexts/MatchContext";
 import { usePredictionsContext } from "@/contexts/PredictionsContext";
 import { useUser } from "@/contexts/UserContext";
+import { useDatabase } from "@/contexts/DatabaseContext";
 import { UserScore, CalculatedStanding, FifaMatchId } from "@/types/football";
 import { calculateTotalPoints } from "@/lib/scoring";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
@@ -50,6 +51,7 @@ export function LeaderboardProvider({ children }: LeaderboardProviderProps) {
   const { matches } = useMatches();
   const { getAllProfiles } = useUser();
   const { getAllPredictions } = usePredictionsContext();
+  const { currentCompetitionId } = useDatabase();
   const [scores, setScores] = useState<UserScore[]>([]);
   const [loading, setLoading] = useState(true);
   const hasLoadedOnce = useRef(false);
@@ -273,7 +275,7 @@ export function LeaderboardProvider({ children }: LeaderboardProviderProps) {
     }
   }, [matches, stageLockStatus, getAllProfiles, getAllPredictions]);
 
-  // Calculate leaderboard on mount and when matches/tick changes
+  // Calculate leaderboard on mount and when matches/tick/competition changes
   useEffect(() => {
     calculateLeaderboard();
   }, [
@@ -281,6 +283,7 @@ export function LeaderboardProvider({ children }: LeaderboardProviderProps) {
     tick,
     stageLockStatus.groupStageLocked,
     stageLockStatus.knockoutStageLocked,
+    currentCompetitionId,
   ]);
 
   // Get position for a specific user

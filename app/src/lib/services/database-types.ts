@@ -83,7 +83,9 @@ export interface CompetitionMemberService {
   getUserCompetitions(userId: string): Promise<ServiceResult<Competition[]>>;
 
   /** Get all members of a competition */
-  getCompetitionMembers(competitionId: string): Promise<ServiceResult<CompetitionMember[]>>;
+  getCompetitionMembers(
+    competitionId: string,
+  ): Promise<ServiceResult<CompetitionMember[]>>;
 
   /** Add a user to a competition */
   addMember(
@@ -93,7 +95,10 @@ export interface CompetitionMemberService {
   ): Promise<ServiceVoidResult>;
 
   /** Check if a user is a member of a competition */
-  isMember(userId: string, competitionId: string): Promise<ServiceResult<boolean>>;
+  isMember(
+    userId: string,
+    competitionId: string,
+  ): Promise<ServiceResult<boolean>>;
 }
 
 // =====================================================================

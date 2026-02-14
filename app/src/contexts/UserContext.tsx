@@ -8,7 +8,7 @@ import {
   useCallback,
   ReactNode,
 } from "react";
-import { useDatabaseService } from "@/contexts/DatabaseContext";
+import { useDatabaseService, useDatabase } from "@/contexts/DatabaseContext";
 import { Profile } from "@/types/database";
 
 interface UserContextValue {
@@ -45,6 +45,12 @@ export function UserProvider({ children }: UserProviderProps) {
   
   // Database service for all operations (auth + data)
   const db = useDatabaseService();
+  const { currentCompetitionId } = useDatabase();
+
+  // Clear profiles cache when competition changes
+  useEffect(() => {
+    setAllProfiles(null);
+  }, [currentCompetitionId]);
 
   const fetchUser = async (isRefresh = false) => {
     // Only show loading on initial fetch, not on refresh

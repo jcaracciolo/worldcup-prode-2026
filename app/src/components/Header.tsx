@@ -10,7 +10,8 @@ import { useUser } from "@/contexts/UserContext";
 export default function Header() {
   const router = useRouter();
   const db = useDatabaseService();
-  const { userCompetitions, currentCompetitionId, switchCompetition } = useDatabase();
+  const { userCompetitions, currentCompetitionId, switchCompetition } =
+    useDatabase();
   const { isSimulated } = useMatches();
   const { user } = useUser();
 
@@ -20,7 +21,9 @@ export default function Header() {
   const [competitionDropdownOpen, setCompetitionDropdownOpen] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const currentCompetition = userCompetitions.find(c => c.id === currentCompetitionId);
+  const currentCompetition = userCompetitions.find(
+    (c) => c.id === currentCompetitionId,
+  );
 
   const handleLogout = async () => {
     await db.auth.signOut();
@@ -63,7 +66,9 @@ export default function Header() {
             {mounted && user && userCompetitions.length > 1 && (
               <div className="relative hidden sm:block">
                 <button
-                  onClick={() => setCompetitionDropdownOpen(!competitionDropdownOpen)}
+                  onClick={() =>
+                    setCompetitionDropdownOpen(!competitionDropdownOpen)
+                  }
                   className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-all text-sm"
                 >
                   <span className="text-white/90 max-w-[120px] truncate">
@@ -75,13 +80,18 @@ export default function Header() {
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </button>
-                
+
                 {competitionDropdownOpen && (
                   <div className="absolute top-full left-0 mt-1 w-48 bg-[#0a3d36] border border-white/20 rounded-lg shadow-xl py-1 z-50">
-                    {userCompetitions.map(comp => (
+                    {userCompetitions.map((comp) => (
                       <button
                         key={comp.id}
                         onClick={() => handleCompetitionSwitch(comp.id)}
@@ -217,15 +227,19 @@ export default function Header() {
                   onChange={(e) => handleCompetitionSwitch(e.target.value)}
                   className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm"
                 >
-                  {userCompetitions.map(comp => (
-                    <option key={comp.id} value={comp.id} className="bg-[#0a3d36]">
+                  {userCompetitions.map((comp) => (
+                    <option
+                      key={comp.id}
+                      value={comp.id}
+                      className="bg-[#0a3d36]"
+                    >
                       {comp.name}
                     </option>
                   ))}
                 </select>
               </div>
             )}
-            
+
             <Link
               href="/fixtures"
               onClick={() => setMenuOpen(false)}

@@ -10,7 +10,10 @@ import React, {
   useRef,
 } from "react";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
-import { DatabaseService, CURRENT_DB_VERSION } from "@/lib/services/database-types";
+import {
+  DatabaseService,
+  CURRENT_DB_VERSION,
+} from "@/lib/services/database-types";
 import {
   createDatabaseServiceFromClient,
   GetCompetitionIdFn,
@@ -52,7 +55,9 @@ interface DatabaseProviderProps {
 
 export function DatabaseProvider({ children }: DatabaseProviderProps) {
   // Competition state
-  const [currentCompetitionId, setCurrentCompetitionId] = useState<string | null>(null);
+  const [currentCompetitionId, setCurrentCompetitionId] = useState<
+    string | null
+  >(null);
   const [userCompetitions, setUserCompetitions] = useState<Competition[]>([]);
   const [competitionLoading, setCompetitionLoading] = useState(true);
 
@@ -169,7 +174,10 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
       // Verify user has access to this competition
       const hasAccess = userCompetitions.some((c) => c.id === competitionId);
       if (!hasAccess) {
-        console.warn("[DB] User does not have access to competition:", competitionId);
+        console.warn(
+          "[DB] User does not have access to competition:",
+          competitionId,
+        );
         return;
       }
 
@@ -248,7 +256,9 @@ export function useDatabase(): DatabaseContextValue {
 export function useDatabaseService(): DatabaseService {
   const context = useContext(DatabaseContext);
   if (!context) {
-    throw new Error("useDatabaseService must be used within a DatabaseProvider");
+    throw new Error(
+      "useDatabaseService must be used within a DatabaseProvider",
+    );
   }
   return context.db;
 }

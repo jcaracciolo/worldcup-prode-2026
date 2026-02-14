@@ -21,7 +21,10 @@
 
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import { DatabaseService, CURRENT_DB_VERSION } from "./database-types";
-import { createDatabaseServiceFromClient, GetCompetitionIdFn } from "./database-shared";
+import {
+  createDatabaseServiceFromClient,
+  GetCompetitionIdFn,
+} from "./database-shared";
 
 // =====================================================================
 // CLIENT-SIDE DATABASE SERVICE

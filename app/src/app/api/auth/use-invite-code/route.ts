@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     // Verify the invite code and get its competition
     const { data: codeData } = await db.inviteCodes.checkInviteCode(code);
-    
+
     if (!codeData) {
       return NextResponse.json(
         { error: "Invalid or already used invite code" },
@@ -57,7 +57,10 @@ export async function POST(request: NextRequest) {
       // User can still join via settings
     }
 
-    return NextResponse.json({ success: true, competitionId: targetCompetitionId });
+    return NextResponse.json({
+      success: true,
+      competitionId: targetCompetitionId,
+    });
   } catch (error) {
     console.error("Error in use-invite-code:", error);
     return NextResponse.json(

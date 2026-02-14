@@ -43,7 +43,10 @@ export type GetCompetitionIdFn = () => string | null;
 // PROFILE SERVICE IMPLEMENTATION
 // =====================================================================
 
-export function createProfileService(supabase: SupabaseClient): ProfileService {
+export function createProfileService(
+  supabase: SupabaseClient,
+  getCompetitionId?: GetCompetitionIdFn,
+): ProfileService {
   return {
     async getProfile(userId: string): Promise<ServiceResult<Profile>> {
       try {
@@ -66,6 +69,26 @@ export function createProfileService(supabase: SupabaseClient): ProfileService {
 
     async getAllProfiles(): Promise<ServiceResult<Profile[]>> {
       try {
+        const competitionId = getCompetitionId?.();
+        
+        if (competitionId) {
+          // Get only profiles for users in the current competition
+          const { data, error } = await supabase
+            .from("competition_members")
+            .select("profiles(*)")
+            .eq("competition_id", competitionId);
+
+          if (error) throw error;
+          
+          // Extract profiles from the join result
+          const profiles = (data || [])
+            .map((row: { profiles: Profile }) => row.profiles)
+            .filter(Boolean);
+          
+          return { data: profiles, error: null };
+        }
+
+        // Fall back to all profiles if no competition selected
         const { data, error } = await supabase.from("profiles").select("*");
 
         if (error) throw error;
@@ -139,7 +162,10 @@ export function createCompetitionService(
         if (error) throw error;
         return { data, error: null };
       } catch (error) {
-        console.error(`[DB] Failed to get competition ${competitionId}:`, error);
+        console.error(
+          `[DB] Failed to get competition ${competitionId}:`,
+          error,
+        );
         return {
           data: null,
           error: error instanceof Error ? error.message : "Unknown error",
@@ -189,7 +215,10 @@ export function createCompetitionService(
         if (error) throw error;
         return { success: true, error: null };
       } catch (error) {
-        console.error(`[DB] Failed to update competition ${competitionId}:`, error);
+        console.error(
+          `[DB] Failed to update competition ${competitionId}:`,
+          error,
+        );
         return {
           success: false,
           error: error instanceof Error ? error.message : "Unknown error",
@@ -207,10 +236,11 @@ export function createCompetitionMemberService(
   supabase: SupabaseClient,
 ): CompetitionMemberService {
   return {
-    async getUserCompetitions(userId: string): Promise<ServiceResult<Competition[]>> {
+    async getUserCompetitions(
+      userId: string,
+    ): Promise<ServiceResult<Competition[]>> {
       try {
-        const { data, error } = await supabase
-          .from("competition_members")
+        n.from("competition_members")
           .select("competition_id, competitions(*)")
           .eq("user_id", userId);
 
@@ -224,7 +254,10 @@ export function createCompetitionMemberService(
 
         return { data: competitions, error: null };
       } catch (error) {
-        console.error(`[DB] Failed to get competitions for user ${userId}:`, error);
+        console.error(
+          `[DB] Failed to get competitions for user ${userId}:`,
+          error,
+        );
         return {
           data: null,
           error: error instanceof Error ? error.message : "Unknown error",
@@ -244,7 +277,10 @@ export function createCompetitionMemberService(
         if (error) throw error;
         return { data: data || [], error: null };
       } catch (error) {
-        console.error(`[DB] Failed to get members for competition ${competitionId}:`, error);
+        console.error(
+          `[DB] Failed to get members for competition ${competitionId}:`,
+          error,
+        );
         return {
           data: null,
           error: error instanceof Error ? error.message : "Unknown error",
@@ -258,18 +294,19 @@ export function createCompetitionMemberService(
       invitedBy?: string,
     ): Promise<ServiceVoidResult> {
       try {
-        const { error } = await supabase
-          .from("competition_members")
-          .insert({
-            user_id: userId,
-            competition_id: competitionId,
-            invited_by: invitedBy || null,
-          });
+        const { error } = await supabase.from("competition_members").insert({
+          user_id: userId,
+          competition_id: competitionId,
+          invited_by: invitedBy || null,
+        });
 
         if (error) throw error;
         return { success: true, error: null };
       } catch (error) {
-        console.error(`[DB] Failed to add member ${userId} to competition ${competitionId}:`, error);
+        console.error(
+          `[DB] Failed to add member ${userId} to competition ${competitionId}:`,
+          error,
+        );
         return {
           success: false,
           error: error instanceof Error ? error.message : "Unknown error",
@@ -332,7 +369,9 @@ export function createInviteCodeService(
 
         if (codesError) throw codesError;
 
-        const typedCodes = (codes || []) as (InviteCode & { competitions: Competition })[];
+        const typedCodes = (codes || []) as (InviteCode & {
+          competitions: Competition;
+        })[];
 
         // Get used_by profiles
         const usedByIds = typedCodes
@@ -372,7 +411,10 @@ export function createInviteCodeService(
           error: null,
         };
       } catch (error) {
-        console.error("[DB] Failed to get invite codes for competition:", error);
+        console.error(
+          "[DB] Failed to get invite codes for competition:",
+          error,
+        );
         return {
           data: null,
           error: error instanceof Error ? error.message : "Unknown error",
@@ -813,7 +855,7 @@ export function createTournamentSettingsService(
           .single();
 
         if (error && error.code !== "PGRST116") throw error;
-        
+
         // If no settings exist, return default values
         if (!data) {
           return {
@@ -827,7 +869,7 @@ export function createTournamentSettingsService(
             error: null,
           };
         }
-        
+
         return { data, error: null };
       } catch (error) {
         console.error("[DB] Failed to get tournament settings:", error);
@@ -839,7 +881,9 @@ export function createTournamentSettingsService(
     },
 
     async updateSettings(
-      updates: Partial<Omit<TournamentSettings, "competition_id" | "updated_at">>,
+      updates: Partial<
+        Omit<TournamentSettings, "competition_id" | "updated_at">
+      >,
     ): Promise<ServiceVoidResult> {
       const competitionId = getCompetitionId();
       if (!competitionId) {
@@ -850,16 +894,16 @@ export function createTournamentSettingsService(
 
     async updateSettingsForCompetition(
       competitionId: string,
-      updates: Partial<Omit<TournamentSettings, "competition_id" | "updated_at">>,
+      updates: Partial<
+        Omit<TournamentSettings, "competition_id" | "updated_at">
+      >,
     ): Promise<ServiceVoidResult> {
       try {
-        const { error } = await supabase
-          .from("tournament_settings")
-          .upsert({
-            competition_id: competitionId,
-            ...updates,
-            updated_at: new Date().toISOString(),
-          });
+        const { error } = await supabase.from("tournament_settings").upsert({
+          competition_id: competitionId,
+          ...updates,
+          updated_at: new Date().toISOString(),
+        });
 
         if (error) throw error;
         return { success: true, error: null };
@@ -874,14 +918,12 @@ export function createTournamentSettingsService(
 
     async createSettings(competitionId: string): Promise<ServiceVoidResult> {
       try {
-        const { error } = await supabase
-          .from("tournament_settings")
-          .insert({
-            competition_id: competitionId,
-            group_stage_locked: false,
-            knockout_stage_open: false,
-            knockout_stage_locked: false,
-          });
+        const { error } = await supabase.from("tournament_settings").insert({
+          competition_id: competitionId,
+          group_stage_locked: false,
+          knockout_stage_open: false,
+          knockout_stage_locked: false,
+        });
 
         if (error) throw error;
         return { success: true, error: null };
@@ -1040,13 +1082,16 @@ export function createDatabaseServiceFromClient(
 ): DatabaseService {
   return {
     auth: createAuthService(supabase),
-    profiles: createProfileService(supabase),
+    profiles: createProfileService(supabase, getCompetitionId),
     competitions: createCompetitionService(supabase),
     competitionMembers: createCompetitionMemberService(supabase),
     inviteCodes: createInviteCodeService(supabase, getCompetitionId),
     predictions: createPredictionService(supabase, getCompetitionId),
     overrides: createOverrideService(supabase, getCompetitionId),
     matchesCache: createMatchesCacheService(supabase),
-    tournamentSettings: createTournamentSettingsService(supabase, getCompetitionId),
+    tournamentSettings: createTournamentSettingsService(
+      supabase,
+      getCompetitionId,
+    ),
   };
 }

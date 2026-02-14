@@ -32,7 +32,10 @@ function LoginForm() {
     setError("");
     setLoading(true);
 
-    const { error: authError } = await db.auth.signInWithPassword(email, password);
+    const { error: authError } = await db.auth.signInWithPassword(
+      email,
+      password,
+    );
 
     if (authError) {
       setError(authError);

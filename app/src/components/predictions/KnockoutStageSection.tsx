@@ -3,13 +3,16 @@
 import { useTime } from "@/contexts/TimeContext";
 import { Match, Team, FifaMatchId } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
-import PredictionInput from "@/components/PredictionInput";
 import FixtureRow from "@/components/FixtureRow";
+import MatchPointsTooltip from "@/components/MatchPointsTooltip";
+import { KnockoutMatchRow } from "@/components/MatchRowShared";
 
 interface ResolvedTeams {
   home: Team | null;
   away: Team | null;
 }
+
+type ViewMode = "edit" | "fixtures" | "predictions";
 
 interface KnockoutStageSectionProps {
   knockoutStages: Map<string, Match[]>;
@@ -23,7 +26,14 @@ interface KnockoutStageSectionProps {
     awayGoals: number | null,
     winnerId?: number | null,
   ) => void;
-  /** Read-only mode: shows FixtureRow instead of PredictionInput */
+  /**
+   * View mode:
+   * - "edit": PredictionInput for editing predictions
+   * - "fixtures": FixtureRow showing actual match results
+   * - "predictions": Show user predictions with points (read-only)
+   */
+  mode?: ViewMode;
+  /** @deprecated Use mode="fixtures" instead */
   readOnly?: boolean;
 }
 
@@ -55,9 +65,13 @@ export default function KnockoutStageSection({
   apiToFifaMap,
   knockoutLocked = false,
   onPredictionChange,
+  mode,
   readOnly = false,
 }: KnockoutStageSectionProps) {
   const { getCurrentTime } = useTime();
+
+  // Support legacy readOnly prop
+  const viewMode: ViewMode = mode ?? (readOnly ? "fixtures" : "edit");
 
   return (
     <section className="mb-10">
@@ -72,7 +86,7 @@ export default function KnockoutStageSection({
       </div>
 
       <div className="space-y-6">
-        {!readOnly && knockoutLocked && (
+        {viewMode === "edit" && knockoutLocked && (
           <div className="bg-amber-500/20 border border-amber-500/30 text-amber-300 px-4 py-3 rounded-xl">
             Knockout stage predictions are locked
           </div>
@@ -95,7 +109,7 @@ export default function KnockoutStageSection({
                 {sortedMatches.map((match) => {
                   const fifaNumber = apiToFifaMap.get(match.id);
 
-                  if (readOnly) {
+                  if (viewMode === "fixtures") {
                     return (
                       <FixtureRow
                         key={match.id}
@@ -110,20 +124,45 @@ export default function KnockoutStageSection({
                     return null;
                   }
 
+                  const prediction = predictions?.get(fifaNumber);
                   const resolved = resolvedKnockoutTeams?.get(fifaNumber);
+
+                  if (viewMode === "predictions") {
+                    // Read-only predictions with points tooltip
+                    return (
+                      <KnockoutMatchRow
+                        key={match.id}
+                        match={match}
+                        prediction={prediction}
+                        resolvedTeams={resolved}
+                        fifaMatchNumber={fifaNumber}
+                        mode="readonly"
+                        pointsTooltip={
+                          <MatchPointsTooltip
+                            match={match}
+                            prediction={prediction}
+                            predictedHomeTeam={resolved?.home ?? null}
+                            predictedAwayTeam={resolved?.away ?? null}
+                          />
+                        }
+                      />
+                    );
+                  }
+
+                  // Edit mode
                   const matchHasStarted =
                     getCurrentTime() >= new Date(match.utcDate);
                   return (
-                    <PredictionInput
+                    <KnockoutMatchRow
                       key={match.id}
                       match={match}
-                      prediction={predictions?.get(fifaNumber)}
-                      onChange={onPredictionChange!}
+                      prediction={prediction}
+                      resolvedTeams={resolved}
+                      fifaMatchNumber={fifaNumber}
+                      mode="edit"
+                      onChange={onPredictionChange}
                       disabled={knockoutLocked || matchHasStarted}
                       showWinnerSelect={true}
-                      resolvedHomeTeam={resolved?.home ?? undefined}
-                      resolvedAwayTeam={resolved?.away ?? undefined}
-                      fifaMatchNumber={fifaNumber}
                     />
                   );
                 })}

@@ -16,6 +16,7 @@ import { CalculatedStanding, Team, Match, FifaMatchId } from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { BracketResolver } from "@/lib/bracket-resolver";
 import { buildApiToFifaMapping } from "@/lib/api-client";
+import { calculateAllActualStandings } from "@/lib/standings";
 import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
 
 export default function PredictionsPage() {
@@ -111,11 +112,12 @@ export default function PredictionsPage() {
     groupStageLocked: groupLocked,
     knockoutStageOpen: knockoutOpen,
     knockoutStageLocked: knockoutLocked,
+    daysUntilKnockoutLocks,
   } = stageLockStatus;
 
   // Tab state - default to knockout if it's open
-  const [activeTab, setActiveTab] = useState<"group" | "knockout">(
-    () => knockoutOpen ? "knockout" : "group"
+  const [activeTab, setActiveTab] = useState<"group" | "knockout">(() =>
+    knockoutOpen ? "knockout" : "group",
   );
 
   // Redirect if not logged in
@@ -131,6 +133,16 @@ export default function PredictionsPage() {
 
   // Build API match ID to FIFA match number mapping
   const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
+
+  // Calculate actual standings from real match results (must be before early return)
+  const actualGroupStandings = useMemo(
+    () => calculateAllActualStandings(matches),
+    [matches],
+  );
+  const actualThirdPlaceQualifying = useMemo(
+    () => getQualifyingThirdPlaceTeams(actualGroupStandings),
+    [actualGroupStandings],
+  );
 
   const handlePredictionChange = (
     fifaMatchId: FifaMatchId,
@@ -424,11 +436,14 @@ export default function PredictionsPage() {
   });
 
   // Use BracketResolver to resolve knockout teams based on predictions
+  // Also passes actual standings/results which are used when available
   const resolver = new BracketResolver({
     matches,
     predictions,
     groupStandings,
     thirdPlaceQualifying,
+    actualGroupStandings,
+    actualThirdPlaceQualifying,
   });
   const resolvedKnockoutTeams = resolver.resolve();
 
@@ -481,6 +496,31 @@ export default function PredictionsPage() {
         {error && (
           <div className="bg-red-500/20 border border-red-500/30 text-red-300 px-4 py-3 rounded-xl mb-6">
             {error}
+          </div>
+        )}
+
+        {/* Warning banner for knockout predictions deadline */}
+        {daysUntilKnockoutLocks !== null && !knockoutLocked && (
+          <div className="bg-red-600/90 border border-red-500 text-white px-4 py-3 rounded-xl mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div>
+                <div className="font-bold">Knockout predictions lock soon!</div>
+                <div className="text-red-100 text-sm">
+                  {daysUntilKnockoutLocks === 0
+                    ? "Locking today!"
+                    : daysUntilKnockoutLocks === 1
+                      ? "Only 1 day left to finish your knockout predictions"
+                      : `Only ${daysUntilKnockoutLocks} days left to finish your knockout predictions`}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveTab("knockout")}
+              className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-colors"
+            >
+              Go to Knockout →
+            </button>
           </div>
         )}
 
@@ -539,8 +579,8 @@ export default function PredictionsPage() {
         )}
 
         {/* Knockout Stage */}
-        {activeTab === "knockout" && (
-          knockoutOpen ? (
+        {activeTab === "knockout" &&
+          (knockoutOpen ? (
             <KnockoutStageSection
               knockoutStages={knockoutStages}
               predictions={predictions}
@@ -556,8 +596,7 @@ export default function PredictionsPage() {
                 Knockout predictions will be available after group stage locks
               </p>
             </div>
-          )
-        )}
+          ))}
       </main>
 
       <footer className="border-t border-white/10 mt-auto">

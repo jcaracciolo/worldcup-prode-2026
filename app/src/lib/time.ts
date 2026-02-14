@@ -89,13 +89,13 @@ export function isGroupStageLocked(now?: Date): boolean {
 
 /**
  * Check if knockout stage predictions are open
- * Knockout opens when group stage ends (all group matches finished)
- * For simplicity: opens when last group match starts
+ * Knockout opens when group stage STARTS - users can start making
+ * knockout predictions as soon as the tournament begins
  */
 export function isKnockoutStageOpen(now?: Date): boolean {
   const currentTime = now ?? getCurrentTime();
-  // Open once group stage is complete (last group match has started)
-  return currentTime >= GROUP_STAGE_END;
+  // Open when group stage starts (tournament begins)
+  return currentTime >= GROUP_STAGE_START;
 }
 
 /**
@@ -104,6 +104,27 @@ export function isKnockoutStageOpen(now?: Date): boolean {
 export function isKnockoutStageLocked(now?: Date): boolean {
   const currentTime = now ?? getCurrentTime();
   return currentTime >= KNOCKOUT_START;
+}
+
+/**
+ * Get days until knockout stage locks (null if already locked or >5 days)
+ * Returns number of days if 5 or less, null otherwise
+ */
+export function getDaysUntilKnockoutLocks(now?: Date): number | null {
+  const currentTime = now ?? getCurrentTime();
+
+  if (currentTime >= KNOCKOUT_START) {
+    return null; // Already locked
+  }
+
+  const diff = KNOCKOUT_START.getTime() - currentTime.getTime();
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+  if (days <= 5) {
+    return days;
+  }
+
+  return null;
 }
 
 /**
@@ -126,12 +147,14 @@ export function getStageLockStatus(now?: Date): {
   groupStageLocked: boolean;
   knockoutStageOpen: boolean;
   knockoutStageLocked: boolean;
+  daysUntilKnockoutLocks: number | null;
 } {
   const currentTime = now ?? getCurrentTime();
   return {
     groupStageLocked: isGroupStageLocked(currentTime),
     knockoutStageOpen: isKnockoutStageOpen(currentTime),
     knockoutStageLocked: isKnockoutStageLocked(currentTime),
+    daysUntilKnockoutLocks: getDaysUntilKnockoutLocks(currentTime),
   };
 }
 

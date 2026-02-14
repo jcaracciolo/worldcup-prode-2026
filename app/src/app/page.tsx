@@ -1,17 +1,46 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import TodaysMatches from "@/components/TodaysMatches";
 import Leaderboard from "@/components/Leaderboard";
 import { useUser } from "@/contexts/UserContext";
 import { useLeaderboard } from "@/contexts/LeaderboardContext";
+import { useTime } from "@/contexts/TimeContext";
+import Link from "next/link";
 
 export default function HomePage() {
   const { user: profile } = useUser();
   const { scores: leaderboard } = useLeaderboard();
+  const { stageLockStatus } = useTime();
+  const daysLeft = stageLockStatus?.daysUntilKnockoutLocks;
+
+  // Avoid hydration mismatch by only showing banner after mount
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const showBanner = mounted && daysLeft !== null && daysLeft !== undefined;
 
   return (
     <div className="min-h-screen flex flex-col">
       <main className="flex-1 container mx-auto px-4 py-4 sm:py-8">
+        {/* Knockout warning banner */}
+        {showBanner && (
+          <Link href="/predictions">
+            <div className="mb-4 sm:mb-6 bg-red-600/90 rounded-lg px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-red-600 transition-colors">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">⚠️</span>
+                <span className="text-white text-sm font-medium">
+                  {daysLeft === 0
+                    ? "Knockout predictions lock today!"
+                    : daysLeft === 1
+                      ? "Only 1 day left for knockout predictions!"
+                      : `${daysLeft} days left for knockout predictions`}
+                </span>
+              </div>
+              <span className="text-white/80 text-sm">Set predictions →</span>
+            </div>
+          </Link>
+        )}
+
         <div className="grid lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Matches Section */}
           <div className="lg:col-span-2">

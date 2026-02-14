@@ -65,6 +65,7 @@ interface SimulationContextValue {
     groupStageLocked: boolean;
     knockoutStageOpen: boolean;
     knockoutStageLocked: boolean;
+    daysUntilKnockoutLocks: number | null;
   };
 }
 

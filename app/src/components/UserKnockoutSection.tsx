@@ -18,6 +18,9 @@ interface UserKnockoutSectionProps {
   knockoutOpen: boolean;
   knockoutLocked: boolean;
   showPredictions: boolean;
+  // Optional: pass actual standings to only show teams when groups are complete
+  actualGroupStandings?: Map<string, CalculatedStanding[]>;
+  actualThirdPlaceQualifying?: Map<string, boolean>;
 }
 
 const KNOCKOUT_STAGES = [
@@ -37,6 +40,8 @@ export default function UserKnockoutSection({
   knockoutOpen,
   knockoutLocked,
   showPredictions,
+  actualGroupStandings,
+  actualThirdPlaceQualifying,
 }: UserKnockoutSectionProps) {
   // Predictions from DB have match_id as number, but they ARE FIFA match IDs
   const predictionMap = useMemo(
@@ -56,9 +61,18 @@ export default function UserKnockoutSection({
       predictions: predictionMap,
       groupStandings,
       thirdPlaceQualifying,
+      actualGroupStandings,
+      actualThirdPlaceQualifying,
     });
     return resolver.resolve();
-  }, [matches, predictionMap, groupStandings, thirdPlaceQualifying]);
+  }, [
+    matches,
+    predictionMap,
+    groupStandings,
+    thirdPlaceQualifying,
+    actualGroupStandings,
+    actualThirdPlaceQualifying,
+  ]);
 
   const getMatchVenue = (match: Match): Venue | null => {
     const fifaNum = apiToFifaMap.get(match.id);
@@ -143,6 +157,7 @@ export default function UserKnockoutSection({
                             : undefined
                         }
                         venue={getMatchVenue(match)}
+                        fifaMatchNumber={fifaNumber}
                       />
                     );
                   })}
@@ -161,6 +176,7 @@ interface KnockoutMatchRowProps {
   prediction: LocalPrediction | undefined;
   resolvedTeams: ResolvedTeams | undefined;
   venue: Venue | null;
+  fifaMatchNumber?: FifaMatchId;
 }
 
 function KnockoutMatchRow({
@@ -168,6 +184,7 @@ function KnockoutMatchRow({
   prediction,
   resolvedTeams,
   venue,
+  fifaMatchNumber,
 }: KnockoutMatchRowProps) {
   const homeTeam =
     resolvedTeams?.home || (match.homeTeam?.id ? match.homeTeam : null);
@@ -245,7 +262,7 @@ function KnockoutMatchRow({
                 homeHighlight ? "text-slate-900" : "text-white"
               }`}
             >
-              {getTeamDisplayName(homeTeam, match.id, "home")}
+              {getTeamDisplayName(homeTeam, match.id, "home", fifaMatchNumber)}
             </span>
             {homeTeam?.crest ? (
               <img
@@ -293,7 +310,7 @@ function KnockoutMatchRow({
                 awayHighlight ? "text-slate-900" : "text-white"
               }`}
             >
-              {getTeamDisplayName(awayTeam, match.id, "away")}
+              {getTeamDisplayName(awayTeam, match.id, "away", fifaMatchNumber)}
             </span>
           </div>
         </div>

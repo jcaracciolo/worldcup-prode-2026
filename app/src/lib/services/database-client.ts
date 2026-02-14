@@ -21,10 +21,10 @@
 
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import { DatabaseService, CURRENT_DB_VERSION } from "./database-types";
-import {
-  createDatabaseServiceFromClient,
-  GetCompetitionIdFn,
-} from "./database-shared";
+import { createDatabaseServiceFromClient } from "./database-shared";
+
+/** Function type for getting the current competition ID */
+type GetCompetitionIdFn = () => string | null;
 
 // =====================================================================
 // CLIENT-SIDE DATABASE SERVICE
@@ -56,7 +56,7 @@ export function createClientDatabaseService(
       console.warn("Failed to create Supabase client");
       return null;
     }
-    return createDatabaseServiceFromClient(supabase, getCompetitionId);
+    return createDatabaseServiceFromClient(supabase, getCompetitionId());
   }
 
   // Use singleton for cases without competition scope

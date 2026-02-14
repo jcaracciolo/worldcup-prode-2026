@@ -114,7 +114,7 @@ export default function Header() {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-2">
+          <nav className="hidden lg:flex items-center gap-2">
             <Link
               href="/fixtures"
               className="px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all"
@@ -180,7 +180,7 @@ export default function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+            className="lg:hidden p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
             aria-label="Toggle menu"
           >
             {menuOpen ? (
@@ -217,7 +217,7 @@ export default function Header() {
 
         {/* Mobile Navigation */}
         {menuOpen && (
-          <nav className="md:hidden border-t border-white/10 py-2 px-4 space-y-1">
+          <nav className="lg:hidden border-t border-white/10 py-2 px-4 space-y-1">
             {/* Mobile Competition Switcher */}
             {user && userCompetitions.length > 1 && (
               <div className="px-4 py-2 mb-2 border-b border-white/10">

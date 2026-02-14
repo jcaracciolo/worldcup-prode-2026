@@ -34,6 +34,7 @@ interface StageLockStatus {
   groupStageLocked: boolean;
   knockoutStageOpen: boolean;
   knockoutStageLocked: boolean;
+  daysUntilKnockoutLocks: number | null;
 }
 
 interface TimeContextValue {
@@ -57,27 +58,28 @@ interface TimeProviderProps {
 
 /**
  * TimeProvider - Provides time functions to the application
- * 
+ *
  * Controls the global update tick:
  * - In real mode: ticks every 60 seconds
  * - In simulation mode: ticks every 5 seconds
- * 
+ *
  * MUST be nested inside SimulationProvider as it uses useSimulation()
  * to get the current time (which may be simulated).
  */
 export function TimeProvider({ children }: TimeProviderProps) {
   // Get time functions from simulation context (handles both real and simulated time)
-  const { getCurrentTime, stageLockStatus, simulationEnabled } = useSimulation();
-  
+  const { getCurrentTime, stageLockStatus, simulationEnabled } =
+    useSimulation();
+
   // Tick counter - increments on each interval
   const [tick, setTick] = useState(0);
 
   // Set up the tick interval based on mode
   useEffect(() => {
-    const interval = simulationEnabled 
-      ? SIMULATION_TICK_INTERVAL 
+    const interval = simulationEnabled
+      ? SIMULATION_TICK_INTERVAL
       : REAL_TIME_TICK_INTERVAL;
-    
+
     const intervalId = setInterval(() => {
       setTick((t) => t + 1);
     }, interval);
@@ -114,11 +116,11 @@ export function TimeProvider({ children }: TimeProviderProps) {
 
 /**
  * Hook to access time-related functions.
- * 
+ *
  * This is the RECOMMENDED way for components to get current time.
  * The time is automatically simulation-aware when simulation mode is active,
  * but this is completely transparent to the component.
- * 
+ *
  * The `tick` value can be used to trigger periodic refreshes:
  * ```
  * const { tick } = useTime();

@@ -3,27 +3,17 @@
 import { Match, Team, FifaMatchId } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
 import { getTeamDisplayName } from "@/lib/scoring";
-import { getMatchInfo } from "@/lib/tournament";
-
-// City name to 3-letter abbreviation mapping
-const CITY_ABBREVIATIONS: Record<string, string> = {
-  "Mexico City": "MXC",
-  Miami: "MIA",
-  Vancouver: "VAN",
-  "New York": "NYC",
-  "Los Angeles": "LAX",
-  Dallas: "DAL",
-  Houston: "HOU",
-  Seattle: "SEA",
-  "San Francisco": "SFO",
-  Boston: "BOS",
-  Monterrey: "MTY",
-  Atlanta: "ATL",
-  Philadelphia: "PHI",
-  "Kansas City": "KAN",
-  Toronto: "TOR",
-  Guadalajara: "GDL",
-};
+import {
+  CITY_ABBREVIATIONS,
+  formatMatchDate,
+  formatMatchTime,
+  getVenueFromFifaNumber,
+  getVenueAbbreviation,
+  DateColumn,
+  TimeVenueColumn,
+  MobileDateColumn,
+  TeamCrest,
+} from "@/components/MatchRowShared";
 
 interface PredictionInputProps {
   match: Match;
@@ -110,20 +100,10 @@ export default function PredictionInput({
     groupAwayWins ||
     groupIsDraw;
 
-  // Format date
-  const matchDate = new Date(match.utcDate);
-  const formattedDate = matchDate.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-  const formattedTime = matchDate.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-
-  // Get venue info from centralized tournament data
-  const matchInfo = fifaMatchNumber ? getMatchInfo(fifaMatchNumber) : null;
-  const venue = matchInfo?.venue || null;
+  // Format date and get venue
+  const formattedDate = formatMatchDate(match.utcDate);
+  const formattedTime = formatMatchTime(match.utcDate);
+  const venue = getVenueFromFifaNumber(fifaMatchNumber);
 
   return (
     <div
@@ -134,28 +114,16 @@ export default function PredictionInput({
       } ${
         needsWinnerSelect
           ? "border-2 border-amber-400/50"
-          : "border border-white/5"
+          : "border border-white/10"
       }`}
     >
       {/* Mobile Layout - Single row */}
-      <div className="sm:hidden flex items-center gap-1">
-        {/* Date+Time */}
-        <div className="w-10 shrink-0 text-center">
-          <div className="flex flex-col items-center leading-tight">
-            <span
-              style={{ color: "var(--date-color)" }}
-              className="text-[7px] font-medium"
-            >
-              {formattedDate}
-            </span>
-            <span
-              style={{ color: "var(--date-color)" }}
-              className="text-[9px] font-bold"
-            >
-              {formattedTime}
-            </span>
-          </div>
-        </div>
+      <div className="lg:hidden flex items-center gap-1">
+        {/* Date+Time+Match# */}
+        <MobileDateColumn
+          date={match.utcDate}
+          fifaMatchNumber={fifaMatchNumber}
+        />
 
         {/* Home Team */}
         <div className="flex-1 min-w-0 flex items-center justify-end gap-0.5">
@@ -170,26 +138,18 @@ export default function PredictionInput({
                   : "text-white hover:bg-white/10"
               } disabled:opacity-50`}
             >
-              {homeTeam?.tla || getTeamDisplayName(homeTeam, match.id, "home")}
+              {homeTeam?.tla ||
+                getTeamDisplayName(homeTeam, match.id, "home", fifaMatchNumber)}
             </button>
           ) : (
             <span
               className={`text-[10px] font-semibold truncate px-0.5 py-0.5 rounded ${homeIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
             >
-              {homeTeam?.tla || getTeamDisplayName(homeTeam, match.id, "home")}
+              {homeTeam?.tla ||
+                getTeamDisplayName(homeTeam, match.id, "home", fifaMatchNumber)}
             </span>
           )}
-          {homeTeam?.crest ? (
-            <img
-              src={homeTeam.crest}
-              alt={homeTeam.name}
-              className="w-4 h-4 object-contain shrink-0"
-            />
-          ) : (
-            <div className="w-4 h-4 bg-white/20 rounded-full flex items-center justify-center text-[6px] font-bold text-white/60 shrink-0">
-              {homeTeam?.tla?.substring(0, 2) || "?"}
-            </div>
-          )}
+          <TeamCrest team={homeTeam} size="sm" />
         </div>
 
         {/* Score Inputs */}
@@ -219,17 +179,7 @@ export default function PredictionInput({
 
         {/* Away Team */}
         <div className="flex-1 min-w-0 flex items-center gap-0.5">
-          {awayTeam?.crest ? (
-            <img
-              src={awayTeam.crest}
-              alt={awayTeam.name}
-              className="w-4 h-4 object-contain shrink-0"
-            />
-          ) : (
-            <div className="w-4 h-4 bg-white/20 rounded-full flex items-center justify-center text-[6px] font-bold text-white/60 shrink-0">
-              {awayTeam?.tla?.substring(0, 2) || "?"}
-            </div>
-          )}
+          <TeamCrest team={awayTeam} size="sm" />
           {needsWinnerSelect ? (
             <button
               type="button"
@@ -241,13 +191,15 @@ export default function PredictionInput({
                   : "text-white hover:bg-white/10"
               } disabled:opacity-50`}
             >
-              {awayTeam?.tla || getTeamDisplayName(awayTeam, match.id, "away")}
+              {awayTeam?.tla ||
+                getTeamDisplayName(awayTeam, match.id, "away", fifaMatchNumber)}
             </button>
           ) : (
             <span
               className={`text-[10px] font-semibold truncate px-0.5 py-0.5 rounded ${awayIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
             >
-              {awayTeam?.tla || getTeamDisplayName(awayTeam, match.id, "away")}
+              {awayTeam?.tla ||
+                getTeamDisplayName(awayTeam, match.id, "away", fifaMatchNumber)}
             </span>
           )}
         </div>
@@ -259,38 +211,19 @@ export default function PredictionInput({
               style={{ color: "var(--venue-color)" }}
               className="text-[8px] font-medium"
             >
-              {CITY_ABBREVIATIONS[venue.city] ||
-                venue.city.substring(0, 3).toUpperCase()}
+              {getVenueAbbreviation(venue.city)}
             </span>
           </div>
         )}
       </div>
 
       {/* Desktop Layout - Compact like profile page */}
-      <div className="hidden sm:flex items-center gap-2">
-        {/* Date + Time/Venue stacked */}
-        <div className="w-28 shrink-0 flex items-center justify-center gap-3">
-          <div
-            className="text-[11px] uppercase font-bold tracking-wide text-center"
-            style={{ color: "var(--date-color)" }}
-          >
-            {formattedDate}
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-[10px] text-white/70 font-medium">
-              {formattedTime}
-            </span>
-            {venue && (
-              <span
-                className="text-[10px] font-semibold"
-                style={{ color: "var(--venue-color)" }}
-              >
-                {CITY_ABBREVIATIONS[venue.city] ||
-                  venue.city.substring(0, 3).toUpperCase()}
-              </span>
-            )}
-          </div>
-        </div>
+      <div className="hidden lg:flex items-center gap-2">
+        <DateColumn date={match.utcDate} fifaMatchNumber={fifaMatchNumber} />
+        <TimeVenueColumn
+          time={match.utcDate}
+          fifaMatchNumber={fifaMatchNumber}
+        />
 
         {/* Match section */}
         <div className="flex-1 flex items-center justify-center">
@@ -309,19 +242,14 @@ export default function PredictionInput({
               >
                 <span className="text-xs font-semibold">
                   {homeTeam?.tla ||
-                    getTeamDisplayName(homeTeam, match.id, "home")}
+                    getTeamDisplayName(
+                      homeTeam,
+                      match.id,
+                      "home",
+                      fifaMatchNumber,
+                    )}
                 </span>
-                {homeTeam?.crest ? (
-                  <img
-                    src={homeTeam.crest}
-                    alt={homeTeam.name}
-                    className="w-5 h-5 object-contain shrink-0"
-                  />
-                ) : (
-                  <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-                    {homeTeam?.tla?.substring(0, 2) || "?"}
-                  </div>
-                )}
+                <TeamCrest team={homeTeam} />
               </button>
             ) : (
               <div
@@ -335,23 +263,17 @@ export default function PredictionInput({
                   }`}
                 >
                   {homeTeam?.tla ||
-                    getTeamDisplayName(homeTeam, match.id, "home")}
+                    getTeamDisplayName(
+                      homeTeam,
+                      match.id,
+                      "home",
+                      fifaMatchNumber,
+                    )}
                 </span>
-                {homeTeam?.crest ? (
-                  <img
-                    src={homeTeam.crest}
-                    alt={homeTeam.name}
-                    className="w-5 h-5 object-contain shrink-0"
-                  />
-                ) : (
-                  <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-                    {homeTeam?.tla?.substring(0, 2) || "?"}
-                  </div>
-                )}
+                <TeamCrest team={homeTeam} />
               </div>
             )}
           </div>
-
           {/* Score Inputs - compact */}
           <div className="flex flex-col items-center mx-2">
             {/* Tie indicator when winner needed but not selected */}
@@ -398,20 +320,15 @@ export default function PredictionInput({
                     : "hover:bg-white/10"
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                {awayTeam?.crest ? (
-                  <img
-                    src={awayTeam.crest}
-                    alt={awayTeam.name}
-                    className="w-5 h-5 object-contain shrink-0"
-                  />
-                ) : (
-                  <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-                    {awayTeam?.tla?.substring(0, 2) || "?"}
-                  </div>
-                )}
+                <TeamCrest team={awayTeam} />
                 <span className="text-xs font-semibold">
                   {awayTeam?.tla ||
-                    getTeamDisplayName(awayTeam, match.id, "away")}
+                    getTeamDisplayName(
+                      awayTeam,
+                      match.id,
+                      "away",
+                      fifaMatchNumber,
+                    )}
                 </span>
               </button>
             ) : (
@@ -420,24 +337,19 @@ export default function PredictionInput({
                   awayIsWinner ? "bg-amber-500/80" : ""
                 }`}
               >
-                {awayTeam?.crest ? (
-                  <img
-                    src={awayTeam.crest}
-                    alt={awayTeam.name}
-                    className="w-5 h-5 object-contain shrink-0"
-                  />
-                ) : (
-                  <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-                    {awayTeam?.tla?.substring(0, 2) || "?"}
-                  </div>
-                )}
+                <TeamCrest team={awayTeam} />
                 <span
                   className={`text-xs font-semibold ${
                     awayIsWinner ? "text-slate-900 font-bold" : "text-white"
                   }`}
                 >
                   {awayTeam?.tla ||
-                    getTeamDisplayName(awayTeam, match.id, "away")}
+                    getTeamDisplayName(
+                      awayTeam,
+                      match.id,
+                      "away",
+                      fifaMatchNumber,
+                    )}
                 </span>
               </div>
             )}

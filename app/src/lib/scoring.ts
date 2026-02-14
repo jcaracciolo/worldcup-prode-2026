@@ -11,6 +11,7 @@ import {
   getPredictionResult,
   isGroupStageMatch,
 } from "./football-api";
+import { r32Bracket, r16Bracket, qfBracket, sfBracket } from "./r32-bracket";
 
 // =====================================================================
 // SCORING CONSTANTS - Single source of truth for all scoring rules
@@ -116,8 +117,70 @@ export function getTbdLabels(matchId: number): { home: string; away: string } {
 }
 
 /**
+ * Generate meaningful TBD labels for knockout matches based on bracket structure
+ * R32: "1A" (1st in Group A), "2B" (2nd in Group B), "3rd" (third place)
+ * R16+: "W73" (winner of match 73)
+ */
+export function getKnockoutTbdLabel(
+  fifaMatchNumber: FifaMatchId,
+  position: "home" | "away",
+): string {
+  // R32 matches (73-88): Show group position like "1A", "2B"
+  const r32Slot = r32Bracket.find((s) => s.matchNumber === fifaMatchNumber);
+  if (r32Slot) {
+    const pos =
+      position === "home" ? r32Slot.homePosition : r32Slot.awayPosition;
+    if (pos) {
+      // Extract group letter from "GROUP_A" -> "A"
+      const groupLetter = pos.group.replace("GROUP_", "");
+      return `${pos.position}${groupLetter}`;
+    }
+    // 3rd place slot - dynamic
+    return "3rd";
+  }
+
+  // R16 matches (89-96): Show winner of R32 match
+  const r16Slot = r16Bracket.find((s) => s.matchNumber === fifaMatchNumber);
+  if (r16Slot) {
+    const sourceMatch =
+      position === "home" ? r16Slot.homeFromR32 : r16Slot.awayFromR32;
+    return `W${sourceMatch}`;
+  }
+
+  // QF matches (97-100): Show winner of R16 match
+  const qfSlot = qfBracket.find((s) => s.matchNumber === fifaMatchNumber);
+  if (qfSlot) {
+    const sourceMatch =
+      position === "home" ? qfSlot.homeFromR16 : qfSlot.awayFromR16;
+    return `W${sourceMatch}`;
+  }
+
+  // SF matches (101-102): Show winner of QF match
+  const sfSlot = sfBracket.find((s) => s.matchNumber === fifaMatchNumber);
+  if (sfSlot) {
+    const sourceMatch =
+      position === "home" ? sfSlot.homeFromQF : sfSlot.awayFromQF;
+    return `W${sourceMatch}`;
+  }
+
+  // Third place (103): Losers of SF
+  if (fifaMatchNumber === 103) {
+    return position === "home" ? "L101" : "L102";
+  }
+
+  // Final (104): Winners of SF
+  if (fifaMatchNumber === 104) {
+    return position === "home" ? "W101" : "W102";
+  }
+
+  // Fallback
+  return position === "home" ? "TBD" : "TBD";
+}
+
+/**
  * Get team display name with consistent TBD fallback
  * Use this in components to display team names
+ * For knockout matches with fifaMatchNumber, generates meaningful labels like "1A", "W73"
  */
 export function getTeamDisplayName(
   team:
@@ -126,6 +189,7 @@ export function getTeamDisplayName(
     | undefined,
   matchId: number,
   position: "home" | "away",
+  fifaMatchNumber?: FifaMatchId,
 ): string {
   // Check for override first
   if (team?.name && TEAM_TLA_OVERRIDES[team.name]) {
@@ -134,6 +198,13 @@ export function getTeamDisplayName(
   if (team?.tla) return team.tla;
   if (team?.shortName) return team.shortName;
   if (team?.name) return team.name;
+
+  // For knockout matches with FIFA number, use meaningful labels
+  if (fifaMatchNumber && fifaMatchNumber >= 73) {
+    return getKnockoutTbdLabel(fifaMatchNumber, position);
+  }
+
+  // Fallback to generic labels
   const labels = getTbdLabels(matchId);
   return position === "home" ? labels.home : labels.away;
 }

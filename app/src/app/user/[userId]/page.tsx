@@ -13,9 +13,12 @@ import {
   calculateAllGroupStandings,
   calculateAllActualStandings,
 } from "@/lib/standings";
+import { buildApiToFifaMapping } from "@/lib/api-client";
+import { BracketResolver } from "@/lib/bracket-resolver";
 import { LocalPrediction } from "@/types/database";
+import { FifaMatchId } from "@/types/football";
 import PointsBreakdown from "@/components/PointsBreakdown";
-import UserKnockoutSection from "@/components/UserKnockoutSection";
+import { KnockoutStageSection } from "@/components/predictions";
 import UserGroupSection from "@/components/UserGroupSection";
 import Link from "next/link";
 
@@ -63,8 +66,8 @@ export default function UserPredictionsPage() {
   const { isSimulated } = useTime();
 
   // Tab state - default to knockout if it's open
-  const [activeTab, setActiveTab] = useState<"group" | "knockout">(
-    () => knockoutStageOpen ? "knockout" : "group"
+  const [activeTab, setActiveTab] = useState<"group" | "knockout">(() =>
+    knockoutStageOpen ? "knockout" : "group",
   );
 
   // Calculate predicted standings
@@ -93,6 +96,51 @@ export default function UserPredictionsPage() {
     () => getQualifyingThirdPlaceTeams(actualStandings),
     [actualStandings],
   );
+
+  // API ID to FIFA match number mapping
+  const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
+
+  // Predictions keyed by FIFA match number (for knockout)
+  const fifaPredictionMap = useMemo(
+    () =>
+      new Map<FifaMatchId, LocalPrediction>(
+        predictions.map((p) => [p.match_id as FifaMatchId, p]),
+      ),
+    [predictions],
+  );
+
+  // Group knockout matches by stage
+  const knockoutStages = useMemo(() => {
+    const stages = new Map<string, typeof matches>();
+    for (const match of matches) {
+      if (match.stage !== "GROUP_STAGE") {
+        const existing = stages.get(match.stage) || [];
+        existing.push(match);
+        stages.set(match.stage, existing);
+      }
+    }
+    return stages;
+  }, [matches]);
+
+  // Resolve knockout teams based on predictions
+  const resolvedKnockoutTeams = useMemo(() => {
+    const resolver = new BracketResolver({
+      matches,
+      predictions: fifaPredictionMap,
+      groupStandings: predictedStandings,
+      thirdPlaceQualifying,
+      actualGroupStandings: actualStandings,
+      actualThirdPlaceQualifying,
+    });
+    return resolver.resolve();
+  }, [
+    matches,
+    fifaPredictionMap,
+    predictedStandings,
+    thirdPlaceQualifying,
+    actualStandings,
+    actualThirdPlaceQualifying,
+  ]);
 
   // Determine which teams actually advanced
   const advancingTeamIds = useMemo(() => {
@@ -422,15 +470,35 @@ export default function UserPredictionsPage() {
 
         {/* Knockout Stage */}
         {activeTab === "knockout" && (
-          <UserKnockoutSection
-            matches={matches}
-            predictions={predictions}
-            groupStandings={predictedStandings}
-            thirdPlaceQualifying={thirdPlaceQualifying}
-            knockoutOpen={knockoutStageOpen}
-            knockoutLocked={knockoutStageLocked}
-            showPredictions={showKnockoutPredictions}
-          />
+          <>
+            {!knockoutStageOpen ? (
+              <section className="mb-8">
+                <div className="glass-card p-8 text-center">
+                  <div className="text-5xl mb-4">🔒</div>
+                  <p className="text-white/60 text-lg">
+                    Knockout predictions will be available after group stage
+                    locks
+                  </p>
+                </div>
+              </section>
+            ) : !showKnockoutPredictions ? (
+              <section className="mb-8">
+                <div className="glass-card p-8 text-center blur-sm select-none">
+                  <p className="text-white/50">
+                    Predictions will be visible after knockout stage starts
+                  </p>
+                </div>
+              </section>
+            ) : (
+              <KnockoutStageSection
+                knockoutStages={knockoutStages}
+                predictions={fifaPredictionMap}
+                resolvedKnockoutTeams={resolvedKnockoutTeams}
+                apiToFifaMap={apiToFifaMap}
+                mode="predictions"
+              />
+            )}
+          </>
         )}
 
         {/* Points Breakdown */}

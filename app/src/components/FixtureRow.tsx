@@ -1,34 +1,21 @@
 "use client";
 
-import { Match } from "@/types/football";
+import { Match, FifaMatchId } from "@/types/football";
 import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { getTeamDisplayName } from "@/lib/scoring";
-import { getMatchInfo } from "@/lib/tournament";
 import Link from "next/link";
-
-// City name to 3-letter abbreviation mapping
-const CITY_ABBREVIATIONS: Record<string, string> = {
-  "Mexico City": "MXC",
-  Miami: "MIA",
-  Vancouver: "VAN",
-  "New York": "NYC",
-  "Los Angeles": "LAX",
-  Dallas: "DAL",
-  Houston: "HOU",
-  Seattle: "SEA",
-  "San Francisco": "SFO",
-  Boston: "BOS",
-  Monterrey: "MTY",
-  Atlanta: "ATL",
-  Philadelphia: "PHI",
-  "Kansas City": "KAN",
-  Toronto: "TOR",
-  Guadalajara: "GDL",
-};
+import {
+  CITY_ABBREVIATIONS,
+  formatMatchDate,
+  formatMatchTime,
+  getVenueFromFifaNumber,
+  getVenueAbbreviation,
+  TeamCrest,
+} from "@/components/MatchRowShared";
 
 interface FixtureRowProps {
   match: Match | MatchWithLiveInfo;
-  fifaMatchNumber?: number;
+  fifaMatchNumber?: FifaMatchId;
 }
 
 // Type guard for MatchWithLiveInfo
@@ -76,20 +63,10 @@ export default function FixtureRow({
   const homeIsWinner = homeWins || (isGroupStage && isDraw);
   const awayIsWinner = awayWins || (isGroupStage && isDraw);
 
-  // Format date
-  const matchDate = new Date(match.utcDate);
-  const formattedDate = matchDate.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-  const formattedTime = matchDate.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-
-  // Get venue info from centralized tournament data
-  const matchInfo = fifaMatchNumber ? getMatchInfo(fifaMatchNumber) : null;
-  const venue = matchInfo?.venue || null;
+  // Format date and get venue
+  const formattedDate = formatMatchDate(match.utcDate);
+  const formattedTime = formatMatchTime(match.utcDate);
+  const venue = getVenueFromFifaNumber(fifaMatchNumber);
 
   // Get elapsed minutes for live matches
   const elapsedMinutes = hasLiveInfo(match) ? match.elapsedMinutes : null;
@@ -115,12 +92,19 @@ export default function FixtureRow({
               LIVE
             </span>
           ) : isFinished ? (
-            <span
-              style={{ color: "var(--date-color, #888)" }}
-              className="text-[10px] font-bold"
-            >
-              FT
-            </span>
+            <div>
+              <span
+                style={{ color: "var(--date-color, #888)" }}
+                className="text-[10px] font-bold"
+              >
+                FT
+              </span>
+              {fifaMatchNumber && (
+                <div className="text-[7px] text-white/40">
+                  #{fifaMatchNumber}
+                </div>
+              )}
+            </div>
           ) : (
             <div className="flex flex-col items-center leading-tight">
               <span
@@ -135,6 +119,11 @@ export default function FixtureRow({
               >
                 {formattedTime}
               </span>
+              {fifaMatchNumber && (
+                <span className="text-[7px] text-white/40">
+                  #{fifaMatchNumber}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -144,19 +133,10 @@ export default function FixtureRow({
           <span
             className={`text-xs font-semibold truncate px-1 py-0.5 rounded ${homeIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
           >
-            {homeTeam?.tla || getTeamDisplayName(homeTeam, match.id, "home")}
+            {homeTeam?.tla ||
+              getTeamDisplayName(homeTeam, match.id, "home", fifaMatchNumber)}
           </span>
-          {homeTeam?.crest ? (
-            <img
-              src={homeTeam.crest}
-              alt={homeTeam.name}
-              className="w-5 h-5 object-contain shrink-0"
-            />
-          ) : (
-            <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-              {homeTeam?.tla?.substring(0, 2) || "?"}
-            </div>
-          )}
+          <TeamCrest team={homeTeam} />
         </div>
 
         {/* Score Display */}
@@ -198,21 +178,12 @@ export default function FixtureRow({
 
         {/* Away Team */}
         <div className="flex-1 min-w-0 flex items-center gap-1">
-          {awayTeam?.crest ? (
-            <img
-              src={awayTeam.crest}
-              alt={awayTeam.name}
-              className="w-5 h-5 object-contain shrink-0"
-            />
-          ) : (
-            <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-              {awayTeam?.tla?.substring(0, 2) || "?"}
-            </div>
-          )}
+          <TeamCrest team={awayTeam} />
           <span
             className={`text-xs font-semibold truncate px-1 py-0.5 rounded ${awayIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
           >
-            {awayTeam?.tla || getTeamDisplayName(awayTeam, match.id, "away")}
+            {awayTeam?.tla ||
+              getTeamDisplayName(awayTeam, match.id, "away", fifaMatchNumber)}
           </span>
         </div>
 
@@ -223,8 +194,7 @@ export default function FixtureRow({
               style={{ color: "var(--venue-color)" }}
               className="text-[10px] font-medium"
             >
-              {CITY_ABBREVIATIONS[venue.city] ||
-                venue.city.substring(0, 3).toUpperCase()}
+              {getVenueAbbreviation(venue.city)}
             </span>
           </div>
         )}
@@ -246,18 +216,32 @@ export default function FixtureRow({
               )}
             </div>
           ) : isFinished ? (
-            <div
-              className="text-sm uppercase font-bold tracking-wide"
-              style={{ color: "var(--date-color, #888)" }}
-            >
-              FT
+            <div>
+              <div
+                className="text-sm uppercase font-bold tracking-wide"
+                style={{ color: "var(--date-color, #888)" }}
+              >
+                FT
+              </div>
+              {fifaMatchNumber && (
+                <div className="text-[9px] text-white/40">
+                  #{fifaMatchNumber}
+                </div>
+              )}
             </div>
           ) : (
-            <div
-              className="text-sm uppercase font-bold tracking-wide whitespace-nowrap"
-              style={{ color: "var(--date-color)" }}
-            >
-              {formattedDate}
+            <div>
+              <div
+                className="text-sm uppercase font-bold tracking-wide whitespace-nowrap"
+                style={{ color: "var(--date-color)" }}
+              >
+                {formattedDate}
+              </div>
+              {fifaMatchNumber && (
+                <div className="text-[9px] text-white/40">
+                  #{fifaMatchNumber}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -291,19 +275,14 @@ export default function FixtureRow({
                   homeIsWinner ? "text-slate-900 font-bold" : "text-white"
                 }`}
               >
-                {getTeamDisplayName(homeTeam, match.id, "home")}
+                {getTeamDisplayName(
+                  homeTeam,
+                  match.id,
+                  "home",
+                  fifaMatchNumber,
+                )}
               </span>
-              {homeTeam?.crest ? (
-                <img
-                  src={homeTeam.crest}
-                  alt={homeTeam.name}
-                  className="w-7 h-7 object-contain shrink-0"
-                />
-              ) : (
-                <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
-                  {homeTeam?.tla?.substring(0, 2) || "?"}
-                </div>
-              )}
+              <TeamCrest team={homeTeam} size="lg" />
             </div>
           </div>
 
@@ -353,23 +332,18 @@ export default function FixtureRow({
                 awayIsWinner ? "bg-amber-500/80" : ""
               }`}
             >
-              {awayTeam?.crest ? (
-                <img
-                  src={awayTeam.crest}
-                  alt={awayTeam.name}
-                  className="w-7 h-7 object-contain shrink-0"
-                />
-              ) : (
-                <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
-                  {awayTeam?.tla?.substring(0, 2) || "?"}
-                </div>
-              )}
+              <TeamCrest team={awayTeam} size="lg" />
               <span
                 className={`text-sm font-semibold truncate ${
                   awayIsWinner ? "text-slate-900 font-bold" : "text-white"
                 }`}
               >
-                {getTeamDisplayName(awayTeam, match.id, "away")}
+                {getTeamDisplayName(
+                  awayTeam,
+                  match.id,
+                  "away",
+                  fifaMatchNumber,
+                )}
               </span>
             </div>
           </div>

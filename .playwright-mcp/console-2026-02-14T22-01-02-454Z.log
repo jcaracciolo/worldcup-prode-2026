@@ -1,0 +1,1075 @@
+[ 1081111ms] ReferenceError: UserKnockoutSection is not defined
+    at UserPredictionsPage (http://localhost:3000/_next/static/chunks/src_f5a55860._.js?id=%255Bproject%255D%252Fsrc%252Fapp%252Fuser%252F%255BuserId%255D%252Fpage.tsx+%255Bapp-client%255D+%2528ecmascript%2529:778:252)
+    at Object.react_stack_bottom_frame (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:14826:24)
+    at renderWithHooks (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:4651:24)
+    at updateFunctionComponent (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6112:21)
+    at beginWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6708:24)
+    at runWithFiberInDEV (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:965:74)
+    at performUnitOfWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9562:97)
+    at workLoopSync (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9456:40)
+    at renderRootSync (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9440:13)
+    at performWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9105:47)
+    at performSyncWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:10238:9)
+    at flushSyncWorkAcrossRoots_impl (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:10154:316)
+    at flushSyncWork$1 (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9237:86)
+    at Object.scheduleRefresh (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:299:13)
+    at http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:391:33
+    at Set.forEach (<anonymous>)
+    at Object.performReactRefresh (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:384:38)
+    at applyUpdate (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:878:31)
+    at http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:886:13
+[ 1099587ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1100450ms] [ERROR] [MatchProvider] Fetch error: TypeError: Failed to fetch
+    at MatchProvider.useCallback[fetchMatches] (http://localhost:3000/_next/static/chunks/src_c3b91fb3._.js:4178:35)
+    at MatchProvider.useEffect (http://localhost:3000/_next/static/chunks/src_c3b91fb3._.js:4222:17)
+    at Object.react_stack_bottom_frame (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:14876:22)
+    at runWithFiberInDEV (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:965:74)
+    at commitHookEffectListMount (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:7266:167)
+    at commitHookPassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:7301:60)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8696:33)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8757:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8757:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8757:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8757:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8757:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8757:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8700:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8700:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8700:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8757:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8757:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316) @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1100451ms] [ERROR] [DB] Failed to get profile 465ac02f-2345-4055-9549-35d251cfb521: {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch
+    at http://localhost…00/_next/static/chunks/src_c3b91fb3._.js:6339:30), hint: , code: } @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1100451ms] [ERROR] [DB] Failed to get profile 465ac02f-2345-4055-9549-35d251cfb521: {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch
+    at http://localhost…00/_next/static/chunks/src_c3b91fb3._.js:6275:55), hint: , code: } @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1100451ms] [ERROR] [DB] Failed to get all profiles: Error: TypeError: Failed to fetch
+    at Object.getAllProfiles (http://localhost:3000/_next/static/chunks/src_c3b91fb3._.js:125:27)
+    at async UserProvider.useCallback[getAllProfiles] (http://localhost:3000/_next/static/chunks/src_c3b91fb3._.js:6331:30) @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1100451ms] [ERROR] [DB] Failed to get competitions for user 465ac02f-2345-4055-9549-35d251cfb521: {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch
+    at http://localhost…00/_next/static/chunks/src_c3b91fb3._.js:1042:25), hint: , code: } @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1100451ms] [ERROR] [DB] Failed to load user competitions: Unknown error @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1102068ms] ReferenceError: UserKnockoutSection is not defined
+    at UserPredictionsPage (http://localhost:3000/_next/static/chunks/src_bb135d1a._.js:3130:252)
+    at Object.react_stack_bottom_frame (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:14826:24)
+    at renderWithHooks (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:4651:24)
+    at updateFunctionComponent (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6112:21)
+    at beginWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6708:24)
+    at runWithFiberInDEV (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:965:74)
+    at performUnitOfWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9562:97)
+    at workLoopSync (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9456:40)
+    at renderRootSync (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9440:13)
+    at performWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9105:47)
+    at performWorkOnRootViaSchedulerTask (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:10230:9)
+    at MessagePort.performWorkUntilDeadline (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:2647:64)
+[ 1131669ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1467175ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=RYGb-0FZ7jg8ZzOBHxQAx' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 2434214ms] ReferenceError: getMatchInfo is not defined
+    at PredictionInput (http://localhost:3000/_next/static/chunks/src_3ea616bd._.js?id=%255Bproject%255D%252Fsrc%252Fcomponents%252FPredictionInput.tsx+%255Bapp-client%255D+%2528ecmascript%2529:61:41)
+    at Object.react_stack_bottom_frame (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:14826:24)
+    at renderWithHooks (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:4651:24)
+    at updateFunctionComponent (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6112:21)
+    at beginWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6708:24)
+    at runWithFiberInDEV (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:965:74)
+    at performUnitOfWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9562:97)
+    at workLoopSync (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9456:40)
+    at renderRootSync (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9440:13)
+    at performWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9105:47)
+    at performSyncWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:10238:9)
+    at flushSyncWorkAcrossRoots_impl (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:10154:316)
+    at flushSyncWork$1 (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9237:86)
+    at Object.scheduleRefresh (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:299:13)
+    at http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:391:33
+    at Set.forEach (<anonymous>)
+    at Object.performReactRefresh (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:384:38)
+    at applyUpdate (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:878:31)
+    at http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:886:13
+[ 2448949ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 2448962ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 2449579ms] [ERROR] [MatchProvider] Fetch error: TypeError: Failed to fetch
+    at MatchProvider.useCallback[fetchMatches] (http://localhost:3000/_next/static/chunks/src_c3b91fb3._.js:4178:35)
+    at MatchProvider.useEffect (http://localhost:3000/_next/static/chunks/src_c3b91fb3._.js:4222:17)
+    at Object.react_stack_bottom_frame (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:14876:22)
+    at runWithFiberInDEV (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:965:74)
+    at commitHookEffectListMount (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:7266:167)
+    at commitHookPassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:7301:60)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8696:33)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8757:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8757:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8757:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8757:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8757:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8757:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8700:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8700:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8700:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8695:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8757:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316)
+    at commitPassiveMountOnFiber (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8757:17)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:8683:316) @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2449580ms] [ERROR] [DB] Failed to get all profiles: Error: TypeError: Failed to fetch
+    at Object.getAllProfiles (http://localhost:3000/_next/static/chunks/src_c3b91fb3._.js:125:27)
+    at async UserProvider.useCallback[getAllProfiles] (http://localhost:3000/_next/static/chunks/src_c3b91fb3._.js:6331:30) @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2449580ms] [ERROR] [DB] Failed to get profile 465ac02f-2345-4055-9549-35d251cfb521: {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch
+    at http://localhost…00/_next/static/chunks/src_c3b91fb3._.js:6275:55), hint: , code: } @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2449580ms] [ERROR] [DB] Failed to get competitions for user 465ac02f-2345-4055-9549-35d251cfb521: {message: TypeError: Failed to fetch, details: TypeError: Failed to fetch
+    at http://localhost…00/_next/static/chunks/src_c3b91fb3._.js:1042:25), hint: , code: } @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2449580ms] [ERROR] [DB] Failed to load user competitions: Unknown error @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2496322ms] [ERROR] ./src/components/PredictionInput.tsx:218:12
+Parsing ecmascript source code failed
+  216 |         <TimeVenueColumn time={match.utcDate} fifaMatchNumber={fifaMatchNumber} />
+  217 |             </div>
+> 218 |           )}
+      |            ^
+  219 |         </div>
+  220 |
+  221 |         {/* Match section */}
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import traces:
+  Client Component Browser:
+    ./src/components/PredictionInput.tsx [Client Component Browser]
+    ./src/components/predictions/GroupStageSection.tsx [Client Component Browser]
+    ./src/components/predictions/index.ts [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/PredictionInput.tsx [Client Component SSR]
+    ./src/components/predictions/GroupStageSection.tsx [Client Component SSR]
+    ./src/components/predictions/index.ts [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2780738ms] [ERROR] ./src/app/user/[userId]/page.tsx:17:1
+Export BracketResolver doesn't exist in target module
+  15 | } from "@/lib/standings";
+  16 | import { buildApiToFifaMapping } from "@/lib/api-client";
+> 17 | import { BracketResolver } from "@/lib/bracket-resolver";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  18 | import { LocalPrediction } from "@/types/database";
+  19 | import { FifaMatchId } from "@/types/football";
+  20 | import PointsBreakdown from "@/components/PointsBreakdown";
+
+The export BracketResolver was not found in module [project]/src/lib/bracket-resolver.ts [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2780738ms] [ERROR] ./src/app/user/[userId]/page.tsx:17:1
+Export BracketResolver doesn't exist in target module
+  15 | } from "@/lib/standings";
+  16 | import { buildApiToFifaMapping } from "@/lib/api-client";
+> 17 | import { BracketResolver } from "@/lib/bracket-resolver";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  18 | import { LocalPrediction } from "@/types/database";
+  19 | import { FifaMatchId } from "@/types/football";
+  20 | import PointsBreakdown from "@/components/PointsBreakdown";
+
+The export BracketResolver was not found in module [project]/src/lib/bracket-resolver.ts [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2780738ms] [ERROR] ./src/app/predictions/page.tsx:17:1
+Export BracketResolver doesn't exist in target module
+  15 | import { CalculatedStanding, Team, Match, FifaMatchId } from "@/types/football";
+  16 | import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
+> 17 | import { BracketResolver } from "@/lib/bracket-resolver";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  18 | import { buildApiToFifaMapping } from "@/lib/api-client";
+  19 | import { calculateAllActualStandings } from "@/lib/standings";
+  20 | import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
+
+The export BracketResolver was not found in module [project]/src/lib/bracket-resolver.ts [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/predictions/page.tsx [Client Component Browser]
+    ./src/app/predictions/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/predictions/page.tsx [Client Component SSR]
+    ./src/app/predictions/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2780738ms] [ERROR] ./src/app/predictions/page.tsx:17:1
+Export BracketResolver doesn't exist in target module
+  15 | import { CalculatedStanding, Team, Match, FifaMatchId } from "@/types/football";
+  16 | import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
+> 17 | import { BracketResolver } from "@/lib/bracket-resolver";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  18 | import { buildApiToFifaMapping } from "@/lib/api-client";
+  19 | import { calculateAllActualStandings } from "@/lib/standings";
+  20 | import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
+
+The export BracketResolver was not found in module [project]/src/lib/bracket-resolver.ts [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/predictions/page.tsx [Client Component Browser]
+    ./src/app/predictions/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/predictions/page.tsx [Client Component SSR]
+    ./src/app/predictions/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781490ms] [ERROR] ./src/contexts/ScoringContext.tsx:13:1
+Export calculateGroupStagePoints doesn't exist in target module
+  11 |   FifaMatchId,
+  12 | } from "@/types/football";
+> 13 | import {
+     | ^^^^^^^^
+> 14 |   calculateGroupStagePoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 15 |   calculateKnockoutPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 16 |   calculateGroupStandingsBonusPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |   calculateStandingsFromPredictions,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 18 | } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+  19 | import { isGroupStageMatch } from "@/lib/football-api";
+  20 | import { GROUPS } from "@/lib/tournament";
+  21 |
+
+The export calculateGroupStagePoints was not found in module [project]/src/lib/scoring.ts [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/contexts/ScoringContext.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/contexts/ScoringContext.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781490ms] [ERROR] ./src/contexts/ScoringContext.tsx:13:1
+Export calculateGroupStagePoints doesn't exist in target module
+  11 |   FifaMatchId,
+  12 | } from "@/types/football";
+> 13 | import {
+     | ^^^^^^^^
+> 14 |   calculateGroupStagePoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 15 |   calculateKnockoutPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 16 |   calculateGroupStandingsBonusPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |   calculateStandingsFromPredictions,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 18 | } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+  19 | import { isGroupStageMatch } from "@/lib/football-api";
+  20 | import { GROUPS } from "@/lib/tournament";
+  21 |
+
+The export calculateGroupStagePoints was not found in module [project]/src/lib/scoring.ts [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/contexts/ScoringContext.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/contexts/ScoringContext.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781491ms] [ERROR] ./src/contexts/ScoringContext.tsx:13:1
+Export calculateGroupStandingsBonusPoints doesn't exist in target module
+  11 |   FifaMatchId,
+  12 | } from "@/types/football";
+> 13 | import {
+     | ^^^^^^^^
+> 14 |   calculateGroupStagePoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 15 |   calculateKnockoutPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 16 |   calculateGroupStandingsBonusPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |   calculateStandingsFromPredictions,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 18 | } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+  19 | import { isGroupStageMatch } from "@/lib/football-api";
+  20 | import { GROUPS } from "@/lib/tournament";
+  21 |
+
+The export calculateGroupStandingsBonusPoints was not found in module [project]/src/lib/scoring.ts [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/contexts/ScoringContext.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/contexts/ScoringContext.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781491ms] [ERROR] ./src/contexts/ScoringContext.tsx:13:1
+Export calculateGroupStandingsBonusPoints doesn't exist in target module
+  11 |   FifaMatchId,
+  12 | } from "@/types/football";
+> 13 | import {
+     | ^^^^^^^^
+> 14 |   calculateGroupStagePoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 15 |   calculateKnockoutPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 16 |   calculateGroupStandingsBonusPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |   calculateStandingsFromPredictions,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 18 | } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+  19 | import { isGroupStageMatch } from "@/lib/football-api";
+  20 | import { GROUPS } from "@/lib/tournament";
+  21 |
+
+The export calculateGroupStandingsBonusPoints was not found in module [project]/src/lib/scoring.ts [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/contexts/ScoringContext.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/contexts/ScoringContext.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781491ms] [ERROR] ./src/contexts/ScoringContext.tsx:13:1
+Export calculateKnockoutPoints doesn't exist in target module
+  11 |   FifaMatchId,
+  12 | } from "@/types/football";
+> 13 | import {
+     | ^^^^^^^^
+> 14 |   calculateGroupStagePoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 15 |   calculateKnockoutPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 16 |   calculateGroupStandingsBonusPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |   calculateStandingsFromPredictions,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 18 | } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+  19 | import { isGroupStageMatch } from "@/lib/football-api";
+  20 | import { GROUPS } from "@/lib/tournament";
+  21 |
+
+The export calculateKnockoutPoints was not found in module [project]/src/lib/scoring.ts [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/contexts/ScoringContext.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/contexts/ScoringContext.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781491ms] [ERROR] ./src/contexts/ScoringContext.tsx:13:1
+Export calculateKnockoutPoints doesn't exist in target module
+  11 |   FifaMatchId,
+  12 | } from "@/types/football";
+> 13 | import {
+     | ^^^^^^^^
+> 14 |   calculateGroupStagePoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 15 |   calculateKnockoutPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 16 |   calculateGroupStandingsBonusPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |   calculateStandingsFromPredictions,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 18 | } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+  19 | import { isGroupStageMatch } from "@/lib/football-api";
+  20 | import { GROUPS } from "@/lib/tournament";
+  21 |
+
+The export calculateKnockoutPoints was not found in module [project]/src/lib/scoring.ts [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/contexts/ScoringContext.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/contexts/ScoringContext.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781491ms] [ERROR] ./src/components/MatchPointsTooltip.tsx:5:1
+Export calculateMatchPoints doesn't exist in target module
+   3 | import { Match } from "@/types/football";
+   4 | import { LocalPrediction } from "@/types/database";
+>  5 | import {
+     | ^^^^^^^^
+>  6 |   calculateMatchPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+>  7 |   calculateMatchPointsDetailed,
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+>  8 | } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+   9 | import { useState } from "react";
+  10 |
+  11 | interface MatchPointsTooltipProps {
+
+The export calculateMatchPoints was not found in module [project]/src/lib/scoring.ts [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/components/MatchPointsTooltip.tsx [Client Component Browser]
+    ./src/components/UserGroupSection.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/MatchPointsTooltip.tsx [Client Component SSR]
+    ./src/components/UserGroupSection.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781491ms] [ERROR] ./src/components/MatchPointsTooltip.tsx:5:1
+Export calculateMatchPoints doesn't exist in target module
+   3 | import { Match } from "@/types/football";
+   4 | import { LocalPrediction } from "@/types/database";
+>  5 | import {
+     | ^^^^^^^^
+>  6 |   calculateMatchPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+>  7 |   calculateMatchPointsDetailed,
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+>  8 | } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+   9 | import { useState } from "react";
+  10 |
+  11 | interface MatchPointsTooltipProps {
+
+The export calculateMatchPoints was not found in module [project]/src/lib/scoring.ts [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/components/MatchPointsTooltip.tsx [Client Component Browser]
+    ./src/components/UserGroupSection.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/MatchPointsTooltip.tsx [Client Component SSR]
+    ./src/components/UserGroupSection.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781491ms] [ERROR] ./src/components/MatchPointsTooltip.tsx:5:1
+Export calculateMatchPointsDetailed doesn't exist in target module
+   3 | import { Match } from "@/types/football";
+   4 | import { LocalPrediction } from "@/types/database";
+>  5 | import {
+     | ^^^^^^^^
+>  6 |   calculateMatchPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+>  7 |   calculateMatchPointsDetailed,
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+>  8 | } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+   9 | import { useState } from "react";
+  10 |
+  11 | interface MatchPointsTooltipProps {
+
+The export calculateMatchPointsDetailed was not found in module [project]/src/lib/scoring.ts [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/components/MatchPointsTooltip.tsx [Client Component Browser]
+    ./src/components/UserGroupSection.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/MatchPointsTooltip.tsx [Client Component SSR]
+    ./src/components/UserGroupSection.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781491ms] [ERROR] ./src/components/MatchPointsTooltip.tsx:5:1
+Export calculateMatchPointsDetailed doesn't exist in target module
+   3 | import { Match } from "@/types/football";
+   4 | import { LocalPrediction } from "@/types/database";
+>  5 | import {
+     | ^^^^^^^^
+>  6 |   calculateMatchPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+>  7 |   calculateMatchPointsDetailed,
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+>  8 | } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+   9 | import { useState } from "react";
+  10 |
+  11 | interface MatchPointsTooltipProps {
+
+The export calculateMatchPointsDetailed was not found in module [project]/src/lib/scoring.ts [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/components/MatchPointsTooltip.tsx [Client Component Browser]
+    ./src/components/UserGroupSection.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/MatchPointsTooltip.tsx [Client Component SSR]
+    ./src/components/UserGroupSection.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781491ms] [ERROR] ./src/contexts/ScoringContext.tsx:13:1
+Export calculateStandingsFromPredictions doesn't exist in target module
+  11 |   FifaMatchId,
+  12 | } from "@/types/football";
+> 13 | import {
+     | ^^^^^^^^
+> 14 |   calculateGroupStagePoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 15 |   calculateKnockoutPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 16 |   calculateGroupStandingsBonusPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |   calculateStandingsFromPredictions,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 18 | } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+  19 | import { isGroupStageMatch } from "@/lib/football-api";
+  20 | import { GROUPS } from "@/lib/tournament";
+  21 |
+
+The export calculateStandingsFromPredictions was not found in module [project]/src/lib/scoring.ts [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/contexts/ScoringContext.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/contexts/ScoringContext.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781491ms] [ERROR] ./src/contexts/ScoringContext.tsx:13:1
+Export calculateStandingsFromPredictions doesn't exist in target module
+  11 |   FifaMatchId,
+  12 | } from "@/types/football";
+> 13 | import {
+     | ^^^^^^^^
+> 14 |   calculateGroupStagePoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 15 |   calculateKnockoutPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 16 |   calculateGroupStandingsBonusPoints,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 17 |   calculateStandingsFromPredictions,
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 18 | } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^
+  19 | import { isGroupStageMatch } from "@/lib/football-api";
+  20 | import { GROUPS } from "@/lib/tournament";
+  21 |
+
+The export calculateStandingsFromPredictions was not found in module [project]/src/lib/scoring.ts [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/contexts/ScoringContext.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/contexts/ScoringContext.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781491ms] [ERROR] ./src/app/user/[userId]/page.tsx:10:1
+Export calculateTotalPoints doesn't exist in target module
+   8 | import { useUserPredictions } from "@/contexts/PredictionsContext";
+   9 | import { useUserPosition } from "@/contexts/LeaderboardContext";
+> 10 | import { calculateTotalPoints } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  11 | import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
+  12 | import {
+  13 |   calculateAllGroupStandings,
+
+The export calculateTotalPoints was not found in module [project]/src/lib/scoring.ts [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781491ms] [ERROR] ./src/app/user/[userId]/page.tsx:10:1
+Export calculateTotalPoints doesn't exist in target module
+   8 | import { useUserPredictions } from "@/contexts/PredictionsContext";
+   9 | import { useUserPosition } from "@/contexts/LeaderboardContext";
+> 10 | import { calculateTotalPoints } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  11 | import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
+  12 | import {
+  13 |   calculateAllGroupStandings,
+
+The export calculateTotalPoints was not found in module [project]/src/lib/scoring.ts [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781491ms] [ERROR] ./src/contexts/LeaderboardContext.tsx:15:1
+Export calculateTotalPoints doesn't exist in target module
+  13 | import { useAllProfiles } from "@/contexts/UserContext";
+  14 | import { UserScore, CalculatedStanding, FifaMatchId } from "@/types/football";
+> 15 | import { calculateTotalPoints } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  16 | import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
+  17 |
+  18 | // =====================================================================
+
+The export calculateTotalPoints was not found in module [project]/src/lib/scoring.ts [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  #1 [Client Component Browser]:
+    ./src/contexts/LeaderboardContext.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  #2 [Client Component SSR]:
+    ./src/contexts/LeaderboardContext.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  #3 [Client Component Browser]:
+    ./src/contexts/LeaderboardContext.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component]
+
+  #4 [Client Component SSR]:
+    ./src/contexts/LeaderboardContext.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781491ms] [ERROR] ./src/contexts/LeaderboardContext.tsx:15:1
+Export calculateTotalPoints doesn't exist in target module
+  13 | import { useAllProfiles } from "@/contexts/UserContext";
+  14 | import { UserScore, CalculatedStanding, FifaMatchId } from "@/types/football";
+> 15 | import { calculateTotalPoints } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  16 | import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
+  17 |
+  18 | // =====================================================================
+
+The export calculateTotalPoints was not found in module [project]/src/lib/scoring.ts [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  #1 [Client Component Browser]:
+    ./src/contexts/LeaderboardContext.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  #2 [Client Component SSR]:
+    ./src/contexts/LeaderboardContext.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  #3 [Client Component Browser]:
+    ./src/contexts/LeaderboardContext.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Client Component Browser]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component]
+
+  #4 [Client Component SSR]:
+    ./src/contexts/LeaderboardContext.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Client Component SSR]
+    ./src/components/Providers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781491ms] [ERROR] ./src/components/FixtureRow.tsx:5:1
+Export getTeamDisplayName doesn't exist in target module
+  3 | import { Match, FifaMatchId } from "@/types/football";
+  4 | import { MatchWithLiveInfo } from "@/contexts/MatchContext";
+> 5 | import { getTeamDisplayName } from "@/lib/scoring";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 | import Link from "next/link";
+  7 | import {
+  8 |   CITY_ABBREVIATIONS,
+
+The export getTeamDisplayName was not found in module [project]/src/lib/scoring.ts [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/components/FixtureRow.tsx [Client Component Browser]
+    ./src/components/predictions/GroupStageSection.tsx [Client Component Browser]
+    ./src/components/predictions/index.ts [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/FixtureRow.tsx [Client Component SSR]
+    ./src/components/predictions/GroupStageSection.tsx [Client Component SSR]
+    ./src/components/predictions/index.ts [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781491ms] [ERROR] ./src/components/FixtureRow.tsx:5:1
+Export getTeamDisplayName doesn't exist in target module
+  3 | import { Match, FifaMatchId } from "@/types/football";
+  4 | import { MatchWithLiveInfo } from "@/contexts/MatchContext";
+> 5 | import { getTeamDisplayName } from "@/lib/scoring";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 | import Link from "next/link";
+  7 | import {
+  8 |   CITY_ABBREVIATIONS,
+
+The export getTeamDisplayName was not found in module [project]/src/lib/scoring.ts [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/components/FixtureRow.tsx [Client Component Browser]
+    ./src/components/predictions/GroupStageSection.tsx [Client Component Browser]
+    ./src/components/predictions/index.ts [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/FixtureRow.tsx [Client Component SSR]
+    ./src/components/predictions/GroupStageSection.tsx [Client Component SSR]
+    ./src/components/predictions/index.ts [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781492ms] [ERROR] ./src/components/MatchRowShared.tsx:4:1
+Export getTeamDisplayName doesn't exist in target module
+  2 |
+  3 | import { Team, FifaMatchId } from "@/types/football";
+> 4 | import { getTeamDisplayName } from "@/lib/scoring";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { getMatchInfo } from "@/lib/tournament";
+  6 | import { ReactNode } from "react";
+  7 |
+
+The export getTeamDisplayName was not found in module [project]/src/lib/scoring.ts [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/components/MatchRowShared.tsx [Client Component Browser]
+    ./src/components/predictions/KnockoutStageSection.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/MatchRowShared.tsx [Client Component SSR]
+    ./src/components/predictions/KnockoutStageSection.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781492ms] [ERROR] ./src/components/MatchRowShared.tsx:4:1
+Export getTeamDisplayName doesn't exist in target module
+  2 |
+  3 | import { Team, FifaMatchId } from "@/types/football";
+> 4 | import { getTeamDisplayName } from "@/lib/scoring";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  5 | import { getMatchInfo } from "@/lib/tournament";
+  6 | import { ReactNode } from "react";
+  7 |
+
+The export getTeamDisplayName was not found in module [project]/src/lib/scoring.ts [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/components/MatchRowShared.tsx [Client Component Browser]
+    ./src/components/predictions/KnockoutStageSection.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/MatchRowShared.tsx [Client Component SSR]
+    ./src/components/predictions/KnockoutStageSection.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781492ms] [ERROR] ./src/components/PredictionInput.tsx:5:1
+Export getTeamDisplayName doesn't exist in target module
+  3 | import { Match, Team, FifaMatchId } from "@/types/football";
+  4 | import { LocalPrediction } from "@/types/database";
+> 5 | import { getTeamDisplayName } from "@/lib/scoring";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 | import {
+  7 |   CITY_ABBREVIATIONS,
+  8 |   formatMatchDate,
+
+The export getTeamDisplayName was not found in module [project]/src/lib/scoring.ts [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/components/PredictionInput.tsx [Client Component Browser]
+    ./src/components/predictions/GroupStageSection.tsx [Client Component Browser]
+    ./src/components/predictions/index.ts [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/PredictionInput.tsx [Client Component SSR]
+    ./src/components/predictions/GroupStageSection.tsx [Client Component SSR]
+    ./src/components/predictions/index.ts [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781492ms] [ERROR] ./src/components/PredictionInput.tsx:5:1
+Export getTeamDisplayName doesn't exist in target module
+  3 | import { Match, Team, FifaMatchId } from "@/types/football";
+  4 | import { LocalPrediction } from "@/types/database";
+> 5 | import { getTeamDisplayName } from "@/lib/scoring";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  6 | import {
+  7 |   CITY_ABBREVIATIONS,
+  8 |   formatMatchDate,
+
+The export getTeamDisplayName was not found in module [project]/src/lib/scoring.ts [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/components/PredictionInput.tsx [Client Component Browser]
+    ./src/components/predictions/GroupStageSection.tsx [Client Component Browser]
+    ./src/components/predictions/index.ts [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/PredictionInput.tsx [Client Component SSR]
+    ./src/components/predictions/GroupStageSection.tsx [Client Component SSR]
+    ./src/components/predictions/index.ts [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781492ms] [ERROR] ./src/components/UserGroupSection.tsx:7:1
+Export getTeamDisplayName doesn't exist in target module
+   5 | import { LocalPrediction } from "@/types/database";
+   6 | import { calculateStandingsFromPredictions } from "@/lib/standings";
+>  7 | import { getTeamDisplayName } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 | import { buildApiToFifaMapping } from "@/lib/api-client";
+   9 | import MatchPointsTooltip from "@/components/MatchPointsTooltip";
+  10 | import StandingsTable from "@/components/StandingsTable";
+
+The export getTeamDisplayName was not found in module [project]/src/lib/scoring.ts [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/components/UserGroupSection.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/UserGroupSection.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 2781492ms] [ERROR] ./src/components/UserGroupSection.tsx:7:1
+Export getTeamDisplayName doesn't exist in target module
+   5 | import { LocalPrediction } from "@/types/database";
+   6 | import { calculateStandingsFromPredictions } from "@/lib/standings";
+>  7 | import { getTeamDisplayName } from "@/lib/scoring";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   8 | import { buildApiToFifaMapping } from "@/lib/api-client";
+   9 | import MatchPointsTooltip from "@/components/MatchPointsTooltip";
+  10 | import StandingsTable from "@/components/StandingsTable";
+
+The export getTeamDisplayName was not found in module [project]/src/lib/scoring.ts [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./src/components/UserGroupSection.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/UserGroupSection.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 3242793ms] ReferenceError: Link is not defined
+    at KnockoutPredictionRow (http://localhost:3000/_next/static/chunks/src_fa082f79._.js?id=%255Bproject%255D%252Fsrc%252Fcomponents%252Fpredictions%252FKnockoutStageSection.tsx+%255Bapp-client%255D+%2528ecmascript%2529:216:216)
+    at Object.react_stack_bottom_frame (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:14826:24)
+    at renderWithHooks (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:4651:24)
+    at updateFunctionComponent (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6112:21)
+    at beginWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6708:24)
+    at runWithFiberInDEV (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:965:74)
+    at performUnitOfWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9562:97)
+    at workLoopSync (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9456:40)
+    at renderRootSync (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9440:13)
+    at performWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9105:47)
+    at performSyncWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:10238:9)
+    at flushSyncWorkAcrossRoots_impl (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:10154:316)
+    at flushSyncWork$1 (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9237:86)
+    at Object.scheduleRefresh (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:299:13)
+    at http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:391:33
+    at Set.forEach (<anonymous>)
+    at Object.performReactRefresh (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:384:38)
+    at applyUpdate (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:878:31)
+    at http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:886:13
+[ 3242819ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 3244793ms] ReferenceError: Link is not defined
+    at KnockoutPredictionRow (http://localhost:3000/_next/static/chunks/src_149707d3._.js:3211:216)
+    at Object.react_stack_bottom_frame (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:14826:24)
+    at renderWithHooks (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:4651:24)
+    at updateFunctionComponent (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6112:21)
+    at beginWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6708:24)
+    at runWithFiberInDEV (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:965:74)
+    at performUnitOfWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9562:97)
+    at workLoopSync (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9456:40)
+    at renderRootSync (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9440:13)
+    at performWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9105:47)
+    at performWorkOnRootViaSchedulerTask (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:10230:9)
+    at MessagePort.performWorkUntilDeadline (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:2647:64)
+[ 3254943ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 3392653ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=Q9VAWI_2UCXqlGxMOZz6D' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 3393658ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=Q9VAWI_2UCXqlGxMOZz6D' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 3579836ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=7Lr7O8iFVY-qisahkDZuE' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 3580839ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=7Lr7O8iFVY-qisahkDZuE' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878

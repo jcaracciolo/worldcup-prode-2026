@@ -38,8 +38,8 @@ export interface ProfileService {
   /** Get a profile by ID */
   getProfile(userId: string): Promise<ServiceResult<Profile>>;
 
-  /** Get all profiles */
-  getAllProfiles(): Promise<ServiceResult<Profile[]>>;
+  /** Get all profiles, optionally override competition filter */
+  getAllProfiles(overrideCompetitionId?: string): Promise<ServiceResult<Profile[]>>;
 
   /** Update a profile */
   updateProfile(

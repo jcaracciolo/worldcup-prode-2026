@@ -97,25 +97,36 @@ export default function AdminPage() {
       if (loadedCompetitions.length > 0 && !selectedCompetitionId) {
         setSelectedCompetitionId(loadedCompetitions[0].id);
       }
-
-      // Load all users using database service
-      const { data: usersData } = await db.profiles.getAllProfiles();
-      setUsers(usersData || []);
-      setUsersLoading(false);
     };
 
     loadData();
   }, [db, router, profile, userLoading, selectedCompetitionId]);
 
+  // Load users when competition is selected
+  useEffect(() => {
+    const loadUsers = async () => {
+      if (!selectedCompetitionId || !profile?.is_admin) {
+        setUsers([]);
+        setUsersLoading(false);
+        return;
+      }
+      setUsersLoading(true);
+      const { data: usersData } = await db.profiles.getAllProfiles(selectedCompetitionId);
+      setUsers(usersData || []);
+      setUsersLoading(false);
+    };
+
+    loadUsers();
+  }, [db, selectedCompetitionId, profile?.is_admin]);
+
   // Load invite codes when competition is selected
   useEffect(() => {
-    if (!selectedCompetitionId || !profile?.is_admin) {
-      setInviteCodes([]);
-      setCodesLoading(false);
-      return;
-    }
-
     const loadCodes = async () => {
+      if (!selectedCompetitionId || !profile?.is_admin) {
+        setInviteCodes([]);
+        setCodesLoading(false);
+        return;
+      }
       setCodesLoading(true);
       const { data: codesData } =
         await db.inviteCodes.getAllInviteCodesForCompetition(

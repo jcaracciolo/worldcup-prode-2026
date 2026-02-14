@@ -67,9 +67,9 @@ export function createProfileService(
       }
     },
 
-    async getAllProfiles(): Promise<ServiceResult<Profile[]>> {
+    async getAllProfiles(overrideCompetitionId?: string): Promise<ServiceResult<Profile[]>> {
       try {
-        const competitionId = getCompetitionId?.();
+        const competitionId = overrideCompetitionId ?? getCompetitionId?.();
         
         if (competitionId) {
           // Get only profiles for users in the current competition
@@ -84,10 +84,13 @@ export function createProfileService(
             throw new Error(error.message || "Failed to query competition members");
           }
           
-          // Extract profiles from the join result
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // Extract profiles from the join result (using .single() FK returns object, otherwise returns array)
           const profiles = (data || [])
-            .map((row: any) => row.profiles as Profile)
+            .map((row) => {
+              const profile = row.profiles;
+              // Handle both array (default) and object (single FK) cases
+              return Array.isArray(profile) ? profile[0] : profile;
+            })
             .filter((p): p is Profile => p !== null && p !== undefined);
           
           return { data: profiles, error: null };
@@ -255,9 +258,12 @@ export function createCompetitionMemberService(
         if (error) throw error;
 
         // Extract competitions from the joined results
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const competitions = (data || [])
-          .map((row: any) => row.competitions as Competition)
+          .map((row) => {
+            const comp = row.competitions;
+            // Handle both array (default) and object (single FK) cases
+            return Array.isArray(comp) ? comp[0] : comp;
+          })
           .filter((c): c is Competition => c !== null);
 
         return { data: competitions, error: null };

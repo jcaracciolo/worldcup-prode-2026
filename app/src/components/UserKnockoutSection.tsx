@@ -243,106 +243,108 @@ function KnockoutMatchRow({
     awayWins || (isTie && prediction?.winner_id === awayTeam?.id);
 
   return (
-    <Link
-      href={`/match/${match.id}`}
-      className="flex items-center py-3 px-4 rounded-xl bg-slate-800/60 border border-white/5 hover:bg-slate-800/80 transition-colors cursor-pointer"
-    >
-      {/* Date */}
-      <div className="w-20 text-center shrink-0 pr-3 border-r border-white/10">
-        <div
-          className="text-sm uppercase font-bold tracking-wide whitespace-nowrap"
-          style={{ color: "var(--date-color)" }}
-        >
-          {formattedDate}
-        </div>
-      </div>
-
-      {/* Time & Venue */}
-      <div className="w-28 shrink-0 px-3 border-r border-white/10">
-        <div className="text-sm text-white/70 font-medium">{formattedTime}</div>
-        {venue && (
+    <div className="flex items-center py-3 px-4 rounded-xl bg-slate-800/60 border border-white/5">
+      <Link
+        href={`/match/${match.id}`}
+        className="flex-1 flex items-center hover:bg-slate-800/80 transition-colors cursor-pointer rounded-lg -m-2 p-2"
+      >
+        {/* Date */}
+        <div className="w-20 text-center shrink-0 pr-3 border-r border-white/10">
           <div
-            className="text-sm font-semibold truncate"
-            style={{ color: "var(--venue-color)" }}
+            className="text-sm uppercase font-bold tracking-wide whitespace-nowrap"
+            style={{ color: "var(--date-color)" }}
           >
-            {venue.city}
+            {formattedDate}
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Match */}
-      <div className="flex-1 flex items-center justify-center pl-4">
-        {/* Home Team */}
-        <div
-          className={`flex items-center justify-end gap-2 px-2 py-1 rounded-lg ${
-            homeHighlight ? "bg-amber-500/80 text-slate-900" : ""
-          }`}
-        >
-          <span
-            className={`text-sm font-semibold truncate ${
-              homeHighlight ? "text-slate-900" : "text-white"
-            }`}
-          >
-            {getTeamDisplayName(homeTeam, match.id, "home")}
-          </span>
-          {homeTeam?.crest ? (
-            <img
-              src={homeTeam.crest}
-              alt={homeTeam.name}
-              className="w-7 h-7 object-contain shrink-0"
-            />
-          ) : (
-            <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
-              {homeTeam?.tla?.substring(0, 2) || "?"}
+        {/* Time & Venue */}
+        <div className="w-28 shrink-0 px-3 border-r border-white/10">
+          <div className="text-sm text-white/70 font-medium">{formattedTime}</div>
+          {venue && (
+            <div
+              className="text-sm font-semibold truncate"
+              style={{ color: "var(--venue-color)" }}
+            >
+              {venue.city}
             </div>
           )}
         </div>
 
-        {/* Score */}
-        <div className="flex items-center gap-2 mx-4">
-          <span className="w-10 h-9 flex items-center justify-center text-lg font-bold bg-white/90 rounded-lg text-slate-800">
-            {prediction?.home_goals ?? "-"}
-          </span>
-          <span className="text-white/50 font-bold">-</span>
-          <span className="w-10 h-9 flex items-center justify-center text-lg font-bold bg-white/90 rounded-lg text-slate-800">
-            {prediction?.away_goals ?? "-"}
-          </span>
-        </div>
-
-        {/* Away Team */}
-        <div
-          className={`flex items-center gap-2 px-2 py-1 rounded-lg ${
-            awayHighlight ? "bg-amber-500/80 text-slate-900" : ""
-          }`}
-        >
-          {awayTeam?.crest ? (
-            <img
-              src={awayTeam.crest}
-              alt={awayTeam.name}
-              className="w-7 h-7 object-contain shrink-0"
-            />
-          ) : (
-            <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
-              {awayTeam?.tla?.substring(0, 2) || "?"}
-            </div>
-          )}
-          <span
-            className={`text-sm font-semibold truncate ${
-              awayHighlight ? "text-slate-900" : "text-white"
+        {/* Match */}
+        <div className="flex-1 flex items-center justify-center pl-4">
+          {/* Home Team */}
+          <div
+            className={`flex items-center justify-end gap-2 px-2 py-1 rounded-lg ${
+              homeHighlight ? "bg-amber-500/80 text-slate-900" : ""
             }`}
           >
-            {getTeamDisplayName(awayTeam, match.id, "away")}
-          </span>
-        </div>
-      </div>
+            <span
+              className={`text-sm font-semibold truncate ${
+                homeHighlight ? "text-slate-900" : "text-white"
+              }`}
+            >
+              {getTeamDisplayName(homeTeam, match.id, "home")}
+            </span>
+            {homeTeam?.crest ? (
+              <img
+                src={homeTeam.crest}
+                alt={homeTeam.name}
+                className="w-7 h-7 object-contain shrink-0"
+              />
+            ) : (
+              <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
+                {homeTeam?.tla?.substring(0, 2) || "?"}
+              </div>
+            )}
+          </div>
 
-      {/* Points earned */}
+          {/* Score */}
+          <div className="flex items-center gap-2 mx-4">
+            <span className="w-10 h-9 flex items-center justify-center text-lg font-bold bg-white/90 rounded-lg text-slate-800">
+              {prediction?.home_goals ?? "-"}
+            </span>
+            <span className="text-white/50 font-bold">-</span>
+            <span className="w-10 h-9 flex items-center justify-center text-lg font-bold bg-white/90 rounded-lg text-slate-800">
+              {prediction?.away_goals ?? "-"}
+            </span>
+          </div>
+
+          {/* Away Team */}
+          <div
+            className={`flex items-center gap-2 px-2 py-1 rounded-lg ${
+              awayHighlight ? "bg-amber-500/80 text-slate-900" : ""
+            }`}
+          >
+            {awayTeam?.crest ? (
+              <img
+                src={awayTeam.crest}
+                alt={awayTeam.name}
+                className="w-7 h-7 object-contain shrink-0"
+              />
+            ) : (
+              <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
+                {awayTeam?.tla?.substring(0, 2) || "?"}
+              </div>
+            )}
+            <span
+              className={`text-sm font-semibold truncate ${
+                awayHighlight ? "text-slate-900" : "text-white"
+              }`}
+            >
+              {getTeamDisplayName(awayTeam, match.id, "away")}
+            </span>
+          </div>
+        </div>
+      </Link>
+
+      {/* Points earned - outside Link so tap works */}
       <MatchPointsTooltip
         match={match}
         prediction={prediction}
         predictedHomeTeam={homeTeam}
         predictedAwayTeam={awayTeam}
       />
-    </Link>
+    </div>
   );
 }

@@ -170,63 +170,65 @@ function GroupMatchRow({ match, prediction }: GroupMatchRowProps) {
   const awayHighlight = awayWins || isDraw;
 
   return (
-    <Link
-      href={`/match/${match.id}`}
-      className="flex items-center gap-2 py-2 text-sm hover:bg-white/5 transition-colors rounded px-1 -mx-1 cursor-pointer"
-    >
-      <div
-        className={`flex-1 flex items-center justify-end gap-1.5 px-1.5 py-0.5 rounded ${homeHighlight ? "bg-amber-500/80" : ""}`}
+    <div className="flex items-center gap-2 py-2 text-sm">
+      <Link
+        href={`/match/${match.id}`}
+        className="flex-1 flex items-center gap-2 hover:bg-white/5 transition-colors rounded px-1 -mx-1 cursor-pointer"
       >
-        <span
-          className={
-            homeHighlight ? "text-slate-900 font-semibold" : "text-white/80"
-          }
+        <div
+          className={`flex-1 flex items-center justify-end gap-1.5 px-1.5 py-0.5 rounded ${homeHighlight ? "bg-amber-500/80" : ""}`}
         >
-          {getTeamDisplayName(match.homeTeam, match.id, "home")}
+          <span
+            className={
+              homeHighlight ? "text-slate-900 font-semibold" : "text-white/80"
+            }
+          >
+            {getTeamDisplayName(match.homeTeam, match.id, "home")}
+          </span>
+          {match.homeTeam.crest ? (
+            <img
+              src={match.homeTeam.crest}
+              alt={match.homeTeam.name}
+              className="w-5 h-5 object-contain shrink-0"
+            />
+          ) : (
+            <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
+              ?
+            </div>
+          )}
+        </div>
+        <span className="w-16 text-center font-bold text-white">
+          {prediction?.home_goals ?? "-"} - {prediction?.away_goals ?? "-"}
         </span>
-        {match.homeTeam.crest ? (
-          <img
-            src={match.homeTeam.crest}
-            alt={match.homeTeam.name}
-            className="w-5 h-5 object-contain shrink-0"
-          />
-        ) : (
-          <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-            ?
-          </div>
-        )}
-      </div>
-      <span className="w-16 text-center font-bold text-white">
-        {prediction?.home_goals ?? "-"} - {prediction?.away_goals ?? "-"}
-      </span>
-      <div
-        className={`flex-1 flex items-center gap-1.5 px-1.5 py-0.5 rounded ${awayHighlight ? "bg-amber-500/80" : ""}`}
-      >
-        {match.awayTeam.crest ? (
-          <img
-            src={match.awayTeam.crest}
-            alt={match.awayTeam.name}
-            className="w-5 h-5 object-contain shrink-0"
-          />
-        ) : (
-          <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-            ?
-          </div>
-        )}
-        <span
-          className={
-            awayHighlight ? "text-slate-900 font-semibold" : "text-white/80"
-          }
+        <div
+          className={`flex-1 flex items-center gap-1.5 px-1.5 py-0.5 rounded ${awayHighlight ? "bg-amber-500/80" : ""}`}
         >
-          {getTeamDisplayName(match.awayTeam, match.id, "away")}
-        </span>
-      </div>
-      {/* Points earned */}
+          {match.awayTeam.crest ? (
+            <img
+              src={match.awayTeam.crest}
+              alt={match.awayTeam.name}
+              className="w-5 h-5 object-contain shrink-0"
+            />
+          ) : (
+            <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
+              ?
+            </div>
+          )}
+          <span
+            className={
+              awayHighlight ? "text-slate-900 font-semibold" : "text-white/80"
+            }
+          >
+            {getTeamDisplayName(match.awayTeam, match.id, "away")}
+          </span>
+        </div>
+      </Link>
+      {/* Points earned - outside Link so tap works */}
       <MatchPointsTooltip
         match={match}
         prediction={prediction}
         className="w-8"
       />
-    </Link>
+    </div>
   );
 }

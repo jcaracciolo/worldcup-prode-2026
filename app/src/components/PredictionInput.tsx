@@ -308,7 +308,8 @@ export default function PredictionInput({
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <span className="text-xs font-semibold">
-                  {homeTeam?.tla || getTeamDisplayName(homeTeam, match.id, "home")}
+                  {homeTeam?.tla ||
+                    getTeamDisplayName(homeTeam, match.id, "home")}
                 </span>
                 {homeTeam?.crest ? (
                   <img
@@ -333,7 +334,8 @@ export default function PredictionInput({
                     homeIsWinner ? "text-slate-900 font-bold" : "text-white"
                   }`}
                 >
-                  {homeTeam?.tla || getTeamDisplayName(homeTeam, match.id, "home")}
+                  {homeTeam?.tla ||
+                    getTeamDisplayName(homeTeam, match.id, "home")}
                 </span>
                 {homeTeam?.crest ? (
                   <img
@@ -408,7 +410,8 @@ export default function PredictionInput({
                   </div>
                 )}
                 <span className="text-xs font-semibold">
-                  {awayTeam?.tla || getTeamDisplayName(awayTeam, match.id, "away")}
+                  {awayTeam?.tla ||
+                    getTeamDisplayName(awayTeam, match.id, "away")}
                 </span>
               </button>
             ) : (
@@ -433,7 +436,8 @@ export default function PredictionInput({
                     awayIsWinner ? "text-slate-900 font-bold" : "text-white"
                   }`}
                 >
-                  {awayTeam?.tla || getTeamDisplayName(awayTeam, match.id, "away")}
+                  {awayTeam?.tla ||
+                    getTeamDisplayName(awayTeam, match.id, "away")}
                 </span>
               </div>
             )}

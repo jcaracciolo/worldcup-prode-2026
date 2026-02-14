@@ -300,6 +300,8 @@ export default function UserPredictionsPage() {
                       {positionInfo.above && (
                         <Link
                           href={`/user/${positionInfo.above.userId}`}
+                          scroll={true}
+                          onClick={(e) => e.stopPropagation()}
                           className="flex items-center justify-between p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
                         >
                           <div className="flex items-center gap-2">
@@ -342,6 +344,8 @@ export default function UserPredictionsPage() {
                       {positionInfo.below && (
                         <Link
                           href={`/user/${positionInfo.below.userId}`}
+                          scroll={true}
+                          onClick={(e) => e.stopPropagation()}
                           className="flex items-center justify-between p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
                         >
                           <div className="flex items-center gap-2">

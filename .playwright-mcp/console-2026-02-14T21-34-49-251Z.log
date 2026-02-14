@@ -1,0 +1,32 @@
+[   20480ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://yzcimgrudhtnjdlvgnhg.supabase.co/auth/v1/token?grant_type=password:0
+[   20481ms] [ERROR] [Auth] Failed to sign in: AuthApiError: Invalid login credentials
+    at handleError (http://localhost:3000/_next/static/chunks/node_modules_46a7588c._.js:10522:11)
+    at async _handleRequest (http://localhost:3000/_next/static/chunks/node_modules_46a7588c._.js:10572:9)
+    at async _request (http://localhost:3000/_next/static/chunks/node_modules_46a7588c._.js:10552:18)
+    at async SupabaseAuthClient.signInWithPassword (http://localhost:3000/_next/static/chunks/node_modules_46a7588c._.js:12822:23)
+    at async Object.signInWithPassword (http://localhost:3000/_next/static/chunks/src_74777713._.js:822:41)
+    at async handleLogin (http://localhost:3000/_next/static/chunks/src_app_login_page_tsx_a6b4ed9b._.js:45:38) @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[   67008ms] [ERROR] ./src/components/MatchPointsTooltip.tsx:214:7
+Parsing ecmascript source code failed
+  212 |         </>
+  213 |       )}
+> 214 |     </div>
+      |       ^^^
+  215 |   );
+  216 | }
+  217 |
+
+Expected corresponding JSX closing tag for <button>
+
+Import traces:
+  Client Component Browser:
+    ./src/components/MatchPointsTooltip.tsx [Client Component Browser]
+    ./src/components/UserGroupSection.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/MatchPointsTooltip.tsx [Client Component SSR]
+    ./src/components/UserGroupSection.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127

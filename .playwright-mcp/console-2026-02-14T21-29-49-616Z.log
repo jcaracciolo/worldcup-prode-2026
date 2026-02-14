@@ -1,0 +1,157 @@
+[  157076ms] [ERROR] ./src/components/MatchPointsTooltip.tsx:210:8
+Parsing ecmascript source code failed
+  208 |           </div>
+  209 |         </div>
+> 210 |       )}
+      |        ^
+  211 |     </div>
+  212 |   );
+  213 | }
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import traces:
+  Client Component Browser:
+    ./src/components/MatchPointsTooltip.tsx [Client Component Browser]
+    ./src/components/UserGroupSection.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/MatchPointsTooltip.tsx [Client Component SSR]
+    ./src/components/UserGroupSection.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[  157562ms] [ERROR] ./src/components/MatchPointsTooltip.tsx:210:8
+Parsing ecmascript source code failed
+  208 |           </div>
+  209 |         </div>
+> 210 |       )}
+      |        ^
+  211 |     </div>
+  212 |   );
+  213 | }
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import traces:
+  Client Component Browser:
+    ./src/components/MatchPointsTooltip.tsx [Client Component Browser]
+    ./src/components/UserGroupSection.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/MatchPointsTooltip.tsx [Client Component SSR]
+    ./src/components/UserGroupSection.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[  157803ms] [ERROR] ./src/components/MatchPointsTooltip.tsx:210:8
+Parsing ecmascript source code failed
+  208 |           </div>
+  209 |         </div>
+> 210 |       )}
+      |        ^
+  211 |     </div>
+  212 |   );
+  213 | }
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import traces:
+  Client Component Browser:
+    ./src/components/MatchPointsTooltip.tsx [Client Component Browser]
+    ./src/components/UserGroupSection.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/MatchPointsTooltip.tsx [Client Component SSR]
+    ./src/components/UserGroupSection.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[  157831ms] [ERROR] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+%s%s https://react.dev/link/hydration-mismatch 
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/match/537334" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="en">
+                          <body
+                            className="inter_5972bc34-module__OU16Qa__className bg-gray-100 min-h-screen antialiased"
+-                           style={{padding-right:"8px",overflow-x:"hidden",overflow-y:"hidden"}}
+                          >
+                  ...
+ @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[  157907ms] [ERROR] ./src/components/MatchPointsTooltip.tsx:210:8
+Parsing ecmascript source code failed
+  208 |           </div>
+  209 |         </div>
+> 210 |       )}
+      |        ^
+  211 |     </div>
+  212 |   );
+  213 | }
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import traces:
+  Client Component Browser:
+    ./src/components/MatchPointsTooltip.tsx [Client Component Browser]
+    ./src/components/UserGroupSection.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/MatchPointsTooltip.tsx [Client Component SSR]
+    ./src/components/UserGroupSection.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[  158007ms] [ERROR] ./src/components/MatchPointsTooltip.tsx:210:8
+Parsing ecmascript source code failed
+  208 |           </div>
+  209 |         </div>
+> 210 |       )}
+      |        ^
+  211 |     </div>
+  212 |   );
+  213 | }
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import traces:
+  Client Component Browser:
+    ./src/components/MatchPointsTooltip.tsx [Client Component Browser]
+    ./src/components/UserGroupSection.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Client Component Browser]
+    ./src/app/user/[userId]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/components/MatchPointsTooltip.tsx [Client Component SSR]
+    ./src/components/UserGroupSection.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Client Component SSR]
+    ./src/app/user/[userId]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127

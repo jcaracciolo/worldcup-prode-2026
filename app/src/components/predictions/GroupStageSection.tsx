@@ -48,12 +48,8 @@ export default function GroupStageSection({
           <span className="text-sm">🏆</span>
         </div>
         <div>
-          <h2 className="text-lg font-bold text-white">
-            Group Stage
-          </h2>
-          <p className="text-white/50 text-xs">
-            48 teams in 12 groups
-          </p>
+          <h2 className="text-lg font-bold text-white">Group Stage</h2>
+          <p className="text-white/50 text-xs">48 teams in 12 groups</p>
         </div>
       </div>
 

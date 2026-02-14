@@ -72,10 +72,16 @@ export default function MatchPointsTooltip({
       : "text-white/40";
 
   return (
-    <div
+    <button
+      type="button"
       className={`${className || "w-12 shrink-0 pl-2"} text-right relative`}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowTooltip((prev) => !prev);
+      }}
     >
       <span
         className={`${isSmall ? "text-xs" : "text-sm"} font-bold cursor-help ${pointsColorClass}`}
@@ -85,10 +91,19 @@ export default function MatchPointsTooltip({
 
       {/* Tooltip */}
       {showTooltip && hasActualScore && (
-        <div className="absolute right-0 bottom-full mb-2 z-50 whitespace-nowrap">
+        <>
+          {/* Click-away overlay for mobile */}
           <div
-            className={`bg-slate-800 border rounded-lg shadow-xl p-3 ${isLive ? "border-red-500 border-2" : "border-white/20"}`}
-          >
+            className="fixed inset-0 z-40"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowTooltip(false);
+            }}
+          />
+          <div className="absolute right-0 bottom-full mb-2 z-50 whitespace-nowrap">
+            <div
+              className={`bg-slate-800 border rounded-lg shadow-xl p-3 ${isLive ? "border-red-500 border-2" : "border-white/20"}`}
+            >
             {/* Header */}
             <div
               className={`text-[10px] uppercase tracking-wider mb-2 text-center ${isLive ? "text-red-400" : "text-white/50"}`}
@@ -194,7 +209,8 @@ export default function MatchPointsTooltip({
             <div className="absolute -bottom-1 right-4 w-2 h-2 bg-slate-800 border-r border-b border-white/20 transform rotate-45" />
           </div>
         </div>
+        </>
       )}
-    </div>
+    </button>
   );
 }

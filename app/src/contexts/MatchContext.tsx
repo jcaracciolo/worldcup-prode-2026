@@ -290,18 +290,15 @@ export function MatchProvider({
 
     // In simulation mode, we don't need to fetch - simulation generates matches
     if (isSimulated) {
-      console.log("[MatchProvider] Simulation tick, skipping API fetch");
       return;
     }
 
     // Only fetch in real mode when there's a reason to
     const shouldFetch = hasLiveMatches || hasMatchesToday(rawMatches);
     if (!shouldFetch) {
-      console.log("[MatchProvider] No live/today matches, skipping fetch");
       return;
     }
 
-    console.log("[MatchProvider] Tick fetch...", { tick, hasLiveMatches });
     fetchMatches();
   }, [tick, isSimulated, hasLiveMatches, rawMatches, fetchMatches]);
 

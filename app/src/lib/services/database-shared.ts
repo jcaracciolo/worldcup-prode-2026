@@ -73,17 +73,22 @@ export function createProfileService(
         
         if (competitionId) {
           // Get only profiles for users in the current competition
+          // Must specify the FK relationship since there are two (user_id and invited_by)
           const { data, error } = await supabase
             .from("competition_members")
-            .select("profiles(*)")
+            .select("user_id, profiles!competition_members_user_id_fkey(*)")
             .eq("competition_id", competitionId);
-
-          if (error) throw error;
+          
+          if (error) {
+            console.error("[DB] Competition members query error:", error.message);
+            throw new Error(error.message || "Failed to query competition members");
+          }
           
           // Extract profiles from the join result
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const profiles = (data || [])
-            .map((row: { profiles: Profile }) => row.profiles)
-            .filter(Boolean);
+            .map((row: any) => row.profiles as Profile)
+            .filter((p): p is Profile => p !== null && p !== undefined);
           
           return { data: profiles, error: null };
         }
@@ -91,13 +96,15 @@ export function createProfileService(
         // Fall back to all profiles if no competition selected
         const { data, error } = await supabase.from("profiles").select("*");
 
-        if (error) throw error;
+        if (error) {
+          throw new Error(error.message || "Failed to query profiles");
+        }
         return { data: data || [], error: null };
       } catch (error) {
         console.error("[DB] Failed to get all profiles:", error);
         return {
           data: null,
-          error: error instanceof Error ? error.message : "Unknown error",
+          error: error instanceof Error ? error.message : String(error),
         };
       }
     },
@@ -240,7 +247,8 @@ export function createCompetitionMemberService(
       userId: string,
     ): Promise<ServiceResult<Competition[]>> {
       try {
-        n.from("competition_members")
+        const { data, error } = await supabase
+          .from("competition_members")
           .select("competition_id, competitions(*)")
           .eq("user_id", userId);
 

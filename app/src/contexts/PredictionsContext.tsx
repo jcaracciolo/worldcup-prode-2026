@@ -389,7 +389,7 @@ export function usePredictionsContext(): PredictionsContextValue {
 
 /**
  * Hook to get predictions for a specific user
- * Automatically fetches if not cached
+ * Automatically fetches when userId or competition changes
  */
 export function useUserPredictions(userId: string | null): {
   predictions: Map<FifaMatchId, Prediction>;
@@ -413,63 +413,52 @@ export function useUserPredictions(userId: string | null): {
     savePredictions: contextSavePredictions,
   } = usePredictionsContext();
 
-  // Initialize state synchronously from cache to avoid loading flash
-  const [state, setState] = useState<UserPredictions | null>(() => {
-    if (!userId) return null;
-    const cached = getCachedPredictions(userId);
-    return cached && !cached.loading ? cached : null;
-  });
+  // Get current competition - when this changes, we refetch
+  const { currentCompetitionId } = useDatabase();
 
-  // Track userId changes to reinitialize state
-  const prevUserIdRef = useRef(userId);
-  const hasFetchedRef = useRef(false);
+  const [state, setState] = useState<UserPredictions | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Load predictions on mount or userId change
-  React.useEffect(() => {
-    // Handle userId change - reset and refetch
-    if (prevUserIdRef.current !== userId) {
-      prevUserIdRef.current = userId;
-      hasFetchedRef.current = false;
-      if (!userId) {
+  // Fetch predictions when userId or competition changes
+  useEffect(() => {
+    const loadPredictions = async () => {
+      if (!userId || !currentCompetitionId) {
         setState(null);
+        setLoading(false);
         return;
       }
-      // Check cache on userId change
+
+      // Check cache first
       const cached = getCachedPredictions(userId);
-      if (cached && !cached.loading) {
+      if (cached && !cached.loading && cached.lastUpdated) {
         setState(cached);
-        hasFetchedRef.current = true;
+        setLoading(false);
         return;
       }
-    }
 
-    if (!userId || hasFetchedRef.current) {
-      return;
-    }
+      // Fetch from server
+      setLoading(true);
+      const result = await getUserPredictions(userId);
+      setState(result);
+      setLoading(false);
+    };
 
-    // If we already have state from cache, mark as fetched
-    if (state && !state.loading) {
-      hasFetchedRef.current = true;
-      return;
-    }
-
-    // Fetch predictions
-    hasFetchedRef.current = true;
-    getUserPredictions(userId).then(setState);
-  }, [userId, getCachedPredictions, getUserPredictions, state]);
+    loadPredictions();
+  }, [userId, currentCompetitionId, getUserPredictions, getCachedPredictions]);
 
   const refresh = useCallback(async () => {
     if (!userId) return;
+    setLoading(true);
     await refreshUserPredictions(userId);
     const updated = getCachedPredictions(userId);
     if (updated) setState(updated);
+    setLoading(false);
   }, [userId, refreshUserPredictions, getCachedPredictions]);
 
   const updatePrediction = useCallback(
     (prediction: Prediction) => {
       if (!userId) return;
       contextUpdatePrediction(userId, prediction);
-      // Also update local state for immediate UI feedback
       setState((prev) => {
         if (!prev) return prev;
         const newPredictions = new Map(prev.predictions);
@@ -495,13 +484,8 @@ export function useUserPredictions(userId: string | null): {
       overrides: GroupStandingsOverride[],
     ): Promise<{ success: boolean; error?: string }> => {
       if (!userId) return { success: false, error: "Not logged in" };
-      const result = await contextSavePredictions(
-        userId,
-        predictions,
-        overrides,
-      );
+      const result = await contextSavePredictions(userId, predictions, overrides);
       if (result.success) {
-        // Update local state with saved data
         setState((prev) =>
           prev
             ? {
@@ -520,7 +504,7 @@ export function useUserPredictions(userId: string | null): {
   return {
     predictions: state?.predictions || new Map(),
     overrides: state?.overrides || [],
-    loading: state?.loading ?? true,
+    loading,
     error: state?.error || null,
     refresh,
     updatePrediction,

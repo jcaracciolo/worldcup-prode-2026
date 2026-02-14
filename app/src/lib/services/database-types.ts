@@ -39,7 +39,9 @@ export interface ProfileService {
   getProfile(userId: string): Promise<ServiceResult<Profile>>;
 
   /** Get all profiles, optionally override competition filter */
-  getAllProfiles(overrideCompetitionId?: string): Promise<ServiceResult<Profile[]>>;
+  getAllProfiles(
+    overrideCompetitionId?: string,
+  ): Promise<ServiceResult<Profile[]>>;
 
   /** Update a profile */
   updateProfile(

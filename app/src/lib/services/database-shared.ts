@@ -67,10 +67,12 @@ export function createProfileService(
       }
     },
 
-    async getAllProfiles(overrideCompetitionId?: string): Promise<ServiceResult<Profile[]>> {
+    async getAllProfiles(
+      overrideCompetitionId?: string,
+    ): Promise<ServiceResult<Profile[]>> {
       try {
         const competitionId = overrideCompetitionId ?? getCompetitionId?.();
-        
+
         if (competitionId) {
           // Get only profiles for users in the current competition
           // Must specify the FK relationship since there are two (user_id and invited_by)
@@ -78,12 +80,17 @@ export function createProfileService(
             .from("competition_members")
             .select("user_id, profiles!competition_members_user_id_fkey(*)")
             .eq("competition_id", competitionId);
-          
+
           if (error) {
-            console.error("[DB] Competition members query error:", error.message);
-            throw new Error(error.message || "Failed to query competition members");
+            console.error(
+              "[DB] Competition members query error:",
+              error.message,
+            );
+            throw new Error(
+              error.message || "Failed to query competition members",
+            );
           }
-          
+
           // Extract profiles from the join result (using .single() FK returns object, otherwise returns array)
           const profiles = (data || [])
             .map((row) => {
@@ -92,7 +99,7 @@ export function createProfileService(
               return Array.isArray(profile) ? profile[0] : profile;
             })
             .filter((p): p is Profile => p !== null && p !== undefined);
-          
+
           return { data: profiles, error: null };
         }
 

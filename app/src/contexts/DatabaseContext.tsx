@@ -27,7 +27,7 @@ import { Competition } from "@/types/database";
 const COMPETITION_STORAGE_KEY = "worldcupprode_competition_id";
 
 interface DatabaseContextValue {
-  /** The database service instance */
+  /** The database service instance (for mutations) */
   db: DatabaseService;
   /** Current competition ID */
   currentCompetitionId: string | null;

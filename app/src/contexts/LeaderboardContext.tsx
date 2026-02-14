@@ -76,7 +76,10 @@ export function LeaderboardProvider({ children }: LeaderboardProviderProps) {
       }
 
       // If nothing is locked, everyone has 0 points
-      if (!stageLockStatus.groupStageLocked && !stageLockStatus.knockoutStageLocked) {
+      if (
+        !stageLockStatus.groupStageLocked &&
+        !stageLockStatus.knockoutStageLocked
+      ) {
         setScores(
           profiles.map((p) => ({
             userId: p.id,
@@ -87,7 +90,7 @@ export function LeaderboardProvider({ children }: LeaderboardProviderProps) {
             groupBonusPoints: 0,
             knockoutPoints: 0,
             position: 0,
-          }))
+          })),
         );
         return;
       }
@@ -152,8 +155,10 @@ export function LeaderboardProvider({ children }: LeaderboardProviderProps) {
           awayStats.goalsFor += awayGoals;
           awayStats.goalsAgainst += homeGoals;
 
-          homeStats.goalDifference = homeStats.goalsFor - homeStats.goalsAgainst;
-          awayStats.goalDifference = awayStats.goalsFor - awayStats.goalsAgainst;
+          homeStats.goalDifference =
+            homeStats.goalsFor - homeStats.goalsAgainst;
+          awayStats.goalDifference =
+            awayStats.goalsFor - awayStats.goalsAgainst;
 
           if (homeGoals > awayGoals) {
             homeStats.won++;
@@ -174,7 +179,8 @@ export function LeaderboardProvider({ children }: LeaderboardProviderProps) {
         const standings = Array.from(teamStats.values())
           .sort((a, b) => {
             if (b.points !== a.points) return b.points - a.points;
-            if (b.goalDifference !== a.goalDifference) return b.goalDifference - a.goalDifference;
+            if (b.goalDifference !== a.goalDifference)
+              return b.goalDifference - a.goalDifference;
             return b.goalsFor - a.goalsFor;
           })
           .map((s, i) => ({ ...s, position: i + 1 }));
@@ -183,7 +189,8 @@ export function LeaderboardProvider({ children }: LeaderboardProviderProps) {
       });
 
       // Calculate advancing teams
-      const actualThirdPlaceQualifying = getQualifyingThirdPlaceTeams(actualGroupStandings);
+      const actualThirdPlaceQualifying =
+        getQualifyingThirdPlaceTeams(actualGroupStandings);
       const advancingTeamIds = new Set<number>();
       actualGroupStandings.forEach((standings, groupName) => {
         standings.forEach((standing, index) => {
@@ -212,7 +219,7 @@ export function LeaderboardProvider({ children }: LeaderboardProviderProps) {
           predictions,
           groupOverrides,
           actualGroupStandings,
-          advancingTeamIds
+          advancingTeamIds,
         );
 
         // Categorize points

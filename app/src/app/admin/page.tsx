@@ -111,7 +111,9 @@ export default function AdminPage() {
         return;
       }
       setUsersLoading(true);
-      const { data: usersData } = await db.profiles.getAllProfiles(selectedCompetitionId);
+      const { data: usersData } = await db.profiles.getAllProfiles(
+        selectedCompetitionId,
+      );
       setUsers(usersData || []);
       setUsersLoading(false);
     };

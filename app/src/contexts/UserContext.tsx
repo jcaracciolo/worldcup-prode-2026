@@ -42,7 +42,7 @@ export function UserProvider({ children }: UserProviderProps) {
     new Map(),
   );
   const [allProfiles, setAllProfiles] = useState<Profile[] | null>(null);
-  
+
   // Database service for all operations (auth + data)
   const db = useDatabaseService();
   const { currentCompetitionId } = useDatabase();

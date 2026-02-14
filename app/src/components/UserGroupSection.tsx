@@ -66,7 +66,7 @@ export default function UserGroupSection({
         Group Stage
       </h2>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {Array.from(groups.entries())
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([groupName, groupMatchList]) => {
@@ -117,7 +117,7 @@ function GroupCard({
         {groupName.replace("GROUP_", "Group ")}
       </h3>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="space-y-4">
         <div className="bg-slate-800/50 rounded-lg p-3">
           <h4 className="text-sm font-medium text-white/50 mb-2">
             Predictions

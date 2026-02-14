@@ -43,21 +43,21 @@ export default function GroupStageSection({
 
   return (
     <section>
-      <div className="flex items-center gap-3 mb-4 sm:mb-6">
-        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-          <span className="text-lg sm:text-xl">🏆</span>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-7 h-7 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+          <span className="text-sm">🏆</span>
         </div>
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white">
+          <h2 className="text-lg font-bold text-white">
             Group Stage
           </h2>
-          <p className="text-white/50 text-xs sm:text-sm">
+          <p className="text-white/50 text-xs">
             48 teams in 12 groups
           </p>
         </div>
       </div>
 
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {Array.from(groups.entries())
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([groupName, groupMatchList]) => {
@@ -68,20 +68,20 @@ export default function GroupStageSection({
             );
 
             return (
-              <div key={groupName} className="glass-card p-3 sm:p-5">
-                <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                  <span className="px-3 sm:px-4 py-1.5 sm:py-2 bg-emerald-500/20 text-emerald-400 text-lg sm:text-xl font-bold rounded-lg">
+              <div key={groupName} className="glass-card p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 text-sm font-bold rounded-lg">
                     {groupName.replace("GROUP_", "Group ")}
                   </span>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {/* Matches */}
                   <div>
-                    <h4 className="text-sm font-medium text-white/50 mb-3 uppercase tracking-wider">
+                    <h4 className="text-xs font-medium text-white/50 mb-2 uppercase tracking-wider">
                       Matches
                     </h4>
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                       {sortedMatches.map((match) => {
                         const fifaNumber = apiToFifaMap.get(match.id);
 
@@ -119,10 +119,10 @@ export default function GroupStageSection({
                   {/* Standings Table */}
                   {standings.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-medium text-white/50 mb-3 uppercase tracking-wider">
+                      <h4 className="text-xs font-medium text-white/50 mb-2 uppercase tracking-wider">
                         Standings
                         {!readOnly && !groupLocked && (
-                          <span className="text-white/30 text-xs ml-2">
+                          <span className="text-white/30 text-[10px] ml-2">
                             (↕ swap tied teams)
                           </span>
                         )}

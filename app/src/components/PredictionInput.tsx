@@ -127,7 +127,7 @@ export default function PredictionInput({
 
   return (
     <div
-      className={`py-2 px-2 sm:py-3 sm:px-4 rounded-xl transition-colors ${
+      className={`py-1.5 px-2 rounded-lg transition-colors ${
         disabled
           ? "bg-slate-900/60 opacity-70"
           : "bg-slate-800/60 hover:bg-slate-800/80"
@@ -266,84 +266,83 @@ export default function PredictionInput({
         )}
       </div>
 
-      {/* Desktop Layout */}
-      <div className="hidden sm:flex items-center">
-        {/* Section 1: Date */}
-        <div className="w-20 text-center shrink-0 pr-3 border-r border-white/10">
+      {/* Desktop Layout - Compact like profile page */}
+      <div className="hidden sm:flex items-center gap-2">
+        {/* Date + Time/Venue stacked */}
+        <div className="w-28 shrink-0 flex items-center justify-center gap-3">
           <div
-            className="text-sm uppercase font-bold tracking-wide whitespace-nowrap"
+            className="text-[11px] uppercase font-bold tracking-wide text-center"
             style={{ color: "var(--date-color)" }}
           >
             {formattedDate}
           </div>
-        </div>
-
-        {/* Section 2: Time & Venue */}
-        <div className="w-28 shrink-0 px-3 border-r border-white/10">
-          <div className="text-sm text-white/70 font-medium">
-            {formattedTime}
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] text-white/70 font-medium">
+              {formattedTime}
+            </span>
+            {venue && (
+              <span
+                className="text-[10px] font-semibold"
+                style={{ color: "var(--venue-color)" }}
+              >
+                {CITY_ABBREVIATIONS[venue.city] ||
+                  venue.city.substring(0, 3).toUpperCase()}
+              </span>
+            )}
           </div>
-          {venue && (
-            <div
-              className="text-sm font-semibold truncate"
-              style={{ color: "var(--venue-color)" }}
-            >
-              {venue.city}
-            </div>
-          )}
         </div>
 
-        {/* Section 3: Match */}
-        <div className="flex-1 flex items-center pl-4">
-          {/* Home Team - fixed width for alignment */}
-          <div className="w-24 flex items-center justify-end gap-2">
+        {/* Match section */}
+        <div className="flex-1 flex items-center justify-center">
+          {/* Home Team */}
+          <div className="flex items-center justify-end gap-1.5 flex-1 min-w-0">
             {needsWinnerSelect ? (
               <button
                 type="button"
                 onClick={() => homeTeam?.id && handleWinnerChange(homeTeam.id)}
                 disabled={disabled || !homeTeam?.id}
-                className={`flex items-center gap-2 px-2 py-1 rounded-lg transition-all ${
+                className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded transition-all ${
                   homeIsWinner
                     ? "bg-amber-500/80 text-slate-900 font-bold"
                     : "hover:bg-white/10"
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                <span className="text-sm font-semibold truncate">
-                  {getTeamDisplayName(homeTeam, match.id, "home")}
+                <span className="text-xs font-semibold">
+                  {homeTeam?.tla || getTeamDisplayName(homeTeam, match.id, "home")}
                 </span>
                 {homeTeam?.crest ? (
                   <img
                     src={homeTeam.crest}
                     alt={homeTeam.name}
-                    className="w-7 h-7 object-contain shrink-0"
+                    className="w-5 h-5 object-contain shrink-0"
                   />
                 ) : (
-                  <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
+                  <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
                     {homeTeam?.tla?.substring(0, 2) || "?"}
                   </div>
                 )}
               </button>
             ) : (
               <div
-                className={`flex items-center gap-2 px-2 py-1 rounded-lg ${
+                className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded ${
                   homeIsWinner ? "bg-amber-500/80" : ""
                 }`}
               >
                 <span
-                  className={`text-sm font-semibold truncate ${
+                  className={`text-xs font-semibold ${
                     homeIsWinner ? "text-slate-900 font-bold" : "text-white"
                   }`}
                 >
-                  {getTeamDisplayName(homeTeam, match.id, "home")}
+                  {homeTeam?.tla || getTeamDisplayName(homeTeam, match.id, "home")}
                 </span>
                 {homeTeam?.crest ? (
                   <img
                     src={homeTeam.crest}
                     alt={homeTeam.name}
-                    className="w-7 h-7 object-contain shrink-0"
+                    className="w-5 h-5 object-contain shrink-0"
                   />
                 ) : (
-                  <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
+                  <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
                     {homeTeam?.tla?.substring(0, 2) || "?"}
                   </div>
                 )}
@@ -351,15 +350,15 @@ export default function PredictionInput({
             )}
           </div>
 
-          {/* Score Inputs - centered */}
-          <div className="flex flex-col items-center mx-4">
-            {/* Tie indicator when winner needed but not selected - ABOVE score */}
+          {/* Score Inputs - compact */}
+          <div className="flex flex-col items-center mx-2">
+            {/* Tie indicator when winner needed but not selected */}
             {needsWinnerSelect && !winnerId && (
-              <div className="mb-1 px-1.5 py-0.5 text-[9px] leading-tight text-center rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                Select winner
+              <div className="mb-0.5 px-1 py-0.5 text-[8px] leading-tight text-center rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                Pick winner
               </div>
             )}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <input
                 type="number"
                 min="0"
@@ -367,10 +366,10 @@ export default function PredictionInput({
                 value={homeGoals ?? ""}
                 onChange={(e) => handleHomeChange(e.target.value)}
                 disabled={disabled}
-                className="w-12 h-10 text-center text-xl font-bold bg-white/90 border-2 border-white rounded-lg text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20 transition-all shadow-md"
+                className="w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-400 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20 transition-all"
                 placeholder="-"
               />
-              <span className="text-white/50 font-bold text-lg">-</span>
+              <span className="text-white/50 font-bold text-xs">-</span>
               <input
                 type="number"
                 min="0"
@@ -378,20 +377,20 @@ export default function PredictionInput({
                 value={awayGoals ?? ""}
                 onChange={(e) => handleAwayChange(e.target.value)}
                 disabled={disabled}
-                className="w-12 h-10 text-center text-xl font-bold bg-white/90 border-2 border-white rounded-lg text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20 transition-all shadow-md"
+                className="w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-400 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20 transition-all"
                 placeholder="-"
               />
             </div>
           </div>
 
-          {/* Away Team - fixed width for alignment */}
-          <div className="w-24 flex items-center gap-2">
+          {/* Away Team */}
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
             {needsWinnerSelect ? (
               <button
                 type="button"
                 onClick={() => awayTeam?.id && handleWinnerChange(awayTeam.id)}
                 disabled={disabled || !awayTeam?.id}
-                className={`flex items-center gap-2 px-2 py-1 rounded-lg transition-all ${
+                className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded transition-all ${
                   awayIsWinner
                     ? "bg-amber-500/80 text-slate-900 font-bold"
                     : "hover:bg-white/10"
@@ -401,20 +400,20 @@ export default function PredictionInput({
                   <img
                     src={awayTeam.crest}
                     alt={awayTeam.name}
-                    className="w-7 h-7 object-contain shrink-0"
+                    className="w-5 h-5 object-contain shrink-0"
                   />
                 ) : (
-                  <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
+                  <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
                     {awayTeam?.tla?.substring(0, 2) || "?"}
                   </div>
                 )}
-                <span className="text-sm font-semibold truncate">
-                  {getTeamDisplayName(awayTeam, match.id, "away")}
+                <span className="text-xs font-semibold">
+                  {awayTeam?.tla || getTeamDisplayName(awayTeam, match.id, "away")}
                 </span>
               </button>
             ) : (
               <div
-                className={`flex items-center gap-2 px-2 py-1 rounded-lg ${
+                className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded ${
                   awayIsWinner ? "bg-amber-500/80" : ""
                 }`}
               >
@@ -422,19 +421,19 @@ export default function PredictionInput({
                   <img
                     src={awayTeam.crest}
                     alt={awayTeam.name}
-                    className="w-7 h-7 object-contain shrink-0"
+                    className="w-5 h-5 object-contain shrink-0"
                   />
                 ) : (
-                  <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
+                  <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
                     {awayTeam?.tla?.substring(0, 2) || "?"}
                   </div>
                 )}
                 <span
-                  className={`text-sm font-semibold truncate ${
+                  className={`text-xs font-semibold ${
                     awayIsWinner ? "text-slate-900 font-bold" : "text-white"
                   }`}
                 >
-                  {getTeamDisplayName(awayTeam, match.id, "away")}
+                  {awayTeam?.tla || getTeamDisplayName(awayTeam, match.id, "away")}
                 </span>
               </div>
             )}

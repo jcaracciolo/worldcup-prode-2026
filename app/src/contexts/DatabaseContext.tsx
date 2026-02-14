@@ -7,17 +7,13 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
-  useRef,
 } from "react";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import {
   DatabaseService,
   CURRENT_DB_VERSION,
 } from "@/lib/services/database-types";
-import {
-  createDatabaseServiceFromClient,
-  GetCompetitionIdFn,
-} from "@/lib/services/database-shared";
+import { createDatabaseServiceFromClient } from "@/lib/services/database-shared";
 import { Competition } from "@/types/database";
 
 // =====================================================================
@@ -61,16 +57,8 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
   const [userCompetitions, setUserCompetitions] = useState<Competition[]>([]);
   const [competitionLoading, setCompetitionLoading] = useState(true);
 
-  // Use ref for synchronous access to competition ID (for database service)
-  const competitionIdRef = useRef<string | null>(null);
-  competitionIdRef.current = currentCompetitionId;
-
-  // Get competition ID function for database services
-  const getCompetitionId: GetCompetitionIdFn = useCallback(() => {
-    return competitionIdRef.current;
-  }, []);
-
-  // Create the database service with competition ID getter
+  // Create the database service with competition ID
+  // Recreated when competition changes, triggering re-renders in consumers that depend on [db]
   const db = useMemo(() => {
     // During SSR/build, return null - will be initialized client-side
     if (typeof window === "undefined") {
@@ -84,8 +72,8 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
       return null;
     }
 
-    return createDatabaseServiceFromClient(supabase, getCompetitionId);
-  }, [getCompetitionId]);
+    return createDatabaseServiceFromClient(supabase, currentCompetitionId);
+  }, [currentCompetitionId]);
 
   // Load user's competitions after auth
   const loadUserCompetitions = useCallback(

@@ -36,16 +36,13 @@ import {
   TournamentSettings,
 } from "@/types/database";
 
-// Type for getting current competition ID (provided by DatabaseContext)
-export type GetCompetitionIdFn = () => string | null;
-
 // =====================================================================
 // PROFILE SERVICE IMPLEMENTATION
 // =====================================================================
 
 export function createProfileService(
   supabase: SupabaseClient,
-  getCompetitionId?: GetCompetitionIdFn,
+  competitionId?: string | null,
 ): ProfileService {
   return {
     async getProfile(userId: string): Promise<ServiceResult<Profile>> {
@@ -71,15 +68,15 @@ export function createProfileService(
       overrideCompetitionId?: string,
     ): Promise<ServiceResult<Profile[]>> {
       try {
-        const competitionId = overrideCompetitionId ?? getCompetitionId?.();
+        const effectiveCompetitionId = overrideCompetitionId ?? competitionId;
 
-        if (competitionId) {
+        if (effectiveCompetitionId) {
           // Get only profiles for users in the current competition
           // Must specify the FK relationship since there are two (user_id and invited_by)
           const { data, error } = await supabase
             .from("competition_members")
             .select("user_id, profiles!competition_members_user_id_fkey(*)")
-            .eq("competition_id", competitionId);
+            .eq("competition_id", effectiveCompetitionId);
 
           if (error) {
             console.error(
@@ -366,11 +363,10 @@ export function createCompetitionMemberService(
 
 export function createInviteCodeService(
   supabase: SupabaseClient,
-  getCompetitionId: GetCompetitionIdFn,
+  competitionId: string | null,
 ): InviteCodeService {
   return {
     async getAllInviteCodes(): Promise<ServiceResult<InviteCodeWithUsedBy[]>> {
-      const competitionId = getCompetitionId();
       if (!competitionId) {
         return { data: [], error: null };
       }
@@ -532,13 +528,12 @@ export function createInviteCodeService(
 
 export function createPredictionService(
   supabase: SupabaseClient,
-  getCompetitionId: GetCompetitionIdFn,
+  competitionId: string | null,
 ): PredictionService {
   return {
     async getUserPredictions(
       userId: string,
     ): Promise<ServiceResult<Prediction[]>> {
-      const competitionId = getCompetitionId();
       if (!competitionId) {
         return { data: [], error: null };
       }
@@ -564,7 +559,6 @@ export function createPredictionService(
     },
 
     async getAllPredictions(): Promise<ServiceResult<Prediction[]>> {
-      const competitionId = getCompetitionId();
       if (!competitionId) {
         return { data: [], error: null };
       }
@@ -594,7 +588,6 @@ export function createPredictionService(
         winner_id: number | null;
       }>,
     ): Promise<ServiceVoidResult> {
-      const competitionId = getCompetitionId();
       if (!competitionId) {
         return { success: false, error: "No competition selected" };
       }
@@ -642,13 +635,12 @@ export function createPredictionService(
 
 export function createOverrideService(
   supabase: SupabaseClient,
-  getCompetitionId: GetCompetitionIdFn,
+  competitionId: string | null,
 ): OverrideService {
   return {
     async getUserOverrides(
       userId: string,
     ): Promise<ServiceResult<GroupStandingsOverride[]>> {
-      const competitionId = getCompetitionId();
       if (!competitionId) {
         return { data: [], error: null };
       }
@@ -674,7 +666,6 @@ export function createOverrideService(
     },
 
     async getAllOverrides(): Promise<ServiceResult<GroupStandingsOverride[]>> {
-      const competitionId = getCompetitionId();
       if (!competitionId) {
         return { data: [], error: null };
       }
@@ -703,7 +694,6 @@ export function createOverrideService(
         position: number;
       }>,
     ): Promise<ServiceVoidResult> {
-      const competitionId = getCompetitionId();
       if (!competitionId) {
         return { success: false, error: "No competition selected" };
       }
@@ -854,11 +844,10 @@ export function createMatchesCacheService(
 
 export function createTournamentSettingsService(
   supabase: SupabaseClient,
-  getCompetitionId: GetCompetitionIdFn,
+  competitionId: string | null,
 ): TournamentSettingsService {
   return {
     async getSettings(): Promise<ServiceResult<TournamentSettings>> {
-      const competitionId = getCompetitionId();
       if (!competitionId) {
         return { data: null, error: "No competition selected" };
       }
@@ -906,7 +895,6 @@ export function createTournamentSettingsService(
         Omit<TournamentSettings, "competition_id" | "updated_at">
       >,
     ): Promise<ServiceVoidResult> {
-      const competitionId = getCompetitionId();
       if (!competitionId) {
         return { success: false, error: "No competition selected" };
       }
@@ -978,10 +966,19 @@ export function createAuthService(supabase: SupabaseClient): AuthService {
           error: null,
         };
       } catch (error) {
-        console.error("[Auth] Failed to get user:", error);
+        // AuthSessionMissingError is expected when no user is logged in — not a real error
+        const isSessionMissing =
+          error instanceof Error && error.name === "AuthSessionMissingError";
+        if (!isSessionMissing) {
+          console.error("[Auth] Failed to get user:", error);
+        }
         return {
           data: null,
-          error: error instanceof Error ? error.message : "Unknown error",
+          error: isSessionMissing
+            ? null
+            : error instanceof Error
+              ? error.message
+              : "Unknown error",
         };
       }
     },
@@ -1095,24 +1092,24 @@ export function createAuthService(supabase: SupabaseClient): AuthService {
  * This factory is used by both client and server implementations
  *
  * @param supabase - The Supabase client instance
- * @param getCompetitionId - Function that returns the current competition ID (for scoped queries)
+ * @param competitionId - The current competition ID (for scoped queries)
  */
 export function createDatabaseServiceFromClient(
   supabase: SupabaseClient,
-  getCompetitionId: GetCompetitionIdFn = () => null,
+  competitionId: string | null = null,
 ): DatabaseService {
   return {
     auth: createAuthService(supabase),
-    profiles: createProfileService(supabase, getCompetitionId),
+    profiles: createProfileService(supabase, competitionId),
     competitions: createCompetitionService(supabase),
     competitionMembers: createCompetitionMemberService(supabase),
-    inviteCodes: createInviteCodeService(supabase, getCompetitionId),
-    predictions: createPredictionService(supabase, getCompetitionId),
-    overrides: createOverrideService(supabase, getCompetitionId),
+    inviteCodes: createInviteCodeService(supabase, competitionId),
+    predictions: createPredictionService(supabase, competitionId),
+    overrides: createOverrideService(supabase, competitionId),
     matchesCache: createMatchesCacheService(supabase),
     tournamentSettings: createTournamentSettingsService(
       supabase,
-      getCompetitionId,
+      competitionId,
     ),
   };
 }

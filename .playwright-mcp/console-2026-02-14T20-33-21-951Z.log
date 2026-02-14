@@ -1,0 +1,10 @@
+[     363ms] [ERROR] [Auth] Failed to get user: AuthSessionMissingError: Auth session missing!
+    at http://localhost:3000/_next/static/chunks/node_modules_46a7588c._.js:13809:32
+    at SupabaseAuthClient._useSession (http://localhost:3000/_next/static/chunks/node_modules_46a7588c._.js:13681:26)
+    at async SupabaseAuthClient._getUser (http://localhost:3000/_next/static/chunks/node_modules_46a7588c._.js:13797:20)
+    at async http://localhost:3000/_next/static/chunks/node_modules_46a7588c._.js:13781:20 @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[     372ms] [ERROR] [Auth] Failed to get user: AuthSessionMissingError: Auth session missing!
+    at http://localhost:3000/_next/static/chunks/node_modules_46a7588c._.js:13809:32
+    at SupabaseAuthClient._useSession (http://localhost:3000/_next/static/chunks/node_modules_46a7588c._.js:13681:26)
+    at async SupabaseAuthClient._getUser (http://localhost:3000/_next/static/chunks/node_modules_46a7588c._.js:13797:20)
+    at async http://localhost:3000/_next/static/chunks/node_modules_46a7588c._.js:13781:20 @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127

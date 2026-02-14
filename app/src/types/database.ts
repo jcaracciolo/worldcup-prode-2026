@@ -242,3 +242,13 @@ export type GroupStandingsOverride =
 export type MatchCache = Database["public"]["Tables"]["matches_cache"]["Row"];
 export type TournamentSettings =
   Database["public"]["Tables"]["tournament_settings"]["Row"];
+
+// Local types for editing - omit DB-managed fields
+export type LocalPrediction = Omit<
+  Prediction,
+  "id" | "user_id" | "competition_id" | "created_at" | "updated_at"
+>;
+export type LocalGroupStandingsOverride = Omit<
+  GroupStandingsOverride,
+  "id" | "user_id" | "competition_id" | "created_at" | "updated_at"
+>;

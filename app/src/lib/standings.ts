@@ -6,7 +6,7 @@
  */
 
 import { Match, CalculatedStanding } from "@/types/football";
-import { Prediction } from "@/types/database";
+import { LocalPrediction } from "@/types/database";
 
 /**
  * Calculate standings from user predictions
@@ -16,7 +16,7 @@ import { Prediction } from "@/types/database";
  */
 export function calculateStandingsFromPredictions(
   groupMatches: Match[],
-  predictionMap: Map<number, Prediction>,
+  predictionMap: Map<number, LocalPrediction>,
   apiToFifaMap?: Map<number, number>,
 ): CalculatedStanding[] {
   const teamStats = new Map<number, CalculatedStanding>();
@@ -210,7 +210,7 @@ export function groupMatchesByGroup(matches: Match[]): Map<string, Match[]> {
  */
 export function calculateAllGroupStandings(
   matches: Match[],
-  predictionMap: Map<number, Prediction>,
+  predictionMap: Map<number, LocalPrediction>,
 ): Map<string, CalculatedStanding[]> {
   const groups = groupMatchesByGroup(matches);
   const allStandings = new Map<string, CalculatedStanding[]>();

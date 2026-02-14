@@ -5,7 +5,7 @@ import {
   Team,
   FifaMatchId,
 } from "@/types/football";
-import { Prediction, GroupStandingsOverride } from "@/types/database";
+import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
 import {
   getMatchResult,
   getPredictionResult,
@@ -176,7 +176,7 @@ function isMatchScorable(match: Match): boolean {
  */
 export function calculateMatchPoints(
   match: Match,
-  prediction: Prediction | null | undefined,
+  prediction: LocalPrediction | null | undefined,
   predictedHomeTeam?: { id: number } | null,
   predictedAwayTeam?: { id: number } | null,
 ): MatchPointsResult {
@@ -289,7 +289,7 @@ export function calculateMatchPoints(
  */
 export function calculateMatchPointsDetailed(
   match: Match,
-  prediction: Prediction | null | undefined,
+  prediction: LocalPrediction | null | undefined,
   predictedHomeTeam?: { id: number } | null,
   predictedAwayTeam?: { id: number } | null,
 ): MatchPointsBreakdown {
@@ -477,7 +477,7 @@ export function getMaxPossiblePoints(match: Match): number {
 
 export function calculateGroupStagePoints(
   match: Match,
-  prediction: Prediction | undefined,
+  prediction: LocalPrediction | undefined,
 ): PointBreakdown[] {
   const points: PointBreakdown[] = [];
   const isLive = isMatchLive(match);
@@ -585,7 +585,7 @@ export function calculateGroupStagePoints(
 
 export function calculateKnockoutPoints(
   match: Match,
-  prediction: Prediction | undefined,
+  prediction: LocalPrediction | undefined,
 ): PointBreakdown[] {
   const points: PointBreakdown[] = [];
   const isLive = isMatchLive(match);
@@ -817,8 +817,8 @@ export function calculateGroupStandingsBonusPoints(
 
 export function calculateStandingsFromPredictions(
   groupMatches: (Match & { fifaNumber?: FifaMatchId | null })[],
-  predictions: Map<FifaMatchId, Prediction>, // Keyed by FIFA match number
-  overrides: GroupStandingsOverride[],
+  predictions: Map<FifaMatchId, LocalPrediction>, // Keyed by FIFA match number
+  overrides: LocalGroupStandingsOverride[],
 ): CalculatedStanding[] {
   const teamStats = new Map<number, CalculatedStanding>();
 
@@ -918,13 +918,13 @@ function createEmptyStanding(team: Team): CalculatedStanding {
 
 export function calculateTotalPoints(
   matches: (Match & { fifaNumber?: FifaMatchId | null })[],
-  predictions: Prediction[], // Keyed by FIFA match number (match_id)
-  groupOverrides: GroupStandingsOverride[],
+  predictions: LocalPrediction[], // Keyed by FIFA match number (match_id)
+  groupOverrides: LocalGroupStandingsOverride[],
   actualGroupStandings: Map<string, CalculatedStanding[]>,
   advancingTeamIds: Set<number>,
 ): { totalPoints: number; livePoints: number; breakdown: PointBreakdown[] } {
   // Predictions are keyed by FIFA match number
-  const predictionMap = new Map<FifaMatchId, Prediction>(
+  const predictionMap = new Map<FifaMatchId, LocalPrediction>(
     predictions.map((p) => [p.match_id as FifaMatchId, p]),
   );
   const allBreakdown: PointBreakdown[] = [];

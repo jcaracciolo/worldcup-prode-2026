@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Match, Team, CalculatedStanding, FifaMatchId } from "@/types/football";
-import { Prediction } from "@/types/database";
+import { LocalPrediction } from "@/types/database";
 import { getTeamDisplayName } from "@/lib/scoring";
 import { getMatchInfo, Venue } from "@/lib/tournament";
 import { buildApiToFifaMapping } from "@/lib/api-client";
@@ -13,7 +13,7 @@ import { useMemo } from "react";
 
 interface UserKnockoutSectionProps {
   matches: Match[];
-  predictions: Prediction[];
+  predictions: LocalPrediction[];
   groupStandings: Map<string, CalculatedStanding[]>;
   thirdPlaceQualifying: Map<string, boolean>;
   knockoutOpen: boolean;
@@ -42,7 +42,7 @@ export default function UserKnockoutSection({
   // Predictions from DB have match_id as number, but they ARE FIFA match IDs
   const predictionMap = useMemo(
     () =>
-      new Map<FifaMatchId, Prediction>(
+      new Map<FifaMatchId, LocalPrediction>(
         predictions.map((p) => [p.match_id as FifaMatchId, p]),
       ),
     [predictions],
@@ -199,7 +199,7 @@ export default function UserKnockoutSection({
 
 interface KnockoutMatchRowProps {
   match: Match;
-  prediction: Prediction | undefined;
+  prediction: LocalPrediction | undefined;
   resolvedTeams: ResolvedTeams | undefined;
   venue: Venue | null;
 }

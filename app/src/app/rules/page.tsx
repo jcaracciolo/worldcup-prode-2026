@@ -36,8 +36,8 @@ const content = {
         actual: "Actual result",
         breakdown: "Points breakdown",
         items: [
-          { reason: "Correct result (away win)", points: "+2 pts" },
-          { reason: "Wrong home goals (predicted 0)", points: "+0 pts" },
+          { reason: "Correct result (home win)", points: "+2 pts" },
+          { reason: "Wrong home goals (predicted 2)", points: "+0 pts" },
           { reason: "Correct away goals (1)", points: "+1 pt" },
         ],
         total: "Total: 3 / 4 points",
@@ -196,8 +196,8 @@ const content = {
         actual: "Resultado real",
         breakdown: "Desglose de puntos",
         items: [
-          { reason: "Resultado correcto (victoria visitante)", points: "+2 pts" },
-          { reason: "Goles locales incorrectos (predijiste 0)", points: "+0 pts" },
+          { reason: "Resultado correcto (victoria local)", points: "+2 pts" },
+          { reason: "Goles locales incorrectos (predijiste 2)", points: "+0 pts" },
           { reason: "Goles visitantes correctos (1)", points: "+1 pt" },
         ],
         total: "Total: 3 / 4 puntos",
@@ -450,7 +450,7 @@ export default function RulesPage() {
                     <span className="text-white font-semibold">ARG</span>
                   </div>
                   <div className="bg-white/10 px-3 py-1 rounded font-bold text-white">
-                    0 - 1
+                    2 - 1
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-white font-semibold">NGA</span>
@@ -468,7 +468,7 @@ export default function RulesPage() {
                     <span className="text-white font-semibold">ARG</span>
                   </div>
                   <div className="bg-emerald-500/20 px-3 py-1 rounded font-bold text-emerald-300">
-                    2 - 1
+                    3 - 1
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-white font-semibold">NGA</span>

@@ -13,17 +13,15 @@ import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
 import { useUser } from "@/contexts/UserContext";
 import { useUserPredictions } from "@/contexts/PredictionsContext";
-import { useDatabase } from "@/contexts/DatabaseContext";
 import { CalculatedStanding, Team, Match, FifaMatchId } from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { BracketResolver } from "@/lib/bracket-resolver";
 import { buildApiToFifaMapping } from "@/lib/api-client";
-import { Prediction, GroupStandingsOverride } from "@/types/database";
+import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
 
 export default function PredictionsPage() {
   const router = useRouter();
   const { user: profile, loading: userLoading } = useUser();
-  const { currentCompetitionId } = useDatabase();
 
   // Use cached predictions from context (initializes from cache synchronously)
   const {
@@ -34,12 +32,30 @@ export default function PredictionsPage() {
   } = useUserPredictions(profile?.id || null);
 
   // Local state for editing - initialize directly from cache
-  const [predictions, setPredictions] = useState<Map<FifaMatchId, Prediction>>(
-    () => new Map(cachedPredictions),
+  const [predictions, setPredictions] = useState<
+    Map<FifaMatchId, LocalPrediction>
+  >(
+    () =>
+      new Map(
+        Array.from(cachedPredictions.entries()).map(([k, v]) => [
+          k,
+          {
+            match_id: v.match_id,
+            home_goals: v.home_goals,
+            away_goals: v.away_goals,
+            winner_id: v.winner_id,
+          },
+        ]),
+      ),
   );
-  const [overrides, setOverrides] = useState<GroupStandingsOverride[]>(() => [
-    ...cachedOverrides,
-  ]);
+  const [overrides, setOverrides] = useState<LocalGroupStandingsOverride[]>(
+    () =>
+      cachedOverrides.map((o) => ({
+        group_name: o.group_name,
+        team_id: o.team_id,
+        position: o.position,
+      })),
+  );
   const [hasLocalEdits, setHasLocalEdits] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -49,8 +65,26 @@ export default function PredictionsPage() {
     if (!hasLocalEdits && !predictionsLoading && cachedPredictions.size > 0) {
       // Use queueMicrotask to avoid sync setState warning
       queueMicrotask(() => {
-        setPredictions(new Map(cachedPredictions));
-        setOverrides([...cachedOverrides]);
+        setPredictions(
+          new Map(
+            Array.from(cachedPredictions.entries()).map(([k, v]) => [
+              k,
+              {
+                match_id: v.match_id,
+                home_goals: v.home_goals,
+                away_goals: v.away_goals,
+                winner_id: v.winner_id,
+              },
+            ]),
+          ),
+        );
+        setOverrides(
+          cachedOverrides.map((o) => ({
+            group_name: o.group_name,
+            team_id: o.team_id,
+            position: o.position,
+          })),
+        );
       });
     }
   }, [hasLocalEdits, predictionsLoading, cachedPredictions, cachedOverrides]);
@@ -102,16 +136,11 @@ export default function PredictionsPage() {
   ) => {
     setHasLocalEdits(true);
     const existing = predictions.get(fifaMatchId);
-    const updated: Prediction = {
-      id: existing?.id || "",
-      user_id: profile?.id || "",
-      competition_id: currentCompetitionId || "",
-      match_id: fifaMatchId, // FIFA number, not API ID
+    const updated: LocalPrediction = {
+      match_id: fifaMatchId,
       home_goals: homeGoals,
       away_goals: awayGoals,
       winner_id: winnerId ?? existing?.winner_id ?? null,
-      created_at: existing?.created_at || new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     };
     setPredictions(new Map(predictions.set(fifaMatchId, updated)));
   };
@@ -229,24 +258,14 @@ export default function PredictionsPage() {
 
     // Add swapped positions
     newOverrides.push({
-      id: "",
-      user_id: profile?.id || "",
-      competition_id: currentCompetitionId || "",
       group_name: groupName,
       team_id: teamId1,
       position: team2Standing.position,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     });
     newOverrides.push({
-      id: "",
-      user_id: profile?.id || "",
-      competition_id: currentCompetitionId || "",
       group_name: groupName,
       team_id: teamId2,
       position: team1Standing.position,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     });
 
     setHasLocalEdits(true);
@@ -353,16 +372,11 @@ export default function PredictionsPage() {
         winnerId = Math.random() < 0.5 ? match.homeTeam.id : match.awayTeam.id;
       }
 
-      const updated: Prediction = {
-        id: existing?.id || "",
-        user_id: profile?.id || "",
-        competition_id: currentCompetitionId || "",
+      const updated: LocalPrediction = {
         match_id: fifaNumber,
         home_goals: homeGoals,
         away_goals: awayGoals,
         winner_id: winnerId,
-        created_at: existing?.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       };
       newPredictions.set(fifaNumber, updated);
     });

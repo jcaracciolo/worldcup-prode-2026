@@ -1,7 +1,7 @@
 "use client";
 
 import { Match } from "@/types/football";
-import { Prediction } from "@/types/database";
+import { LocalPrediction } from "@/types/database";
 import {
   calculateMatchPoints,
   calculateMatchPointsDetailed,
@@ -10,7 +10,7 @@ import { useState } from "react";
 
 interface MatchPointsTooltipProps {
   match: Match;
-  prediction: Prediction | null | undefined;
+  prediction: LocalPrediction | null | undefined;
   /** For knockout: the team user predicted for home slot */
   predictedHomeTeam?: { id: number } | null;
   /** For knockout: the team user predicted for away slot */

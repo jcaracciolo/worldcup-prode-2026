@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useMemo, useCallback } from "react";
 import { useMatches } from "./MatchContext";
 import { useUserPredictions } from "./PredictionsContext";
-import { Prediction, GroupStandingsOverride } from "@/types/database";
+import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
 import {
   Match,
   PointBreakdown,
@@ -43,19 +43,19 @@ interface ScoringContextValue {
   /** Calculate score for a user given their predictions */
   calculateUserScore: (
     userId: string,
-    predictions: Map<FifaMatchId, Prediction>,
-    overrides: GroupStandingsOverride[],
+    predictions: Map<FifaMatchId, LocalPrediction>,
+    overrides: LocalGroupStandingsOverride[],
   ) => ScoreBreakdown;
   /** Get the score for a specific match */
   getMatchScore: (
     matchId: number,
-    prediction: Prediction | undefined,
+    prediction: LocalPrediction | undefined,
   ) => PointBreakdown[];
   /** Calculate group standings from predictions */
   calculatePredictedStandings: (
     groupName: string,
-    predictions: Map<FifaMatchId, Prediction>,
-    overrides: GroupStandingsOverride[],
+    predictions: Map<FifaMatchId, LocalPrediction>,
+    overrides: LocalGroupStandingsOverride[],
   ) => CalculatedStanding[];
   /** Get actual group standings */
   getActualGroupStandings: (groupName: string) => CalculatedStanding[];
@@ -237,8 +237,8 @@ export function ScoringProvider({ children }: ScoringProviderProps) {
   const calculatePredictedStandings = useCallback(
     (
       groupName: string,
-      predictions: Map<FifaMatchId, Prediction>,
-      overrides: GroupStandingsOverride[],
+      predictions: Map<FifaMatchId, LocalPrediction>,
+      overrides: LocalGroupStandingsOverride[],
     ): CalculatedStanding[] => {
       const groupMatches = matchesByGroup.get(groupName) || [];
       const groupOverrides = overrides.filter(
@@ -255,7 +255,10 @@ export function ScoringProvider({ children }: ScoringProviderProps) {
 
   // Get score for a specific match
   const getMatchScore = useCallback(
-    (matchId: number, prediction: Prediction | undefined): PointBreakdown[] => {
+    (
+      matchId: number,
+      prediction: LocalPrediction | undefined,
+    ): PointBreakdown[] => {
       const match = matches.find((m) => m.id === matchId);
       if (!match) return [];
 
@@ -272,8 +275,8 @@ export function ScoringProvider({ children }: ScoringProviderProps) {
   const calculateUserScore = useCallback(
     (
       userId: string,
-      predictions: Map<FifaMatchId, Prediction>,
-      overrides: GroupStandingsOverride[],
+      predictions: Map<FifaMatchId, LocalPrediction>,
+      overrides: LocalGroupStandingsOverride[],
     ): ScoreBreakdown => {
       const groupStage: PointBreakdown[] = [];
       const knockout: PointBreakdown[] = [];
@@ -427,7 +430,7 @@ export function useUserScore(userId: string | null): UserScore {
  */
 export function useMatchScore(
   matchId: number,
-  prediction: Prediction | undefined,
+  prediction: LocalPrediction | undefined,
 ): PointBreakdown[] {
   const { getMatchScore } = useScoringContext();
   return useMemo(

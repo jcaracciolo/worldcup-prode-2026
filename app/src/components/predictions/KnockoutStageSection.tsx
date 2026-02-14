@@ -2,7 +2,7 @@
 
 import { useTime } from "@/contexts/TimeContext";
 import { Match, Team, FifaMatchId } from "@/types/football";
-import { Prediction } from "@/types/database";
+import { LocalPrediction } from "@/types/database";
 import PredictionInput from "@/components/PredictionInput";
 import FixtureRow from "@/components/FixtureRow";
 
@@ -13,7 +13,7 @@ interface ResolvedTeams {
 
 interface KnockoutStageSectionProps {
   knockoutStages: Map<string, Match[]>;
-  predictions?: Map<FifaMatchId, Prediction>; // Keyed by FIFA match number (73-104)
+  predictions?: Map<FifaMatchId, LocalPrediction>; // Keyed by FIFA match number (73-104)
   resolvedKnockoutTeams?: Map<FifaMatchId, ResolvedTeams>; // Keyed by FIFA match number
   apiToFifaMap: Map<number, FifaMatchId>;
   knockoutLocked?: boolean;

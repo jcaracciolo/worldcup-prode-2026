@@ -2,14 +2,14 @@
 
 import { useTime } from "@/contexts/TimeContext";
 import { Match, CalculatedStanding, FifaMatchId } from "@/types/football";
-import { Prediction } from "@/types/database";
+import { LocalPrediction } from "@/types/database";
 import PredictionInput from "@/components/PredictionInput";
 import FixtureRow from "@/components/FixtureRow";
 import StandingsTable from "@/components/StandingsTable";
 
 interface GroupStageSectionProps {
   groups: Map<string, Match[]>;
-  predictions?: Map<FifaMatchId, Prediction>; // Keyed by FIFA match number (1-72)
+  predictions?: Map<FifaMatchId, LocalPrediction>; // Keyed by FIFA match number (1-72)
   apiToFifaMap: Map<number, FifaMatchId>;
   groupLocked?: boolean;
   thirdPlaceQualifying: Map<string, boolean>;

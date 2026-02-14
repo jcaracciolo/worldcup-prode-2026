@@ -50,7 +50,6 @@ export {
   PredictionsProvider,
   usePredictionsContext,
   useUserPredictions,
-  type UserPredictions,
 } from "./PredictionsContext";
 
 // Scoring Context - Score calculations

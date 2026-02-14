@@ -4,14 +4,14 @@
 // The FIFA bracket structure defines which matches feed into which
 import { Match, Team, FifaMatchId } from "@/types/football";
 import { CalculatedStanding } from "@/types/football";
-import { Prediction } from "@/types/database";
+import { LocalPrediction } from "@/types/database";
 import { r32Bracket, r16Bracket, qfBracket, sfBracket } from "./r32-bracket";
 import { getBracketSource } from "./tournament";
 import { buildApiToFifaMapping } from "./api-client";
 
 export interface BracketResolverParams {
   matches: Match[];
-  predictions: Map<FifaMatchId, Prediction>;
+  predictions: Map<FifaMatchId, LocalPrediction>;
   groupStandings: Map<string, CalculatedStanding[]>;
   thirdPlaceQualifying: Map<string, boolean>;
 }
@@ -24,7 +24,7 @@ export interface ResolvedTeams {
 // Main resolver class - uses FIFA bracket structure + user predictions
 export class BracketResolver {
   private matches: Match[];
-  private predictions: Map<FifaMatchId, Prediction>; // Keyed by FIFA match number
+  private predictions: Map<FifaMatchId, LocalPrediction>; // Keyed by FIFA match number
   private groupStandings: Map<string, CalculatedStanding[]>;
   private thirdPlaceQualifying: Map<string, boolean>;
   private resolved: Map<FifaMatchId, ResolvedTeams>; // FIFA match number -> teams

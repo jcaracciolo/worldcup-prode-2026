@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Match, CalculatedStanding } from "@/types/football";
-import { Prediction } from "@/types/database";
+import { LocalPrediction } from "@/types/database";
 import { calculateStandingsFromPredictions } from "@/lib/standings";
 import { getTeamDisplayName } from "@/lib/scoring";
 import { buildApiToFifaMapping } from "@/lib/api-client";
@@ -12,7 +12,7 @@ import { useMemo } from "react";
 
 interface UserGroupSectionProps {
   matches: Match[];
-  predictions: Prediction[];
+  predictions: LocalPrediction[];
   thirdPlaceQualifying: Map<string, boolean>;
   showPredictions: boolean;
 }
@@ -98,7 +98,7 @@ interface GroupCardProps {
   groupName: string;
   matches: Match[];
   standings: CalculatedStanding[];
-  predictionMap: Map<number, Prediction>;
+  predictionMap: Map<number, LocalPrediction>;
   apiToFifaMap: Map<number, number>;
   thirdPlaceQualifies: boolean;
 }
@@ -151,7 +151,7 @@ function GroupCard({
 
 interface GroupMatchRowProps {
   match: Match;
-  prediction: Prediction | undefined;
+  prediction: LocalPrediction | undefined;
 }
 
 function GroupMatchRow({ match, prediction }: GroupMatchRowProps) {

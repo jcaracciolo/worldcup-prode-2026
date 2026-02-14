@@ -13,7 +13,7 @@ import {
   calculateAllGroupStandings,
   calculateAllActualStandings,
 } from "@/lib/standings";
-import { Prediction, Profile } from "@/types/database";
+import { LocalPrediction, Profile } from "@/types/database";
 import PointsBreakdown from "@/components/PointsBreakdown";
 import UserKnockoutSection from "@/components/UserKnockoutSection";
 import UserGroupSection from "@/components/UserGroupSection";
@@ -81,7 +81,7 @@ export default function UserPredictionsPage() {
   }, [userId, getProfile, isOwnPredictions, currentProfile]);
 
   // Use predictions from context
-  const predictions: Prediction[] = Array.from(cachedPredictions.values());
+  const predictions: LocalPrediction[] = Array.from(cachedPredictions.values());
   const groupOverrides = cachedOverrides;
   // Only show loading on initial load when we have no data
   const isLoading = loading || (predictionsLoading && predictions.length === 0);

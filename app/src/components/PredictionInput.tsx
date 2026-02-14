@@ -1,7 +1,7 @@
 "use client";
 
 import { Match, Team, FifaMatchId } from "@/types/football";
-import { Prediction } from "@/types/database";
+import { LocalPrediction } from "@/types/database";
 import { getTeamDisplayName } from "@/lib/scoring";
 import { getMatchInfo } from "@/lib/tournament";
 
@@ -27,7 +27,7 @@ const CITY_ABBREVIATIONS: Record<string, string> = {
 
 interface PredictionInputProps {
   match: Match;
-  prediction?: Prediction;
+  prediction?: LocalPrediction;
   onChange: (
     fifaMatchId: FifaMatchId,
     homeGoals: number | null,

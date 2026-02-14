@@ -295,10 +295,11 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
         // Save predictions using database service
         const predResult = await db.predictions.savePredictions(
           userId,
-          predictionsArray
+          predictionsArray,
         );
 
-        if (!predResult.success) throw new Error(predResult.error || "Failed to save predictions");
+        if (!predResult.success)
+          throw new Error(predResult.error || "Failed to save predictions");
 
         // Save overrides using database service
         if (overrides.length > 0) {
@@ -308,10 +309,11 @@ export function PredictionsProvider({ children }: PredictionsProviderProps) {
               group_name: o.group_name,
               team_id: o.team_id,
               position: o.position,
-            }))
+            })),
           );
 
-          if (!overrideResult.success) throw new Error(overrideResult.error || "Failed to save overrides");
+          if (!overrideResult.success)
+            throw new Error(overrideResult.error || "Failed to save overrides");
         }
 
         // Update cache with saved data

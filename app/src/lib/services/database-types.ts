@@ -7,6 +7,8 @@
 
 import {
   Profile,
+  Competition,
+  CompetitionMember,
   InviteCode,
   Prediction,
   GroupStandingsOverride,
@@ -42,8 +44,56 @@ export interface ProfileService {
   /** Update a profile */
   updateProfile(
     userId: string,
-    updates: Partial<Omit<Profile, "id" | "created_at">>
+    updates: Partial<Omit<Profile, "id" | "created_at">>,
   ): Promise<ServiceVoidResult>;
+}
+
+// =====================================================================
+// COMPETITION OPERATIONS
+// =====================================================================
+
+export interface CompetitionService {
+  /** Get all competitions */
+  getAll(): Promise<ServiceResult<Competition[]>>;
+
+  /** Get a competition by ID */
+  getById(competitionId: string): Promise<ServiceResult<Competition>>;
+
+  /** Create a new competition (admin only) */
+  create(
+    name: string,
+    description: string | null,
+    seasonId: number | null,
+    createdBy: string,
+  ): Promise<ServiceResult<Competition>>;
+
+  /** Update a competition (admin only) */
+  update(
+    competitionId: string,
+    updates: Partial<Omit<Competition, "id" | "created_at" | "created_by">>,
+  ): Promise<ServiceVoidResult>;
+}
+
+// =====================================================================
+// COMPETITION MEMBER OPERATIONS
+// =====================================================================
+
+export interface CompetitionMemberService {
+  /** Get all competitions a user belongs to */
+  getUserCompetitions(userId: string): Promise<ServiceResult<Competition[]>>;
+
+  /** Get all members of a competition */
+  getCompetitionMembers(competitionId: string): Promise<ServiceResult<CompetitionMember[]>>;
+
+  /** Add a user to a competition */
+  addMember(
+    userId: string,
+    competitionId: string,
+    invitedBy?: string,
+  ): Promise<ServiceVoidResult>;
+
+  /** Check if a user is a member of a competition */
+  isMember(userId: string, competitionId: string): Promise<ServiceResult<boolean>>;
 }
 
 // =====================================================================
@@ -52,19 +102,28 @@ export interface ProfileService {
 
 export interface InviteCodeWithUsedBy extends InviteCode {
   used_by_profile?: { id: string; display_name: string } | null;
+  competition?: Competition | null;
 }
 
 export interface InviteCodeService {
-  /** Get all invite codes with used_by profile info */
+  /** Get all invite codes with used_by profile info (for current competition) */
   getAllInviteCodes(): Promise<ServiceResult<InviteCodeWithUsedBy[]>>;
 
-  /** Check if an invite code is valid (exists and unused) */
-  checkInviteCode(code: string): Promise<ServiceResult<{ id: string }>>;
+  /** Get all invite codes for a specific competition (admin) */
+  getAllInviteCodesForCompetition(
+    competitionId: string,
+  ): Promise<ServiceResult<InviteCodeWithUsedBy[]>>;
 
-  /** Create a new invite code */
+  /** Check if an invite code is valid (exists and unused) */
+  checkInviteCode(
+    code: string,
+  ): Promise<ServiceResult<{ id: string; competition_id: string }>>;
+
+  /** Create a new invite code for a specific competition */
   createInviteCode(
     code: string,
-    createdBy: string
+    createdBy: string,
+    competitionId: string,
   ): Promise<ServiceResult<InviteCode>>;
 
   /** Mark an invite code as used */
@@ -90,7 +149,7 @@ export interface PredictionService {
       home_goals: number | null;
       away_goals: number | null;
       winner_id: number | null;
-    }>
+    }>,
   ): Promise<ServiceVoidResult>;
 }
 
@@ -101,7 +160,7 @@ export interface PredictionService {
 export interface OverrideService {
   /** Get overrides for a specific user */
   getUserOverrides(
-    userId: string
+    userId: string,
   ): Promise<ServiceResult<GroupStandingsOverride[]>>;
 
   /** Get all overrides (for leaderboard) */
@@ -114,7 +173,7 @@ export interface OverrideService {
       group_name: string;
       team_id: number;
       position: number;
-    }>
+    }>,
   ): Promise<ServiceVoidResult>;
 }
 
@@ -135,7 +194,7 @@ export interface MatchesCacheService {
   /** Update individual match cache */
   updateIndividualMatchCache(
     matchId: number,
-    data: unknown
+    data: unknown,
   ): Promise<ServiceVoidResult>;
 
   /** Clear all match caches */
@@ -147,13 +206,27 @@ export interface MatchesCacheService {
 // =====================================================================
 
 export interface TournamentSettingsService {
-  /** Get tournament settings */
+  /** Get tournament settings (for current competition) */
   getSettings(): Promise<ServiceResult<TournamentSettings>>;
 
-  /** Update tournament settings */
+  /** Get tournament settings for a specific competition */
+  getSettingsForCompetition(
+    competitionId: string,
+  ): Promise<ServiceResult<TournamentSettings>>;
+
+  /** Update tournament settings (for current competition) */
   updateSettings(
-    updates: Partial<Omit<TournamentSettings, "id" | "updated_at">>
+    updates: Partial<Omit<TournamentSettings, "competition_id" | "updated_at">>,
   ): Promise<ServiceVoidResult>;
+
+  /** Update tournament settings for a specific competition (admin) */
+  updateSettingsForCompetition(
+    competitionId: string,
+    updates: Partial<Omit<TournamentSettings, "competition_id" | "updated_at">>,
+  ): Promise<ServiceVoidResult>;
+
+  /** Create tournament settings for a new competition */
+  createSettings(competitionId: string): Promise<ServiceVoidResult>;
 }
 
 // =====================================================================
@@ -176,14 +249,14 @@ export interface AuthService {
   /** Sign in with email and password */
   signInWithPassword(
     email: string,
-    password: string
+    password: string,
   ): Promise<ServiceResult<AuthSession>>;
 
   /** Sign up with email and password */
   signUp(
     email: string,
     password: string,
-    metadata?: { display_name?: string }
+    metadata?: { display_name?: string },
   ): Promise<ServiceResult<AuthUser>>;
 
   /** Sign out the current user */
@@ -194,7 +267,7 @@ export interface AuthService {
 
   /** Subscribe to auth state changes */
   onAuthStateChange(
-    callback: (event: string, session: AuthSession | null) => void
+    callback: (event: string, session: AuthSession | null) => void,
   ): { unsubscribe: () => void };
 }
 
@@ -208,6 +281,12 @@ export interface DatabaseService {
 
   // Profile operations
   profiles: ProfileService;
+
+  // Competition operations (admin)
+  competitions: CompetitionService;
+
+  // Competition member operations
+  competitionMembers: CompetitionMemberService;
 
   // Invite code operations
   inviteCodes: InviteCodeService;
@@ -235,6 +314,6 @@ export interface DatabaseServiceVersion {
 }
 
 export const CURRENT_DB_VERSION: DatabaseServiceVersion = {
-  version: "1.0.0",
-  description: "Supabase PostgreSQL implementation",
+  version: "2.0.0",
+  description: "Supabase PostgreSQL with multi-competition support",
 };

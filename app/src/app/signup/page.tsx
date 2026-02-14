@@ -4,11 +4,13 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useDatabaseService } from "@/contexts/DatabaseContext";
+import type { Competition } from "@/types/database";
 
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const codeFromUrl = searchParams.get("code") || "";
+  const competitionFromUrl = searchParams.get("competition") || "";
   const db = useDatabaseService();
 
   const [inviteCode, setInviteCode] = useState(codeFromUrl);
@@ -18,10 +20,24 @@ function SignupForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [codeValid, setCodeValid] = useState<boolean | null>(null);
+  const [competition, setCompetition] = useState<Competition | null>(null);
 
   useEffect(() => {
     setInviteCode(codeFromUrl);
   }, [codeFromUrl]);
+
+  // Load competition info from URL parameter
+  useEffect(() => {
+    const loadCompetition = async () => {
+      if (!competitionFromUrl) return;
+      
+      const result = await db.competitions.getById(competitionFromUrl);
+      if (result.data) {
+        setCompetition(result.data);
+      }
+    };
+    loadCompetition();
+  }, [competitionFromUrl, db]);
 
   useEffect(() => {
     const checkCode = async () => {
@@ -76,6 +92,7 @@ function SignupForm() {
         body: JSON.stringify({
           code: inviteCode,
           userId: authData.id,
+          competitionId: competitionFromUrl || undefined,
         }),
       });
 
@@ -101,9 +118,15 @@ function SignupForm() {
           <h1 className="text-2xl font-bold mt-4 text-white">
             Join WorldCupProde
           </h1>
-          <p className="text-white/50 mt-2">
-            Create your account to start predicting
-          </p>
+          {competition ? (
+            <p className="text-emerald-400 mt-2 font-medium">
+              Joining: {competition.name}
+            </p>
+          ) : (
+            <p className="text-white/50 mt-2">
+              Create your account to start predicting
+            </p>
+          )}
         </div>
 
         <form onSubmit={handleSignup} className="space-y-5">

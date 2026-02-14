@@ -9,12 +9,23 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/";
+  const codeParam = searchParams.get("code");
+  const competitionParam = searchParams.get("competition");
   const db = useDatabaseService();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Build signup URL preserving invite params
+  const signupUrl = (() => {
+    const params = new URLSearchParams();
+    if (codeParam) params.set("code", codeParam);
+    if (competitionParam) params.set("competition", competitionParam);
+    const qs = params.toString();
+    return qs ? `/signup?${qs}` : "/signup";
+  })();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,7 +133,7 @@ function LoginForm() {
           <p className="text-white/50">
             Don&apos;t have an account?{" "}
             <Link
-              href="/signup"
+              href={signupUrl}
               className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
             >
               Sign up

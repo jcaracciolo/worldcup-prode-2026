@@ -37,10 +37,60 @@ export interface Database {
           updated_at?: string;
         };
       };
+      competitions: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          season_id: number | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          season_id?: number | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          season_id?: number | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      competition_members: {
+        Row: {
+          user_id: string;
+          competition_id: string;
+          joined_at: string;
+          invited_by: string | null;
+        };
+        Insert: {
+          user_id: string;
+          competition_id: string;
+          joined_at?: string;
+          invited_by?: string | null;
+        };
+        Update: {
+          user_id?: string;
+          competition_id?: string;
+          joined_at?: string;
+          invited_by?: string | null;
+        };
+      };
       invite_codes: {
         Row: {
           id: string;
           code: string;
+          competition_id: string;
           created_by: string;
           used_by: string | null;
           created_at: string;
@@ -49,6 +99,7 @@ export interface Database {
         Insert: {
           id?: string;
           code: string;
+          competition_id: string;
           created_by: string;
           used_by?: string | null;
           created_at?: string;
@@ -57,6 +108,7 @@ export interface Database {
         Update: {
           id?: string;
           code?: string;
+          competition_id?: string;
           created_by?: string;
           used_by?: string | null;
           created_at?: string;
@@ -67,6 +119,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          competition_id: string;
           match_id: number;
           home_goals: number | null;
           away_goals: number | null;
@@ -77,6 +130,7 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
+          competition_id: string;
           match_id: number;
           home_goals?: number | null;
           away_goals?: number | null;
@@ -87,6 +141,7 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
+          competition_id?: string;
           match_id?: number;
           home_goals?: number | null;
           away_goals?: number | null;
@@ -99,6 +154,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
+          competition_id: string;
           group_name: string;
           team_id: number;
           position: number;
@@ -108,6 +164,7 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
+          competition_id: string;
           group_name: string;
           team_id: number;
           position: number;
@@ -117,6 +174,7 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
+          competition_id?: string;
           group_name?: string;
           team_id?: number;
           position?: number;
@@ -143,21 +201,21 @@ export interface Database {
       };
       tournament_settings: {
         Row: {
-          id: number;
+          competition_id: string;
           group_stage_locked: boolean;
           knockout_stage_open: boolean;
           knockout_stage_locked: boolean;
           updated_at: string;
         };
         Insert: {
-          id?: number;
+          competition_id: string;
           group_stage_locked?: boolean;
           knockout_stage_open?: boolean;
           knockout_stage_locked?: boolean;
           updated_at?: string;
         };
         Update: {
-          id?: number;
+          competition_id?: string;
           group_stage_locked?: boolean;
           knockout_stage_open?: boolean;
           knockout_stage_locked?: boolean;
@@ -169,6 +227,8 @@ export interface Database {
 }
 
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+export type Competition = Database["public"]["Tables"]["competitions"]["Row"];
+export type CompetitionMember = Database["public"]["Tables"]["competition_members"]["Row"];
 export type InviteCode = Database["public"]["Tables"]["invite_codes"]["Row"];
 /** Raw prediction type from database - use TypedPrediction for type-safe match_id */
 export type Prediction = Database["public"]["Tables"]["predictions"]["Row"];

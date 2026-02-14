@@ -13,6 +13,7 @@ import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
 import { useUser } from "@/contexts/UserContext";
 import { useUserPredictions } from "@/contexts/PredictionsContext";
+import { useDatabase } from "@/contexts/DatabaseContext";
 import { CalculatedStanding, Team, Match, FifaMatchId } from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { BracketResolver } from "@/lib/bracket-resolver";
@@ -22,6 +23,7 @@ import { Prediction, GroupStandingsOverride } from "@/types/database";
 export default function PredictionsPage() {
   const router = useRouter();
   const { user: profile, loading: userLoading } = useUser();
+  const { currentCompetitionId } = useDatabase();
 
   // Use cached predictions from context (initializes from cache synchronously)
   const {
@@ -103,6 +105,7 @@ export default function PredictionsPage() {
     const updated: Prediction = {
       id: existing?.id || "",
       user_id: profile?.id || "",
+      competition_id: currentCompetitionId || "",
       match_id: fifaMatchId, // FIFA number, not API ID
       home_goals: homeGoals,
       away_goals: awayGoals,
@@ -228,6 +231,7 @@ export default function PredictionsPage() {
     newOverrides.push({
       id: "",
       user_id: profile?.id || "",
+      competition_id: currentCompetitionId || "",
       group_name: groupName,
       team_id: teamId1,
       position: team2Standing.position,
@@ -237,6 +241,7 @@ export default function PredictionsPage() {
     newOverrides.push({
       id: "",
       user_id: profile?.id || "",
+      competition_id: currentCompetitionId || "",
       group_name: groupName,
       team_id: teamId2,
       position: team1Standing.position,
@@ -351,6 +356,7 @@ export default function PredictionsPage() {
       const updated: Prediction = {
         id: existing?.id || "",
         user_id: profile?.id || "",
+        competition_id: currentCompetitionId || "",
         match_id: fifaNumber,
         home_goals: homeGoals,
         away_goals: awayGoals,

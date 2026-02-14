@@ -3,24 +3,34 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useDatabaseService } from "@/contexts/DatabaseContext";
+import { useDatabaseService, useDatabase } from "@/contexts/DatabaseContext";
 import { useMatches } from "@/contexts/MatchContext";
 import { useUser } from "@/contexts/UserContext";
 
 export default function Header() {
   const router = useRouter();
   const db = useDatabaseService();
+  const { userCompetitions, currentCompetitionId, switchCompetition } = useDatabase();
   const { isSimulated } = useMatches();
   const { user } = useUser();
 
   // Defer simulation banner to avoid hydration mismatch
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [competitionDropdownOpen, setCompetitionDropdownOpen] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  const currentCompetition = userCompetitions.find(c => c.id === currentCompetitionId);
 
   const handleLogout = async () => {
     await db.auth.signOut();
     setMenuOpen(false);
+    router.refresh();
+  };
+
+  const handleCompetitionSwitch = (competitionId: string) => {
+    switchCompetition(competitionId);
+    setCompetitionDropdownOpen(false);
     router.refresh();
   };
 
@@ -34,19 +44,64 @@ export default function Header() {
       )}
       <header className="bg-[#0a3d36]/80 backdrop-blur-md border-b border-white/10 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/20 group-hover:shadow-green-500/40 transition-all">
-              <span className="text-lg sm:text-xl">⚽</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-base sm:text-lg font-bold text-white tracking-tight">
-                WorldCupProde
-              </span>
-              <span className="text-[9px] sm:text-[10px] text-emerald-400 font-medium tracking-wider uppercase">
-                FIFA 2026
-              </span>
-            </div>
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center gap-2 sm:gap-3 group">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/20 group-hover:shadow-green-500/40 transition-all">
+                <span className="text-lg sm:text-xl">⚽</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-base sm:text-lg font-bold text-white tracking-tight">
+                  WorldCupProde
+                </span>
+                <span className="text-[9px] sm:text-[10px] text-emerald-400 font-medium tracking-wider uppercase">
+                  FIFA 2026
+                </span>
+              </div>
+            </Link>
+
+            {/* Competition Switcher - only show if user has multiple competitions */}
+            {mounted && user && userCompetitions.length > 1 && (
+              <div className="relative hidden sm:block">
+                <button
+                  onClick={() => setCompetitionDropdownOpen(!competitionDropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-all text-sm"
+                >
+                  <span className="text-white/90 max-w-[120px] truncate">
+                    {currentCompetition?.name || "Select Competition"}
+                  </span>
+                  <svg
+                    className={`w-4 h-4 text-white/70 transition-transform ${competitionDropdownOpen ? "rotate-180" : ""}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                
+                {competitionDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-48 bg-[#0a3d36] border border-white/20 rounded-lg shadow-xl py-1 z-50">
+                    {userCompetitions.map(comp => (
+                      <button
+                        key={comp.id}
+                        onClick={() => handleCompetitionSwitch(comp.id)}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-all ${
+                          comp.id === currentCompetitionId
+                            ? "text-emerald-400 bg-white/5"
+                            : "text-white/90"
+                        }`}
+                      >
+                        {comp.name}
+                        {comp.id === currentCompetitionId && (
+                          <span className="ml-2 text-emerald-400">✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-2">
@@ -153,6 +208,24 @@ export default function Header() {
         {/* Mobile Navigation */}
         {menuOpen && (
           <nav className="md:hidden border-t border-white/10 py-2 px-4 space-y-1">
+            {/* Mobile Competition Switcher */}
+            {user && userCompetitions.length > 1 && (
+              <div className="px-4 py-2 mb-2 border-b border-white/10">
+                <p className="text-xs text-white/50 mb-2">Competition</p>
+                <select
+                  value={currentCompetitionId || ""}
+                  onChange={(e) => handleCompetitionSwitch(e.target.value)}
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm"
+                >
+                  {userCompetitions.map(comp => (
+                    <option key={comp.id} value={comp.id} className="bg-[#0a3d36]">
+                      {comp.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
             <Link
               href="/fixtures"
               onClick={() => setMenuOpen(false)}

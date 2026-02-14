@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDatabaseService } from "@/contexts/DatabaseContext";
-import { Profile } from "@/types/database";
+import { Profile, Competition } from "@/types/database";
 import { InviteCodeWithUsedBy } from "@/lib/services/database-types";
 import { useSimulation } from "@/contexts/SimulationContext";
 import { useMatches } from "@/contexts/MatchContext";
@@ -26,6 +26,15 @@ export default function AdminPage() {
     useSimulation();
   const { matches, isSimulated } = useMatches();
   const { user: profile, loading: userLoading } = useUser();
+
+  // Competition management state
+  const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const [competitionsLoading, setCompetitionsLoading] = useState(true);
+  const [selectedCompetitionId, setSelectedCompetitionId] = useState<string | null>(null);
+  const [newCompetitionName, setNewCompetitionName] = useState("");
+  const [newCompetitionDesc, setNewCompetitionDesc] = useState("");
+  const [creatingCompetition, setCreatingCompetition] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const [inviteCodes, setInviteCodes] = useState<InviteCodeWithUsedBy[]>([]);
   const [codesLoading, setCodesLoading] = useState(true);
@@ -76,10 +85,16 @@ export default function AdminPage() {
     if (!profile?.is_admin) return;
 
     const loadData = async () => {
-      // Load invite codes using database service
-      const { data: codesData } = await db.inviteCodes.getAllInviteCodes();
-      setInviteCodes(codesData || []);
-      setCodesLoading(false);
+      // Load competitions
+      const { data: compsData } = await db.competitions.getAll();
+      const loadedCompetitions = compsData || [];
+      setCompetitions(loadedCompetitions);
+      setCompetitionsLoading(false);
+
+      // Auto-select first competition if available
+      if (loadedCompetitions.length > 0 && !selectedCompetitionId) {
+        setSelectedCompetitionId(loadedCompetitions[0].id);
+      }
 
       // Load all users using database service
       const { data: usersData } = await db.profiles.getAllProfiles();
@@ -88,23 +103,78 @@ export default function AdminPage() {
     };
 
     loadData();
-  }, [db, router, profile, userLoading]);
+  }, [db, router, profile, userLoading, selectedCompetitionId]);
+
+  // Load invite codes when competition is selected
+  useEffect(() => {
+    if (!selectedCompetitionId || !profile?.is_admin) {
+      setInviteCodes([]);
+      setCodesLoading(false);
+      return;
+    }
+
+    const loadCodes = async () => {
+      setCodesLoading(true);
+      const { data: codesData } = await db.inviteCodes.getAllInviteCodesForCompetition(selectedCompetitionId);
+      setInviteCodes(codesData || []);
+      setCodesLoading(false);
+    };
+
+    loadCodes();
+  }, [db, selectedCompetitionId, profile?.is_admin]);
+
+  const handleCreateCompetition = async () => {
+    if (!profile || !newCompetitionName.trim()) return;
+    setCreatingCompetition(true);
+
+    const { data, error } = await db.competitions.create(
+      newCompetitionName.trim(),
+      newCompetitionDesc.trim() || null,
+      2398, // Default World Cup 2026 season ID
+      profile.id,
+    );
+
+    if (!error && data) {
+      // Create tournament settings for the new competition
+      await db.tournamentSettings.createSettings(data.id);
+      setCompetitions([data, ...competitions]);
+      setSelectedCompetitionId(data.id);
+      setNewCompetitionName("");
+      setNewCompetitionDesc("");
+    }
+
+    setCreatingCompetition(false);
+  };
 
   const handleGenerateCode = async () => {
-    if (!profile) return;
+    if (!profile || !selectedCompetitionId) return;
     setGenerating(true);
 
     const code = generateCode();
     const { data, error } = await db.inviteCodes.createInviteCode(
       code,
-      profile.id
+      profile.id,
+      selectedCompetitionId,
     );
 
     if (!error && data) {
-      setInviteCodes([{ ...data, used_by_profile: null }, ...inviteCodes]);
+      setInviteCodes([{ ...data, used_by_profile: null, competition: null }, ...inviteCodes]);
     }
 
     setGenerating(false);
+  };
+
+  const handleCopyInviteLink = async (code: string) => {
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const inviteLink = `${baseUrl}/signup?code=${code}&competition=${selectedCompetitionId}`;
+    
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
   };
 
   const handleMakeAdmin = async (userId: string) => {
@@ -287,74 +357,175 @@ export default function AdminPage() {
           </div>
         </section>
 
-        {/* Invite Codes */}
+        {/* Competitions Management */}
         <section className="glass-card p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-white">Invite Codes</h2>
+            <h2 className="text-xl font-bold text-white">Competitions</h2>
+            <span className="text-sm text-white/50">
+              {competitions.length} competition{competitions.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+
+          {/* Create new competition */}
+          <div className="bg-white/5 rounded-lg p-4 mb-4">
+            <h3 className="text-sm font-medium text-white/70 mb-3">Create New Competition</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <input
+                  type="text"
+                  value={newCompetitionName}
+                  onChange={(e) => setNewCompetitionName(e.target.value)}
+                  placeholder="Competition name"
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  value={newCompetitionDesc}
+                  onChange={(e) => setNewCompetitionDesc(e.target.value)}
+                  placeholder="Description (optional)"
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <button
+                  onClick={handleCreateCompetition}
+                  disabled={creatingCompetition || !newCompetitionName.trim()}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+                >
+                  {creatingCompetition ? "Creating..." : "Create Competition"}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Competition list */}
+          {competitionsLoading ? (
+            <div className="py-8 text-center text-white/50">Loading competitions...</div>
+          ) : competitions.length === 0 ? (
+            <div className="py-8 text-center text-white/50">No competitions yet. Create one above.</div>
+          ) : (
+            <div className="space-y-2">
+              {competitions.map((comp) => (
+                <div
+                  key={comp.id}
+                  onClick={() => setSelectedCompetitionId(comp.id)}
+                  className={`p-4 rounded-lg cursor-pointer transition ${
+                    selectedCompetitionId === comp.id
+                      ? "bg-emerald-600/20 border border-emerald-500/50"
+                      : "bg-white/5 hover:bg-white/10 border border-transparent"
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-medium text-white">{comp.name}</h3>
+                      {comp.description && (
+                        <p className="text-sm text-white/50">{comp.description}</p>
+                      )}
+                    </div>
+                    <div className="text-xs text-white/40">
+                      Created {format(new Date(comp.created_at), "MMM d, yyyy")}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Invite Codes (scoped to selected competition) */}
+        <section className="glass-card p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-white">Invite Codes</h2>
+              {selectedCompetitionId && (
+                <p className="text-sm text-white/50">
+                  For: {competitions.find(c => c.id === selectedCompetitionId)?.name}
+                </p>
+              )}
+            </div>
             <button
               onClick={handleGenerateCode}
-              disabled={generating}
+              disabled={generating || !selectedCompetitionId}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
             >
-              {generating ? "Generating..." : "Generate New Code"}
+              {generating ? "Generating..." : "Generate Invite Link"}
             </button>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left py-2 px-4 text-white/60">Code</th>
-                  <th className="text-left py-2 px-4 text-white/60">Created</th>
-                  <th className="text-left py-2 px-4 text-white/60">Used By</th>
-                  <th className="text-left py-2 px-4 text-white/60">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {codesLoading ? (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center text-white/50">
-                      Loading invite codes...
-                    </td>
+          {!selectedCompetitionId ? (
+            <div className="py-8 text-center text-white/50">
+              Select a competition above to manage invite codes
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="text-left py-2 px-4 text-white/60">Code</th>
+                    <th className="text-left py-2 px-4 text-white/60">Created</th>
+                    <th className="text-left py-2 px-4 text-white/60">Used By</th>
+                    <th className="text-left py-2 px-4 text-white/60">Status</th>
+                    <th className="text-left py-2 px-4 text-white/60">Actions</th>
                   </tr>
-                ) : inviteCodes.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center text-white/50">
-                      No invite codes yet
-                    </td>
-                  </tr>
-                ) : (
-                  inviteCodes.map((code) => (
-                    <tr
-                      key={code.id}
-                      className="border-b border-white/5 hover:bg-white/5"
-                    >
-                      <td className="py-2 px-4 font-mono font-bold text-white">
-                        {code.code}
-                      </td>
-                      <td className="py-2 px-4 text-white/70">
-                        {format(new Date(code.created_at), "MMM d, yyyy")}
-                      </td>
-                      <td className="py-2 px-4 text-white/70">
-                        {code.used_by_profile?.display_name || "-"}
-                      </td>
-                      <td className="py-2 px-4">
-                        {code.used_by ? (
-                          <span className="px-2 py-1 bg-white/10 text-white/50 rounded text-xs">
-                            Used
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">
-                            Available
-                          </span>
-                        )}
+                </thead>
+                <tbody>
+                  {codesLoading ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-white/50">
+                        Loading invite codes...
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : inviteCodes.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-white/50">
+                        No invite codes yet for this competition
+                      </td>
+                    </tr>
+                  ) : (
+                    inviteCodes.map((code) => (
+                      <tr
+                        key={code.id}
+                        className="border-b border-white/5 hover:bg-white/5"
+                      >
+                        <td className="py-2 px-4 font-mono font-bold text-white">
+                          {code.code}
+                        </td>
+                        <td className="py-2 px-4 text-white/70">
+                          {format(new Date(code.created_at), "MMM d, yyyy")}
+                        </td>
+                        <td className="py-2 px-4 text-white/70">
+                          {code.used_by_profile?.display_name || "-"}
+                        </td>
+                        <td className="py-2 px-4">
+                          {code.used_by ? (
+                            <span className="px-2 py-1 bg-white/10 text-white/50 rounded text-xs">
+                              Used
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs">
+                              Available
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2 px-4">
+                          {!code.used_by && (
+                            <button
+                              onClick={() => handleCopyInviteLink(code.code)}
+                              className="px-3 py-1 rounded text-xs transition bg-blue-600/20 text-blue-400 hover:bg-blue-600/30"
+                            >
+                              {copiedCode === code.code ? "Copied!" : "Copy Link"}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         {/* Users Management */}

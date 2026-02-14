@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
-import { useDatabaseService } from "@/contexts/DatabaseContext";
+import { useDatabaseService, useDatabase } from "@/contexts/DatabaseContext";
 
 export default function SettingsPage() {
   const router = useRouter();
   const db = useDatabaseService();
+  const { userCompetitions, refreshCompetitions } = useDatabase();
   const { user: profile, loading: userLoading, updateProfile } = useUser();
 
   const [displayName, setDisplayName] = useState("");
@@ -16,6 +17,10 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
+  
+  // Join competition state
+  const [inviteLink, setInviteLink] = useState("");
+  const [joiningCompetition, setJoiningCompetition] = useState(false);
 
   useEffect(() => {
     if (!userLoading && !profile) {
@@ -83,6 +88,82 @@ export default function SettingsPage() {
     }
 
     setSaving(false);
+  };
+
+  const handleJoinCompetition = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile) return;
+    
+    setJoiningCompetition(true);
+    setMessage({ type: "", text: "" });
+
+    try {
+      // Parse the invite link to extract code and competition
+      let code = "";
+      let competitionId = "";
+      
+      try {
+        const url = new URL(inviteLink);
+        code = url.searchParams.get("code") || "";
+        competitionId = url.searchParams.get("competition") || "";
+      } catch {
+        // If not a valid URL, assume it's just the code
+        code = inviteLink.trim().toUpperCase();
+      }
+
+      if (!code) {
+        setMessage({ type: "error", text: "Invalid invite link or code" });
+        setJoiningCompetition(false);
+        return;
+      }
+
+      // Verify the invite code is valid
+      const { data: codeData } = await db.inviteCodes.checkInviteCode(code);
+      if (!codeData) {
+        setMessage({ type: "error", text: "Invalid or already used invite code" });
+        setJoiningCompetition(false);
+        return;
+      }
+
+      // Use the competition from the code if not in URL
+      const targetCompetitionId = competitionId || codeData.competition_id;
+
+      // Check if already a member
+      const alreadyMember = userCompetitions.some(c => c.id === targetCompetitionId);
+      if (alreadyMember) {
+        setMessage({ type: "error", text: "You are already a member of this competition" });
+        setJoiningCompetition(false);
+        return;
+      }
+
+      // Call the API to use the invite code and join the competition
+      const response = await fetch("/api/auth/use-invite-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code,
+          userId: profile.id,
+          competitionId: targetCompetitionId,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        setMessage({ type: "error", text: error.error || "Failed to join competition" });
+        setJoiningCompetition(false);
+        return;
+      }
+
+      // Refresh competitions list
+      await refreshCompetitions();
+      setInviteLink("");
+      setMessage({ type: "success", text: "Successfully joined competition!" });
+    } catch (error) {
+      console.error("Error joining competition:", error);
+      setMessage({ type: "error", text: "Failed to join competition" });
+    }
+
+    setJoiningCompetition(false);
   };
 
   if (userLoading) {
@@ -186,6 +267,51 @@ export default function SettingsPage() {
                 className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
               >
                 {saving ? "Changing..." : "Change Password"}
+              </button>
+            </form>
+          </section>
+
+          {/* Join Competition */}
+          <section className="glass-card p-8">
+            <h2 className="text-lg font-semibold text-white mb-4">Join Another Competition</h2>
+            <p className="text-white/60 text-sm mb-4">
+              Paste an invite link or code to join another competition.
+            </p>
+            
+            {userCompetitions.length > 0 && (
+              <div className="mb-4">
+                <p className="text-white/50 text-sm mb-2">Your competitions:</p>
+                <ul className="space-y-1">
+                  {userCompetitions.map(comp => (
+                    <li key={comp.id} className="text-white/70 text-sm">
+                      • {comp.name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <form onSubmit={handleJoinCompetition} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-white/70 mb-2">
+                  Invite Link or Code
+                </label>
+                <input
+                  type="text"
+                  value={inviteLink}
+                  onChange={(e) => setInviteLink(e.target.value)}
+                  placeholder="https://...?code=ABC123&competition=... or just ABC123"
+                  className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={joiningCompetition || !inviteLink.trim()}
+                className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
+              >
+                {joiningCompetition ? "Joining..." : "Join Competition"}
               </button>
             </form>
           </section>

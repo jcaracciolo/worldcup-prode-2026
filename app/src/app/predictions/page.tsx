@@ -7,7 +7,6 @@ import { GlobalLiveIndicator } from "@/components/MatchStatus";
 import {
   KnockoutStageSection,
   GroupStageSection,
-  KnockoutPreviewSection,
 } from "@/components/predictions";
 import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
@@ -113,6 +112,11 @@ export default function PredictionsPage() {
     knockoutStageOpen: knockoutOpen,
     knockoutStageLocked: knockoutLocked,
   } = stageLockStatus;
+
+  // Tab state - default to knockout if it's open
+  const [activeTab, setActiveTab] = useState<"group" | "knockout">(
+    () => knockoutOpen ? "knockout" : "group"
+  );
 
   // Redirect if not logged in
   useEffect(() => {
@@ -496,20 +500,32 @@ export default function PredictionsPage() {
           </div>
         )}
 
-        {/* Knockout Stage Section - when knockout is open */}
-        {knockoutOpen && (
-          <KnockoutStageSection
-            knockoutStages={knockoutStages}
-            predictions={predictions}
-            resolvedKnockoutTeams={resolvedKnockoutTeams}
-            apiToFifaMap={apiToFifaMap}
-            knockoutLocked={knockoutLocked}
-            onPredictionChange={handlePredictionChange}
-          />
-        )}
+        {/* Stage Tabs */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab("group")}
+            className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
+              activeTab === "group"
+                ? "bg-emerald-600 text-white"
+                : "bg-white/10 text-white/60 hover:bg-white/20"
+            }`}
+          >
+            Group Stage
+          </button>
+          <button
+            onClick={() => setActiveTab("knockout")}
+            className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
+              activeTab === "knockout"
+                ? "bg-amber-600 text-white"
+                : "bg-white/10 text-white/60 hover:bg-white/20"
+            }`}
+          >
+            Knockout Stage
+          </button>
+        </div>
 
         {/* Group Stage */}
-        <div className={knockoutOpen ? "" : "mb-10"}>
+        {activeTab === "group" && (
           <GroupStageSection
             groups={groups}
             predictions={predictions}
@@ -520,15 +536,27 @@ export default function PredictionsPage() {
             onPredictionChange={handlePredictionChange}
             onSwapPositions={handleSwapPositions}
           />
-        </div>
+        )}
 
-        {/* Knockout Stage - when not yet open */}
-        {!knockoutOpen && (
-          <KnockoutPreviewSection
-            knockoutStages={knockoutStages}
-            groupStandings={groupStandings}
-            thirdPlaceQualifying={thirdPlaceQualifying}
-          />
+        {/* Knockout Stage */}
+        {activeTab === "knockout" && (
+          knockoutOpen ? (
+            <KnockoutStageSection
+              knockoutStages={knockoutStages}
+              predictions={predictions}
+              resolvedKnockoutTeams={resolvedKnockoutTeams}
+              apiToFifaMap={apiToFifaMap}
+              knockoutLocked={knockoutLocked}
+              onPredictionChange={handlePredictionChange}
+            />
+          ) : (
+            <div className="glass-card p-8 text-center">
+              <div className="text-5xl mb-4">🔒</div>
+              <p className="text-white/60 text-lg">
+                Knockout predictions will be available after group stage locks
+              </p>
+            </div>
+          )
         )}
       </main>
 

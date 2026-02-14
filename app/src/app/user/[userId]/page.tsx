@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
@@ -31,9 +31,15 @@ export default function UserPredictionsPage() {
 
   // Use profile from hook - if viewing own profile, prefer currentProfile
   const targetProfileState = useProfile(isOwnPredictions ? null : userId);
-  const targetProfile = isOwnPredictions ? currentProfile : targetProfileState.content;
+  const targetProfile = isOwnPredictions
+    ? currentProfile
+    : targetProfileState.content;
   const profileLoading = isOwnPredictions ? false : targetProfileState.loading;
-  const notFound = !isOwnPredictions && !targetProfileState.loading && !targetProfileState.content && !targetProfileState.error;
+  const notFound =
+    !isOwnPredictions &&
+    !targetProfileState.loading &&
+    !targetProfileState.content &&
+    !targetProfileState.error;
 
   // Use cached predictions from PredictionsContext
   const {
@@ -46,7 +52,8 @@ export default function UserPredictionsPage() {
   const predictions: LocalPrediction[] = Array.from(cachedPredictions.values());
   const groupOverrides = cachedOverrides;
   // Only show loading on initial load when we have no data
-  const isLoading = profileLoading || (predictionsLoading && predictions.length === 0);
+  const isLoading =
+    profileLoading || (predictionsLoading && predictions.length === 0);
 
   // Stage lock status from time context (simulation-transparent)
   const { groupStageLocked, knockoutStageOpen, knockoutStageLocked } =
@@ -54,6 +61,11 @@ export default function UserPredictionsPage() {
 
   // Also get isSimulated from time context
   const { isSimulated } = useTime();
+
+  // Tab state - default to knockout if it's open
+  const [activeTab, setActiveTab] = useState<"group" | "knockout">(
+    () => knockoutStageOpen ? "knockout" : "group"
+  );
 
   // Calculate predicted standings
   const predictionMap = useMemo(
@@ -374,29 +386,42 @@ export default function UserPredictionsPage() {
           </div>
         )}
 
-        {/* Knockout Stage - shown first when knockout is locked */}
-        {knockoutStageLocked && (
-          <UserKnockoutSection
+        {/* Stage Tabs */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab("group")}
+            className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
+              activeTab === "group"
+                ? "bg-emerald-600 text-white"
+                : "bg-white/10 text-white/60 hover:bg-white/20"
+            }`}
+          >
+            Group Stage
+          </button>
+          <button
+            onClick={() => setActiveTab("knockout")}
+            className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
+              activeTab === "knockout"
+                ? "bg-amber-600 text-white"
+                : "bg-white/10 text-white/60 hover:bg-white/20"
+            }`}
+          >
+            Knockout Stage
+          </button>
+        </div>
+
+        {/* Group Stage */}
+        {activeTab === "group" && (
+          <UserGroupSection
             matches={matches}
             predictions={predictions}
-            groupStandings={predictedStandings}
             thirdPlaceQualifying={thirdPlaceQualifying}
-            knockoutOpen={knockoutStageOpen}
-            knockoutLocked={knockoutStageLocked}
-            showPredictions={showKnockoutPredictions}
+            showPredictions={showGroupPredictions}
           />
         )}
 
-        {/* Group Stage */}
-        <UserGroupSection
-          matches={matches}
-          predictions={predictions}
-          thirdPlaceQualifying={thirdPlaceQualifying}
-          showPredictions={showGroupPredictions}
-        />
-
-        {/* Knockout Stage - shown after groups when not locked */}
-        {!knockoutStageLocked && (
+        {/* Knockout Stage */}
+        {activeTab === "knockout" && (
           <UserKnockoutSection
             matches={matches}
             predictions={predictions}

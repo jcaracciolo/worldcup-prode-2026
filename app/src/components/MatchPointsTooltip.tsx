@@ -104,111 +104,111 @@ export default function MatchPointsTooltip({
             <div
               className={`bg-slate-800 border rounded-lg shadow-xl p-3 ${isLive ? "border-red-500 border-2" : "border-white/20"}`}
             >
-            {/* Header */}
-            <div
-              className={`text-[10px] uppercase tracking-wider mb-2 text-center ${isLive ? "text-red-400" : "text-white/50"}`}
-            >
-              {isLive ? "🔴 Live Score" : "Actual Result"}
-            </div>
-
-            {/* Match result */}
-            <div className="flex items-center justify-center gap-3">
-              {/* Home team */}
+              {/* Header */}
               <div
-                className={`flex items-center gap-1.5 px-2 py-1 rounded ${actualHomeHighlight ? "bg-amber-500/80" : ""}`}
+                className={`text-[10px] uppercase tracking-wider mb-2 text-center ${isLive ? "text-red-400" : "text-white/50"}`}
               >
-                {match.homeTeam.crest ? (
-                  <img
-                    src={match.homeTeam.crest}
-                    alt={match.homeTeam.tla}
-                    className="w-5 h-5 object-contain shrink-0"
-                  />
-                ) : (
-                  <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-                    {match.homeTeam.tla?.substring(0, 2)}
-                  </div>
-                )}
-                <span
-                  className={`text-sm font-semibold ${actualHomeHighlight ? "text-slate-900" : "text-white"}`}
+                {isLive ? "🔴 Live Score" : "Actual Result"}
+              </div>
+
+              {/* Match result */}
+              <div className="flex items-center justify-center gap-3">
+                {/* Home team */}
+                <div
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded ${actualHomeHighlight ? "bg-amber-500/80" : ""}`}
                 >
-                  {match.homeTeam.tla}
-                </span>
-              </div>
-
-              {/* Score */}
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded">
-                <span className="text-white font-bold text-lg">
-                  {actualHome}
-                </span>
-                <span className="text-white/50">-</span>
-                <span className="text-white font-bold text-lg">
-                  {actualAway}
-                </span>
-              </div>
-
-              {/* Away team */}
-              <div
-                className={`flex items-center gap-1.5 px-2 py-1 rounded ${actualAwayHighlight ? "bg-amber-500/80" : ""}`}
-              >
-                {match.awayTeam.crest ? (
-                  <img
-                    src={match.awayTeam.crest}
-                    alt={match.awayTeam.tla}
-                    className="w-5 h-5 object-contain shrink-0"
-                  />
-                ) : (
-                  <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-                    {match.awayTeam.tla?.substring(0, 2)}
-                  </div>
-                )}
-                <span
-                  className={`text-sm font-semibold ${actualAwayHighlight ? "text-slate-900" : "text-white"}`}
-                >
-                  {match.awayTeam.tla}
-                </span>
-              </div>
-            </div>
-
-            {/* Points breakdown */}
-            <div className="mt-2 pt-2 border-t border-white/10 text-xs space-y-1">
-              {detailed?.details.map((detail, i) => (
-                <div key={i} className="flex justify-between gap-4">
+                  {match.homeTeam.crest ? (
+                    <img
+                      src={match.homeTeam.crest}
+                      alt={match.homeTeam.tla}
+                      className="w-5 h-5 object-contain shrink-0"
+                    />
+                  ) : (
+                    <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
+                      {match.homeTeam.tla?.substring(0, 2)}
+                    </div>
+                  )}
                   <span
-                    className={
-                      detail.earned ? "text-white/80" : "text-white/40"
-                    }
+                    className={`text-sm font-semibold ${actualHomeHighlight ? "text-slate-900" : "text-white"}`}
                   >
-                    {detail.description}
+                    {match.homeTeam.tla}
                   </span>
+                </div>
+
+                {/* Score */}
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-white/10 rounded">
+                  <span className="text-white font-bold text-lg">
+                    {actualHome}
+                  </span>
+                  <span className="text-white/50">-</span>
+                  <span className="text-white font-bold text-lg">
+                    {actualAway}
+                  </span>
+                </div>
+
+                {/* Away team */}
+                <div
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded ${actualAwayHighlight ? "bg-amber-500/80" : ""}`}
+                >
+                  {match.awayTeam.crest ? (
+                    <img
+                      src={match.awayTeam.crest}
+                      alt={match.awayTeam.tla}
+                      className="w-5 h-5 object-contain shrink-0"
+                    />
+                  ) : (
+                    <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
+                      {match.awayTeam.tla?.substring(0, 2)}
+                    </div>
+                  )}
+                  <span
+                    className={`text-sm font-semibold ${actualAwayHighlight ? "text-slate-900" : "text-white"}`}
+                  >
+                    {match.awayTeam.tla}
+                  </span>
+                </div>
+              </div>
+
+              {/* Points breakdown */}
+              <div className="mt-2 pt-2 border-t border-white/10 text-xs space-y-1">
+                {detailed?.details.map((detail, i) => (
+                  <div key={i} className="flex justify-between gap-4">
+                    <span
+                      className={
+                        detail.earned ? "text-white/80" : "text-white/40"
+                      }
+                    >
+                      {detail.description}
+                    </span>
+                    <span
+                      className={
+                        detail.earned
+                          ? "text-emerald-400 font-bold"
+                          : "text-white/40"
+                      }
+                    >
+                      {detail.earned ? `+${detail.points}` : "—"}
+                    </span>
+                  </div>
+                ))}
+                <div className="flex justify-between gap-4 pt-1 border-t border-white/10 font-semibold">
+                  <span className="text-white/60">Total:</span>
                   <span
                     className={
-                      detail.earned
+                      pts.total > 0
                         ? "text-emerald-400 font-bold"
                         : "text-white/40"
                     }
                   >
-                    {detail.earned ? `+${detail.points}` : "—"}
+                    {pts.total} / {pts.maxPossible}
                   </span>
                 </div>
-              ))}
-              <div className="flex justify-between gap-4 pt-1 border-t border-white/10 font-semibold">
-                <span className="text-white/60">Total:</span>
-                <span
-                  className={
-                    pts.total > 0
-                      ? "text-emerald-400 font-bold"
-                      : "text-white/40"
-                  }
-                >
-                  {pts.total} / {pts.maxPossible}
-                </span>
               </div>
-            </div>
 
-            {/* Arrow */}
-            <div className="absolute -bottom-1 right-4 w-2 h-2 bg-slate-800 border-r border-b border-white/20 transform rotate-45" />
+              {/* Arrow */}
+              <div className="absolute -bottom-1 right-4 w-2 h-2 bg-slate-800 border-r border-b border-white/20 transform rotate-45" />
+            </div>
           </div>
-        </div>
         </>
       )}
     </button>

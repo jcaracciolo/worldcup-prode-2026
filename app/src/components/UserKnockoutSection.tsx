@@ -8,7 +8,6 @@ import { getMatchInfo, Venue } from "@/lib/tournament";
 import { buildApiToFifaMapping } from "@/lib/api-client";
 import { BracketResolver, ResolvedTeams } from "@/lib/bracket-resolver";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
-import R32Preview from "@/components/R32Preview";
 import { useMemo } from "react";
 
 interface UserKnockoutSectionProps {
@@ -72,55 +71,15 @@ export default function UserKnockoutSection({
 
   const knockoutMatches = matches.filter((m) => m.stage !== "GROUP_STAGE");
 
-  // Knockout not open yet - show R32 preview + blurred placeholder
+  // Knockout not open yet - show locked message
   if (!knockoutOpen) {
     return (
       <section className="mb-8">
-        <h2 className="text-xl font-bold mb-4 border-b border-white/10 pb-2 text-white">
-          Knockout Stage
-        </h2>
-        <div className="space-y-6">
-          <R32Preview
-            matches={matches.filter((m) => m.stage === "LAST_32")}
-            groupStandings={groupStandings}
-            thirdPlaceQualifying={thirdPlaceQualifying}
-          />
-
-          {/* Blurred rest of knockout */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-10 rounded-xl flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-5xl mb-4">🔒</div>
-                <p className="text-white/60 text-lg">
-                  Coming soon after group stage
-                </p>
-              </div>
-            </div>
-            <div className="space-y-6 opacity-50">
-              {["LAST_16", "QUARTER_FINALS", "SEMI_FINALS", "FINAL"].map(
-                (stage) => {
-                  const stageName = {
-                    LAST_16: "Round of 16",
-                    QUARTER_FINALS: "Quarter-Finals",
-                    SEMI_FINALS: "Semi-Finals",
-                    FINAL: "Final",
-                  }[stage];
-                  return (
-                    <div key={stage} className="glass-card p-5">
-                      <h3 className="font-bold text-lg mb-4 text-white">
-                        {stageName}
-                      </h3>
-                      <div className="grid md:grid-cols-2 gap-4 h-20">
-                        {/* Placeholder boxes */}
-                        <div className="bg-white/5 rounded-lg h-12"></div>
-                        <div className="bg-white/5 rounded-lg h-12"></div>
-                      </div>
-                    </div>
-                  );
-                },
-              )}
-            </div>
-          </div>
+        <div className="glass-card p-8 text-center">
+          <div className="text-5xl mb-4">🔒</div>
+          <p className="text-white/60 text-lg">
+            Knockout predictions will be available after group stage locks
+          </p>
         </div>
       </section>
     );
@@ -260,7 +219,9 @@ function KnockoutMatchRow({
 
         {/* Time & Venue */}
         <div className="w-28 shrink-0 px-3 border-r border-white/10">
-          <div className="text-sm text-white/70 font-medium">{formattedTime}</div>
+          <div className="text-sm text-white/70 font-medium">
+            {formattedTime}
+          </div>
           {venue && (
             <div
               className="text-sm font-semibold truncate"

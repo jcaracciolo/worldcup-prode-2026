@@ -1,11 +1,11 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useMatches } from "@/contexts/MatchContext";
-import { useUser } from "@/contexts/UserContext";
-import { usePredictionsContext } from "@/contexts/PredictionsContext";
+import { useUser, useAllProfiles } from "@/contexts/UserContext";
+import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { getMatchInfo } from "@/lib/tournament";
 import { buildApiToFifaMapping } from "@/lib/api-client";
 import {
@@ -31,15 +31,11 @@ interface UserMatchPrediction {
 export default function MatchDetailPage() {
   const params = useParams();
   const matchId = params.matchId as string;
-  const { user: profile, getAllProfiles } = useUser();
-  const { getAllPredictions } = usePredictionsContext();
+  const { user: profile } = useUser();
+  const profiles = useAllProfiles();
+  const allPredictions = useAllPredictions();
 
   const { matches, loading: matchesLoading } = useMatches();
-
-  // All users' predictions for this match
-  const [allUserPredictions, setAllUserPredictions] = useState<UserMatchPrediction[]>([]);
-  const [loadingAllPredictions, setLoadingAllPredictions] = useState(true);
-  const hasLoadedOnce = useRef(false);
 
   // Find the specific match first
   const match = matches.find((m) => m.id === parseInt(matchId));
@@ -48,77 +44,65 @@ export default function MatchDetailPage() {
   const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
   const fifaNumber = match ? apiToFifaMap.get(match.id) : undefined;
 
-  // Load all predictions
-  useEffect(() => {
-    async function loadAllPredictions() {
-      if (!match || !fifaNumber) return;
+  // Loading state from hooks
+  const loadingAllPredictions = profiles.loading || allPredictions.loading;
 
-      // Only show loading on initial load, not on refresh
-      if (!hasLoadedOnce.current) {
-        setLoadingAllPredictions(true);
+  // Calculate all user predictions from hooks
+  const allUserPredictions = useMemo(() => {
+    if (!match || !fifaNumber) return [];
+    if (!profiles.content || !allPredictions.content) return [];
+
+    const profilesList = profiles.content;
+    const allPredictionsMap = allPredictions.content;
+
+    const isFinished = match.status === "FINISHED";
+    const maxPoints = getMaxPossiblePoints(match);
+
+    const userPredictions: UserMatchPrediction[] = [];
+
+    profilesList.forEach((profileData: Profile) => {
+      const userData = allPredictionsMap.get(profileData.id);
+      if (!userData) return;
+
+      // Find prediction for this match
+      const pred = userData.predictions.find(
+        (p) => (p.match_id as FifaMatchId) === fifaNumber
+      );
+
+      if (!pred) return;
+
+      // Calculate points if match is finished
+      let pointsEarned = 0;
+      if (isFinished && pred.home_goals !== null && pred.away_goals !== null) {
+        const breakdown = isGroupStageMatch(match)
+          ? calculateGroupStagePoints(match, pred)
+          : calculateKnockoutPoints(match, pred);
+        pointsEarned = breakdown.reduce((sum, p) => sum + p.points, 0);
       }
-      try {
-        const [profiles, allPredictionsMap] = await Promise.all([
-          getAllProfiles(),
-          getAllPredictions(),
-        ]);
 
-        const isFinished = match.status === "FINISHED";
-        const maxPoints = getMaxPossiblePoints(match);
+      userPredictions.push({
+        userId: profileData.id,
+        displayName: profileData.display_name,
+        homeGoals: pred.home_goals,
+        awayGoals: pred.away_goals,
+        winnerId: pred.winner_id,
+        pointsEarned,
+        maxPoints,
+      });
+    });
 
-        const userPredictions: UserMatchPrediction[] = [];
+    // Sort: current user first, then by points (highest first), then by name
+    userPredictions.sort((a, b) => {
+      // Current user always first
+      if (a.userId === profile?.id) return -1;
+      if (b.userId === profile?.id) return 1;
+      // Then sort by points
+      if (b.pointsEarned !== a.pointsEarned) return b.pointsEarned - a.pointsEarned;
+      return a.displayName.localeCompare(b.displayName);
+    });
 
-        profiles.forEach((profileData: Profile) => {
-          const userData = allPredictionsMap.get(profileData.id);
-          if (!userData) return;
-
-          // Find prediction for this match
-          const pred = userData.predictions.find(
-            (p) => (p.match_id as FifaMatchId) === fifaNumber
-          );
-
-          if (!pred) return;
-
-          // Calculate points if match is finished
-          let pointsEarned = 0;
-          if (isFinished && pred.home_goals !== null && pred.away_goals !== null) {
-            const breakdown = isGroupStageMatch(match)
-              ? calculateGroupStagePoints(match, pred)
-              : calculateKnockoutPoints(match, pred);
-            pointsEarned = breakdown.reduce((sum, p) => sum + p.points, 0);
-          }
-
-          userPredictions.push({
-            userId: profileData.id,
-            displayName: profileData.display_name,
-            homeGoals: pred.home_goals,
-            awayGoals: pred.away_goals,
-            winnerId: pred.winner_id,
-            pointsEarned,
-            maxPoints,
-          });
-        });
-
-        // Sort: current user first, then by points (highest first), then by name
-        userPredictions.sort((a, b) => {
-          // Current user always first
-          if (a.userId === profile?.id) return -1;
-          if (b.userId === profile?.id) return 1;
-          // Then sort by points
-          if (b.pointsEarned !== a.pointsEarned) return b.pointsEarned - a.pointsEarned;
-          return a.displayName.localeCompare(b.displayName);
-        });
-
-        setAllUserPredictions(userPredictions);
-        hasLoadedOnce.current = true;
-      } catch (error) {
-        console.error("Failed to load all predictions:", error);
-      }
-      setLoadingAllPredictions(false);
-    }
-
-    loadAllPredictions();
-  }, [match, fifaNumber, getAllProfiles, getAllPredictions, profile?.id]);
+    return userPredictions;
+  }, [match, fifaNumber, profiles.content, allPredictions.content, profile?.id]);
 
   const loading = matchesLoading;
 

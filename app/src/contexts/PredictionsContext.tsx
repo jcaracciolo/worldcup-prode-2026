@@ -10,6 +10,7 @@ import React, {
 import { useDatabase } from "@/contexts/DatabaseContext";
 import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
 import { FifaMatchId } from "@/types/football";
+import { LCE, lceLoading, lceContent, lceError } from "@/types/lce";
 
 // =====================================================================
 // TYPES
@@ -268,4 +269,35 @@ export function useUserPredictions(userId: string | null) {
     updateOverrides,
     savePredictions: save,
   };
+}
+
+/** Type alias for all predictions result */
+type AllPredictionsMap = Map<
+  string,
+  {
+    predictions: LocalPrediction[];
+    overrides: LocalGroupStandingsOverride[];
+  }
+>;
+
+/**
+ * Hook to get all users' predictions.
+ * Automatically refetches when competition changes (via db dependency).
+ */
+export function useAllPredictions(): LCE<AllPredictionsMap> {
+  const { getAllPredictions } = usePredictionsContext();
+  const [state, setState] = useState<LCE<AllPredictionsMap>>(lceLoading());
+
+  useEffect(() => {
+    setState(lceLoading());
+    getAllPredictions()
+      .then((predictions) => {
+        setState(lceContent(predictions));
+      })
+      .catch((err) => {
+        setState(lceError(err.message));
+      });
+  }, [getAllPredictions]);
+
+  return state;
 }

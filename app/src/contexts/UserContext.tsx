@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useDatabase } from "@/contexts/DatabaseContext";
 import { Profile } from "@/types/database";
+import { LCE, lceLoading, lceContent, lceError } from "@/types/lce";
 
 // =====================================================================
 // TYPES
@@ -117,4 +118,53 @@ export function useUser(): UserContextValue {
     throw new Error("useUser must be used within a UserProvider");
   }
   return context;
+}
+
+/**
+ * Hook to get a specific user's profile.
+ * Automatically refetches when competition changes (via db dependency).
+ */
+export function useProfile(userId: string | null): LCE<Profile> {
+  const { getProfile } = useUser();
+  const [state, setState] = useState<LCE<Profile>>(lceLoading());
+
+  useEffect(() => {
+    if (!userId) {
+      setState(lceContent(null as unknown as Profile));
+      return;
+    }
+
+    setState(lceLoading());
+    getProfile(userId)
+      .then((profile) => {
+        setState(profile ? lceContent(profile) : lceError("Profile not found"));
+      })
+      .catch((err) => {
+        setState(lceError(err.message));
+      });
+  }, [userId, getProfile]);
+
+  return state;
+}
+
+/**
+ * Hook to get all profiles for the current competition.
+ * Automatically refetches when competition changes (via db dependency).
+ */
+export function useAllProfiles(): LCE<Profile[]> {
+  const { getAllProfiles } = useUser();
+  const [state, setState] = useState<LCE<Profile[]>>(lceLoading());
+
+  useEffect(() => {
+    setState(lceLoading());
+    getAllProfiles()
+      .then((profiles) => {
+        setState(lceContent(profiles));
+      })
+      .catch((err) => {
+        setState(lceError(err.message));
+      });
+  }, [getAllProfiles]);
+
+  return state;
 }

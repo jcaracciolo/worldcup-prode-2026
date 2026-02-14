@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
-import { useUser } from "@/contexts/UserContext";
+import { useUser, useProfile } from "@/contexts/UserContext";
 import { useUserPredictions } from "@/contexts/PredictionsContext";
 import { useUserPosition } from "@/contexts/LeaderboardContext";
 import { calculateTotalPoints } from "@/lib/scoring";
@@ -13,7 +13,7 @@ import {
   calculateAllGroupStandings,
   calculateAllActualStandings,
 } from "@/lib/standings";
-import { LocalPrediction, Profile } from "@/types/database";
+import { LocalPrediction } from "@/types/database";
 import PointsBreakdown from "@/components/PointsBreakdown";
 import UserKnockoutSection from "@/components/UserKnockoutSection";
 import UserGroupSection from "@/components/UserGroupSection";
@@ -24,10 +24,16 @@ export default function UserPredictionsPage() {
   const userId = params.userId as string;
   const { matches, loading: matchesLoading } = useMatches();
   const { stageLockStatus } = useTime();
-  const { user: currentProfile, getProfile } = useUser();
+  const { user: currentProfile } = useUser();
 
   // Check if viewing own profile
   const isOwnPredictions = currentProfile?.id === userId;
+
+  // Use profile from hook - if viewing own profile, prefer currentProfile
+  const targetProfileState = useProfile(isOwnPredictions ? null : userId);
+  const targetProfile = isOwnPredictions ? currentProfile : targetProfileState.content;
+  const profileLoading = isOwnPredictions ? false : targetProfileState.loading;
+  const notFound = !isOwnPredictions && !targetProfileState.loading && !targetProfileState.content && !targetProfileState.error;
 
   // Use cached predictions from PredictionsContext
   const {
@@ -36,55 +42,11 @@ export default function UserPredictionsPage() {
     loading: predictionsLoading,
   } = useUserPredictions(userId);
 
-  // State for target profile - use own profile if available
-  const [targetProfile, setTargetProfile] = useState<Profile | null>(() =>
-    isOwnPredictions ? currentProfile : null,
-  );
-  const [loading, setLoading] = useState(
-    () => !isOwnPredictions || !currentProfile,
-  );
-  const [notFound, setNotFound] = useState(false);
-
-  // Fetch target user profile using context (getProfile is cached)
-  useEffect(() => {
-    // If viewing own profile, use it directly
-    if (isOwnPredictions && currentProfile) {
-      // Use queueMicrotask to avoid sync setState warning
-      queueMicrotask(() => {
-        setTargetProfile(currentProfile);
-        setLoading(false);
-      });
-      return;
-    }
-
-    // Fetch other user's profile
-    let cancelled = false;
-    async function fetchProfile() {
-      const profile = await getProfile(userId);
-
-      if (cancelled) return;
-
-      if (!profile) {
-        setNotFound(true);
-        setLoading(false);
-        return;
-      }
-
-      setTargetProfile(profile);
-      setLoading(false);
-    }
-
-    fetchProfile();
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, getProfile, isOwnPredictions, currentProfile]);
-
   // Use predictions from context
   const predictions: LocalPrediction[] = Array.from(cachedPredictions.values());
   const groupOverrides = cachedOverrides;
   // Only show loading on initial load when we have no data
-  const isLoading = loading || (predictionsLoading && predictions.length === 0);
+  const isLoading = profileLoading || (predictionsLoading && predictions.length === 0);
 
   // Stage lock status from time context (simulation-transparent)
   const { groupStageLocked, knockoutStageOpen, knockoutStageLocked } =

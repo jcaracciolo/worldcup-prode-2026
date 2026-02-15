@@ -9,9 +9,15 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { Match, FifaMatchId, asFifaMatchId, CalculatedStanding } from "@/types/football";
+import {
+  Match,
+  FifaMatchId,
+  asFifaMatchId,
+  CalculatedStanding,
+} from "@/types/football";
 import { LocalPrediction } from "@/types/database";
 import { getMatchInfo, Venue } from "@/lib/tournament";
+import { getTeamDisplayName } from "@/lib/scoring";
 import { calculateAllActualStandings } from "@/lib/standings";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { BracketResolver, ResolvedTeams } from "@/lib/bracket-resolver";
@@ -40,6 +46,10 @@ export interface MatchWithLiveInfo extends Match {
   venueDisplay: string | null;
   /** Static venue info from tournament data */
   staticVenue: Venue | null;
+  /** Ready-to-use display name for home team (e.g., "USA", "1A", "W73", "3rd") */
+  homeDisplayName: string;
+  /** Ready-to-use display name for away team */
+  awayDisplayName: string;
 }
 
 interface MatchContextValue {
@@ -60,12 +70,11 @@ interface MatchContextValue {
   /** Whether simulation mode is active */
   isSimulated: boolean;
   /** Knockout teams resolved from actual results (API > calculated > null) */
-  resolvedKnockoutTeams: Map<FifaMatchId, { home: import("@/types/football").Team | null; away: import("@/types/football").Team | null }>;
+  resolvedKnockoutTeams: Map<FifaMatchId, ResolvedTeams>;
   /** Actual group standings from real match results */
   actualGroupStandings: Map<string, CalculatedStanding[]>;
   /** Which 3rd place teams qualify based on actual results */
   actualThirdPlaceQualifying: Map<string, boolean>;
-
 }
 
 const MatchContext = createContext<MatchContextValue | null>(null);
@@ -129,12 +138,9 @@ function determinePeriod(
 }
 
 /**
- * Enhance a match with live info, FIFA number, and venue
+ * Enhance a match with live info, FIFA number, venue, and display names
  */
-function enhanceMatch(
-  match: Match,
-  currentTime: Date,
-): MatchWithLiveInfo {
+function enhanceMatch(match: Match, currentTime: Date): MatchWithLiveInfo {
   const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
   const elapsedMinutes = calculateElapsedMinutes(match, currentTime);
   const period = determinePeriod(match, elapsedMinutes);
@@ -154,6 +160,20 @@ function enhanceMatch(
     venueDisplay = `${staticVenue.stadium}, ${staticVenue.city}`;
   }
 
+  // Compute display names (e.g., "USA", "1A", "W73", "3rd")
+  const homeDisplayName = getTeamDisplayName(
+    match.homeTeam,
+    match.id,
+    "home",
+    fifaNumber,
+  );
+  const awayDisplayName = getTeamDisplayName(
+    match.awayTeam,
+    match.id,
+    "away",
+    fifaNumber,
+  );
+
   return {
     ...match,
     isLive,
@@ -162,6 +182,8 @@ function enhanceMatch(
     fifaNumber,
     venueDisplay,
     staticVenue,
+    homeDisplayName,
+    awayDisplayName,
   };
 }
 
@@ -217,8 +239,7 @@ export function MatchProvider({
   // Transform raw matches to include live info, FIFA number, and venue
   // match.id is already the FIFA number (converted by the API route)
   const matches = useMemo(
-    () =>
-      processedMatches.map((m) => enhanceMatch(m, currentTime)),
+    () => processedMatches.map((m) => enhanceMatch(m, currentTime)),
     [processedMatches, currentTime],
   );
 
@@ -328,7 +349,6 @@ export function MatchProvider({
     resolvedKnockoutTeams,
     actualGroupStandings,
     actualThirdPlaceQualifying,
-
   };
 
   return (
@@ -350,6 +370,43 @@ export function useMatches(): MatchContextValue {
     throw new Error("useMatches must be used within a MatchProvider");
   }
   return context;
+}
+
+/**
+ * Hook to get a single match by FIFA ID with resolved knockout teams and display names.
+ *
+ * For group stage matches, returns the match as-is (teams are always known).
+ * For knockout matches, overlays resolved teams from BracketResolver onto
+ * homeTeam/awayTeam and uses resolved display names.
+ *
+ * The returned match includes:
+ * - `homeDisplayName` / `awayDisplayName`: Ready-to-use strings like "USA", "1A", "W73", "3rd"
+ *
+ * @param fifaId - FIFA match number (1-104)
+ * @returns The match with resolved teams and display names, or undefined if not found
+ */
+export function useMatch(fifaId: FifaMatchId): MatchWithLiveInfo | undefined {
+  const { matches, resolvedKnockoutTeams } = useMatches();
+
+  return useMemo(() => {
+    const match = matches.find((m) => m.id === fifaId);
+    if (!match) return undefined;
+
+    // Group stage — teams and display names already computed in enhanceMatch
+    if (match.stage === "GROUP_STAGE") return match;
+
+    // Knockout — overlay resolved teams and display names if available
+    const resolved = resolvedKnockoutTeams.get(fifaId);
+    if (!resolved) return match;
+
+    return {
+      ...match,
+      homeTeam: resolved.home ?? match.homeTeam,
+      awayTeam: resolved.away ?? match.awayTeam,
+      homeDisplayName: resolved.homeDisplayName,
+      awayDisplayName: resolved.awayDisplayName,
+    };
+  }, [matches, resolvedKnockoutTeams, fifaId]);
 }
 
 /**

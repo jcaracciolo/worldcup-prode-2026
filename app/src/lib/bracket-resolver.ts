@@ -8,6 +8,7 @@ import { Match, Team, FifaMatchId, asFifaMatchId } from "@/types/football";
 import { CalculatedStanding } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
 import { r32Bracket, r16Bracket, qfBracket, sfBracket } from "./r32-bracket";
+import { getKnockoutTbdLabel } from "./scoring";
 
 export interface BracketResolverParams {
   matches: Match[];
@@ -25,6 +26,10 @@ export interface BracketResolverParams {
 export interface ResolvedTeams {
   home: Team | null;
   away: Team | null;
+  /** Ready-to-use display name for home team (e.g., "USA", "1A", "W73", "3rd") */
+  homeDisplayName: string;
+  /** Ready-to-use display name for away team */
+  awayDisplayName: string;
 }
 
 // Main resolver class - uses FIFA bracket structure + actual results when available
@@ -43,6 +48,27 @@ export class BracketResolver {
     this.thirdPlaceQualifying = params.thirdPlaceQualifying;
     this.useKnockoutPredictions = params.useKnockoutPredictions || false;
     this.resolved = new Map();
+  }
+
+  /**
+   * Helper to set resolved teams with computed display names
+   * If team exists: uses team.tla; if null: uses bracket label (1A, W73, L101, etc.)
+   */
+  private setResolved(
+    fifaNumber: FifaMatchId,
+    home: Team | null,
+    away: Team | null,
+  ): void {
+    const homeDisplayName =
+      home?.tla ?? getKnockoutTbdLabel(fifaNumber, "home");
+    const awayDisplayName =
+      away?.tla ?? getKnockoutTbdLabel(fifaNumber, "away");
+    this.resolved.set(fifaNumber, {
+      home,
+      away,
+      homeDisplayName,
+      awayDisplayName,
+    });
   }
 
   // Check if a team from API is valid (not a placeholder/TBD)
@@ -162,7 +188,11 @@ export class BracketResolver {
     if (!resolved?.home || !resolved?.away) return null;
 
     const prediction = this.predictions.get(fifaMatchNumber);
-    if (!prediction || prediction.home_goals === null || prediction.away_goals === null) {
+    if (
+      !prediction ||
+      prediction.home_goals === null ||
+      prediction.away_goals === null
+    ) {
       return null;
     }
 
@@ -246,7 +276,7 @@ export class BracketResolver {
         }
       }
 
-      this.resolved.set(fifaNumber, { home: homeTeam, away: awayTeam });
+      this.setResolved(fifaNumber, homeTeam, awayTeam);
     }
   }
 
@@ -280,7 +310,7 @@ export class BracketResolver {
         }
       }
 
-      this.resolved.set(fifaNumber, { home: homeTeam, away: awayTeam });
+      this.setResolved(fifaNumber, homeTeam, awayTeam);
     }
   }
 
@@ -312,7 +342,7 @@ export class BracketResolver {
         }
       }
 
-      this.resolved.set(fifaNumber, { home: homeTeam, away: awayTeam });
+      this.setResolved(fifaNumber, homeTeam, awayTeam);
     }
   }
 
@@ -344,7 +374,7 @@ export class BracketResolver {
         }
       }
 
-      this.resolved.set(fifaNumber, { home: homeTeam, away: awayTeam });
+      this.setResolved(fifaNumber, homeTeam, awayTeam);
     }
   }
 
@@ -367,7 +397,7 @@ export class BracketResolver {
       ? thirdPlaceMatch.awayTeam
       : this.getLoserByFifa(sfBracket[1].matchNumber);
 
-    this.resolved.set(fifaNumber, { home: homeTeam, away: awayTeam });
+    this.setResolved(fifaNumber, homeTeam, awayTeam);
   }
 
   // Final: Use API teams if available, otherwise calculate from SF winners
@@ -389,6 +419,6 @@ export class BracketResolver {
       ? finalMatch.awayTeam
       : this.getWinnerByFifa(sfBracket[1].matchNumber);
 
-    this.resolved.set(fifaNumber, { home: homeTeam, away: awayTeam });
+    this.setResolved(fifaNumber, homeTeam, awayTeam);
   }
 }

@@ -1,7 +1,9 @@
 "use client";
 
-import { Match } from "@/types/football";
-import { MatchWithLiveInfo } from "@/contexts/MatchContext";
+import { useMemo } from "react";
+import { Match, FifaMatchId, asFifaMatchId } from "@/types/football";
+import { useMatches, MatchWithLiveInfo } from "@/contexts/MatchContext";
+import { getTeamDisplayName } from "@/lib/scoring";
 import { format } from "date-fns";
 import Link from "next/link";
 
@@ -18,6 +20,27 @@ function hasLiveInfo(
 }
 
 export default function MatchCard({ match, showDate = false }: MatchCardProps) {
+  // Resolve knockout teams from context
+  const { resolvedKnockoutTeams } = useMatches();
+  const fifaMatchNumber = asFifaMatchId(match.id);
+  const resolved =
+    match.stage !== "GROUP_STAGE"
+      ? resolvedKnockoutTeams.get(fifaMatchNumber)
+      : undefined;
+  const homeTeam = resolved?.home ?? match.homeTeam;
+  const awayTeam = resolved?.away ?? match.awayTeam;
+  const homeDisplayName = getTeamDisplayName(
+    homeTeam,
+    match.id,
+    "home",
+    fifaMatchNumber,
+  );
+  const awayDisplayName = getTeamDisplayName(
+    awayTeam,
+    match.id,
+    "away",
+    fifaMatchNumber,
+  );
   // Support both Match and MatchWithLiveInfo
   const isLive = hasLiveInfo(match)
     ? match.isLive
@@ -119,23 +142,21 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
           <div
             className={`flex-1 flex flex-col items-center gap-1 sm:gap-2 p-1.5 sm:p-2 rounded-lg ${homeHighlight ? "bg-amber-500/80" : ""} ${awayWon ? "opacity-50" : ""}`}
           >
-            {match.homeTeam.crest ? (
+            {homeTeam.crest ? (
               <img
-                src={match.homeTeam.crest}
-                alt={match.homeTeam.name}
+                src={homeTeam.crest}
+                alt={homeDisplayName}
                 className="w-9 h-9 sm:w-12 sm:h-12 object-contain drop-shadow-md"
               />
             ) : (
               <div className="w-9 h-9 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center text-white/60 font-bold text-xs sm:text-sm">
-                {match.homeTeam.shortName?.substring(0, 3) || "???"}
+                {homeTeam.tla?.substring(0, 3) || "TBD"}
               </div>
             )}
             <span
               className={`font-semibold text-xs sm:text-sm text-center ${homeHighlight ? "text-slate-900" : "text-white"}`}
             >
-              {match.homeTeam.tla ||
-                match.homeTeam.shortName ||
-                match.homeTeam.name}
+              {homeDisplayName}
             </span>
           </div>
 
@@ -167,23 +188,21 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
           <div
             className={`flex-1 flex flex-col items-center gap-1 sm:gap-2 p-1.5 sm:p-2 rounded-lg ${awayHighlight ? "bg-amber-500/80" : ""} ${homeWon ? "opacity-50" : ""}`}
           >
-            {match.awayTeam.crest ? (
+            {awayTeam.crest ? (
               <img
-                src={match.awayTeam.crest}
-                alt={match.awayTeam.name}
+                src={awayTeam.crest}
+                alt={awayDisplayName}
                 className="w-9 h-9 sm:w-12 sm:h-12 object-contain drop-shadow-md"
               />
             ) : (
               <div className="w-9 h-9 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center text-white/60 font-bold text-xs sm:text-sm">
-                {match.awayTeam.shortName?.substring(0, 3) || "???"}
+                {awayTeam.tla?.substring(0, 3) || "TBD"}
               </div>
             )}
             <span
               className={`font-semibold text-xs sm:text-sm text-center ${awayHighlight ? "text-slate-900" : "text-white"}`}
             >
-              {match.awayTeam.tla ||
-                match.awayTeam.shortName ||
-                match.awayTeam.name}
+              {awayDisplayName}
             </span>
           </div>
         </div>

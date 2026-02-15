@@ -9,9 +9,7 @@ import { useUserPredictions } from "@/contexts/PredictionsContext";
 import { useUserPosition } from "@/contexts/LeaderboardContext";
 import { calculateTotalPoints } from "@/lib/scoring";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
-import {
-  calculateAllGroupStandings,
-} from "@/lib/standings";
+import { calculateAllGroupStandings } from "@/lib/standings";
 import { LocalPrediction } from "@/types/database";
 import { FifaMatchId } from "@/types/football";
 import PointsBreakdown from "@/components/PointsBreakdown";
@@ -23,7 +21,12 @@ import Link from "next/link";
 export default function UserPredictionsPage() {
   const params = useParams();
   const userId = params.userId as string;
-  const { matches, loading: matchesLoading, actualGroupStandings: actualStandings, actualThirdPlaceQualifying } = useMatches();
+  const {
+    matches,
+    loading: matchesLoading,
+    actualGroupStandings: actualStandings,
+    actualThirdPlaceQualifying,
+  } = useMatches();
   const { stageLockStatus } = useTime();
   const { user: currentProfile } = useUser();
 
@@ -44,14 +47,13 @@ export default function UserPredictionsPage() {
 
   // Use cached predictions from PredictionsContext
   const {
-    predictions: cachedPredictions,
-    overrides: cachedOverrides,
+    predictions: predictionsMap,
+    overrides: groupOverrides,
     loading: predictionsLoading,
   } = useUserPredictions(userId);
 
   // Use predictions from context
-  const predictions: LocalPrediction[] = Array.from(cachedPredictions.values());
-  const groupOverrides = cachedOverrides;
+  const predictions: LocalPrediction[] = Array.from(predictionsMap.values());
   // Only show loading on initial load when we have no data
   const isLoading =
     profileLoading || (predictionsLoading && predictions.length === 0);
@@ -131,8 +133,16 @@ export default function UserPredictionsPage() {
       groupOverrides,
       actualStandings,
       advancingTeamIds,
+      thirdPlaceQualifying, // User's predicted 3rd place qualifying
     );
-  }, [matches, predictions, groupOverrides, actualStandings, advancingTeamIds]);
+  }, [
+    matches,
+    predictions,
+    groupOverrides,
+    actualStandings,
+    advancingTeamIds,
+    thirdPlaceQualifying,
+  ]);
 
   // Get user's position from centralized leaderboard context
   const positionInfo = useUserPosition(userId);
@@ -166,10 +176,8 @@ export default function UserPredictionsPage() {
   }, [breakdown, matches]);
 
   // Visibility rules - show predictions when stage is locked
-  const showGroupPredictions =
-    isOwnPredictions || groupStageLocked;
-  const showKnockoutPredictions =
-    isOwnPredictions || knockoutStageLocked;
+  const showGroupPredictions = isOwnPredictions || groupStageLocked;
+  const showKnockoutPredictions = isOwnPredictions || knockoutStageLocked;
 
   if (isLoading || (matchesLoading && matches.length === 0)) {
     return (
@@ -429,7 +437,7 @@ export default function UserPredictionsPage() {
             thirdPlaceQualifying={thirdPlaceQualifying}
             showPredictions={showGroupPredictions}
             actualStandings={actualStandings}
-            advancingTeamIds={advancingTeamIds}
+            breakdown={breakdown}
           />
         )}
 

@@ -1,7 +1,12 @@
 "use client";
 
 import { useTime } from "@/contexts/TimeContext";
-import { Match, CalculatedStanding, FifaMatchId, asFifaMatchId } from "@/types/football";
+import {
+  Match,
+  CalculatedStanding,
+  FifaMatchId,
+  asFifaMatchId,
+} from "@/types/football";
 import { LocalPrediction } from "@/types/database";
 import PredictionInput from "@/components/PredictionInput";
 import StandingsTable from "@/components/StandingsTable";

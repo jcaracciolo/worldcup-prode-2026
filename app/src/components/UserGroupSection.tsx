@@ -1,10 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Match, CalculatedStanding, PointBreakdown, asFifaMatchId } from "@/types/football";
+import {
+  Match,
+  CalculatedStanding,
+  PointBreakdown,
+  asFifaMatchId,
+} from "@/types/football";
 import { LocalPrediction } from "@/types/database";
 import { calculateStandingsFromPredictions } from "@/lib/standings";
-import { getTeamDisplayName, calculateGroupStandingsBonusPoints } from "@/lib/scoring";
+import { getTeamDisplayName } from "@/lib/scoring";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import StandingsTable from "@/components/StandingsTable";
 import LockedCard from "@/components/LockedCard";
@@ -17,8 +22,8 @@ interface UserGroupSectionProps {
   showPredictions: boolean;
   /** Actual standings from real match results (for scoring comparison) */
   actualStandings?: Map<string, CalculatedStanding[]>;
-  /** Teams that actually advanced (1st, 2nd, best 3rds) */
-  advancingTeamIds?: Set<number>;
+  /** Centralized points breakdown from scoring system */
+  breakdown?: PointBreakdown[];
 }
 
 export default function UserGroupSection({
@@ -27,7 +32,7 @@ export default function UserGroupSection({
   thirdPlaceQualifying,
   showPredictions,
   actualStandings,
-  advancingTeamIds,
+  breakdown = [],
 }: UserGroupSectionProps) {
   // Predictions are keyed by FIFA number
   const predictionMap = useMemo(
@@ -47,6 +52,23 @@ export default function UserGroupSection({
       });
     return map;
   }, [matches]);
+
+  // Group bonus points by group letter (from centralized breakdown)
+  const groupBonusPoints = useMemo(() => {
+    const map = new Map<string, PointBreakdown[]>();
+    breakdown
+      .filter((b) => b.type === "group_advance" || b.type === "group_position")
+      .forEach((b) => {
+        // Extract group letter from description like "Predicted to advance from Group F"
+        const match = b.description?.match(/Group ([A-L])/);
+        if (match) {
+          const groupKey = `GROUP_${match[1]}`;
+          if (!map.has(groupKey)) map.set(groupKey, []);
+          map.get(groupKey)!.push(b);
+        }
+      });
+    return map;
+  }, [breakdown]);
 
   if (!showPredictions) {
     return (
@@ -77,8 +99,10 @@ export default function UserGroupSection({
             const groupActualStandings = actualStandings?.get(groupName) || [];
             // Check if all group matches are finished
             const groupComplete = groupMatchList.every(
-              (m) => m.status === "FINISHED"
+              (m) => m.status === "FINISHED",
             );
+            // Get bonus points for this group from centralized breakdown
+            const bonusPoints = groupBonusPoints.get(groupName) || [];
             return (
               <GroupCard
                 key={groupName}
@@ -90,7 +114,7 @@ export default function UserGroupSection({
                   thirdPlaceQualifying.get(groupName) || false
                 }
                 actualStandings={groupActualStandings}
-                advancingTeamIds={advancingTeamIds}
+                bonusPoints={bonusPoints}
                 groupComplete={groupComplete}
               />
             );
@@ -107,7 +131,7 @@ interface GroupCardProps {
   predictionMap: Map<number, LocalPrediction>;
   thirdPlaceQualifies: boolean;
   actualStandings: CalculatedStanding[];
-  advancingTeamIds?: Set<number>;
+  bonusPoints: PointBreakdown[];
   groupComplete: boolean;
 }
 
@@ -118,23 +142,9 @@ function GroupCard({
   predictionMap,
   thirdPlaceQualifies,
   actualStandings,
-  advancingTeamIds,
+  bonusPoints,
   groupComplete,
 }: GroupCardProps) {
-  // Calculate standings bonus points for this group
-  const bonusPoints = useMemo(() => {
-    if (!groupComplete || !advancingTeamIds || actualStandings.length === 0) {
-      return [];
-    }
-    return calculateGroupStandingsBonusPoints(
-      groupName,
-      standings,
-      actualStandings,
-      advancingTeamIds,
-      groupComplete
-    );
-  }, [groupName, standings, actualStandings, advancingTeamIds, groupComplete]);
-
   const totalBonusPoints = bonusPoints.reduce((sum, b) => sum + b.points, 0);
 
   return (
@@ -211,7 +221,8 @@ function StandingsPointsTooltip({
     if (point.team) {
       // Find this team in actual standings by TLA or name
       const actualTeam = actualStandings.find(
-        (s) => s.team.tla === point.team?.tla || s.team.name === point.team?.name
+        (s) =>
+          s.team.tla === point.team?.tla || s.team.name === point.team?.name,
       );
       if (actualTeam) {
         const current = teamPointsEarned.get(actualTeam.team.id) || 0;
@@ -221,7 +232,10 @@ function StandingsPointsTooltip({
   });
 
   // Calculate displayed total from what we actually show
-  const displayedTotal = Array.from(teamPointsEarned.values()).reduce((a, b) => a + b, 0);
+  const displayedTotal = Array.from(teamPointsEarned.values()).reduce(
+    (a, b) => a + b,
+    0,
+  );
 
   return (
     <button
@@ -259,7 +273,9 @@ function StandingsPointsTooltip({
           <div className="absolute right-0 bottom-full mb-2 z-50 w-48 bg-slate-900/95 backdrop-blur-xl rounded-lg border border-white/10 shadow-2xl overflow-hidden">
             {/* Header with column titles */}
             <div className="px-2 py-1.5 border-b border-white/10 flex items-center gap-1 text-[10px]">
-              <span className="text-white/80 font-semibold">Group {groupLetter}</span>
+              <span className="text-white/80 font-semibold">
+                Group {groupLetter}
+              </span>
               <span className="flex-1" />
               <span className="text-white/40 w-5 text-right">Pts</span>
               <span className="text-white/40 w-6 text-right">GD</span>
@@ -287,13 +303,21 @@ function StandingsPointsTooltip({
                       />
                     )}
                     <span className="text-white/80 flex-1 truncate">
-                      {actual.team.tla || actual.team.name?.substring(0, 3).toUpperCase()}
+                      {actual.team.tla ||
+                        actual.team.name?.substring(0, 3).toUpperCase()}
                     </span>
-                    <span className="text-white/50 w-5 text-right">{actual.points}</span>
-                    <span className="text-white/50 w-6 text-right">{gdSign}{actual.goalDifference}</span>
-                    <span className={`w-5 text-right font-bold text-[10px] ${
-                      earnedPoints > 0 ? "text-emerald-400" : "text-white/20"
-                    }`}>
+                    <span className="text-white/50 w-5 text-right">
+                      {actual.points}
+                    </span>
+                    <span className="text-white/50 w-6 text-right">
+                      {gdSign}
+                      {actual.goalDifference}
+                    </span>
+                    <span
+                      className={`w-5 text-right font-bold text-[10px] ${
+                        earnedPoints > 0 ? "text-emerald-400" : "text-white/20"
+                      }`}
+                    >
                       {earnedPoints > 0 ? `+${earnedPoints}` : "—"}
                     </span>
                   </div>
@@ -304,7 +328,9 @@ function StandingsPointsTooltip({
             {/* Total */}
             <div className="px-2 py-1.5 bg-white/5 flex items-center justify-between border-t border-white/10">
               <span className="text-[10px] text-white/50">Total</span>
-              <span className="text-[11px] font-bold text-purple-400">+{displayedTotal}</span>
+              <span className="text-[11px] font-bold text-purple-400">
+                +{displayedTotal}
+              </span>
             </div>
           </div>
         </>
@@ -319,10 +345,18 @@ export interface GroupMatchRowProps {
   showPoints?: boolean;
 }
 
-export function GroupMatchRow({ match, prediction, showPoints = true }: GroupMatchRowProps) {
+export function GroupMatchRow({
+  match,
+  prediction,
+  showPoints = true,
+}: GroupMatchRowProps) {
   // Use prediction scores if available, otherwise actual match scores
-  const homeGoals = prediction ? prediction.home_goals : match.score.fullTime.home;
-  const awayGoals = prediction ? prediction.away_goals : match.score.fullTime.away;
+  const homeGoals = prediction
+    ? prediction.home_goals
+    : match.score.fullTime.home;
+  const awayGoals = prediction
+    ? prediction.away_goals
+    : match.score.fullTime.away;
   const hasScore =
     homeGoals !== null &&
     homeGoals !== undefined &&

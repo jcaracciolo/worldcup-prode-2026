@@ -35,7 +35,8 @@ export async function GET() {
     }
 
     // Get any individually cached match results (from generated results)
-    const { data: individualCaches } = await db.matchesCache.getIndividualCachedMatches();
+    const { data: individualCaches } =
+      await db.matchesCache.getIndividualCachedMatches();
 
     // Merge individual cached results into matches (by API ID, before conversion)
     if (individualCaches && individualCaches.length > 0) {
@@ -64,7 +65,10 @@ export async function GET() {
       })
       .filter((m): m is Match => m !== null);
 
-    return NextResponse.json({ matches: fifaMatches, fetchedAt: now.toISOString() });
+    return NextResponse.json({
+      matches: fifaMatches,
+      fetchedAt: now.toISOString(),
+    });
   } catch (error) {
     console.error("Error fetching matches:", error);
     return NextResponse.json(

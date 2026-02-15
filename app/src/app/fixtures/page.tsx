@@ -105,9 +105,9 @@ export default function FixturesPage() {
 
   // Scroll to first live match
   const scrollToFirstLiveMatch = useCallback(() => {
-    const firstLiveMatch = document.querySelector('.live-match');
+    const firstLiveMatch = document.querySelector(".live-match");
     if (firstLiveMatch) {
-      firstLiveMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      firstLiveMatch.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, []);
 
@@ -189,7 +189,9 @@ export default function FixturesPage() {
       <main className="flex-1 container mx-auto px-4 py-4 sm:py-8">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white">Fixtures</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">
+              Fixtures
+            </h1>
             <p className="text-white/50 mt-1 text-sm sm:text-base">
               All World Cup 2026 matches and results
             </p>

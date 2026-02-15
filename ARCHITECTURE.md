@@ -26,6 +26,7 @@ The `Header` component and `PageTransition` wrapper are rendered **inside** all 
 **Data source:** Supabase browser client, created via `createBrowserClient()`
 
 **Responsibilities:**
+
 - Creates a `DatabaseService` instance (the single entry point for ALL database operations)
 - Manages **competition switching** (multi-competition support)
 - Persists selected competition ID to localStorage
@@ -38,6 +39,7 @@ The `Header` component and `PageTransition` wrapper are rendered **inside** all 
 | `useDatabase()` | `db` + `currentCompetitionId` + `switchCompetition()` + `userCompetitions` |
 
 **Database service structure** (`db.*`):
+
 ```
 db.auth          → getUser(), signIn(), signUp(), signOut(), onAuthStateChange()
 db.profiles      → getProfile(), getAllProfiles(), updateProfile()
@@ -61,6 +63,7 @@ db.settings      → getSettings(), updateSettings()
 **Data source:** localStorage (persisted simulation state) + seeded random number generator
 
 **Responsibilities:**
+
 - Provides `getCurrentTime()` — returns real `new Date()` or simulated time
 - Generates fake match results for simulated dates (using seeded RNG for reproducibility)
 - Computes `stageLockStatus` based on current time (real or simulated)
@@ -77,6 +80,7 @@ db.settings      → getSettings(), updateSettings()
 **Data source:** Delegates to `useSimulation()` internally
 
 **Responsibilities:**
+
 - Exposes `getCurrentTime()`, `stageLockStatus`, `isMatchLocked(utcDate)`, `isSimulated`
 - Controls the global **tick counter** that drives periodic updates:
   - Real mode: ticks every **60 seconds** (API polling pace)
@@ -84,15 +88,17 @@ db.settings      → getSettings(), updateSettings()
 - `MatchProvider` watches `tick` to know when to re-fetch
 
 **What consumers get:**
+
 ```ts
-const { getCurrentTime, stageLockStatus, isMatchLocked, tick, isSimulated } = useTime();
+const { getCurrentTime, stageLockStatus, isMatchLocked, tick, isSimulated } =
+  useTime();
 
 stageLockStatus = {
-  groupStageLocked: boolean,      // true after group stage deadline
-  knockoutStageOpen: boolean,     // true when knockout predictions open
-  knockoutStageLocked: boolean,   // true after knockout deadline
+  groupStageLocked: boolean, // true after group stage deadline
+  knockoutStageOpen: boolean, // true when knockout predictions open
+  knockoutStageLocked: boolean, // true after knockout deadline
   daysUntilKnockoutLocks: number | null,
-}
+};
 ```
 
 ---
@@ -112,6 +118,7 @@ Football API (external)  →  /api/matches route  →  MatchProvider  →  All c
 ```
 
 **Responsibilities:**
+
 - Fetches matches from `/api/matches` on mount
 - Re-fetches on every `tick` (if live matches exist or matches are scheduled today)
 - Enhances each match with: `isLive`, `elapsedMinutes`, `period`, `fifaNumber`, `venueDisplay`
@@ -121,17 +128,19 @@ Football API (external)  →  /api/matches route  →  MatchProvider  →  All c
 - In simulation mode: applies simulated scores before processing
 
 **What consumers get:**
+
 ```ts
 const {
-  matches,                    // MatchWithLiveInfo[] — all 104 matches with live info
-  hasLiveMatches,             // boolean
-  liveMatches,                // MatchWithLiveInfo[]
-  loading, error,
+  matches, // MatchWithLiveInfo[] — all 104 matches with live info
+  hasLiveMatches, // boolean
+  liveMatches, // MatchWithLiveInfo[]
+  loading,
+  error,
   lastUpdated,
-  refresh,                    // manual re-fetch
+  refresh, // manual re-fetch
   isSimulated,
-  resolvedKnockoutTeams,      // Map<FifaMatchId, { home: Team | null, away: Team | null }>
-  actualGroupStandings,       // Map<groupName, CalculatedStanding[]>
+  resolvedKnockoutTeams, // Map<FifaMatchId, { home: Team | null, away: Team | null }>
+  actualGroupStandings, // Map<groupName, CalculatedStanding[]>
   actualThirdPlaceQualifying, // Map<groupName, boolean>
 } = useMatches();
 ```
@@ -150,6 +159,7 @@ const resolvedTeams = useKnockoutTeams(knockoutPredictions);
 ```
 
 **Key design decisions:**
+
 - R32 teams are **always** resolved from actual data (API teams → actual group standings → TBD)
 - R16+ teams use actual match winners when available, then fall back to knockout predictions
 - Group predictions are **never** used for knockout bracket resolution — they only affect group bonus scoring
@@ -166,12 +176,14 @@ Used by `KnockoutStageSection` (the only caller). The section passes the result 
 **Data source:** `db.auth` + `db.profiles`
 
 **Responsibilities:**
+
 - Fetches current user profile on mount and auth state changes
 - Provides `getProfile(userId)` and `getAllProfiles()`
 - `useProfile(userId)` returns `LCE<Profile>` (Loading-Content-Error pattern)
 - `useAllProfiles()` returns `LCE<Profile[]>` — used by LeaderboardContext and match detail page
 
 **LCE pattern:**
+
 ```ts
 interface LCE<T> {
   loading: boolean;
@@ -189,6 +201,7 @@ interface LCE<T> {
 **Data source:** `db.predictions` + `db.overrides`
 
 **Responsibilities:**
+
 - `getUserPredictions(userId)` — returns `{ predictions: Map<FifaMatchId, LocalPrediction>, overrides }`, cached in state
 - `getAllPredictions()` — returns `Map<userId, { predictions[], overrides[] }>` for all users
 - `savePredictions(userId, predictions, overrides)` — writes to DB
@@ -197,18 +210,19 @@ interface LCE<T> {
 **Preloading:** `PredictionsPreloader` (in `Providers.tsx`) calls `getUserPredictions(user.id)` as soon as the user is authenticated, making navigation to `/predictions` instant.
 
 **Key types:**
+
 ```ts
 interface LocalPrediction {
-  match_id: number;           // FIFA match number (1-104)
+  match_id: number; // FIFA match number (1-104)
   home_goals: number | null;
   away_goals: number | null;
-  winner_id: number | null;   // For knockout tiebreakers
+  winner_id: number | null; // For knockout tiebreakers
 }
 
 interface LocalGroupStandingsOverride {
   group_name: string;
   team_id: number;
-  position: number;           // Manual position override by user
+  position: number; // Manual position override by user
 }
 ```
 
@@ -221,6 +235,7 @@ interface LocalGroupStandingsOverride {
 **Data source:** `useMatches()` (match results) + `useUserPredictions()` (logged-in user's predictions)
 
 **Responsibilities:**
+
 - `calculateUserScore(userId, predictions, overrides)` — computes full breakdown
 - `getMatchScore(matchId, prediction)` — points for a single match
 - `calculatePredictedStandings(group, predictions, overrides)` — group table from predictions
@@ -228,6 +243,7 @@ interface LocalGroupStandingsOverride {
 - `getAdvancingTeamIds()` — set of team IDs that advanced from groups (actual)
 
 **Scoring types:**
+
 ```ts
 interface PointBreakdown {
   type: "exact" | "result" | "correct_diff" | "knockout_win" | "group_advance" | ...;
@@ -245,12 +261,14 @@ interface PointBreakdown {
 **Data source:** `useAllProfiles()` + `useAllPredictions()` + `useMatches()` + `useTime()`
 
 **Responsibilities:**
+
 - Computes scores for ALL users by iterating profiles × predictions × matches
 - Assigns positions (1st, 2nd, 3rd...) with tie handling
 - Loading state derived from LCE hooks (`profiles.loading || allPredictions.loading`)
 - Re-calculates via `useMemo` when any dependency changes
 
 **What consumers get:**
+
 ```ts
 const { scores, loading, getPosition, getUserScore } = useLeaderboard();
 
@@ -272,20 +290,24 @@ interface UserScore {
 ## Pages — What They Consume
 
 ### Home Page (`/`)
+
 ```
 useUser()       → current profile (for welcome message)
 useLeaderboard() → scores array (top N for sidebar)
 useTime()       → daysUntilKnockoutLocks (warning banner)
 ```
+
 Renders: `TodaysMatches` (fetches from MatchContext internally), `Leaderboard` (receives scores as prop)
 
 ---
 
 ### Fixtures Page (`/fixtures`)
+
 ```
 useMatches()    → matches, loading, hasLiveMatches, liveMatches, refresh
 useTime()       → getCurrentTime, stageLockStatus
 ```
+
 - Groups matches by group and knockout stage
 - Calculates standings locally from actual results
 - `GroupStageSection` — receives groups + standings calculator + readOnly=true
@@ -295,12 +317,14 @@ useTime()       → getCurrentTime, stageLockStatus
 ---
 
 ### Predictions Page (`/predictions`)
+
 ```
 useMatches()         → matches, loading, hasLiveMatches, liveMatches, refresh
 useTime()            → getCurrentTime, stageLockStatus
 useUser()            → current profile
 useUserPredictions() → predictions map, overrides, save function
 ```
+
 - Maintains LOCAL state for predictions (unsaved edits)
 - Calculates group standings FROM predictions (what-if) — used for GroupStageSection UI only
 - Calculates third-place qualifying FROM predicted standings — used for GroupStageSection highlighting
@@ -311,6 +335,7 @@ useUserPredictions() → predictions map, overrides, save function
 ---
 
 ### User Profile Page (`/user/[userId]`)
+
 ```
 useMatches()         → matches, actualGroupStandings, actualThirdPlaceQualifying
 useTime()            → stageLockStatus
@@ -319,6 +344,7 @@ useProfile(userId)   → target user's profile (LCE)
 useUserPredictions() → target user's predictions
 useUserPosition()    → target user's leaderboard position
 ```
+
 - Shows read-only view of another user's predictions
 - `UserGroupSection` — shows group predictions with actual standings comparison
 - `KnockoutStageSection` — receives knockout predictions
@@ -328,12 +354,14 @@ useUserPosition()    → target user's leaderboard position
 ---
 
 ### Match Detail Page (`/match/[matchId]`)
+
 ```
 useMatches()         → all matches (finds specific match by FIFA ID)
 useUser()            → current profile
 useAllProfiles()     → all profiles (LCE)
 useAllPredictions()  → all predictions (LCE)
 ```
+
 - Finds the match by `parseInt(matchId)` (FIFA number)
 - Calculates points per user for this specific match
 - Sorts: current user first, then by points earned
@@ -341,6 +369,7 @@ useAllPredictions()  → all predictions (LCE)
 ---
 
 ### Admin Page (`/admin`)
+
 ```
 useSimulation()     → direct control of simulation state (only page that does this)
 useTime()           → stage lock status
@@ -433,23 +462,24 @@ Calls: useUser()            → current user (show name, avatar)
 
 ## Key Libraries
 
-| File | Purpose |
-|------|---------|
-| `lib/bracket-resolver.ts` | Resolves which teams play in each knockout match (R32→Final). Uses group standings + 3rd place ranking + prediction overrides. |
-| `lib/standings.ts` | `calculateAllGroupStandings(matches, predictionMap)` — computes group tables from predictions. `calculateAllActualStandings(matches)` — from real results. |
-| `lib/third-place-ranking.ts` | `getQualifyingThirdPlaceTeams(standings)` — determines best 8 of 12 third-place teams. |
-| `lib/r32-bracket.ts` | FIFA-defined R32 bracket structure (which group winners/runners-up/3rd-place teams go where). |
-| `lib/scoring.ts` | Point calculation: exact score, correct result, goal difference, group advancement bonus, knockout points. |
-| `lib/tournament.ts` | Static tournament data: group schedules, knockout schedule, venues, match info by FIFA number. |
-| `lib/time.ts` | Stage lock date logic (when predictions lock). |
-| `lib/football-api.ts` | External API client for football-data.org. |
-| `lib/api-client.ts` | `buildApiToFifaMapping(matches)` — maps API IDs to FIFA numbers (used only in API route). |
+| File                         | Purpose                                                                                                                                                    |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lib/bracket-resolver.ts`    | Resolves which teams play in each knockout match (R32→Final). Uses group standings + 3rd place ranking + prediction overrides.                             |
+| `lib/standings.ts`           | `calculateAllGroupStandings(matches, predictionMap)` — computes group tables from predictions. `calculateAllActualStandings(matches)` — from real results. |
+| `lib/third-place-ranking.ts` | `getQualifyingThirdPlaceTeams(standings)` — determines best 8 of 12 third-place teams.                                                                     |
+| `lib/r32-bracket.ts`         | FIFA-defined R32 bracket structure (which group winners/runners-up/3rd-place teams go where).                                                              |
+| `lib/scoring.ts`             | Point calculation: exact score, correct result, goal difference, group advancement bonus, knockout points.                                                 |
+| `lib/tournament.ts`          | Static tournament data: group schedules, knockout schedule, venues, match info by FIFA number.                                                             |
+| `lib/time.ts`                | Stage lock date logic (when predictions lock).                                                                                                             |
+| `lib/football-api.ts`        | External API client for football-data.org.                                                                                                                 |
+| `lib/api-client.ts`          | `buildApiToFifaMapping(matches)` — maps API IDs to FIFA numbers (used only in API route).                                                                  |
 
 ---
 
 ## Data Identity: FIFA Match Numbers
 
 Every match is identified by its FIFA match number (1-104) throughout the entire client-side app:
+
 - **1-72**: Group stage matches
 - **73-88**: Round of 32
 - **89-96**: Round of 16

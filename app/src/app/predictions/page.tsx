@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { GlobalLiveIndicator } from "@/components/MatchStatus";
@@ -13,80 +13,35 @@ import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
 import { useUser } from "@/contexts/UserContext";
 import { useUserPredictions } from "@/contexts/PredictionsContext";
-import { CalculatedStanding, Team, Match, FifaMatchId, asFifaMatchId } from "@/types/football";
+import {
+  CalculatedStanding,
+  Team,
+  Match,
+  FifaMatchId,
+  asFifaMatchId,
+} from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 
-import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
+import { LocalPrediction } from "@/types/database";
 
 export default function PredictionsPage() {
   const router = useRouter();
   const { user: profile, loading: userLoading } = useUser();
 
-  // Use cached predictions from context (initializes from cache synchronously)
+  // Predictions from shared context cache — single source of truth
   const {
-    predictions: cachedPredictions,
-    overrides: cachedOverrides,
+    predictions,
+    overrides,
     loading: predictionsLoading,
-    savePredictions: contextSavePredictions,
+    dirty: hasLocalEdits,
+    updatePrediction,
+    updateOverrides,
+    setPredictions,
+    savePredictions,
   } = useUserPredictions(profile?.id || null);
 
-  // Local state for editing - initialize directly from cache
-  const [predictions, setPredictions] = useState<
-    Map<FifaMatchId, LocalPrediction>
-  >(
-    () =>
-      new Map(
-        Array.from(cachedPredictions.entries()).map(([k, v]) => [
-          k,
-          {
-            match_id: v.match_id,
-            home_goals: v.home_goals,
-            away_goals: v.away_goals,
-            winner_id: v.winner_id,
-          },
-        ]),
-      ),
-  );
-  const [overrides, setOverrides] = useState<LocalGroupStandingsOverride[]>(
-    () =>
-      cachedOverrides.map((o) => ({
-        group_name: o.group_name,
-        team_id: o.team_id,
-        position: o.position,
-      })),
-  );
-  const [hasLocalEdits, setHasLocalEdits] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
-  // Sync from cache when it changes (but not if user has local edits)
-  useEffect(() => {
-    if (!hasLocalEdits && !predictionsLoading && cachedPredictions.size > 0) {
-      // Use queueMicrotask to avoid sync setState warning
-      queueMicrotask(() => {
-        setPredictions(
-          new Map(
-            Array.from(cachedPredictions.entries()).map(([k, v]) => [
-              k,
-              {
-                match_id: v.match_id,
-                home_goals: v.home_goals,
-                away_goals: v.away_goals,
-                winner_id: v.winner_id,
-              },
-            ]),
-          ),
-        );
-        setOverrides(
-          cachedOverrides.map((o) => ({
-            group_name: o.group_name,
-            team_id: o.team_id,
-            position: o.position,
-          })),
-        );
-      });
-    }
-  }, [hasLocalEdits, predictionsLoading, cachedPredictions, cachedOverrides]);
 
   // Use centralized match context for automatic polling
   const {
@@ -136,15 +91,13 @@ export default function PredictionsPage() {
     awayGoals: number | null,
     winnerId?: number | null,
   ) => {
-    setHasLocalEdits(true);
     const existing = predictions.get(fifaMatchId);
-    const updated: LocalPrediction = {
+    updatePrediction({
       match_id: fifaMatchId,
       home_goals: homeGoals,
       away_goals: awayGoals,
       winner_id: winnerId ?? existing?.winner_id ?? null,
-    };
-    setPredictions(new Map(predictions.set(fifaMatchId, updated)));
+    });
   };
 
   const calculateStandings = useCallback(
@@ -269,8 +222,7 @@ export default function PredictionsPage() {
       position: team1Standing.position,
     });
 
-    setHasLocalEdits(true);
-    setOverrides(newOverrides);
+    updateOverrides(newOverrides);
   };
 
   const handleSave = async () => {
@@ -279,10 +231,9 @@ export default function PredictionsPage() {
     setSaving(true);
     setError("");
 
-    const result = await contextSavePredictions(predictions, overrides);
+    const result = await savePredictions();
 
     if (result.success) {
-      setHasLocalEdits(false);
       alert("Predictions saved!");
     } else {
       setError(result.error || "Failed to save predictions");
@@ -317,7 +268,7 @@ export default function PredictionsPage() {
 
     // Clear overrides only if group stage isn't locked
     if (!groupLocked) {
-      setOverrides([]);
+      updateOverrides([]);
     }
   };
 
@@ -330,7 +281,6 @@ export default function PredictionsPage() {
       return;
     }
 
-    setHasLocalEdits(true);
     const newPredictions = new Map(predictions);
 
     matches.forEach((match) => {

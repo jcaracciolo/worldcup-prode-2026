@@ -199,14 +199,13 @@ export function getTeamDisplayName(
   if (team?.shortName) return team.shortName;
   if (team?.name) return team.name;
 
-  // For knockout matches with FIFA number, use meaningful labels
+  // For knockout matches with FIFA number, use meaningful bracket labels
   if (fifaMatchNumber && fifaMatchNumber >= 73) {
     return getKnockoutTbdLabel(fifaMatchNumber, position);
   }
 
-  // Fallback to generic labels
-  const labels = getTbdLabels(matchId);
-  return position === "home" ? labels.home : labels.away;
+  // Group stage: team not yet qualified for the tournament
+  return "QUA";
 }
 
 function getStageName(stage: string): string {
@@ -828,6 +827,7 @@ export function calculateGroupStandingsBonusPoints(
   actualStandings: CalculatedStanding[],
   advancingTeamIds: Set<number>, // Teams that actually advanced (1st, 2nd, best 3rds)
   groupComplete: boolean = false, // Whether all group matches are finished
+  predictedThirdPlaceQualifies: boolean = false, // Whether user predicted 3rd place would qualify
 ): PointBreakdown[] {
   const points: PointBreakdown[] = [];
 
@@ -844,8 +844,15 @@ export function calculateGroupStandingsBonusPoints(
 
     if (!actual || !predicted.team) return;
 
-    // 1 point if team advances
-    if (advancingTeamIds.has(predicted.team.id)) {
+    // User must have predicted team to advance:
+    // - Positions 1-2 always advance
+    // - Position 3 only advances if user's predicted 3rd place qualifies (best 4 of 12)
+    const predictedToAdvance =
+      predictedPosition <= 2 ||
+      (predictedPosition === 3 && predictedThirdPlaceQualifies);
+
+    // 1 point if user predicted team to advance AND team actually advanced
+    if (predictedToAdvance && advancingTeamIds.has(predicted.team.id)) {
       const positionText =
         predictedPosition === 1
           ? "1st"
@@ -993,6 +1000,7 @@ export function calculateTotalPoints(
   groupOverrides: LocalGroupStandingsOverride[],
   actualGroupStandings: Map<string, CalculatedStanding[]>,
   advancingTeamIds: Set<number>,
+  predictedThirdPlaceQualifying?: Map<string, boolean>, // User's predicted 3rd place qualifying
 ): { totalPoints: number; livePoints: number; breakdown: PointBreakdown[] } {
   // Predictions are keyed by FIFA match number
   const predictionMap = new Map<FifaMatchId, LocalPrediction>(
@@ -1044,6 +1052,8 @@ export function calculateTotalPoints(
       groupMatchList.length > 0;
 
     if (actualStandings) {
+      const thirdPlaceQualifies =
+        predictedThirdPlaceQualifying?.get(groupName) || false;
       allBreakdown.push(
         ...calculateGroupStandingsBonusPoints(
           groupName,
@@ -1051,6 +1061,7 @@ export function calculateTotalPoints(
           actualStandings,
           advancingTeamIds,
           groupComplete,
+          thirdPlaceQualifies,
         ),
       );
     }

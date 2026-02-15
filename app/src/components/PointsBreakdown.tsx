@@ -1,18 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { PointBreakdown } from "@/types/football";
+import { PointBreakdown, FifaMatchId, asFifaMatchId } from "@/types/football";
+import { getTeamDisplayName } from "@/lib/scoring";
 
 interface PointsBreakdownProps {
   breakdown: PointBreakdown[];
   totalPoints: number;
   livePoints?: number;
-}
-
-// Generate TBD labels from match ID (same logic as scoring.ts)
-function getTbdLabel(matchId: number, position: "home" | "away"): string {
-  const matchNum = matchId % 100;
-  return `${matchNum}${position === "home" ? "H" : "A"}`;
 }
 
 export default function PointsBreakdown({
@@ -93,29 +88,26 @@ export default function PointsBreakdown({
     // Points color based on live status
     const pointsColorClass = isLive ? "text-red-400" : "text-emerald-400";
     // Container styling for live items
-    const containerClass = isLive 
+    const containerClass = isLive
       ? "px-4 py-2.5 flex items-center hover:bg-red-500/10 transition-colors border-b border-white/5 last:border-0 bg-red-500/5 border-l-2 border-l-red-500"
       : "px-4 py-2.5 flex items-center hover:bg-white/5 transition-colors border-b border-white/5 last:border-0";
 
     // Get team display name with fallback to match ID label
     const getTeamDisplay = (
-      team: { tla?: string; crest?: string; shortName?: string } | undefined,
+      team:
+        | { tla?: string; crest?: string; shortName?: string; name?: string }
+        | undefined,
       matchId: number,
       position: "home" | "away",
     ) => {
-      const tla =
-        team?.tla ||
-        (team?.shortName ? team.shortName.substring(0, 3).toUpperCase() : "");
-      if (tla) return tla;
-      return getTbdLabel(matchId, position);
+      const fifaId = asFifaMatchId(matchId);
+      return getTeamDisplayName(team, matchId, position, fifaId);
     };
 
     // For group bonus types (advance/position), show team with emoji
     if (isGroupBonusType && item.team) {
       const teamTla =
-        item.team?.tla ||
-        item.team?.name?.substring(0, 3).toUpperCase() ||
-        "";
+        item.team?.tla || item.team?.name?.substring(0, 3).toUpperCase() || "";
       return (
         <Link
           key={index}
@@ -124,7 +116,9 @@ export default function PointsBreakdown({
         >
           {/* Score */}
           <div className="w-14 shrink-0 text-center">
-            <span className={`text-base font-black ${pointsColorClass}`}>{isLive && "🔴 "}+{item.points}</span>
+            <span className={`text-base font-black ${pointsColorClass}`}>
+              {isLive && "🔴 "}+{item.points}
+            </span>
           </div>
           <div className="w-px h-6 bg-white/10 mx-3" />
           {/* Reason */}
@@ -146,10 +140,12 @@ export default function PointsBreakdown({
                 className="w-5 h-5 object-contain"
               />
             ) : (
-              <div className="w-5 h-5 bg-white/10 rounded flex items-center justify-center text-[8px] text-white/50">?</div>
+              <div className="w-5 h-5 bg-white/10 rounded flex items-center justify-center text-[8px] text-white/50">
+                TBD
+              </div>
             )}
             <span className="font-semibold text-white text-sm">
-              {teamTla || getTbdLabel(item.matchId, "home")}
+              {teamTla || getTeamDisplay(item.team, item.matchId, "home")}
             </span>
           </div>
         </Link>
@@ -166,7 +162,9 @@ export default function PointsBreakdown({
         >
           {/* Score */}
           <div className="w-14 shrink-0 text-center">
-            <span className={`text-base font-black ${pointsColorClass}`}>{isLive && "🔴 "}+{item.points}</span>
+            <span className={`text-base font-black ${pointsColorClass}`}>
+              {isLive && "🔴 "}+{item.points}
+            </span>
           </div>
           <div className="w-px h-6 bg-white/10 mx-3" />
           {/* Reason */}
@@ -199,7 +197,11 @@ export default function PointsBreakdown({
     // Prediction winner
     const predHome = item.prediction?.homeGoals;
     const predAway = item.prediction?.awayGoals;
-    const hasPrediction = predHome !== null && predHome !== undefined && predAway !== null && predAway !== undefined;
+    const hasPrediction =
+      predHome !== null &&
+      predHome !== undefined &&
+      predAway !== null &&
+      predAway !== undefined;
     const predHomeWon = hasPrediction && predHome > predAway;
     const predAwayWon = hasPrediction && predAway > predHome;
     const predDraw = hasPrediction && predHome === predAway;
@@ -230,20 +232,40 @@ export default function PointsBreakdown({
         {position === "home" && (
           <>
             {team?.crest ? (
-              <img src={team.crest} alt={tla} className={`w-4 h-4 object-contain ${loserOpacity ? "opacity-50" : ""}`} />
+              <img
+                src={team.crest}
+                alt={tla}
+                className={`w-4 h-4 object-contain ${loserOpacity ? "opacity-50" : ""}`}
+              />
             ) : (
-              <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center text-[8px] text-white/50">?</div>
+              <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center text-[8px] text-white/50">
+                ?
+              </div>
             )}
-            <span className={`text-[11px] font-semibold ${highlight ? "text-slate-900" : loserOpacity ? "text-white/40" : "text-white/70"}`}>{tla}</span>
+            <span
+              className={`text-[11px] font-semibold ${highlight ? "text-slate-900" : loserOpacity ? "text-white/40" : "text-white/70"}`}
+            >
+              {tla}
+            </span>
           </>
         )}
         {position === "away" && (
           <>
-            <span className={`text-[11px] font-semibold ${highlight ? "text-slate-900" : loserOpacity ? "text-white/40" : "text-white/70"}`}>{tla}</span>
+            <span
+              className={`text-[11px] font-semibold ${highlight ? "text-slate-900" : loserOpacity ? "text-white/40" : "text-white/70"}`}
+            >
+              {tla}
+            </span>
             {team?.crest ? (
-              <img src={team.crest} alt={tla} className={`w-4 h-4 object-contain ${loserOpacity ? "opacity-50" : ""}`} />
+              <img
+                src={team.crest}
+                alt={tla}
+                className={`w-4 h-4 object-contain ${loserOpacity ? "opacity-50" : ""}`}
+              />
             ) : (
-              <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center text-[8px] text-white/50">?</div>
+              <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center text-[8px] text-white/50">
+                ?
+              </div>
             )}
           </>
         )}
@@ -258,11 +280,13 @@ export default function PointsBreakdown({
       >
         {/* Score */}
         <div className="w-14 shrink-0 text-center">
-          <span className={`text-base font-black ${pointsColorClass}`}>{isLive && "🔴 "}+{item.points}</span>
+          <span className={`text-base font-black ${pointsColorClass}`}>
+            {isLive && "🔴 "}+{item.points}
+          </span>
         </div>
-        
+
         <div className="w-px h-6 bg-white/10 mx-3" />
-        
+
         {/* Reason */}
         <div className="w-40 shrink-0 flex items-center gap-2">
           <span
@@ -270,27 +294,61 @@ export default function PointsBreakdown({
           >
             {getTypeLabel(item.type)}
           </span>
-          <p className="text-[11px] text-white/60 truncate">{item.description}</p>
+          <p className="text-[11px] text-white/60 truncate">
+            {item.description}
+          </p>
         </div>
-        
+
         <div className="w-px h-6 bg-white/10 mx-3" />
-        
+
         {/* Prediction */}
         <div className="flex items-center gap-1 shrink-0">
           <span className="text-[10px] text-white/40 w-16">Prediction:</span>
-          {renderTeam(homeTeam, homeTla, "home", predHomeHighlight, predAwayWon)}
-          <span className="text-xs font-bold text-white px-1">{predHome ?? "-"}-{predAway ?? "-"}</span>
-          {renderTeam(awayTeam, awayTla, "away", predAwayHighlight, predHomeWon)}
+          {renderTeam(
+            homeTeam,
+            homeTla,
+            "home",
+            predHomeHighlight,
+            predAwayWon,
+          )}
+          <span className="text-xs font-bold text-white px-1">
+            {predHome ?? "-"}-{predAway ?? "-"}
+          </span>
+          {renderTeam(
+            awayTeam,
+            awayTla,
+            "away",
+            predAwayHighlight,
+            predHomeWon,
+          )}
         </div>
-        
+
         <div className="w-px h-6 bg-white/10 mx-3" />
-        
+
         {/* Result */}
         <div className="flex items-center gap-1 shrink-0">
-          <span className={`text-[10px] w-12 ${isLive ? "text-red-400" : "text-white/40"}`}>{isLive ? "Live:" : "Result:"}</span>
-          {renderTeam(homeTeam, homeTla, "home", actualHomeHighlight, actualAwayWon)}
-          <span className="text-xs font-bold text-white px-1">{actualHome}-{actualAway}</span>
-          {renderTeam(awayTeam, awayTla, "away", actualAwayHighlight, actualHomeWon)}
+          <span
+            className={`text-[10px] w-12 ${isLive ? "text-red-400" : "text-white/40"}`}
+          >
+            {isLive ? "Live:" : "Result:"}
+          </span>
+          {renderTeam(
+            homeTeam,
+            homeTla,
+            "home",
+            actualHomeHighlight,
+            actualAwayWon,
+          )}
+          <span className="text-xs font-bold text-white px-1">
+            {actualHome}-{actualAway}
+          </span>
+          {renderTeam(
+            awayTeam,
+            awayTla,
+            "away",
+            actualAwayHighlight,
+            actualHomeWon,
+          )}
         </div>
       </Link>
     );
@@ -375,16 +433,26 @@ export default function PointsBreakdown({
         <div className="border-t border-white/10 px-5 py-4 bg-gradient-to-r from-white/5 to-transparent">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-2xl font-bold text-white">{groupMatchPts}</div>
-              <div className="text-[10px] uppercase tracking-wider text-white/40">Group</div>
+              <div className="text-2xl font-bold text-white">
+                {groupMatchPts}
+              </div>
+              <div className="text-[10px] uppercase tracking-wider text-white/40">
+                Group
+              </div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-white">{groupBonusPts}</div>
-              <div className="text-[10px] uppercase tracking-wider text-white/40">Bonus</div>
+              <div className="text-2xl font-bold text-white">
+                {groupBonusPts}
+              </div>
+              <div className="text-[10px] uppercase tracking-wider text-white/40">
+                Bonus
+              </div>
             </div>
             <div>
               <div className="text-2xl font-bold text-white">{knockoutPts}</div>
-              <div className="text-[10px] uppercase tracking-wider text-white/40">Knockout</div>
+              <div className="text-[10px] uppercase tracking-wider text-white/40">
+                Knockout
+              </div>
             </div>
           </div>
         </div>

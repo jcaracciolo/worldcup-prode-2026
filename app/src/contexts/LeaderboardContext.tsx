@@ -12,8 +12,10 @@ import { useMatches } from "@/contexts/MatchContext";
 import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { useAllProfiles } from "@/contexts/UserContext";
 import { UserScore, CalculatedStanding, FifaMatchId } from "@/types/football";
+import { LocalPrediction, Prediction } from "@/types/database";
 import { calculateTotalPoints } from "@/lib/scoring";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
+import { calculateAllGroupStandings } from "@/lib/standings";
 
 // =====================================================================
 // TYPES
@@ -170,12 +172,25 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
         fifaNumber: m.fifaNumber as FifaMatchId | null,
       }));
 
+      // Calculate user's predicted standings to determine their 3rd place qualifying
+      const predictionMap = new Map<number, LocalPrediction>(
+        predictions.map((p: Prediction) => [p.match_id, p]),
+      );
+      const userPredictedStandings = calculateAllGroupStandings(
+        matches,
+        predictionMap,
+      );
+      const userThirdPlaceQualifying = getQualifyingThirdPlaceTeams(
+        userPredictedStandings,
+      );
+
       const { totalPoints, livePoints, breakdown } = calculateTotalPoints(
         matchesWithFifa,
         predictions,
         groupOverrides,
         actualGroupStandings,
         advancingTeamIds,
+        userThirdPlaceQualifying,
       );
 
       let groupStagePoints = 0;
@@ -183,10 +198,7 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
       let knockoutPoints = 0;
 
       breakdown.forEach((item) => {
-        if (
-          item.type === "group_advance" ||
-          item.type === "group_position"
-        ) {
+        if (item.type === "group_advance" || item.type === "group_position") {
           groupBonusPoints += item.points;
         } else if (
           item.type === "knockout_win" ||

@@ -1,6 +1,11 @@
 "use client";
 
-import { Match, CalculatedStanding, Team, asFifaMatchId } from "@/types/football";
+import {
+  Match,
+  CalculatedStanding,
+  Team,
+  asFifaMatchId,
+} from "@/types/football";
 import {
   getBracketSource,
   getMatchInfo,
@@ -186,16 +191,16 @@ export default function R32Preview({
                         ) : (
                           <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
                             <span className="text-white/60 font-bold text-sm">
-                              {homeTeam.tla?.substring(0, 2) || "?"}
+                              {homeTeam.tla?.substring(0, 3) || "TBD"}
                             </span>
                           </div>
                         )}
                         <div>
                           <div className="text-white font-bold text-xl">
-                            {homeTeam.tla || homeTeam.shortName}
+                            {homeTeam.tla || homeTeam.shortName || "TBD"}
                           </div>
                           <div className="text-white/50 text-xs truncate max-w-[100px]">
-                            {homeTeam.name}
+                            {homeTeam.name || ""}
                           </div>
                         </div>
                         <span className="text-[10px] px-2 py-0.5 bg-white/10 rounded text-white/60">
@@ -205,7 +210,7 @@ export default function R32Preview({
                     ) : (
                       <div className="flex flex-col items-center gap-2 min-h-[130px] justify-center">
                         <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
-                          <span className="text-white/30 text-xl">?</span>
+                          <span className="text-white/30 text-xl">TBD</span>
                         </div>
                         <span className="text-white/50 text-sm italic">
                           {homeLabel}
@@ -232,16 +237,16 @@ export default function R32Preview({
                         ) : (
                           <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
                             <span className="text-white/60 font-bold text-sm">
-                              {awayTeam.tla?.substring(0, 2) || "?"}
+                              {awayTeam.tla?.substring(0, 3) || "TBD"}
                             </span>
                           </div>
                         )}
                         <div>
                           <div className="text-white font-bold text-xl">
-                            {awayTeam.tla || awayTeam.shortName}
+                            {awayTeam.tla || awayTeam.shortName || "TBD"}
                           </div>
                           <div className="text-white/50 text-xs truncate max-w-[100px]">
-                            {awayTeam.name}
+                            {awayTeam.name || ""}
                           </div>
                         </div>
                         <span className="text-[10px] px-2 py-0.5 bg-white/10 rounded text-white/60">
@@ -251,7 +256,7 @@ export default function R32Preview({
                     ) : (
                       <div className="flex flex-col items-center gap-2 min-h-[130px] justify-center">
                         <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
-                          <span className="text-white/30 text-xl">?</span>
+                          <span className="text-white/30 text-xl">TBD</span>
                         </div>
                         <span className="text-white/50 text-sm italic">
                           {awayLabel}

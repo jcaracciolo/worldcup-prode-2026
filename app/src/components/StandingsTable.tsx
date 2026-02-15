@@ -104,7 +104,7 @@ export default function StandingsTable({
                       />
                     ) : (
                       <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-                        ?
+                        {standing.team.tla?.substring(0, 3) || "TBD"}
                       </div>
                     )}
                     <span

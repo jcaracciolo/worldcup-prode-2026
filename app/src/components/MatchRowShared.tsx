@@ -86,7 +86,7 @@ export function TeamCrest({
     <div
       className={`bg-white/20 rounded-full flex items-center justify-center font-bold text-white/60 shrink-0 ${sizeClass} ${className}`}
     >
-      {team?.tla?.substring(0, 2) || "?"}
+      {team?.tla?.substring(0, 3) || "TBD"}
     </div>
   );
 }

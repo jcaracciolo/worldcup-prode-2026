@@ -39,6 +39,7 @@ export {
 export {
   MatchProvider,
   useMatches,
+  useMatch,
   type MatchWithLiveInfo,
 } from "./MatchContext";
 

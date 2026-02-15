@@ -40,8 +40,7 @@ export default function UserPredictionsPage() {
   const notFound =
     !isOwnPredictions &&
     !targetProfileState.loading &&
-    !targetProfileState.content &&
-    !targetProfileState.error;
+    !targetProfileState.content;
 
   // Use cached predictions from PredictionsContext
   const { predictions: predictionsMap, loading: predictionsLoading } =

@@ -768,6 +768,13 @@ export function calculateGroupStandingsBonusPoints(
     return points;
   }
 
+  // Don't award bonus points if user made no predictions for this group
+  // (all teams would have played=0, giving arbitrary insertion-order standings)
+  const hasAnyPredictions = predictedStandings.some((s) => s.played > 0);
+  if (!hasAnyPredictions) {
+    return points;
+  }
+
   const groupLetter = groupName.replace("GROUP_", "");
 
   predictedStandings.forEach((predicted, index) => {

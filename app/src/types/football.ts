@@ -177,4 +177,6 @@ export interface UserScore {
   knockoutPoints: number;
   /** Leaderboard position (handles ties - users with same score share position) */
   position: number;
+  /** Full scoring breakdown for all matches (may be empty for privacy before stage locks) */
+  breakdown?: PointBreakdown[];
 }

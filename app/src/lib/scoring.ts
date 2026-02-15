@@ -12,6 +12,7 @@ import {
   isGroupStageMatch,
 } from "./football-api";
 import { r32Bracket, r16Bracket, qfBracket, sfBracket } from "./r32-bracket";
+import { BracketResolver } from "./bracket-resolver";
 
 // =====================================================================
 // SCORING CONSTANTS - Single source of truth for all scoring rules
@@ -336,8 +337,10 @@ export function calculateMatchPoints(
     }
   }
 
-  // Goals points (always 1 point each, no multiplier)
+  // Goals points
+  // Group stage: 1 point each, Knockout: 2 points each
   // For knockout: only award if the predicted team matches the actual team in that slot
+  const goalsPointsPerTeam = isKnockout ? 2 : POINTS_CORRECT_GOALS;
   const homeTeamMatches =
     !isKnockout ||
     !predictedHomeTeam ||
@@ -348,10 +351,10 @@ export function calculateMatchPoints(
     predictedAwayTeam.id === match.awayTeam?.id;
 
   if (homeTeamMatches && prediction.home_goals === actualHome) {
-    total += POINTS_CORRECT_GOALS;
+    total += goalsPointsPerTeam;
   }
   if (awayTeamMatches && prediction.away_goals === actualAway) {
-    total += POINTS_CORRECT_GOALS;
+    total += goalsPointsPerTeam;
   }
 
   return {
@@ -671,6 +674,8 @@ export function calculateGroupStagePoints(
 export function calculateKnockoutPoints(
   match: Match,
   prediction: LocalPrediction | undefined,
+  /** User's predicted teams for this match slot (from BracketResolver) */
+  predictedTeams?: { home?: { id: number } | null; away?: { id: number } | null },
 ): PointBreakdown[] {
   const points: PointBreakdown[] = [];
   const isLive = isMatchLive(match);
@@ -799,7 +804,17 @@ export function calculateKnockoutPoints(
   }
 
   // 2 points for exact goals in knockout (no multiplier for goals)
-  if (prediction.home_goals === actualHomeGoals) {
+  // Only award if the user's predicted team matches the actual team in that slot
+  const homeTeamMatches =
+    !predictedTeams ||
+    !predictedTeams.home ||
+    predictedTeams.home.id === match.homeTeam?.id;
+  const awayTeamMatches =
+    !predictedTeams ||
+    !predictedTeams.away ||
+    predictedTeams.away.id === match.awayTeam?.id;
+
+  if (homeTeamMatches && prediction.home_goals === actualHomeGoals) {
     points.push({
       matchId: match.id,
       description: `Correct goals`,
@@ -816,7 +831,7 @@ export function calculateKnockoutPoints(
     });
   }
 
-  if (prediction.away_goals === actualAwayGoals) {
+  if (awayTeamMatches && prediction.away_goals === actualAwayGoals) {
     points.push({
       matchId: match.id,
       description: `Correct goals`,
@@ -1023,20 +1038,7 @@ export function calculateTotalPoints(
   );
   const allBreakdown: PointBreakdown[] = [];
 
-  // Calculate match points - use fifaNumber for prediction lookup
-  matches.forEach((match) => {
-    // Use fifaNumber to look up prediction (it's keyed by FIFA number now)
-    const fifaNumber = match.fifaNumber;
-    const prediction = fifaNumber ? predictionMap.get(fifaNumber) : undefined;
-
-    if (isGroupStageMatch(match)) {
-      allBreakdown.push(...calculateGroupStagePoints(match, prediction));
-    } else {
-      allBreakdown.push(...calculateKnockoutPoints(match, prediction));
-    }
-  });
-
-  // Calculate group standings bonus points
+  // Calculate all predicted group standings first (needed for BracketResolver)
   const groupMatches = matches.filter(isGroupStageMatch);
   const groupedMatches = new Map<string, Match[]>();
   groupMatches.forEach((match) => {
@@ -1047,6 +1049,7 @@ export function calculateTotalPoints(
     groupedMatches.get(match.group)!.push(match);
   });
 
+  const allPredictedStandings = new Map<string, CalculatedStanding[]>();
   groupedMatches.forEach((groupMatchList, groupName) => {
     const groupOverridesForGroup = groupOverrides.filter(
       (o) => o.group_name === groupName,
@@ -1056,6 +1059,39 @@ export function calculateTotalPoints(
       predictionMap,
       groupOverridesForGroup,
     );
+    allPredictedStandings.set(groupName, predictedStandings);
+  });
+
+  // Run BracketResolver with user's predicted group standings to get their predicted knockout teams
+  const userPredictedTeams = new BracketResolver({
+    matches,
+    predictions: predictionMap,
+    groupStandings: allPredictedStandings,
+    thirdPlaceQualifying: predictedThirdPlaceQualifying || new Map(),
+    useKnockoutPredictions: true, // Use user's knockout predictions for R16+
+  }).resolve();
+
+  // Calculate match points - use fifaNumber for prediction lookup
+  matches.forEach((match) => {
+    // match.id IS the FIFA number (converted at API layer)
+    // fifaNumber field is just for enhanced matches with explicit typing
+    const fifaNumber = (match.fifaNumber ?? match.id) as FifaMatchId;
+    const prediction = predictionMap.get(fifaNumber);
+
+    if (isGroupStageMatch(match)) {
+      allBreakdown.push(...calculateGroupStagePoints(match, prediction));
+    } else {
+      // For knockout, pass the user's predicted teams for this match
+      const predictedTeams = userPredictedTeams.get(fifaNumber);
+      allBreakdown.push(
+        ...calculateKnockoutPoints(match, prediction, predictedTeams),
+      );
+    }
+  });
+
+  // Calculate group standings bonus points
+  groupedMatches.forEach((groupMatchList, groupName) => {
+    const predictedStandings = allPredictedStandings.get(groupName);
     const actualStandings = actualGroupStandings.get(groupName);
 
     // Check if all matches in this group are finished (6 matches per group)
@@ -1066,7 +1102,7 @@ export function calculateTotalPoints(
       finishedMatches.length === groupMatchList.length &&
       groupMatchList.length > 0;
 
-    if (actualStandings) {
+    if (actualStandings && predictedStandings) {
       const thirdPlaceQualifies =
         predictedThirdPlaceQualifying?.get(groupName) || false;
       allBreakdown.push(
@@ -1089,3 +1125,4 @@ export function calculateTotalPoints(
 
   return { totalPoints, livePoints, breakdown: allBreakdown };
 }
+

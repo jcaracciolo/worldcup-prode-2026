@@ -225,6 +225,7 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
         groupBonusPoints,
         knockoutPoints,
         position: 0,
+        breakdown, // Store full breakdown for per-match scoring access
       };
     });
 
@@ -327,4 +328,37 @@ export function useUserPosition(userId: string | null) {
       loading,
     };
   }, [userId, scores, loading, getUserScore]);
+}
+
+/**
+ * Hook to get all users' points for a specific match.
+ * Returns points calculated centrally (with proper knockout team matching).
+ */
+export function useMatchPointsForAllUsers(matchId: number) {
+  const { scores, loading } = useLeaderboard();
+
+  return useMemo(() => {
+    if (loading) {
+      return { loading: true, matchPoints: [] };
+    }
+
+    const matchPoints = scores
+      .map((userScore) => {
+        // Filter breakdown to only items for this match
+        const matchBreakdown = (userScore.breakdown || []).filter(
+          (item) => item.matchId === matchId,
+        );
+        const points = matchBreakdown.reduce((sum, p) => sum + p.points, 0);
+
+        return {
+          userId: userScore.userId,
+          displayName: userScore.displayName,
+          pointsEarned: points,
+          breakdown: matchBreakdown,
+        };
+      })
+      .filter((u) => u.breakdown.length > 0 || scores.some(s => s.userId === u.userId)); // Include users even with 0 points
+
+    return { loading: false, matchPoints };
+  }, [matchId, scores, loading]);
 }

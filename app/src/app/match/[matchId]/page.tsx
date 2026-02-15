@@ -6,14 +6,12 @@ import Link from "next/link";
 import { useMatches, useMatch } from "@/contexts/MatchContext";
 import { useUser, useAllProfiles } from "@/contexts/UserContext";
 import { useAllPredictions } from "@/contexts/PredictionsContext";
+import { useMatchPointsForAllUsers } from "@/contexts/LeaderboardContext";
 import { getMatchInfo } from "@/lib/tournament";
 import {
-  calculateGroupStagePoints,
-  calculateKnockoutPoints,
   getMaxPossiblePoints,
   getTeamDisplayName,
 } from "@/lib/scoring";
-import { isGroupStageMatch } from "@/lib/football-api";
 import { format } from "date-fns";
 import { Profile } from "@/types/database";
 import { FifaMatchId, asFifaMatchId } from "@/types/football";
@@ -43,11 +41,16 @@ export default function MatchDetailPage() {
 
   // match.id IS the FIFA number
   const fifaNumber = match ? (match.id as FifaMatchId) : undefined;
+  const matchIdNum = parseInt(matchId);
+
+  // Get centrally calculated points for all users for this match
+  const { loading: pointsLoading, matchPoints } =
+    useMatchPointsForAllUsers(matchIdNum);
 
   // Loading state from hooks
   const loadingAllPredictions = profiles.loading || allPredictions.loading;
 
-  // Calculate all user predictions from hooks
+  // Combine predictions with centrally calculated points
   const allUserPredictions = useMemo(() => {
     if (!match || !fifaNumber) return [];
     if (!profiles.content || !allPredictions.content) return [];
@@ -55,8 +58,13 @@ export default function MatchDetailPage() {
     const profilesList = profiles.content;
     const allPredictionsMap = allPredictions.content;
 
-    const isFinished = match.status === "FINISHED";
     const maxPoints = getMaxPossiblePoints(match);
+
+    // Build a map of userId -> points from centralized calculation
+    const pointsByUser = new Map<string, number>();
+    matchPoints.forEach((mp) => {
+      pointsByUser.set(mp.userId, mp.pointsEarned);
+    });
 
     const userPredictions: UserMatchPrediction[] = [];
 
@@ -71,14 +79,8 @@ export default function MatchDetailPage() {
 
       if (!pred) return;
 
-      // Calculate points if match is finished
-      let pointsEarned = 0;
-      if (isFinished && pred.home_goals !== null && pred.away_goals !== null) {
-        const breakdown = isGroupStageMatch(match)
-          ? calculateGroupStagePoints(match, pred)
-          : calculateKnockoutPoints(match, pred);
-        pointsEarned = breakdown.reduce((sum, p) => sum + p.points, 0);
-      }
+      // Get points from centralized calculation (already handles knockout team matching)
+      const pointsEarned = pointsByUser.get(profileData.id) || 0;
 
       userPredictions.push({
         userId: profileData.id,
@@ -108,10 +110,11 @@ export default function MatchDetailPage() {
     fifaNumber,
     profiles.content,
     allPredictions.content,
+    matchPoints,
     profile?.id,
   ]);
 
-  const loading = matchesLoading;
+  const loading = matchesLoading || pointsLoading;
 
   if (loading) {
     return (

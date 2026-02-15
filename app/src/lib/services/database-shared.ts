@@ -1044,7 +1044,8 @@ export function createAuthService(supabase: SupabaseClient): AuthService {
 
     async signOut(): Promise<ServiceVoidResult> {
       try {
-        const { error } = await supabase.auth.signOut();
+        // Use 'global' scope to properly invalidate session on both client and server
+        const { error } = await supabase.auth.signOut({ scope: 'global' });
         if (error) throw error;
         return { success: true, error: null };
       } catch (error) {

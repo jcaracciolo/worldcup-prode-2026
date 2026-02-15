@@ -11,13 +11,11 @@ import { calculateTotalPoints } from "@/lib/scoring";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import {
   calculateAllGroupStandings,
-  calculateAllActualStandings,
 } from "@/lib/standings";
-import { buildApiToFifaMapping } from "@/lib/api-client";
-import { BracketResolver } from "@/lib/bracket-resolver";
 import { LocalPrediction } from "@/types/database";
 import { FifaMatchId } from "@/types/football";
 import PointsBreakdown from "@/components/PointsBreakdown";
+import LockedCard from "@/components/LockedCard";
 import { KnockoutStageSection } from "@/components/predictions";
 import UserGroupSection from "@/components/UserGroupSection";
 import Link from "next/link";
@@ -25,7 +23,7 @@ import Link from "next/link";
 export default function UserPredictionsPage() {
   const params = useParams();
   const userId = params.userId as string;
-  const { matches, loading: matchesLoading } = useMatches();
+  const { matches, loading: matchesLoading, actualGroupStandings: actualStandings, actualThirdPlaceQualifying } = useMatches();
   const { stageLockStatus } = useTime();
   const { user: currentProfile } = useUser();
 
@@ -62,9 +60,6 @@ export default function UserPredictionsPage() {
   const { groupStageLocked, knockoutStageOpen, knockoutStageLocked } =
     stageLockStatus;
 
-  // Also get isSimulated from time context
-  const { isSimulated } = useTime();
-
   // Tab state - default to knockout if it's open
   const [activeTab, setActiveTab] = useState<"group" | "knockout">(() =>
     knockoutStageOpen ? "knockout" : "group",
@@ -86,19 +81,7 @@ export default function UserPredictionsPage() {
     [predictedStandings],
   );
 
-  // Calculate actual standings (for scoring)
-  const actualStandings = useMemo(
-    () => calculateAllActualStandings(matches),
-    [matches],
-  );
-
-  const actualThirdPlaceQualifying = useMemo(
-    () => getQualifyingThirdPlaceTeams(actualStandings),
-    [actualStandings],
-  );
-
-  // API ID to FIFA match number mapping
-  const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
+  // API ID to FIFA match number mapping (from context)
 
   // Predictions keyed by FIFA match number (for knockout)
   const fifaPredictionMap = useMemo(
@@ -121,26 +104,6 @@ export default function UserPredictionsPage() {
     }
     return stages;
   }, [matches]);
-
-  // Resolve knockout teams based on predictions
-  const resolvedKnockoutTeams = useMemo(() => {
-    const resolver = new BracketResolver({
-      matches,
-      predictions: fifaPredictionMap,
-      groupStandings: predictedStandings,
-      thirdPlaceQualifying,
-      actualGroupStandings: actualStandings,
-      actualThirdPlaceQualifying,
-    });
-    return resolver.resolve();
-  }, [
-    matches,
-    fifaPredictionMap,
-    predictedStandings,
-    thirdPlaceQualifying,
-    actualStandings,
-    actualThirdPlaceQualifying,
-  ]);
 
   // Determine which teams actually advanced
   const advancingTeamIds = useMemo(() => {
@@ -202,16 +165,16 @@ export default function UserPredictionsPage() {
     return { groupStagePoints, groupBonusPoints, knockoutPoints };
   }, [breakdown, matches]);
 
-  // Visibility rules - also show predictions when in simulation mode
+  // Visibility rules - show predictions when stage is locked
   const showGroupPredictions =
-    isOwnPredictions || groupStageLocked || isSimulated;
+    isOwnPredictions || groupStageLocked;
   const showKnockoutPredictions =
-    isOwnPredictions || knockoutStageLocked || isSimulated;
+    isOwnPredictions || knockoutStageLocked;
 
   if (isLoading || (matchesLoading && matches.length === 0)) {
     return (
-      <div className="min-h-screen">
-        <main className="container mx-auto px-4 py-8">
+      <div className="flex-1 flex flex-col">
+        <main className="flex-1 container mx-auto px-4 py-8">
           <div className="text-center text-white/50 py-12">Loading...</div>
         </main>
       </div>
@@ -220,8 +183,8 @@ export default function UserPredictionsPage() {
 
   if (notFound) {
     return (
-      <div className="min-h-screen">
-        <main className="container mx-auto px-4 py-8">
+      <div className="flex-1 flex flex-col">
+        <main className="flex-1 container mx-auto px-4 py-8">
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold text-white mb-4">
               User Not Found
@@ -239,8 +202,8 @@ export default function UserPredictionsPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <main className="container mx-auto px-4 py-8">
+    <div className="flex-1 flex flex-col">
+      <main className="flex-1 container mx-auto px-4 py-8">
         {/* Header with name */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white">
@@ -465,6 +428,8 @@ export default function UserPredictionsPage() {
             predictions={predictions}
             thirdPlaceQualifying={thirdPlaceQualifying}
             showPredictions={showGroupPredictions}
+            actualStandings={actualStandings}
+            advancingTeamIds={advancingTeamIds}
           />
         )}
 
@@ -473,28 +438,16 @@ export default function UserPredictionsPage() {
           <>
             {!knockoutStageOpen ? (
               <section className="mb-8">
-                <div className="glass-card p-8 text-center">
-                  <div className="text-5xl mb-4">🔒</div>
-                  <p className="text-white/60 text-lg">
-                    Knockout predictions will be available after group stage
-                    locks
-                  </p>
-                </div>
+                <LockedCard message="Knockout predictions will be available after group stage locks" />
               </section>
             ) : !showKnockoutPredictions ? (
               <section className="mb-8">
-                <div className="glass-card p-8 text-center blur-sm select-none">
-                  <p className="text-white/50">
-                    Predictions will be visible after knockout stage starts
-                  </p>
-                </div>
+                <LockedCard message="Predictions will be visible after knockout stage locks" />
               </section>
             ) : (
               <KnockoutStageSection
                 knockoutStages={knockoutStages}
                 predictions={fifaPredictionMap}
-                resolvedKnockoutTeams={resolvedKnockoutTeams}
-                apiToFifaMap={apiToFifaMap}
                 mode="predictions"
               />
             )}
@@ -513,7 +466,7 @@ export default function UserPredictionsPage() {
         )}
       </main>
 
-      <footer className="bg-black/20 text-white py-4 mt-8">
+      <footer className="bg-black/20 text-white py-4 mt-auto">
         <div className="container mx-auto px-4 text-center text-sm">
           <p className="text-white/50">
             WorldCupProde - FIFA World Cup 2026 Predictions

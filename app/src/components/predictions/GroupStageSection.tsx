@@ -1,16 +1,14 @@
 "use client";
 
 import { useTime } from "@/contexts/TimeContext";
-import { Match, CalculatedStanding, FifaMatchId } from "@/types/football";
+import { Match, CalculatedStanding, FifaMatchId, asFifaMatchId } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
 import PredictionInput from "@/components/PredictionInput";
-import FixtureRow from "@/components/FixtureRow";
 import StandingsTable from "@/components/StandingsTable";
 
 interface GroupStageSectionProps {
   groups: Map<string, Match[]>;
   predictions?: Map<FifaMatchId, LocalPrediction>; // Keyed by FIFA match number (1-72)
-  apiToFifaMap: Map<number, FifaMatchId>;
   groupLocked?: boolean;
   thirdPlaceQualifying: Map<string, boolean>;
   calculateStandings: (
@@ -24,14 +22,13 @@ interface GroupStageSectionProps {
     winnerId?: number | null,
   ) => void;
   onSwapPositions?: (groupName: string, team1: number, team2: number) => void;
-  /** Read-only mode: shows FixtureRow instead of PredictionInput, hides standings for groups with no finished matches */
+  /** Read-only mode: shows actual match scores using disabled PredictionInput */
   readOnly?: boolean;
 }
 
 export default function GroupStageSection({
   groups,
   predictions,
-  apiToFifaMap,
   groupLocked = false,
   thirdPlaceQualifying,
   calculateStandings,
@@ -79,21 +76,26 @@ export default function GroupStageSection({
                     </h4>
                     <div className="space-y-0.5">
                       {sortedMatches.map((match) => {
-                        const fifaNumber = apiToFifaMap.get(match.id);
+                        const fifaNumber = asFifaMatchId(match.id);
 
                         if (readOnly) {
+                          // Show actual match scores using PredictionInput in disabled mode
+                          const syntheticPrediction: LocalPrediction = {
+                            match_id: fifaNumber,
+                            home_goals: match.score.fullTime.home,
+                            away_goals: match.score.fullTime.away,
+                            winner_id: null,
+                          };
                           return (
-                            <FixtureRow
+                            <PredictionInput
                               key={match.id}
                               match={match}
+                              prediction={syntheticPrediction}
+                              onChange={() => {}}
+                              disabled={true}
                               fifaMatchNumber={fifaNumber}
                             />
                           );
-                        }
-
-                        if (!fifaNumber) {
-                          console.warn(`No FIFA number for match ${match.id}`);
-                          return null;
                         }
 
                         const matchHasStarted =

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { GlobalLiveIndicator } from "@/components/MatchStatus";
+import LockedCard from "@/components/LockedCard";
 import {
   KnockoutStageSection,
   GroupStageSection,
@@ -12,11 +13,9 @@ import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
 import { useUser } from "@/contexts/UserContext";
 import { useUserPredictions } from "@/contexts/PredictionsContext";
-import { CalculatedStanding, Team, Match, FifaMatchId } from "@/types/football";
+import { CalculatedStanding, Team, Match, FifaMatchId, asFifaMatchId } from "@/types/football";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
-import { BracketResolver } from "@/lib/bracket-resolver";
-import { buildApiToFifaMapping } from "@/lib/api-client";
-import { calculateAllActualStandings } from "@/lib/standings";
+
 import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
 
 export default function PredictionsPage() {
@@ -131,19 +130,6 @@ export default function PredictionsPage() {
   const loading = userLoading || (predictionsLoading && predictions.size === 0);
   const showMatchesLoading = matchesLoading && matches.length === 0;
 
-  // Build API match ID to FIFA match number mapping
-  const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
-
-  // Calculate actual standings from real match results (must be before early return)
-  const actualGroupStandings = useMemo(
-    () => calculateAllActualStandings(matches),
-    [matches],
-  );
-  const actualThirdPlaceQualifying = useMemo(
-    () => getQualifyingThirdPlaceTeams(actualGroupStandings),
-    [actualGroupStandings],
-  );
-
   const handlePredictionChange = (
     fifaMatchId: FifaMatchId,
     homeGoals: number | null,
@@ -175,10 +161,9 @@ export default function PredictionsPage() {
         }
       });
 
-      // Calculate from predictions (lookup by FIFA number)
+      // Calculate from predictions (match.id is the FIFA number)
       groupMatches.forEach((match) => {
-        const fifaNumber = apiToFifaMap.get(match.id);
-        if (!fifaNumber) return;
+        const fifaNumber = asFifaMatchId(match.id);
 
         const prediction = predictions.get(fifaNumber);
         if (
@@ -318,8 +303,7 @@ export default function PredictionsPage() {
     // Filter out predictions for unlocked sections only
     const newPredictions = new Map(predictions);
     matches.forEach((match) => {
-      const fifaNumber = apiToFifaMap.get(match.id);
-      if (!fifaNumber) return;
+      const fifaNumber = asFifaMatchId(match.id);
 
       const isGroupStage = match.stage === "GROUP_STAGE";
       if (isGroupStage && !groupLocked) {
@@ -350,8 +334,7 @@ export default function PredictionsPage() {
     const newPredictions = new Map(predictions);
 
     matches.forEach((match) => {
-      const fifaNumber = apiToFifaMap.get(match.id);
-      if (!fifaNumber) return;
+      const fifaNumber = asFifaMatchId(match.id);
 
       // Check if already has a prediction
       const existing = newPredictions.get(fifaNumber);
@@ -435,20 +418,8 @@ export default function PredictionsPage() {
     knockoutStages.get(m.stage)!.push(m);
   });
 
-  // Use BracketResolver to resolve knockout teams based on predictions
-  // Also passes actual standings/results which are used when available
-  const resolver = new BracketResolver({
-    matches,
-    predictions,
-    groupStandings,
-    thirdPlaceQualifying,
-    actualGroupStandings,
-    actualThirdPlaceQualifying,
-  });
-  const resolvedKnockoutTeams = resolver.resolve();
-
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex-1 flex flex-col">
       <main className="flex-1 container mx-auto px-4 py-4 sm:py-8">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
           <div>
@@ -569,7 +540,6 @@ export default function PredictionsPage() {
           <GroupStageSection
             groups={groups}
             predictions={predictions}
-            apiToFifaMap={apiToFifaMap}
             groupLocked={groupLocked}
             thirdPlaceQualifying={thirdPlaceQualifying}
             calculateStandings={calculateStandings}
@@ -584,18 +554,11 @@ export default function PredictionsPage() {
             <KnockoutStageSection
               knockoutStages={knockoutStages}
               predictions={predictions}
-              resolvedKnockoutTeams={resolvedKnockoutTeams}
-              apiToFifaMap={apiToFifaMap}
               knockoutLocked={knockoutLocked}
               onPredictionChange={handlePredictionChange}
             />
           ) : (
-            <div className="glass-card p-8 text-center">
-              <div className="text-5xl mb-4">🔒</div>
-              <p className="text-white/60 text-lg">
-                Knockout predictions will be available after group stage locks
-              </p>
-            </div>
+            <LockedCard message="Knockout predictions will be available after group stage locks" />
           ))}
       </main>
 

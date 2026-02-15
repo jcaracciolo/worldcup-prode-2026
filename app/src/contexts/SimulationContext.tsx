@@ -331,51 +331,12 @@ export function SimulationProvider({ children }: SimulationProviderProps) {
 
       const simulatedDate = new Date(state.simulatedDateTime);
 
-      // Build a mapping of API match ID to FIFA number
-      const fifaMapping = new Map<number, number>();
-
-      // Group stage: sort by date and assign FIFA numbers 1-72
-      const groupMatches = matches.filter((m) => m.stage === "GROUP_STAGE");
-      const sortedGroupMatches = [...groupMatches].sort(
-        (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
-      );
-      sortedGroupMatches.forEach((match, index) => {
-        fifaMapping.set(match.id, index + 1);
-      });
-
-      // Knockout: assign by stage
-      const stageBaseNumbers: Record<string, number> = {
-        LAST_32: 73,
-        LAST_16: 89,
-        QUARTER_FINALS: 97,
-        SEMI_FINALS: 101,
-        THIRD_PLACE: 103,
-        FINAL: 104,
-      };
-
-      const knockoutStages = [
-        "LAST_32",
-        "LAST_16",
-        "QUARTER_FINALS",
-        "SEMI_FINALS",
-        "THIRD_PLACE",
-        "FINAL",
-      ];
-      for (const stage of knockoutStages) {
-        const stageMatches = matches.filter((m) => m.stage === stage);
-        const sorted = [...stageMatches].sort(
-          (a, b) =>
-            new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
-        );
-        sorted.forEach((match, index) => {
-          fifaMapping.set(match.id, stageBaseNumbers[stage] + index);
-        });
-      }
+      // match.id is already the FIFA number (1-104) from the API route.
+      // No need to build a separate mapping.
 
       // Apply simulation to each match
       return matches.map((match) => {
-        const fifaNumber = fifaMapping.get(match.id);
-        if (!fifaNumber) return match;
+        const fifaNumber = match.id; // Already the FIFA number
 
         const matchDateTime = getMatchDateTime(fifaNumber);
         if (!matchDateTime) return match;

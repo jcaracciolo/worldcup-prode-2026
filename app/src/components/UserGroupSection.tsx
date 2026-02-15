@@ -1,20 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { Match, CalculatedStanding } from "@/types/football";
+import { Match, CalculatedStanding, PointBreakdown, asFifaMatchId } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
 import { calculateStandingsFromPredictions } from "@/lib/standings";
-import { getTeamDisplayName } from "@/lib/scoring";
-import { buildApiToFifaMapping } from "@/lib/api-client";
+import { getTeamDisplayName, calculateGroupStandingsBonusPoints } from "@/lib/scoring";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import StandingsTable from "@/components/StandingsTable";
-import { useMemo } from "react";
+import LockedCard from "@/components/LockedCard";
+import { useMemo, useState } from "react";
 
 interface UserGroupSectionProps {
   matches: Match[];
   predictions: LocalPrediction[];
   thirdPlaceQualifying: Map<string, boolean>;
   showPredictions: boolean;
+  /** Actual standings from real match results (for scoring comparison) */
+  actualStandings?: Map<string, CalculatedStanding[]>;
+  /** Teams that actually advanced (1st, 2nd, best 3rds) */
+  advancingTeamIds?: Set<number>;
 }
 
 export default function UserGroupSection({
@@ -22,10 +26,9 @@ export default function UserGroupSection({
   predictions,
   thirdPlaceQualifying,
   showPredictions,
+  actualStandings,
+  advancingTeamIds,
 }: UserGroupSectionProps) {
-  // Build API ID to FIFA number mapping
-  const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
-
   // Predictions are keyed by FIFA number
   const predictionMap = useMemo(
     () => new Map(predictions.map((p) => [p.match_id, p])),
@@ -51,11 +54,7 @@ export default function UserGroupSection({
         <h2 className="text-xl font-bold mb-4 border-b border-white/10 pb-2 text-white">
           Group Stage
         </h2>
-        <div className="glass-card p-8 text-center blur-sm select-none">
-          <p className="text-white/50">
-            Predictions will be visible after group stage starts
-          </p>
-        </div>
+        <LockedCard message="Predictions will be visible after group stage locks" />
       </section>
     );
   }
@@ -73,7 +72,12 @@ export default function UserGroupSection({
             const standings = calculateStandingsFromPredictions(
               groupMatchList,
               predictionMap,
-              apiToFifaMap,
+            );
+            // Get actual standings for this group
+            const groupActualStandings = actualStandings?.get(groupName) || [];
+            // Check if all group matches are finished
+            const groupComplete = groupMatchList.every(
+              (m) => m.status === "FINISHED"
             );
             return (
               <GroupCard
@@ -82,10 +86,12 @@ export default function UserGroupSection({
                 matches={groupMatchList}
                 standings={standings}
                 predictionMap={predictionMap}
-                apiToFifaMap={apiToFifaMap}
                 thirdPlaceQualifies={
                   thirdPlaceQualifying.get(groupName) || false
                 }
+                actualStandings={groupActualStandings}
+                advancingTeamIds={advancingTeamIds}
+                groupComplete={groupComplete}
               />
             );
           })}
@@ -99,8 +105,10 @@ interface GroupCardProps {
   matches: Match[];
   standings: CalculatedStanding[];
   predictionMap: Map<number, LocalPrediction>;
-  apiToFifaMap: Map<number, number>;
   thirdPlaceQualifies: boolean;
+  actualStandings: CalculatedStanding[];
+  advancingTeamIds?: Set<number>;
+  groupComplete: boolean;
 }
 
 function GroupCard({
@@ -108,9 +116,27 @@ function GroupCard({
   matches,
   standings,
   predictionMap,
-  apiToFifaMap,
   thirdPlaceQualifies,
+  actualStandings,
+  advancingTeamIds,
+  groupComplete,
 }: GroupCardProps) {
+  // Calculate standings bonus points for this group
+  const bonusPoints = useMemo(() => {
+    if (!groupComplete || !advancingTeamIds || actualStandings.length === 0) {
+      return [];
+    }
+    return calculateGroupStandingsBonusPoints(
+      groupName,
+      standings,
+      actualStandings,
+      advancingTeamIds,
+      groupComplete
+    );
+  }, [groupName, standings, actualStandings, advancingTeamIds, groupComplete]);
+
+  const totalBonusPoints = bonusPoints.reduce((sum, b) => sum + b.points, 0);
+
   return (
     <div className="glass-card p-4">
       <h3 className="font-bold text-lg mb-3 text-white">
@@ -123,21 +149,29 @@ function GroupCard({
             Predictions
           </h4>
           {matches.map((match) => {
-            const fifaNumber = apiToFifaMap.get(match.id);
+            const fifaNumber = asFifaMatchId(match.id);
             return (
               <GroupMatchRow
                 key={match.id}
                 match={match}
-                prediction={
-                  fifaNumber ? predictionMap.get(fifaNumber) : undefined
-                }
+                prediction={predictionMap.get(fifaNumber)}
               />
             );
           })}
         </div>
 
         <div>
-          <h4 className="text-sm font-medium text-white/50 mb-2">Standings</h4>
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-sm font-medium text-white/50">Standings</h4>
+            {groupComplete && (
+              <StandingsPointsTooltip
+                bonusPoints={bonusPoints}
+                totalPoints={totalBonusPoints}
+                actualStandings={actualStandings}
+                groupName={groupName}
+              />
+            )}
+          </div>
           <StandingsTable
             standings={standings}
             disabled
@@ -149,14 +183,146 @@ function GroupCard({
   );
 }
 
-interface GroupMatchRowProps {
-  match: Match;
-  prediction: LocalPrediction | undefined;
+interface StandingsPointsTooltipProps {
+  bonusPoints: PointBreakdown[];
+  totalPoints: number;
+  actualStandings: CalculatedStanding[];
+  groupName: string;
 }
 
-function GroupMatchRow({ match, prediction }: GroupMatchRowProps) {
-  const homeGoals = prediction?.home_goals;
-  const awayGoals = prediction?.away_goals;
+function StandingsPointsTooltip({
+  bonusPoints,
+  totalPoints,
+  actualStandings,
+  groupName,
+}: StandingsPointsTooltipProps) {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  if (totalPoints === 0 && bonusPoints.length === 0) {
+    return null;
+  }
+
+  const groupLetter = groupName.replace("GROUP_", "");
+
+  // Build a map of points earned per team (keyed by team ID)
+  // bonusPoints contain the team that was predicted - we need to map to actual team IDs
+  const teamPointsEarned = new Map<number, number>();
+  bonusPoints.forEach((point) => {
+    if (point.team) {
+      // Find this team in actual standings by TLA or name
+      const actualTeam = actualStandings.find(
+        (s) => s.team.tla === point.team?.tla || s.team.name === point.team?.name
+      );
+      if (actualTeam) {
+        const current = teamPointsEarned.get(actualTeam.team.id) || 0;
+        teamPointsEarned.set(actualTeam.team.id, current + point.points);
+      }
+    }
+  });
+
+  // Calculate displayed total from what we actually show
+  const displayedTotal = Array.from(teamPointsEarned.values()).reduce((a, b) => a + b, 0);
+
+  return (
+    <button
+      type="button"
+      className="relative text-right"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowTooltip((prev) => !prev);
+      }}
+    >
+      <span
+        className={`text-xs font-bold cursor-help px-2 py-1 rounded ${
+          totalPoints > 0
+            ? "bg-purple-500/30 text-purple-300"
+            : "bg-white/10 text-white/40"
+        }`}
+      >
+        +{totalPoints}
+      </span>
+
+      {/* Tooltip - opens upward */}
+      {showTooltip && (
+        <>
+          {/* Click-away overlay for mobile */}
+          <div
+            className="fixed inset-0 z-40"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowTooltip(false);
+            }}
+          />
+          <div className="absolute right-0 bottom-full mb-2 z-50 w-48 bg-slate-900/95 backdrop-blur-xl rounded-lg border border-white/10 shadow-2xl overflow-hidden">
+            {/* Header with column titles */}
+            <div className="px-2 py-1.5 border-b border-white/10 flex items-center gap-1 text-[10px]">
+              <span className="text-white/80 font-semibold">Group {groupLetter}</span>
+              <span className="flex-1" />
+              <span className="text-white/40 w-5 text-right">Pts</span>
+              <span className="text-white/40 w-6 text-right">GD</span>
+              <span className="w-5" />
+            </div>
+
+            {/* Actual standings with points */}
+            <div className="px-2 py-1 space-y-0.5">
+              {actualStandings.map((actual, index) => {
+                const earnedPoints = teamPointsEarned.get(actual.team.id) || 0;
+                const gdSign = actual.goalDifference > 0 ? "+" : "";
+
+                return (
+                  <div
+                    key={actual.team.id}
+                    className="flex items-center gap-1 text-[11px] py-0.5"
+                  >
+                    <span className="text-white/40 w-3">{index + 1}</span>
+                    {actual.team.crest && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={actual.team.crest}
+                        alt={actual.team.name}
+                        className="w-3.5 h-3.5 object-contain"
+                      />
+                    )}
+                    <span className="text-white/80 flex-1 truncate">
+                      {actual.team.tla || actual.team.name?.substring(0, 3).toUpperCase()}
+                    </span>
+                    <span className="text-white/50 w-5 text-right">{actual.points}</span>
+                    <span className="text-white/50 w-6 text-right">{gdSign}{actual.goalDifference}</span>
+                    <span className={`w-5 text-right font-bold text-[10px] ${
+                      earnedPoints > 0 ? "text-emerald-400" : "text-white/20"
+                    }`}>
+                      {earnedPoints > 0 ? `+${earnedPoints}` : "—"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Total */}
+            <div className="px-2 py-1.5 bg-white/5 flex items-center justify-between border-t border-white/10">
+              <span className="text-[10px] text-white/50">Total</span>
+              <span className="text-[11px] font-bold text-purple-400">+{displayedTotal}</span>
+            </div>
+          </div>
+        </>
+      )}
+    </button>
+  );
+}
+
+export interface GroupMatchRowProps {
+  match: Match;
+  prediction?: LocalPrediction;
+  showPoints?: boolean;
+}
+
+export function GroupMatchRow({ match, prediction, showPoints = true }: GroupMatchRowProps) {
+  // Use prediction scores if available, otherwise actual match scores
+  const homeGoals = prediction ? prediction.home_goals : match.score.fullTime.home;
+  const awayGoals = prediction ? prediction.away_goals : match.score.fullTime.away;
   const hasScore =
     homeGoals !== null &&
     homeGoals !== undefined &&
@@ -224,11 +390,13 @@ function GroupMatchRow({ match, prediction }: GroupMatchRowProps) {
         </div>
       </Link>
       {/* Points earned - outside Link so tap works */}
-      <MatchPointsTooltip
-        match={match}
-        prediction={prediction}
-        className="w-8"
-      />
+      {showPoints && (
+        <MatchPointsTooltip
+          match={match}
+          prediction={prediction}
+          className="w-8"
+        />
+      )}
     </div>
   );
 }

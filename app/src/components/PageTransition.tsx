@@ -28,7 +28,7 @@ export function PageTransition({ children }: PageTransitionProps) {
   }, [pathname]);
 
   return (
-    <div ref={ref} className="page-fade-in">
+    <div ref={ref} className="page-fade-in flex-1 flex flex-col">
       {children}
     </div>
   );

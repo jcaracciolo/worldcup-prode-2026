@@ -9,11 +9,16 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { Match, FifaMatchId } from "@/types/football";
+import { Match, FifaMatchId, asFifaMatchId, CalculatedStanding } from "@/types/football";
+import { LocalPrediction } from "@/types/database";
 import { getMatchInfo, Venue } from "@/lib/tournament";
-import { buildApiToFifaMapping } from "@/lib/api-client";
+import { calculateAllActualStandings } from "@/lib/standings";
+import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
+import { BracketResolver, ResolvedTeams } from "@/lib/bracket-resolver";
 import { useSimulation } from "./SimulationContext";
 import { useTime } from "./TimeContext";
+
+export type { ResolvedTeams } from "@/lib/bracket-resolver";
 
 // =====================================================================
 // TYPES
@@ -40,10 +45,6 @@ export interface MatchWithLiveInfo extends Match {
 interface MatchContextValue {
   /** All matches with live info attached */
   matches: MatchWithLiveInfo[];
-  /** Get a specific match by API ID (INTERNAL USE ONLY - prefer getMatchByFifa) */
-  getMatch: (apiId: number) => MatchWithLiveInfo | undefined;
-  /** Get a specific match by FIFA match number (1-104) - PREFERRED */
-  getMatchByFifa: (fifaNumber: FifaMatchId) => MatchWithLiveInfo | undefined;
   /** Whether any match is currently live */
   hasLiveMatches: boolean;
   /** List of currently live matches */
@@ -58,6 +59,13 @@ interface MatchContextValue {
   refresh: () => Promise<void>;
   /** Whether simulation mode is active */
   isSimulated: boolean;
+  /** Knockout teams resolved from actual results (API > calculated > null) */
+  resolvedKnockoutTeams: Map<FifaMatchId, { home: import("@/types/football").Team | null; away: import("@/types/football").Team | null }>;
+  /** Actual group standings from real match results */
+  actualGroupStandings: Map<string, CalculatedStanding[]>;
+  /** Which 3rd place teams qualify based on actual results */
+  actualThirdPlaceQualifying: Map<string, boolean>;
+
 }
 
 const MatchContext = createContext<MatchContextValue | null>(null);
@@ -125,15 +133,14 @@ function determinePeriod(
  */
 function enhanceMatch(
   match: Match,
-  fifaMapping: Map<number, FifaMatchId>,
   currentTime: Date,
 ): MatchWithLiveInfo {
   const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
   const elapsedMinutes = calculateElapsedMinutes(match, currentTime);
   const period = determinePeriod(match, elapsedMinutes);
 
-  // Get FIFA number from mapping
-  const fifaNumber = fifaMapping.get(match.id) || null;
+  // match.id IS the FIFA number (converted by the API route)
+  const fifaNumber = asFifaMatchId(match.id);
 
   // Get static venue from tournament data (only available for knockout matches 73-104)
   const matchInfo = fifaNumber ? getMatchInfo(fifaNumber) : null;
@@ -207,17 +214,12 @@ export function MatchProvider({
     [rawMatches, isSimulated, applySimulation],
   );
 
-  // Build FIFA number mapping once when matches change
-  const fifaMapping = useMemo(
-    () => buildApiToFifaMapping(processedMatches),
-    [processedMatches],
-  );
-
   // Transform raw matches to include live info, FIFA number, and venue
+  // match.id is already the FIFA number (converted by the API route)
   const matches = useMemo(
     () =>
-      processedMatches.map((m) => enhanceMatch(m, fifaMapping, currentTime)),
-    [processedMatches, fifaMapping, currentTime],
+      processedMatches.map((m) => enhanceMatch(m, currentTime)),
+    [processedMatches, currentTime],
   );
 
   // Check if any matches are currently live
@@ -228,6 +230,31 @@ export function MatchProvider({
 
   // Get only live matches
   const liveMatches = useMemo(() => matches.filter((m) => m.isLive), [matches]);
+
+  // Calculate actual group standings for knockout team resolution
+  const actualGroupStandings = useMemo(
+    () => calculateAllActualStandings(processedMatches),
+    [processedMatches],
+  );
+
+  // Calculate qualifying 3rd place teams from actual results
+  const actualThirdPlaceQualifying = useMemo(
+    () => getQualifyingThirdPlaceTeams(actualGroupStandings),
+    [actualGroupStandings],
+  );
+
+  // Resolve knockout teams from actual results (not user predictions)
+  // Priority: API teams > calculated from completed groups/matches > null (TBD)
+  const resolvedKnockoutTeams = useMemo(() => {
+    if (processedMatches.length === 0) return new Map();
+    const resolver = new BracketResolver({
+      matches: processedMatches,
+      predictions: new Map(), // No predictions — actual results only
+      groupStandings: actualGroupStandings,
+      thirdPlaceQualifying: actualThirdPlaceQualifying,
+    });
+    return resolver.resolve();
+  }, [processedMatches, actualGroupStandings, actualThirdPlaceQualifying]);
 
   // Fetch matches from API
   const fetchMatches = useCallback(async () => {
@@ -250,19 +277,6 @@ export function MatchProvider({
   const refresh = useCallback(async () => {
     await fetchMatches();
   }, [fetchMatches]);
-
-  // Get a specific match by API ID (internal use)
-  const getMatch = useCallback(
-    (apiId: number) => matches.find((m) => m.id === apiId),
-    [matches],
-  );
-
-  // Get a specific match by FIFA number (preferred)
-  const getMatchByFifa = useCallback(
-    (fifaNumber: FifaMatchId) =>
-      matches.find((m) => m.fifaNumber === fifaNumber),
-    [matches],
-  );
 
   // Initial fetch
   useEffect(() => {
@@ -304,8 +318,6 @@ export function MatchProvider({
 
   const value: MatchContextValue = {
     matches,
-    getMatch,
-    getMatchByFifa,
     hasLiveMatches,
     liveMatches,
     loading,
@@ -313,6 +325,10 @@ export function MatchProvider({
     lastUpdated,
     refresh,
     isSimulated,
+    resolvedKnockoutTeams,
+    actualGroupStandings,
+    actualThirdPlaceQualifying,
+
   };
 
   return (
@@ -337,9 +353,48 @@ export function useMatches(): MatchContextValue {
 }
 
 /**
- * Hook to get a specific match by API ID
+ * Hook to get resolved knockout teams.
+ *
+ * Without arguments, returns actual data from MatchContext
+ * (based on real match results: API > calculated > null).
+ *
+ * When knockout predictions are provided, runs BracketResolver using
+ * actual group standings for R32, and predicted knockout winners for R16+.
+ *
+ * @param predictions - Optional knockout prediction map keyed by FIFA match number
  */
-export function useMatch(apiId: number): MatchWithLiveInfo | undefined {
-  const { getMatch } = useMatches();
-  return getMatch(apiId);
+export function useKnockoutTeams(
+  predictions?: Map<FifaMatchId, LocalPrediction>,
+): Map<FifaMatchId, ResolvedTeams> {
+  const {
+    matches,
+    resolvedKnockoutTeams,
+    actualGroupStandings,
+    actualThirdPlaceQualifying,
+  } = useMatches();
+
+  const hasPredictions = !!predictions;
+
+  // Resolve knockout bracket using actual standings + knockout predictions
+  const predictedTeams = useMemo(() => {
+    if (!hasPredictions || !predictions) {
+      return new Map<FifaMatchId, ResolvedTeams>();
+    }
+    const resolver = new BracketResolver({
+      matches,
+      predictions,
+      groupStandings: actualGroupStandings,
+      thirdPlaceQualifying: actualThirdPlaceQualifying,
+      useKnockoutPredictions: true,
+    });
+    return resolver.resolve();
+  }, [
+    hasPredictions,
+    matches,
+    predictions,
+    actualGroupStandings,
+    actualThirdPlaceQualifying,
+  ]);
+
+  return hasPredictions ? predictedTeams : resolvedKnockoutTeams;
 }

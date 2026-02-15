@@ -7,8 +7,7 @@ import {
   KnockoutStageSection,
 } from "@/components/predictions";
 import { useMatches } from "@/contexts/MatchContext";
-import { useSimulation } from "@/contexts/SimulationContext";
-import { buildApiToFifaMapping } from "@/lib/api-client";
+import { useTime } from "@/contexts/TimeContext";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { Match, CalculatedStanding, Team } from "@/types/football";
 
@@ -102,7 +101,6 @@ export default function FixturesPage() {
     hasLiveMatches,
     liveMatches,
     refresh: refreshMatches,
-    isSimulated,
   } = useMatches();
 
   // Scroll to first live match
@@ -114,7 +112,7 @@ export default function FixturesPage() {
   }, []);
 
   // Get stage lock status to determine section order
-  const { stageLockStatus } = useSimulation();
+  const { stageLockStatus } = useTime();
   const showKnockoutFirst = stageLockStatus.knockoutStageLocked;
 
   // Organize matches by groups
@@ -177,9 +175,6 @@ export default function FixturesPage() {
     return { finished, live, scheduled, total: matches.length };
   }, [matches]);
 
-  // Build API match ID to FIFA match number mapping
-  const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
-
   // Only show loading on initial load when we have no data
   if (matchesLoading && matches.length === 0) {
     return (
@@ -230,12 +225,6 @@ export default function FixturesPage() {
           </div>
         </div>
 
-        {isSimulated && (
-          <div className="bg-amber-500/20 border border-amber-500/30 text-amber-300 px-4 py-3 rounded-xl mb-6">
-            🧪 Simulation mode active — Match data is generated for testing
-          </div>
-        )}
-
         {/* Show Group Stage first during group stage, Knockout first during knockouts */}
         {showKnockoutFirst ? (
           <>
@@ -243,7 +232,6 @@ export default function FixturesPage() {
             {knockoutStages.size > 0 && (
               <KnockoutStageSection
                 knockoutStages={knockoutStages}
-                apiToFifaMap={apiToFifaMap}
                 readOnly={true}
               />
             )}
@@ -251,7 +239,6 @@ export default function FixturesPage() {
             {/* Group Stage */}
             <GroupStageSection
               groups={groups}
-              apiToFifaMap={apiToFifaMap}
               thirdPlaceQualifying={thirdPlaceQualifying}
               calculateStandings={calculateStandings}
               readOnly={true}
@@ -262,7 +249,6 @@ export default function FixturesPage() {
             {/* Group Stage */}
             <GroupStageSection
               groups={groups}
-              apiToFifaMap={apiToFifaMap}
               thirdPlaceQualifying={thirdPlaceQualifying}
               calculateStandings={calculateStandings}
               readOnly={true}
@@ -272,7 +258,6 @@ export default function FixturesPage() {
             {knockoutStages.size > 0 && (
               <KnockoutStageSection
                 knockoutStages={knockoutStages}
-                apiToFifaMap={apiToFifaMap}
                 readOnly={true}
               />
             )}

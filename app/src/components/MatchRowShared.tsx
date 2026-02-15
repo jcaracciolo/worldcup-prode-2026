@@ -379,15 +379,18 @@ type KnockoutMatchRowMode = "edit" | "readonly";
 interface KnockoutMatchRowProps {
   match: Match;
   prediction?: LocalPrediction;
+  /** Resolved teams for this match (from useKnockoutTeams hook) */
   resolvedTeams?: ResolvedTeams;
   fifaMatchNumber: FifaMatchId;
   mode: KnockoutMatchRowMode;
+  // Override scores (e.g., show actual match results instead of predictions)
+  scores?: { home: number | null; away: number | null };
   // Edit mode props
   onChange?: (
     fifaMatchId: FifaMatchId,
     homeGoals: number | null,
     awayGoals: number | null,
-    winnerId?: number | null
+    winnerId?: number | null,
   ) => void;
   disabled?: boolean;
   showWinnerSelect?: boolean;
@@ -401,6 +404,7 @@ export function KnockoutMatchRow({
   resolvedTeams,
   fifaMatchNumber,
   mode,
+  scores,
   onChange,
   disabled = false,
   showWinnerSelect = false,
@@ -412,9 +416,9 @@ export function KnockoutMatchRow({
   const awayTeam =
     resolvedTeams?.away || (match.awayTeam?.id ? match.awayTeam : null);
 
-  // Prediction values
-  const homeGoals = prediction?.home_goals ?? null;
-  const awayGoals = prediction?.away_goals ?? null;
+  // Prediction values (or overridden scores)
+  const homeGoals = scores ? scores.home : (prediction?.home_goals ?? null);
+  const awayGoals = scores ? scores.away : (prediction?.away_goals ?? null);
   const winnerId = prediction?.winner_id ?? null;
 
   const hasScore = homeGoals !== null && awayGoals !== null;
@@ -425,10 +429,8 @@ export function KnockoutMatchRow({
   const homeWins = hasScore && homeGoals! > awayGoals!;
   const awayWins = hasScore && awayGoals! > homeGoals!;
 
-  const homeHighlight =
-    homeWins || (isTie && winnerId === homeTeam?.id);
-  const awayHighlight =
-    awayWins || (isTie && winnerId === awayTeam?.id);
+  const homeHighlight = homeWins || (isTie && winnerId === homeTeam?.id);
+  const awayHighlight = awayWins || (isTie && winnerId === awayTeam?.id);
 
   // Edit handlers
   const handleHomeChange = (value: string) => {
@@ -451,15 +453,26 @@ export function KnockoutMatchRow({
   };
 
   // Content wrapper - Link for readonly, div for edit
-  const ContentWrapper = mode === "readonly" 
-    ? ({ children, className }: { children: ReactNode; className: string }) => (
-        <Link href={`/match/${match.id}`} className={className}>
-          {children}
-        </Link>
-      )
-    : ({ children, className }: { children: ReactNode; className: string }) => (
-        <div className={className}>{children}</div>
-      );
+  const ContentWrapper =
+    mode === "readonly"
+      ? ({
+          children,
+          className,
+        }: {
+          children: ReactNode;
+          className: string;
+        }) => (
+          <Link href={`/match/${match.id}`} className={className}>
+            {children}
+          </Link>
+        )
+      : ({
+          children,
+          className,
+        }: {
+          children: ReactNode;
+          className: string;
+        }) => <div className={className}>{children}</div>;
 
   // Team button/display for edit mode
   const TeamButton = ({
@@ -473,7 +486,8 @@ export function KnockoutMatchRow({
   }) => {
     const isHome = position === "home";
     const teamName =
-      team?.tla || getTeamDisplayName(team, match.id, position, fifaMatchNumber);
+      team?.tla ||
+      getTeamDisplayName(team, match.id, position, fifaMatchNumber);
 
     if (mode === "edit" && needsWinnerSelect) {
       return (
@@ -547,7 +561,8 @@ export function KnockoutMatchRow({
   }) => {
     const isHome = position === "home";
     const teamName =
-      team?.tla || getTeamDisplayName(team, match.id, position, fifaMatchNumber);
+      team?.tla ||
+      getTeamDisplayName(team, match.id, position, fifaMatchNumber);
 
     if (mode === "edit" && needsWinnerSelect) {
       return (
@@ -589,17 +604,17 @@ export function KnockoutMatchRow({
   const ScoreSection = ({ mobile = false }: { mobile?: boolean }) => {
     if (mode === "edit") {
       const inputClass = mobile
-        ? "w-9 h-8 text-center text-base font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
-        : "w-10 h-8 text-center text-base font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-400 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20 transition-all";
+        ? "w-7 h-6 text-center text-xs font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
+        : "w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-400 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20 transition-all";
 
       return (
-        <div className="flex flex-col items-center mx-2 shrink-0">
+        <div className="flex flex-col items-center mx-1 shrink-0">
           {needsWinnerSelect && !winnerId && !mobile && (
-            <div className="mb-1 px-2 py-0.5 text-[9px] leading-tight text-center rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+            <div className="mb-0.5 px-1 py-0.5 text-[8px] leading-tight text-center rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
               Pick winner
             </div>
           )}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <input
               type="number"
               min="0"
@@ -610,7 +625,7 @@ export function KnockoutMatchRow({
               className={inputClass}
               placeholder="-"
             />
-            <span className="text-white/50 font-bold text-sm">-</span>
+            <span className="text-white/50 font-bold text-xs">-</span>
             <input
               type="number"
               min="0"
@@ -627,12 +642,18 @@ export function KnockoutMatchRow({
     }
 
     return (
-      <div className={`flex items-center ${mobile ? "gap-1" : "gap-1.5"} shrink-0`}>
-        <span className={`${mobile ? "w-9 h-8 text-base" : "w-10 h-8 text-base"} flex items-center justify-center font-bold text-white bg-white/10 rounded`}>
+      <div
+        className={`flex items-center ${mobile ? "gap-0.5" : "gap-1"} shrink-0`}
+      >
+        <span
+          className={`${mobile ? "w-7 h-6 text-xs" : "w-8 h-7 text-sm"} flex items-center justify-center font-bold text-white bg-white/10 rounded`}
+        >
           {homeGoals ?? "-"}
         </span>
-        <span className="text-white/50 font-bold text-sm">-</span>
-        <span className={`${mobile ? "w-9 h-8 text-base" : "w-10 h-8 text-base"} flex items-center justify-center font-bold text-white bg-white/10 rounded`}>
+        <span className="text-white/50 font-bold text-xs">-</span>
+        <span
+          className={`${mobile ? "w-7 h-6 text-xs" : "w-8 h-7 text-sm"} flex items-center justify-center font-bold text-white bg-white/10 rounded`}
+        >
           {awayGoals ?? "-"}
         </span>
       </div>
@@ -653,30 +674,58 @@ export function KnockoutMatchRow({
 
   return (
     <div
-      className={`py-2 px-3 rounded-xl transition-colors ${bgClass} ${borderClass}`}
+      className={`py-1.5 px-2 rounded-lg transition-colors ${bgClass} ${borderClass}`}
     >
       {/* Mobile Layout */}
-      <div className="lg:hidden flex items-center gap-1.5">
-        <MobileDateColumn date={match.utcDate} fifaMatchNumber={fifaMatchNumber} />
-        <ContentWrapper className="flex-1 flex items-center justify-center gap-1.5 hover:bg-white/5 transition-colors rounded cursor-pointer">
-          <MobileTeamButton team={homeTeam} position="home" highlighted={homeHighlight} />
+      <div className="lg:hidden flex items-center gap-1">
+        <MobileDateColumn
+          date={match.utcDate}
+          fifaMatchNumber={fifaMatchNumber}
+        />
+        <ContentWrapper className="flex-1 flex items-center justify-center gap-1 hover:bg-white/5 transition-colors rounded cursor-pointer">
+          <div className="flex-1 min-w-0 flex items-center justify-end">
+            <MobileTeamButton
+              team={homeTeam}
+              position="home"
+              highlighted={homeHighlight}
+            />
+          </div>
           <ScoreSection mobile />
-          <MobileTeamButton team={awayTeam} position="away" highlighted={awayHighlight} />
+          <div className="flex-1 min-w-0 flex items-center">
+            <MobileTeamButton
+              team={awayTeam}
+              position="away"
+              highlighted={awayHighlight}
+            />
+          </div>
         </ContentWrapper>
-        {pointsTooltip && <div className="w-8 shrink-0 flex justify-end">{pointsTooltip}</div>}
+        {pointsTooltip && (
+          <div className="w-8 shrink-0 flex justify-end">{pointsTooltip}</div>
+        )}
       </div>
 
       {/* Desktop Layout */}
-      <div className="hidden lg:flex items-center gap-3">
-        <ContentWrapper className="flex-1 flex items-center gap-3 hover:bg-white/5 transition-colors rounded px-1 -mx-1 cursor-pointer">
+      <div className="hidden lg:flex items-center gap-2">
+        <ContentWrapper className="flex-1 flex items-center gap-2 hover:bg-white/5 transition-colors rounded px-1 -mx-1 cursor-pointer">
           <DateColumn date={match.utcDate} fifaMatchNumber={fifaMatchNumber} />
-          <TimeVenueColumn time={match.utcDate} fifaMatchNumber={fifaMatchNumber} />
-          <div className="flex-1 flex items-center justify-end">
-            <TeamButton team={homeTeam} position="home" highlighted={homeHighlight} />
+          <TimeVenueColumn
+            time={match.utcDate}
+            fifaMatchNumber={fifaMatchNumber}
+          />
+          <div className="flex-1 min-w-0 flex items-center justify-end">
+            <TeamButton
+              team={homeTeam}
+              position="home"
+              highlighted={homeHighlight}
+            />
           </div>
           <ScoreSection />
-          <div className="flex-1 flex items-center">
-            <TeamButton team={awayTeam} position="away" highlighted={awayHighlight} />
+          <div className="flex-1 min-w-0 flex items-center">
+            <TeamButton
+              team={awayTeam}
+              position="away"
+              highlighted={awayHighlight}
+            />
           </div>
         </ContentWrapper>
         {pointsTooltip && <div className="w-10 shrink-0">{pointsTooltip}</div>}

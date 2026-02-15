@@ -7,7 +7,6 @@ import { useMatches } from "@/contexts/MatchContext";
 import { useUser, useAllProfiles } from "@/contexts/UserContext";
 import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { getMatchInfo } from "@/lib/tournament";
-import { buildApiToFifaMapping } from "@/lib/api-client";
 import {
   calculateGroupStagePoints,
   calculateKnockoutPoints,
@@ -37,12 +36,11 @@ export default function MatchDetailPage() {
 
   const { matches, loading: matchesLoading } = useMatches();
 
-  // Find the specific match first
+  // Find the specific match (matchId is now a FIFA number)
   const match = matches.find((m) => m.id === parseInt(matchId));
 
-  // Build FIFA number mapping
-  const apiToFifaMap = useMemo(() => buildApiToFifaMapping(matches), [matches]);
-  const fifaNumber = match ? apiToFifaMap.get(match.id) : undefined;
+  // match.id IS the FIFA number
+  const fifaNumber = match ? (match.id as FifaMatchId) : undefined;
 
   // Loading state from hooks
   const loadingAllPredictions = profiles.loading || allPredictions.loading;

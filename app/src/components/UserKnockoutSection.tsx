@@ -196,15 +196,15 @@ function KnockoutMatchRow({
     awayWins || (isTie && prediction?.winner_id === awayTeam?.id);
 
   return (
-    <div className="flex items-center py-3 px-4 rounded-xl bg-slate-800/60 border border-white/5">
+    <div className="flex items-center py-3 px-3 rounded-xl bg-slate-800/60 border border-white/5 overflow-hidden">
       <Link
         href={`/match/${match.id}`}
-        className="flex-1 flex items-center hover:bg-slate-800/80 transition-colors cursor-pointer rounded-lg -m-2 p-2"
+        className="flex-1 flex items-center hover:bg-slate-800/80 transition-colors cursor-pointer rounded-lg -m-2 p-2 min-w-0"
       >
         {/* Date */}
-        <div className="w-20 text-center shrink-0 pr-3 border-r border-white/10">
+        <div className="w-16 text-center shrink-0 pr-2 border-r border-white/10">
           <div
-            className="text-sm uppercase font-bold tracking-wide whitespace-nowrap"
+            className="text-xs uppercase font-bold tracking-wide whitespace-nowrap"
             style={{ color: "var(--date-color)" }}
           >
             {formattedDate}
@@ -212,13 +212,13 @@ function KnockoutMatchRow({
         </div>
 
         {/* Time & Venue */}
-        <div className="w-28 shrink-0 px-3 border-r border-white/10">
-          <div className="text-sm text-white/70 font-medium">
+        <div className="w-20 shrink-0 px-2 border-r border-white/10">
+          <div className="text-xs text-white/70 font-medium">
             {formattedTime}
           </div>
           {venue && (
             <div
-              className="text-sm font-semibold truncate"
+              className="text-xs font-semibold truncate"
               style={{ color: "var(--venue-color)" }}
             >
               {venue.city}
@@ -227,15 +227,15 @@ function KnockoutMatchRow({
         </div>
 
         {/* Match */}
-        <div className="flex-1 flex items-center justify-center pl-4">
+        <div className="flex-1 flex items-center justify-center pl-2 min-w-0">
           {/* Home Team */}
           <div
-            className={`flex items-center justify-end gap-2 px-2 py-1 rounded-lg ${
+            className={`flex items-center justify-end gap-1.5 px-1.5 py-1 rounded-lg min-w-0 ${
               homeHighlight ? "bg-amber-500/80 text-slate-900" : ""
             }`}
           >
             <span
-              className={`text-sm font-semibold truncate ${
+              className={`text-xs font-semibold truncate ${
                 homeHighlight ? "text-slate-900" : "text-white"
               }`}
             >
@@ -244,46 +244,66 @@ function KnockoutMatchRow({
             {homeTeam?.crest ? (
               <img
                 src={homeTeam.crest}
-                alt={getTeamDisplayName(homeTeam, match.id, "home", fifaMatchNumber)}
-                className="w-7 h-7 object-contain shrink-0"
+                alt={getTeamDisplayName(
+                  homeTeam,
+                  match.id,
+                  "home",
+                  fifaMatchNumber,
+                )}
+                className="w-6 h-6 object-contain shrink-0"
               />
             ) : (
-              <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
-                {getTeamDisplayName(homeTeam, match.id, "home", fifaMatchNumber).substring(0, 3)}
+              <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-[9px] font-bold text-white/60 shrink-0">
+                {getTeamDisplayName(
+                  homeTeam,
+                  match.id,
+                  "home",
+                  fifaMatchNumber,
+                ).substring(0, 3)}
               </div>
             )}
           </div>
 
           {/* Score */}
-          <div className="flex items-center gap-2 mx-4">
-            <span className="w-10 h-9 flex items-center justify-center text-lg font-bold bg-white/90 rounded-lg text-slate-800">
+          <div className="flex items-center gap-1.5 mx-2 shrink-0">
+            <span className="w-8 h-7 flex items-center justify-center text-sm font-bold bg-white/90 rounded-lg text-slate-800">
               {prediction?.home_goals ?? "-"}
             </span>
-            <span className="text-white/50 font-bold">-</span>
-            <span className="w-10 h-9 flex items-center justify-center text-lg font-bold bg-white/90 rounded-lg text-slate-800">
+            <span className="text-white/50 font-bold text-xs">-</span>
+            <span className="w-8 h-7 flex items-center justify-center text-sm font-bold bg-white/90 rounded-lg text-slate-800">
               {prediction?.away_goals ?? "-"}
             </span>
           </div>
 
           {/* Away Team */}
           <div
-            className={`flex items-center gap-2 px-2 py-1 rounded-lg ${
+            className={`flex items-center gap-1.5 px-1.5 py-1 rounded-lg min-w-0 ${
               awayHighlight ? "bg-amber-500/80 text-slate-900" : ""
             }`}
           >
             {awayTeam?.crest ? (
               <img
                 src={awayTeam.crest}
-                alt={getTeamDisplayName(awayTeam, match.id, "away", fifaMatchNumber)}
-                className="w-7 h-7 object-contain shrink-0"
+                alt={getTeamDisplayName(
+                  awayTeam,
+                  match.id,
+                  "away",
+                  fifaMatchNumber,
+                )}
+                className="w-6 h-6 object-contain shrink-0"
               />
             ) : (
-              <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
-                {getTeamDisplayName(awayTeam, match.id, "away", fifaMatchNumber).substring(0, 3)}
+              <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-[9px] font-bold text-white/60 shrink-0">
+                {getTeamDisplayName(
+                  awayTeam,
+                  match.id,
+                  "away",
+                  fifaMatchNumber,
+                ).substring(0, 3)}
               </div>
             )}
             <span
-              className={`text-sm font-semibold truncate ${
+              className={`text-xs font-semibold truncate ${
                 awayHighlight ? "text-slate-900" : "text-white"
               }`}
             >
@@ -294,12 +314,15 @@ function KnockoutMatchRow({
       </Link>
 
       {/* Points earned - outside Link so tap works */}
-      <MatchPointsTooltip
-        match={match}
-        prediction={prediction}
-        predictedHomeTeam={homeTeam}
-        predictedAwayTeam={awayTeam}
-      />
+      <div className="shrink-0 ml-2">
+        <MatchPointsTooltip
+          match={match}
+          prediction={prediction}
+          predictedHomeTeam={homeTeam}
+          predictedAwayTeam={awayTeam}
+          className="w-10"
+        />
+      </div>
     </div>
   );
 }

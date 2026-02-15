@@ -282,6 +282,7 @@ export function PredictionsProvider({
   );
 
   // Get all users' predictions (for leaderboard)
+  // Also populates individual user cache for faster profile page loads
   const getAllPredictions = useCallback(async () => {
     const [predictionsResult, overridesResult] = await Promise.all([
       db.predictions.getAllPredictions(),
@@ -319,8 +320,28 @@ export function PredictionsProvider({
       });
     });
 
+    // Populate individual user cache for each user (if not dirty)
+    // This ensures profile pages load instantly after viewing leaderboard
+    byUser.forEach((userData, usrId) => {
+      const current = cacheRef.current.get(usrId);
+      // Don't overwrite dirty cache entries (local edits)
+      if (!current?.dirty) {
+        const predictionsMap = new Map<FifaMatchId, LocalPrediction>(
+          userData.predictions.map((p) => [p.match_id as FifaMatchId, p]),
+        );
+        cacheRef.current.set(usrId, {
+          predictions: predictionsMap,
+          overrides: userData.overrides,
+          loading: false,
+          error: null,
+          dirty: false,
+        });
+      }
+    });
+    bumpVersion();
+
     return byUser;
-  }, [db]);
+  }, [db, bumpVersion]);
 
   const value = useMemo(
     (): PredictionsContextValue => ({

@@ -138,6 +138,7 @@ export default function KnockoutStageSection({
                             prediction={prediction}
                             predictedHomeTeam={resolved?.home ?? null}
                             predictedAwayTeam={resolved?.away ?? null}
+                            className="w-8 text-right"
                           />
                         }
                       />

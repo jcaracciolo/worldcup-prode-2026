@@ -86,7 +86,7 @@ export function TeamCrest({
     <div
       className={`bg-white/20 rounded-full flex items-center justify-center font-bold text-white/60 shrink-0 ${sizeClass} ${className}`}
     >
-      {getTeamLabel(team).substring(0, 3)}
+      TBD
     </div>
   );
 }
@@ -674,7 +674,7 @@ export function KnockoutMatchRow({
 
   return (
     <div
-      className={`py-1.5 px-2 rounded-lg transition-colors ${bgClass} ${borderClass}`}
+      className={`py-1.5 px-2 rounded-lg transition-colors overflow-hidden ${bgClass} ${borderClass}`}
     >
       {/* Mobile Layout */}
       <div className="lg:hidden flex items-center gap-1">
@@ -682,7 +682,7 @@ export function KnockoutMatchRow({
           date={match.utcDate}
           fifaMatchNumber={fifaMatchNumber}
         />
-        <ContentWrapper className="flex-1 flex items-center justify-center gap-1 hover:bg-white/5 transition-colors rounded cursor-pointer">
+        <ContentWrapper className="flex-1 flex items-center justify-center gap-1 hover:bg-white/5 transition-colors rounded cursor-pointer min-w-0">
           <div className="flex-1 min-w-0 flex items-center justify-end">
             <MobileTeamButton
               team={homeTeam}
@@ -700,13 +700,13 @@ export function KnockoutMatchRow({
           </div>
         </ContentWrapper>
         {pointsTooltip && (
-          <div className="w-8 shrink-0 flex justify-end">{pointsTooltip}</div>
+          <div className="shrink-0">{pointsTooltip}</div>
         )}
       </div>
 
       {/* Desktop Layout */}
       <div className="hidden lg:flex items-center gap-2">
-        <ContentWrapper className="flex-1 flex items-center gap-2 hover:bg-white/5 transition-colors rounded px-1 -mx-1 cursor-pointer">
+        <ContentWrapper className="flex-1 flex items-center gap-2 hover:bg-white/5 transition-colors rounded px-1 -mx-1 cursor-pointer min-w-0">
           <DateColumn date={match.utcDate} fifaMatchNumber={fifaMatchNumber} />
           <TimeVenueColumn
             time={match.utcDate}
@@ -728,7 +728,7 @@ export function KnockoutMatchRow({
             />
           </div>
         </ContentWrapper>
-        {pointsTooltip && <div className="w-10 shrink-0">{pointsTooltip}</div>}
+        {pointsTooltip && <div className="shrink-0">{pointsTooltip}</div>}
       </div>
     </div>
   );

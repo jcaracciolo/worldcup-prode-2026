@@ -226,46 +226,46 @@ export default function PointsBreakdown({
       loserOpacity: boolean,
     ) => (
       <div
-        className={`flex items-center gap-1 px-1 py-0.5 rounded ${highlight ? "bg-amber-500/80" : ""}`}
+        className={`flex items-center gap-1 px-1.5 py-0.5 rounded shrink-0 w-16 ${position === "home" ? "justify-end" : "justify-start"} ${highlight ? "bg-amber-500/80" : ""}`}
       >
         {position === "home" && (
           <>
+            <span
+              className={`text-[11px] font-semibold whitespace-nowrap ${highlight ? "text-slate-900" : loserOpacity ? "text-white/40" : "text-white/70"}`}
+            >
+              {tla}
+            </span>
             {team?.crest ? (
               <img
                 src={team.crest}
                 alt={tla}
-                className={`w-4 h-4 object-contain ${loserOpacity ? "opacity-50" : ""}`}
+                className={`w-4 h-4 object-contain shrink-0 ${loserOpacity ? "opacity-50" : ""}`}
               />
             ) : (
-              <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center text-[8px] text-white/50">
-                ?
+              <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center text-[8px] text-white/50 shrink-0">
+                TBD
               </div>
             )}
-            <span
-              className={`text-[11px] font-semibold ${highlight ? "text-slate-900" : loserOpacity ? "text-white/40" : "text-white/70"}`}
-            >
-              {tla}
-            </span>
           </>
         )}
         {position === "away" && (
           <>
-            <span
-              className={`text-[11px] font-semibold ${highlight ? "text-slate-900" : loserOpacity ? "text-white/40" : "text-white/70"}`}
-            >
-              {tla}
-            </span>
             {team?.crest ? (
               <img
                 src={team.crest}
                 alt={tla}
-                className={`w-4 h-4 object-contain ${loserOpacity ? "opacity-50" : ""}`}
+                className={`w-4 h-4 object-contain shrink-0 ${loserOpacity ? "opacity-50" : ""}`}
               />
             ) : (
-              <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center text-[8px] text-white/50">
-                ?
+              <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center text-[8px] text-white/50 shrink-0">
+                TBD
               </div>
             )}
+            <span
+              className={`text-[11px] font-semibold whitespace-nowrap ${highlight ? "text-slate-900" : loserOpacity ? "text-white/40" : "text-white/70"}`}
+            >
+              {tla}
+            </span>
           </>
         )}
       </div>
@@ -287,12 +287,21 @@ export default function PointsBreakdown({
         <div className="w-px h-6 bg-white/10 mx-3" />
 
         {/* Reason */}
-        <div className="w-40 shrink-0 flex items-center gap-2">
+        <div className="w-44 shrink-0 flex items-center gap-2">
           <span
             className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 border ${getTypeBgColor(item.type)}`}
           >
             {getTypeLabel(item.type)}
           </span>
+          {(item.type === "goals_home" || item.type === "goals_away") && item.matchInfo && (
+            <>
+              {item.type === "goals_home" && item.matchInfo.homeTeam?.crest ? (
+                <img src={item.matchInfo.homeTeam.crest} alt={item.matchInfo.homeTeam.tla || ""} className="w-4 h-4 object-contain shrink-0" />
+              ) : item.type === "goals_away" && item.matchInfo.awayTeam?.crest ? (
+                <img src={item.matchInfo.awayTeam.crest} alt={item.matchInfo.awayTeam.tla || ""} className="w-4 h-4 object-contain shrink-0" />
+              ) : null}
+            </>
+          )}
           <p className="text-[11px] text-white/60 truncate">
             {item.description}
           </p>
@@ -301,8 +310,8 @@ export default function PointsBreakdown({
         <div className="w-px h-6 bg-white/10 mx-3" />
 
         {/* Prediction */}
-        <div className="flex items-center gap-1 shrink-0">
-          <span className="text-[10px] text-white/40 w-16">Prediction:</span>
+        <div className="flex items-center gap-1 shrink-0 w-[240px]">
+          <span className="text-[10px] text-white/40 w-[70px] shrink-0">Prediction:</span>
           {renderTeam(
             homeTeam,
             homeTla,
@@ -310,7 +319,7 @@ export default function PointsBreakdown({
             predHomeHighlight,
             predAwayWon,
           )}
-          <span className="text-xs font-bold text-white px-1">
+          <span className="text-xs font-bold text-white px-1 w-8 text-center shrink-0">
             {predHome ?? "-"}-{predAway ?? "-"}
           </span>
           {renderTeam(
@@ -325,9 +334,9 @@ export default function PointsBreakdown({
         <div className="w-px h-6 bg-white/10 mx-3" />
 
         {/* Result */}
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 shrink-0 w-[200px]">
           <span
-            className={`text-[10px] w-12 ${isLive ? "text-red-400" : "text-white/40"}`}
+            className={`text-[10px] w-[50px] shrink-0 ${isLive ? "text-red-400" : "text-white/40"}`}
           >
             {isLive ? "Live:" : "Result:"}
           </span>
@@ -338,7 +347,7 @@ export default function PointsBreakdown({
             actualHomeHighlight,
             actualAwayWon,
           )}
-          <span className="text-xs font-bold text-white px-1">
+          <span className="text-xs font-bold text-white px-1 w-8 text-center shrink-0">
             {actualHome}-{actualAway}
           </span>
           {renderTeam(

@@ -1,12 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Match,
-  CalculatedStanding,
-  PointBreakdown,
-  asFifaMatchId,
-} from "@/types/football";
+import { Match, CalculatedStanding, PointBreakdown, asFifaMatchId } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
 import { calculateStandingsFromPredictions } from "@/lib/standings";
 import { getTeamDisplayName, getTeamLabel } from "@/lib/scoring";
@@ -99,7 +94,7 @@ export default function UserGroupSection({
             const groupActualStandings = actualStandings?.get(groupName) || [];
             // Check if all group matches are finished
             const groupComplete = groupMatchList.every(
-              (m) => m.status === "FINISHED",
+              (m) => m.status === "FINISHED"
             );
             // Get bonus points for this group from centralized breakdown
             const bonusPoints = groupBonusPoints.get(groupName) || [];
@@ -221,8 +216,7 @@ function StandingsPointsTooltip({
     if (point.team) {
       // Find this team in actual standings by TLA or name
       const actualTeam = actualStandings.find(
-        (s) =>
-          s.team.tla === point.team?.tla || s.team.name === point.team?.name,
+        (s) => s.team.tla === point.team?.tla || s.team.name === point.team?.name
       );
       if (actualTeam) {
         const current = teamPointsEarned.get(actualTeam.team.id) || 0;
@@ -232,10 +226,7 @@ function StandingsPointsTooltip({
   });
 
   // Calculate displayed total from what we actually show
-  const displayedTotal = Array.from(teamPointsEarned.values()).reduce(
-    (a, b) => a + b,
-    0,
-  );
+  const displayedTotal = Array.from(teamPointsEarned.values()).reduce((a, b) => a + b, 0);
 
   return (
     <button
@@ -273,9 +264,7 @@ function StandingsPointsTooltip({
           <div className="absolute right-0 bottom-full mb-2 z-50 w-48 bg-slate-900/95 backdrop-blur-xl rounded-lg border border-white/10 shadow-2xl overflow-hidden">
             {/* Header with column titles */}
             <div className="px-2 py-1.5 border-b border-white/10 flex items-center gap-1 text-[10px]">
-              <span className="text-white/80 font-semibold">
-                Group {groupLetter}
-              </span>
+              <span className="text-white/80 font-semibold">Group {groupLetter}</span>
               <span className="flex-1" />
               <span className="text-white/40 w-5 text-right">Pts</span>
               <span className="text-white/40 w-6 text-right">GD</span>
@@ -292,34 +281,28 @@ function StandingsPointsTooltip({
                 return (
                   <div
                     key={actual.team.id}
-                    className="flex items-center gap-1 text-[11px] py-0.5"
+                    className="flex items-center text-[11px] py-0.5"
                   >
-                    <span className="text-white/40 w-3">{index + 1}</span>
-                    {actual.team.crest ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={actual.team.crest}
-                        alt={teamLabel}
-                        className="w-3.5 h-3.5 object-contain"
-                      />
-                    ) : (
-                      <span className="w-3.5 h-3.5 bg-white/10 rounded-sm" />
-                    )}
-                    <span className="text-white/80 flex-1 truncate">
-                      {teamLabel}
+                    <span className="text-white/40 w-3 shrink-0">{index + 1}</span>
+                    <span className="flex items-center gap-1 ml-2">
+                      {actual.team.crest ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={actual.team.crest}
+                          alt={teamLabel}
+                          className="w-3.5 h-3.5 object-contain shrink-0"
+                        />
+                      ) : (
+                        <span className="w-3.5 h-3.5 bg-white/10 rounded-sm flex items-center justify-center text-[6px] text-white/40 shrink-0">?</span>
+                      )}
+                      <span className="text-white/80">{teamLabel}</span>
                     </span>
-                    <span className="text-white/50 w-5 text-right">
-                      {actual.points}
-                    </span>
-                    <span className="text-white/50 w-6 text-right">
-                      {gdSign}
-                      {actual.goalDifference}
-                    </span>
-                    <span
-                      className={`w-5 text-right font-bold text-[10px] ${
-                        earnedPoints > 0 ? "text-emerald-400" : "text-white/20"
-                      }`}
-                    >
+                    <span className="flex-1 min-w-2" />
+                    <span className="text-white/50 w-6 text-right shrink-0">{actual.points}</span>
+                    <span className="text-white/50 w-7 text-right shrink-0">{gdSign}{actual.goalDifference}</span>
+                    <span className={`w-5 text-right font-bold text-[10px] ${
+                      earnedPoints > 0 ? "text-emerald-400" : "text-white/20"
+                    }`}>
                       {earnedPoints > 0 ? `+${earnedPoints}` : "—"}
                     </span>
                   </div>
@@ -330,9 +313,7 @@ function StandingsPointsTooltip({
             {/* Total */}
             <div className="px-2 py-1.5 bg-white/5 flex items-center justify-between border-t border-white/10">
               <span className="text-[10px] text-white/50">Total</span>
-              <span className="text-[11px] font-bold text-purple-400">
-                +{displayedTotal}
-              </span>
+              <span className="text-[11px] font-bold text-purple-400">+{displayedTotal}</span>
             </div>
           </div>
         </>
@@ -347,18 +328,10 @@ export interface GroupMatchRowProps {
   showPoints?: boolean;
 }
 
-export function GroupMatchRow({
-  match,
-  prediction,
-  showPoints = true,
-}: GroupMatchRowProps) {
+export function GroupMatchRow({ match, prediction, showPoints = true }: GroupMatchRowProps) {
   // Use prediction scores if available, otherwise actual match scores
-  const homeGoals = prediction
-    ? prediction.home_goals
-    : match.score.fullTime.home;
-  const awayGoals = prediction
-    ? prediction.away_goals
-    : match.score.fullTime.away;
+  const homeGoals = prediction ? prediction.home_goals : match.score.fullTime.home;
+  const awayGoals = prediction ? prediction.away_goals : match.score.fullTime.away;
   const hasScore =
     homeGoals !== null &&
     homeGoals !== undefined &&
@@ -395,7 +368,7 @@ export function GroupMatchRow({
             />
           ) : (
             <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-              ?
+              TBD
             </div>
           )}
         </div>
@@ -413,7 +386,7 @@ export function GroupMatchRow({
             />
           ) : (
             <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-              ?
+              TBD
             </div>
           )}
           <span

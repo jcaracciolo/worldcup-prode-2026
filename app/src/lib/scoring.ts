@@ -90,13 +90,17 @@ const TEAM_TLA_OVERRIDES: Record<string, string> = {
   Curacao: "CUW",
 };
 
-/** Get team abbreviation with fallbacks - use for standings and non-match contexts */
+/** 
+ * Get team abbreviation with fallbacks - use for standings and non-match contexts.
+ * Default fallback is "QUA" for teams that haven't qualified to the World Cup yet.
+ * For knockout bracket labels, use getTeamDisplayName instead.
+ */
 export function getTeamLabel(
   team:
     | { tla?: string | null; shortName?: string | null; name?: string | null }
     | null
     | undefined,
-  fallback: string = "TBD",
+  fallback: string = "QUA",
 ): string {
   if (!team) return fallback;
   // Check for override first
@@ -112,7 +116,7 @@ function getTeamName(
     | { tla?: string | null; shortName?: string | null; name?: string | null }
     | null
     | undefined,
-  fallback: string = "TBD",
+  fallback: string = "QUA",
 ): string {
   return getTeamLabel(team, fallback);
 }
@@ -872,13 +876,13 @@ export function calculateGroupStandingsBonusPoints(
             : "3rd";
       points.push({
         matchId: 0,
-        description: `Predicted to advance from Group ${groupLetter}`,
+        description: `Predicted ${positionText} to advance from Group ${groupLetter}`,
         points: 1,
         type: "group_advance",
         team: {
-          tla: predicted.team.tla || "???",
+          tla: predicted.team.tla || "QUA",
           crest: predicted.team.crest || "",
-          name: predicted.team.name || "Unknown",
+          name: predicted.team.name || "Qualifier",
         },
       });
 
@@ -892,9 +896,9 @@ export function calculateGroupStandingsBonusPoints(
           points: 1,
           type: "group_position",
           team: {
-            tla: predicted.team.tla || "???",
+            tla: predicted.team.tla || "QUA",
             crest: predicted.team.crest || "",
-            name: predicted.team.name || "Unknown",
+            name: predicted.team.name || "Qualifier",
           },
         });
       }

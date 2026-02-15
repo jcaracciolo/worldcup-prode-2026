@@ -309,8 +309,9 @@ export function ScoringProvider({ children }: ScoringProviderProps) {
       });
 
       // Calculate which 3rd place teams would qualify based on user's predictions
-      const predictedThirdPlaceQualifying =
-        getQualifyingThirdPlaceTeams(allPredictedStandings);
+      const predictedThirdPlaceQualifying = getQualifyingThirdPlaceTeams(
+        allPredictedStandings,
+      );
 
       GROUPS.forEach((groupName) => {
         const predictedStandings = allPredictedStandings.get(groupName) || [];

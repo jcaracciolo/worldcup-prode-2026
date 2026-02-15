@@ -323,6 +323,23 @@ Same layout as Predictions Page but:
 │  ADMIN PANEL                                                │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
+│  SIMULATION MODE (Development/Testing)                      │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │  ☑ Enable Simulation                                   │ │
+│  │                                                        │ │
+│  │  Simulated Date: [2026-06-15]                          │ │
+│  │  Simulated Time: [14:30]                               │ │
+│  │  Random Seed:    [12345] [🎲]                          │ │
+│  │                                                        │ │
+│  │  [Update Simulation]  [Disable Simulation]            │ │
+│  │                                                        │ │
+│  │  📊 Stats: 24 Finished | 0 Live | 80 Scheduled        │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                             │
+│  Note: Prediction locking is AUTOMATIC based on time:      │
+│  - Group stage locks: June 11, 2026 (tournament start)     │
+│  - Knockout stage locks: June 29, 2026 (R32 starts)        │
+│                                                             │
 │  INVITE CODES                                               │
 │  ┌────────────────────────────────────────────────────────┐ │
 │  │  [Generate New Code]                                   │ │
@@ -331,22 +348,6 @@ Same layout as Predictions Page but:
 │  │  ABC123      2026-02-01   juan@...      ✓ Used        │ │
 │  │  XYZ789      2026-02-03   -             Available     │ │
 │  │  DEF456      2026-02-05   maria@...     ✓ Used        │ │
-│  └────────────────────────────────────────────────────────┘ │
-│                                                             │
-│  TOURNAMENT CONTROLS                                        │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │  Group Stage:    ○ Open  ● Locked                     │ │
-│  │  Knockout Stage: ● Closed  ○ Open  ○ Locked           │ │
-│  │                                                        │ │
-│  │  [Lock Group Stage]  [Open Knockout]  [Lock Knockout] │ │
-│  └────────────────────────────────────────────────────────┘ │
-│                                                             │
-│  TESTING (Development only)                                 │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │  [Generate Random Group Results]                       │ │
-│  │  [Generate Random Knockout Results]                    │ │
-│  │  [Reset All Match Results]                             │ │
-│  │  [Reset Tournament State]                              │ │
 │  └────────────────────────────────────────────────────────┘ │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘

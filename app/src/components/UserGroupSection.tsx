@@ -1,7 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Match, CalculatedStanding, PointBreakdown, asFifaMatchId } from "@/types/football";
+import {
+  Match,
+  CalculatedStanding,
+  PointBreakdown,
+  asFifaMatchId,
+} from "@/types/football";
 import { LocalPrediction } from "@/types/database";
 import { calculateStandingsFromPredictions } from "@/lib/standings";
 import { getTeamDisplayName, getTeamLabel } from "@/lib/scoring";
@@ -94,7 +99,7 @@ export default function UserGroupSection({
             const groupActualStandings = actualStandings?.get(groupName) || [];
             // Check if all group matches are finished
             const groupComplete = groupMatchList.every(
-              (m) => m.status === "FINISHED"
+              (m) => m.status === "FINISHED",
             );
             // Get bonus points for this group from centralized breakdown
             const bonusPoints = groupBonusPoints.get(groupName) || [];
@@ -143,13 +148,13 @@ function GroupCard({
   const totalBonusPoints = bonusPoints.reduce((sum, b) => sum + b.points, 0);
 
   return (
-    <div className="glass-card p-4">
+    <div className="glass-card p-4 overflow-visible">
       <h3 className="font-bold text-lg mb-3 text-white">
         {groupName.replace("GROUP_", "Group ")}
       </h3>
 
       <div className="space-y-4">
-        <div className="bg-slate-800/50 rounded-lg p-3">
+        <div className="bg-slate-800/50 rounded-lg p-3 overflow-visible">
           <h4 className="text-sm font-medium text-white/50 mb-2">
             Predictions
           </h4>
@@ -216,7 +221,8 @@ function StandingsPointsTooltip({
     if (point.team) {
       // Find this team in actual standings by TLA or name
       const actualTeam = actualStandings.find(
-        (s) => s.team.tla === point.team?.tla || s.team.name === point.team?.name
+        (s) =>
+          s.team.tla === point.team?.tla || s.team.name === point.team?.name,
       );
       if (actualTeam) {
         const current = teamPointsEarned.get(actualTeam.team.id) || 0;
@@ -226,7 +232,10 @@ function StandingsPointsTooltip({
   });
 
   // Calculate displayed total from what we actually show
-  const displayedTotal = Array.from(teamPointsEarned.values()).reduce((a, b) => a + b, 0);
+  const displayedTotal = Array.from(teamPointsEarned.values()).reduce(
+    (a, b) => a + b,
+    0,
+  );
 
   return (
     <button
@@ -261,10 +270,12 @@ function StandingsPointsTooltip({
               setShowTooltip(false);
             }}
           />
-          <div className="absolute right-0 bottom-full mb-2 z-50 w-48 bg-slate-900/95 backdrop-blur-xl rounded-lg border border-white/10 shadow-2xl overflow-hidden">
+          <div className="absolute right-0 bottom-full mb-2 z-[100] w-48 bg-slate-900/95 backdrop-blur-xl rounded-lg border border-white/10 shadow-2xl overflow-hidden">
             {/* Header with column titles */}
             <div className="px-2 py-1.5 border-b border-white/10 flex items-center gap-1 text-[10px]">
-              <span className="text-white/80 font-semibold">Group {groupLetter}</span>
+              <span className="text-white/80 font-semibold">
+                Group {groupLetter}
+              </span>
               <span className="flex-1" />
               <span className="text-white/40 w-5 text-right">Pts</span>
               <span className="text-white/40 w-6 text-right">GD</span>
@@ -283,7 +294,9 @@ function StandingsPointsTooltip({
                     key={actual.team.id}
                     className="flex items-center text-[11px] py-0.5"
                   >
-                    <span className="text-white/40 w-3 shrink-0">{index + 1}</span>
+                    <span className="text-white/40 w-3 shrink-0">
+                      {index + 1}
+                    </span>
                     <span className="flex items-center gap-1 ml-2">
                       {actual.team.crest ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -293,16 +306,25 @@ function StandingsPointsTooltip({
                           className="w-3.5 h-3.5 object-contain shrink-0"
                         />
                       ) : (
-                        <span className="w-3.5 h-3.5 bg-white/10 rounded-sm flex items-center justify-center text-[6px] text-white/40 shrink-0">?</span>
+                        <span className="w-3.5 h-3.5 bg-white/10 rounded-sm flex items-center justify-center text-[6px] text-white/40 shrink-0">
+                          ?
+                        </span>
                       )}
                       <span className="text-white/80">{teamLabel}</span>
                     </span>
                     <span className="flex-1 min-w-2" />
-                    <span className="text-white/50 w-6 text-right shrink-0">{actual.points}</span>
-                    <span className="text-white/50 w-7 text-right shrink-0">{gdSign}{actual.goalDifference}</span>
-                    <span className={`w-5 text-right font-bold text-[10px] ${
-                      earnedPoints > 0 ? "text-emerald-400" : "text-white/20"
-                    }`}>
+                    <span className="text-white/50 w-6 text-right shrink-0">
+                      {actual.points}
+                    </span>
+                    <span className="text-white/50 w-7 text-right shrink-0">
+                      {gdSign}
+                      {actual.goalDifference}
+                    </span>
+                    <span
+                      className={`w-5 text-right font-bold text-[10px] ${
+                        earnedPoints > 0 ? "text-emerald-400" : "text-white/20"
+                      }`}
+                    >
                       {earnedPoints > 0 ? `+${earnedPoints}` : "—"}
                     </span>
                   </div>
@@ -313,7 +335,9 @@ function StandingsPointsTooltip({
             {/* Total */}
             <div className="px-2 py-1.5 bg-white/5 flex items-center justify-between border-t border-white/10">
               <span className="text-[10px] text-white/50">Total</span>
-              <span className="text-[11px] font-bold text-purple-400">+{displayedTotal}</span>
+              <span className="text-[11px] font-bold text-purple-400">
+                +{displayedTotal}
+              </span>
             </div>
           </div>
         </>
@@ -328,10 +352,18 @@ export interface GroupMatchRowProps {
   showPoints?: boolean;
 }
 
-export function GroupMatchRow({ match, prediction, showPoints = true }: GroupMatchRowProps) {
+export function GroupMatchRow({
+  match,
+  prediction,
+  showPoints = true,
+}: GroupMatchRowProps) {
   // Use prediction scores if available, otherwise actual match scores
-  const homeGoals = prediction ? prediction.home_goals : match.score.fullTime.home;
-  const awayGoals = prediction ? prediction.away_goals : match.score.fullTime.away;
+  const homeGoals = prediction
+    ? prediction.home_goals
+    : match.score.fullTime.home;
+  const awayGoals = prediction
+    ? prediction.away_goals
+    : match.score.fullTime.away;
   const hasScore =
     homeGoals !== null &&
     homeGoals !== undefined &&

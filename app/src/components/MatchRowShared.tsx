@@ -699,9 +699,7 @@ export function KnockoutMatchRow({
             />
           </div>
         </ContentWrapper>
-        {pointsTooltip && (
-          <div className="shrink-0">{pointsTooltip}</div>
-        )}
+        {pointsTooltip && <div className="shrink-0">{pointsTooltip}</div>}
       </div>
 
       {/* Desktop Layout */}

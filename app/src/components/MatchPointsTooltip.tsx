@@ -101,7 +101,7 @@ export default function MatchPointsTooltip({
               setShowTooltip(false);
             }}
           />
-          <div className="absolute right-0 bottom-full mb-2 z-50 whitespace-nowrap">
+          <div className="absolute right-0 bottom-full mb-2 z-[100] whitespace-nowrap">
             <div
               className={`bg-slate-800 border rounded-lg shadow-xl p-3 ${isLive ? "border-red-500 border-2" : "border-white/20"}`}
             >

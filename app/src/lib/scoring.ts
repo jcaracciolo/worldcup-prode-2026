@@ -90,7 +90,7 @@ const TEAM_TLA_OVERRIDES: Record<string, string> = {
   Curacao: "CUW",
 };
 
-/** 
+/**
  * Get team abbreviation with fallbacks - use for standings and non-match contexts.
  * Default fallback is "QUA" for teams that haven't qualified to the World Cup yet.
  * For knockout bracket labels, use getTeamDisplayName instead.

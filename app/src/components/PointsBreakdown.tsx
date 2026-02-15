@@ -293,15 +293,26 @@ export default function PointsBreakdown({
           >
             {getTypeLabel(item.type)}
           </span>
-          {(item.type === "goals_home" || item.type === "goals_away") && item.matchInfo && (
-            <>
-              {item.type === "goals_home" && item.matchInfo.homeTeam?.crest ? (
-                <img src={item.matchInfo.homeTeam.crest} alt={item.matchInfo.homeTeam.tla || ""} className="w-4 h-4 object-contain shrink-0" />
-              ) : item.type === "goals_away" && item.matchInfo.awayTeam?.crest ? (
-                <img src={item.matchInfo.awayTeam.crest} alt={item.matchInfo.awayTeam.tla || ""} className="w-4 h-4 object-contain shrink-0" />
-              ) : null}
-            </>
-          )}
+          {(item.type === "goals_home" || item.type === "goals_away") &&
+            item.matchInfo && (
+              <>
+                {item.type === "goals_home" &&
+                item.matchInfo.homeTeam?.crest ? (
+                  <img
+                    src={item.matchInfo.homeTeam.crest}
+                    alt={item.matchInfo.homeTeam.tla || ""}
+                    className="w-4 h-4 object-contain shrink-0"
+                  />
+                ) : item.type === "goals_away" &&
+                  item.matchInfo.awayTeam?.crest ? (
+                  <img
+                    src={item.matchInfo.awayTeam.crest}
+                    alt={item.matchInfo.awayTeam.tla || ""}
+                    className="w-4 h-4 object-contain shrink-0"
+                  />
+                ) : null}
+              </>
+            )}
           <p className="text-[11px] text-white/60 truncate">
             {item.description}
           </p>
@@ -311,7 +322,9 @@ export default function PointsBreakdown({
 
         {/* Prediction */}
         <div className="flex items-center gap-1 shrink-0 w-[240px]">
-          <span className="text-[10px] text-white/40 w-[70px] shrink-0">Prediction:</span>
+          <span className="text-[10px] text-white/40 w-[70px] shrink-0">
+            Prediction:
+          </span>
           {renderTeam(
             homeTeam,
             homeTla,

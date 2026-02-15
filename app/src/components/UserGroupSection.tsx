@@ -9,7 +9,7 @@ import {
 } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
 import { calculateStandingsFromPredictions } from "@/lib/standings";
-import { getTeamDisplayName } from "@/lib/scoring";
+import { getTeamDisplayName, getTeamLabel } from "@/lib/scoring";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import StandingsTable from "@/components/StandingsTable";
 import LockedCard from "@/components/LockedCard";
@@ -287,6 +287,7 @@ function StandingsPointsTooltip({
               {actualStandings.map((actual, index) => {
                 const earnedPoints = teamPointsEarned.get(actual.team.id) || 0;
                 const gdSign = actual.goalDifference > 0 ? "+" : "";
+                const teamLabel = getTeamLabel(actual.team);
 
                 return (
                   <div
@@ -294,17 +295,18 @@ function StandingsPointsTooltip({
                     className="flex items-center gap-1 text-[11px] py-0.5"
                   >
                     <span className="text-white/40 w-3">{index + 1}</span>
-                    {actual.team.crest && (
+                    {actual.team.crest ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={actual.team.crest}
-                        alt={actual.team.name}
+                        alt={teamLabel}
                         className="w-3.5 h-3.5 object-contain"
                       />
+                    ) : (
+                      <span className="w-3.5 h-3.5 bg-white/10 rounded-sm" />
                     )}
                     <span className="text-white/80 flex-1 truncate">
-                      {actual.team.tla ||
-                        actual.team.name?.substring(0, 3).toUpperCase()}
+                      {teamLabel}
                     </span>
                     <span className="text-white/50 w-5 text-right">
                       {actual.points}

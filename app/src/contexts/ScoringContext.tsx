@@ -16,6 +16,7 @@ import {
   calculateGroupStandingsBonusPoints,
   calculateStandingsFromPredictions,
 } from "@/lib/scoring";
+import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { isGroupStageMatch } from "@/lib/football-api";
 import { GROUPS } from "@/lib/tournament";
 
@@ -298,13 +299,24 @@ export function ScoringProvider({ children }: ScoringProviderProps) {
       const groupComplete = isGroupStageComplete();
       const advancingTeamIds = getAdvancingTeamIds();
 
+      // First calculate all predicted standings to determine 3rd place qualifying
+      const allPredictedStandings = new Map<string, CalculatedStanding[]>();
       GROUPS.forEach((groupName) => {
-        const predictedStandings = calculatePredictedStandings(
+        allPredictedStandings.set(
           groupName,
-          predictions,
-          overrides,
+          calculatePredictedStandings(groupName, predictions, overrides),
         );
+      });
+
+      // Calculate which 3rd place teams would qualify based on user's predictions
+      const predictedThirdPlaceQualifying =
+        getQualifyingThirdPlaceTeams(allPredictedStandings);
+
+      GROUPS.forEach((groupName) => {
+        const predictedStandings = allPredictedStandings.get(groupName) || [];
         const actualStandings = getActualGroupStandings(groupName);
+        const thirdPlaceQualifies =
+          predictedThirdPlaceQualifying.get(groupName) || false;
 
         groupBonus.push(
           ...calculateGroupStandingsBonusPoints(
@@ -313,6 +325,7 @@ export function ScoringProvider({ children }: ScoringProviderProps) {
             actualStandings,
             advancingTeamIds,
             groupComplete,
+            thirdPlaceQualifies,
           ),
         );
       });

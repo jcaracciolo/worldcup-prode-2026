@@ -263,7 +263,12 @@ export default function MatchDetailPage() {
                     ) : (
                       <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-2">
                         <span className="text-lg sm:text-xl font-bold">
-                          {match.homeTeam.tla || "TBD"}
+                          {getTeamDisplayName(
+                            match.homeTeam,
+                            match.id,
+                            "home",
+                            fifaId,
+                          )}
                         </span>
                       </div>
                     )}
@@ -279,7 +284,12 @@ export default function MatchDetailPage() {
                         )}
                       </span>
                       <span className="sm:hidden">
-                        {match.homeTeam.tla || "TBD"}
+                        {getTeamDisplayName(
+                          match.homeTeam,
+                          match.id,
+                          "home",
+                          fifaId,
+                        )}
                       </span>
                     </div>
                   </div>
@@ -321,7 +331,12 @@ export default function MatchDetailPage() {
                     ) : (
                       <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-2">
                         <span className="text-lg sm:text-xl font-bold">
-                          {match.awayTeam.tla || "TBD"}
+                          {getTeamDisplayName(
+                            match.awayTeam,
+                            match.id,
+                            "away",
+                            fifaId,
+                          )}
                         </span>
                       </div>
                     )}
@@ -337,7 +352,12 @@ export default function MatchDetailPage() {
                         )}
                       </span>
                       <span className="sm:hidden">
-                        {match.awayTeam.tla || "TBD"}
+                        {getTeamDisplayName(
+                          match.awayTeam,
+                          match.id,
+                          "away",
+                          fifaId,
+                        )}
                       </span>
                     </div>
                   </div>

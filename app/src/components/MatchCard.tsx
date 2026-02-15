@@ -150,7 +150,7 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
               />
             ) : (
               <div className="w-9 h-9 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center text-white/60 font-bold text-xs sm:text-sm">
-                {homeTeam.tla?.substring(0, 3) || "TBD"}
+                {homeDisplayName.substring(0, 3)}
               </div>
             )}
             <span
@@ -196,7 +196,7 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
               />
             ) : (
               <div className="w-9 h-9 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center text-white/60 font-bold text-xs sm:text-sm">
-                {awayTeam.tla?.substring(0, 3) || "TBD"}
+                {awayDisplayName.substring(0, 3)}
               </div>
             )}
             <span

@@ -90,8 +90,8 @@ const TEAM_TLA_OVERRIDES: Record<string, string> = {
   Curacao: "CUW",
 };
 
-/** Get team abbreviation with fallbacks */
-function getTeamName(
+/** Get team abbreviation with fallbacks - use for standings and non-match contexts */
+export function getTeamLabel(
   team:
     | { tla?: string | null; shortName?: string | null; name?: string | null }
     | null
@@ -104,6 +104,17 @@ function getTeamName(
     return TEAM_TLA_OVERRIDES[team.name];
   }
   return team.tla || team.shortName || team.name || fallback;
+}
+
+/** @deprecated Use getTeamLabel instead. Kept for backwards compatibility. */
+function getTeamName(
+  team:
+    | { tla?: string | null; shortName?: string | null; name?: string | null }
+    | null
+    | undefined,
+  fallback: string = "TBD",
+): string {
+  return getTeamLabel(team, fallback);
 }
 
 /** Generate consistent TBD labels for a match based on match ID */

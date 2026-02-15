@@ -244,12 +244,12 @@ function KnockoutMatchRow({
             {homeTeam?.crest ? (
               <img
                 src={homeTeam.crest}
-                alt={homeTeam.name}
+                alt={getTeamDisplayName(homeTeam, match.id, "home", fifaMatchNumber)}
                 className="w-7 h-7 object-contain shrink-0"
               />
             ) : (
               <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
-                {homeTeam?.tla?.substring(0, 3) || "TBD"}
+                {getTeamDisplayName(homeTeam, match.id, "home", fifaMatchNumber).substring(0, 3)}
               </div>
             )}
           </div>
@@ -274,12 +274,12 @@ function KnockoutMatchRow({
             {awayTeam?.crest ? (
               <img
                 src={awayTeam.crest}
-                alt={awayTeam.name}
+                alt={getTeamDisplayName(awayTeam, match.id, "away", fifaMatchNumber)}
                 className="w-7 h-7 object-contain shrink-0"
               />
             ) : (
               <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center text-[10px] font-bold text-white/60 shrink-0">
-                {awayTeam?.tla?.substring(0, 3) || "TBD"}
+                {getTeamDisplayName(awayTeam, match.id, "away", fifaMatchNumber).substring(0, 3)}
               </div>
             )}
             <span

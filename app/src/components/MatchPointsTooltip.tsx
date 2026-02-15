@@ -5,6 +5,7 @@ import { LocalPrediction } from "@/types/database";
 import {
   calculateMatchPoints,
   calculateMatchPointsDetailed,
+  getTeamLabel,
 } from "@/lib/scoring";
 import { useState } from "react";
 
@@ -120,18 +121,18 @@ export default function MatchPointsTooltip({
                   {match.homeTeam.crest ? (
                     <img
                       src={match.homeTeam.crest}
-                      alt={match.homeTeam.tla}
+                      alt={getTeamLabel(match.homeTeam)}
                       className="w-5 h-5 object-contain shrink-0"
                     />
                   ) : (
                     <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-                      {match.homeTeam.tla?.substring(0, 2)}
+                      {getTeamLabel(match.homeTeam).substring(0, 2)}
                     </div>
                   )}
                   <span
                     className={`text-sm font-semibold ${actualHomeHighlight ? "text-slate-900" : "text-white"}`}
                   >
-                    {match.homeTeam.tla}
+                    {getTeamLabel(match.homeTeam)}
                   </span>
                 </div>
 
@@ -153,18 +154,18 @@ export default function MatchPointsTooltip({
                   {match.awayTeam.crest ? (
                     <img
                       src={match.awayTeam.crest}
-                      alt={match.awayTeam.tla}
+                      alt={getTeamLabel(match.awayTeam)}
                       className="w-5 h-5 object-contain shrink-0"
                     />
                   ) : (
                     <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-                      {match.awayTeam.tla?.substring(0, 2)}
+                      {getTeamLabel(match.awayTeam).substring(0, 2)}
                     </div>
                   )}
                   <span
                     className={`text-sm font-semibold ${actualAwayHighlight ? "text-slate-900" : "text-white"}`}
                   >
-                    {match.awayTeam.tla}
+                    {getTeamLabel(match.awayTeam)}
                   </span>
                 </div>
               </div>

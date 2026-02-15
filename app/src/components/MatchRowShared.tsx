@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Team, FifaMatchId, Match } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
-import { getTeamDisplayName } from "@/lib/scoring";
+import { getTeamDisplayName, getTeamLabel } from "@/lib/scoring";
 import { getMatchInfo } from "@/lib/tournament";
 import { ReactNode } from "react";
 
@@ -76,7 +76,7 @@ export function TeamCrest({
     return (
       <img
         src={team.crest}
-        alt={team.name}
+        alt={getTeamLabel(team)}
         className={`object-contain shrink-0 ${sizeClass.split(" ").slice(0, 2).join(" ")} ${className}`}
       />
     );
@@ -86,7 +86,7 @@ export function TeamCrest({
     <div
       className={`bg-white/20 rounded-full flex items-center justify-center font-bold text-white/60 shrink-0 ${sizeClass} ${className}`}
     >
-      {team?.tla?.substring(0, 3) || "TBD"}
+      {getTeamLabel(team).substring(0, 3)}
     </div>
   );
 }

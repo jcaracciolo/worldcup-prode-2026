@@ -1,6 +1,7 @@
 "use client";
 
 import { CalculatedStanding } from "@/types/football";
+import { getTeamLabel } from "@/lib/scoring";
 
 interface StandingsTableProps {
   standings: CalculatedStanding[];
@@ -99,19 +100,19 @@ export default function StandingsTable({
                     {standing.team.crest ? (
                       <img
                         src={standing.team.crest}
-                        alt={standing.team.name}
+                        alt={getTeamLabel(standing.team)}
                         className="w-5 h-5 object-contain shrink-0"
                       />
                     ) : (
                       <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
-                        {standing.team.tla?.substring(0, 3) || "TBD"}
+                        {getTeamLabel(standing.team).substring(0, 3)}
                       </div>
                     )}
                     <span
                       className={`${definitelyAdvances || thirdAdvances ? "font-medium" : "text-white/80"}`}
                       style={{ color: textColor }}
                     >
-                      {standing.team.tla || standing.team.shortName || "TBD"}
+                      {getTeamLabel(standing.team)}
                     </span>
                     {thirdDoesNotAdvance && (
                       <span className="text-[9px] text-red-400 ml-0.5">✗</span>

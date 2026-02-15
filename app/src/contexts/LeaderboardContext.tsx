@@ -11,7 +11,7 @@ import { useTime } from "@/contexts/TimeContext";
 import { useMatches } from "@/contexts/MatchContext";
 import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { useAllProfiles } from "@/contexts/UserContext";
-import { UserScore, CalculatedStanding, FifaMatchId } from "@/types/football";
+import { UserScore, FifaMatchId } from "@/types/football";
 import { LocalPrediction, Prediction } from "@/types/database";
 import { calculateTotalPoints } from "@/lib/scoring";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
@@ -36,7 +36,11 @@ const LeaderboardContext = createContext<LeaderboardContextValue | null>(null);
 
 export function LeaderboardProvider({ children }: { children: ReactNode }) {
   const { stageLockStatus } = useTime();
-  const { matches } = useMatches();
+  const {
+    matches,
+    actualGroupStandings,
+    actualThirdPlaceQualifying,
+  } = useMatches();
   const profiles = useAllProfiles();
   const allPredictions = useAllPredictions();
 
@@ -69,93 +73,14 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
       }));
     }
 
-    // Calculate actual standings from finished matches
-    const groupMatches = matches.filter((m) => m.stage === "GROUP_STAGE");
-    const groups = new Map<string, typeof matches>();
-    groupMatches.forEach((m) => {
-      if (!m.group) return;
-      if (!groups.has(m.group)) groups.set(m.group, []);
-      groups.get(m.group)!.push(m);
-    });
-
-    const actualGroupStandings = new Map<string, CalculatedStanding[]>();
-    groups.forEach((groupMatchList, groupName) => {
-      const teamStats = new Map<number, CalculatedStanding>();
-
-      groupMatchList.forEach((match) => {
-        [match.homeTeam, match.awayTeam].forEach((team) => {
-          if (!teamStats.has(team.id)) {
-            teamStats.set(team.id, {
-              team,
-              position: 0,
-              points: 0,
-              goalsFor: 0,
-              goalsAgainst: 0,
-              goalDifference: 0,
-              played: 0,
-              won: 0,
-              drawn: 0,
-              lost: 0,
-            });
-          }
-        });
-      });
-
-      groupMatchList.forEach((match) => {
-        if (match.status !== "FINISHED") return;
-        const homeGoals = match.score.fullTime.home;
-        const awayGoals = match.score.fullTime.away;
-        if (homeGoals === null || awayGoals === null) return;
-
-        const homeStats = teamStats.get(match.homeTeam.id)!;
-        const awayStats = teamStats.get(match.awayTeam.id)!;
-
-        homeStats.played++;
-        awayStats.played++;
-        homeStats.goalsFor += homeGoals;
-        homeStats.goalsAgainst += awayGoals;
-        awayStats.goalsFor += awayGoals;
-        awayStats.goalsAgainst += homeGoals;
-        homeStats.goalDifference = homeStats.goalsFor - homeStats.goalsAgainst;
-        awayStats.goalDifference = awayStats.goalsFor - awayStats.goalsAgainst;
-
-        if (homeGoals > awayGoals) {
-          homeStats.won++;
-          homeStats.points += 3;
-          awayStats.lost++;
-        } else if (awayGoals > homeGoals) {
-          awayStats.won++;
-          awayStats.points += 3;
-          homeStats.lost++;
-        } else {
-          homeStats.drawn++;
-          awayStats.drawn++;
-          homeStats.points += 1;
-          awayStats.points += 1;
-        }
-      });
-
-      const standings = Array.from(teamStats.values())
-        .sort((a, b) => {
-          if (b.points !== a.points) return b.points - a.points;
-          if (b.goalDifference !== a.goalDifference)
-            return b.goalDifference - a.goalDifference;
-          return b.goalsFor - a.goalsFor;
-        })
-        .map((s, i) => ({ ...s, position: i + 1 }));
-
-      actualGroupStandings.set(groupName, standings);
-    });
-
-    // Calculate advancing teams
-    const thirdPlaceQualifying =
-      getQualifyingThirdPlaceTeams(actualGroupStandings);
+    // Use actual standings already computed by MatchContext (via lib/standings.ts)
+    // instead of duplicating the calculation here
     const advancingTeamIds = new Set<number>();
     actualGroupStandings.forEach((standings, groupName) => {
       standings.forEach((standing, index) => {
         if (index < 2) {
           advancingTeamIds.add(standing.team.id);
-        } else if (index === 2 && thirdPlaceQualifying.get(groupName)) {
+        } else if (index === 2 && actualThirdPlaceQualifying.get(groupName)) {
           advancingTeamIds.add(standing.team.id);
         }
       });
@@ -251,6 +176,8 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
     stageLockStatus.knockoutStageLocked,
     profiles.content,
     allPredictions.content,
+    actualGroupStandings,
+    actualThirdPlaceQualifying,
   ]);
 
   const getPosition = useCallback(

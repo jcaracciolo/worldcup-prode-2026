@@ -5,7 +5,6 @@ import { SimulationProvider } from "@/contexts/SimulationContext";
 import { TimeProvider } from "@/contexts/TimeContext";
 import { MatchProvider } from "@/contexts/MatchContext";
 import { PredictionsProvider } from "@/contexts/PredictionsContext";
-import { ScoringProvider } from "@/contexts/ScoringContext";
 import { LeaderboardProvider } from "@/contexts/LeaderboardContext";
 import { UserProvider } from "@/contexts/UserContext";
 import Header from "@/components/Header";
@@ -26,8 +25,7 @@ interface ProvidersProps {
  * 3. MatchProvider - Global match data with live polling (uses simulation)
  * 4. UserProvider - Current authenticated user
  * 5. PredictionsProvider - User predictions cache
- * 6. ScoringProvider - Score calculations (depends on 3 & 5)
- * 7. LeaderboardProvider - Centralized leaderboard with positions (auto-refreshes with time)
+ * 6. LeaderboardProvider - Centralized leaderboard & scoring (auto-refreshes with time)
  *
  * Note: Components should use useTime() for time functions, NOT useSimulation().
  * Only the admin page uses useSimulation() directly to control simulation.
@@ -42,12 +40,10 @@ export function Providers({ children }: ProvidersProps) {
           <MatchProvider>
             <UserProvider>
               <PredictionsProvider>
-                <ScoringProvider>
-                  <LeaderboardProvider>
-                    <Header />
-                    <PageTransition>{children}</PageTransition>
-                  </LeaderboardProvider>
-                </ScoringProvider>
+                <LeaderboardProvider>
+                  <Header />
+                  <PageTransition>{children}</PageTransition>
+                </LeaderboardProvider>
               </PredictionsProvider>
             </UserProvider>
           </MatchProvider>

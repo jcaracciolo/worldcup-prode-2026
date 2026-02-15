@@ -8,8 +8,7 @@
  * 3. MatchProvider - Global match data with live polling
  * 4. UserProvider - Current authenticated user
  * 5. PredictionsProvider - User predictions cache
- * 6. ScoringProvider - Score calculations (depends on 3 & 5)
- * 7. LeaderboardProvider - Centralized leaderboard with positions
+ * 6. LeaderboardProvider - Centralized leaderboard & scoring
  *
  * NOTE: Components should use useTime() for time functions, NOT useSimulation().
  * Only the admin page uses useSimulation() directly to control simulation.
@@ -53,12 +52,10 @@ export {
   useUserPredictions,
 } from "./PredictionsContext";
 
-// Scoring Context - Score calculations
+// Leaderboard Context - Centralized scoring & leaderboard
 export {
-  ScoringProvider,
-  useScoringContext,
-  useUserScore,
-  useMatchScore,
-  type ScoreBreakdown,
-  type UserScore,
-} from "./ScoringContext";
+  LeaderboardProvider,
+  useLeaderboard,
+  useUserPosition,
+  useMatchPointsForAllUsers,
+} from "./LeaderboardContext";

@@ -7,7 +7,6 @@ import { useTime } from "@/contexts/TimeContext";
 import { useUser, useProfile } from "@/contexts/UserContext";
 import { useUserPredictions } from "@/contexts/PredictionsContext";
 import { useUserPosition } from "@/contexts/LeaderboardContext";
-import { calculateTotalPoints } from "@/lib/scoring";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { calculateAllGroupStandings } from "@/lib/standings";
 import { LocalPrediction } from "@/types/database";
@@ -25,7 +24,6 @@ export default function UserPredictionsPage() {
     matches,
     loading: matchesLoading,
     actualGroupStandings: actualStandings,
-    actualThirdPlaceQualifying,
   } = useMatches();
   const { stageLockStatus } = useTime();
   const { user: currentProfile } = useUser();
@@ -48,7 +46,6 @@ export default function UserPredictionsPage() {
   // Use cached predictions from PredictionsContext
   const {
     predictions: predictionsMap,
-    overrides: groupOverrides,
     loading: predictionsLoading,
   } = useUserPredictions(userId);
 
@@ -107,73 +104,18 @@ export default function UserPredictionsPage() {
     return stages;
   }, [matches]);
 
-  // Determine which teams actually advanced
-  const advancingTeamIds = useMemo(() => {
-    const ids = new Set<number>();
-    actualStandings.forEach((standings, groupName) => {
-      standings.forEach((standing, index) => {
-        if (index < 2) {
-          ids.add(standing.team.id);
-        } else if (index === 2 && actualThirdPlaceQualifying.get(groupName)) {
-          ids.add(standing.team.id);
-        }
-      });
-    });
-    return ids;
-  }, [actualStandings, actualThirdPlaceQualifying]);
-
-  // Calculate points
-  const { totalPoints, livePoints, breakdown } = useMemo(() => {
-    if (predictions.length === 0 || matches.length === 0) {
-      return { totalPoints: 0, livePoints: 0, breakdown: [] };
-    }
-    return calculateTotalPoints(
-      matches,
-      predictions,
-      groupOverrides,
-      actualStandings,
-      advancingTeamIds,
-      thirdPlaceQualifying, // User's predicted 3rd place qualifying
-    );
-  }, [
-    matches,
-    predictions,
-    groupOverrides,
-    actualStandings,
-    advancingTeamIds,
-    thirdPlaceQualifying,
-  ]);
-
-  // Get user's position from centralized leaderboard context
+  // Get user's score and position from centralized leaderboard context
+  // (avoids re-computing scores that LeaderboardContext already calculated)
   const positionInfo = useUserPosition(userId);
-
-  // Calculate point breakdown from breakdown items
-  const pointBreakdown = useMemo(() => {
-    let groupStagePoints = 0;
-    let groupBonusPoints = 0;
-    let knockoutPoints = 0;
-
-    breakdown.forEach((item) => {
-      if (item.type === "group_advance" || item.type === "group_position") {
-        groupBonusPoints += item.points;
-      } else if (
-        item.type === "knockout_win" ||
-        item.type === "knockout_lose" ||
-        item.type === "knockout_tie"
-      ) {
-        knockoutPoints += item.points;
-      } else if (item.matchId) {
-        const match = matches.find((m) => m.id === item.matchId);
-        if (match?.stage === "GROUP_STAGE") {
-          groupStagePoints += item.points;
-        } else {
-          knockoutPoints += item.points;
-        }
-      }
-    });
-
-    return { groupStagePoints, groupBonusPoints, knockoutPoints };
-  }, [breakdown, matches]);
+  const userScore = positionInfo.userScore;
+  const totalPoints = userScore?.totalPoints ?? 0;
+  const livePoints = userScore?.livePoints ?? 0;
+  const breakdown = userScore?.breakdown ?? [];
+  const pointBreakdown = useMemo(() => ({
+    groupStagePoints: userScore?.groupStagePoints ?? 0,
+    groupBonusPoints: userScore?.groupBonusPoints ?? 0,
+    knockoutPoints: userScore?.knockoutPoints ?? 0,
+  }), [userScore]);
 
   // Visibility rules - show predictions when stage is locked
   const showGroupPredictions = isOwnPredictions || groupStageLocked;

@@ -507,7 +507,7 @@ export function KnockoutMatchRow({
     highlighted: boolean;
   }) => {
     const isHome = position === "home";
-    const { team, label } = teamDisplay;
+    const { team, label, isPlaceholder } = teamDisplay;
 
     if (mode === "edit" && needsWinnerSelect) {
       return (
@@ -524,11 +524,19 @@ export function KnockoutMatchRow({
           {isHome ? (
             <>
               <span className="text-sm font-semibold">{label}</span>
-              <TeamCrest team={team} fallbackLabel={label} size="lg" />
+              <TeamCrest
+                team={team}
+                fallbackLabel={isPlaceholder ? label : undefined}
+                size="lg"
+              />
             </>
           ) : (
             <>
-              <TeamCrest team={team} fallbackLabel={label} size="lg" />
+              <TeamCrest
+                team={team}
+                fallbackLabel={isPlaceholder ? label : undefined}
+                size="lg"
+              />
               <span className="text-sm font-semibold">{label}</span>
             </>
           )}
@@ -551,11 +559,19 @@ export function KnockoutMatchRow({
             >
               {label}
             </span>
-            <TeamCrest team={team} fallbackLabel={label} size="lg" />
+            <TeamCrest
+              team={team}
+              fallbackLabel={isPlaceholder ? label : undefined}
+              size="lg"
+            />
           </>
         ) : (
           <>
-            <TeamCrest team={team} fallbackLabel={label} size="lg" />
+            <TeamCrest
+              team={team}
+              fallbackLabel={isPlaceholder ? label : undefined}
+              size="lg"
+            />
             <span
               className={`text-sm font-semibold ${
                 highlighted ? "text-slate-900 font-bold" : "text-white"
@@ -580,7 +596,7 @@ export function KnockoutMatchRow({
     highlighted: boolean;
   }) => {
     const isHome = position === "home";
-    const { team, label } = teamDisplay;
+    const { team, label, isPlaceholder } = teamDisplay;
 
     if (mode === "edit" && needsWinnerSelect) {
       return (
@@ -594,7 +610,11 @@ export function KnockoutMatchRow({
               : "hover:bg-white/10 text-white"
           } disabled:opacity-50`}
         >
-          <TeamCrest team={team} fallbackLabel={label} size="sm" />
+          <TeamCrest
+            team={team}
+            fallbackLabel={isPlaceholder ? label : undefined}
+            size="sm"
+          />
           <span className="text-xs font-semibold">{label}</span>
         </button>
       );
@@ -606,7 +626,11 @@ export function KnockoutMatchRow({
           highlighted ? "bg-amber-500/80" : ""
         }`}
       >
-        <TeamCrest team={team} fallbackLabel={label} size="sm" />
+        <TeamCrest
+          team={team}
+          fallbackLabel={isPlaceholder ? label : undefined}
+          size="sm"
+        />
         <span
           className={`text-xs font-semibold ${
             highlighted ? "text-slate-900" : "text-white"

@@ -1,3 +1,4 @@
 .secrets
 deploy.zip
 tests/
+.playwright-mcp/

@@ -41,7 +41,7 @@ export function getQualifyingThirdPlaceTeams(
     }
   });
 
-  // Sort by FIFA tiebreaker rules
+  // Sort by FIFA tiebreaker rules for ranking best third-placed teams
   thirdPlaceTeams.sort((a, b) => {
     // 1. Points (descending)
     if (a.points !== b.points) {
@@ -55,7 +55,12 @@ export function getQualifyingThirdPlaceTeams(
     if (a.goalsFor !== b.goalsFor) {
       return b.goalsFor - a.goalsFor;
     }
-    // 4. If still tied, use alphabetical group order (deterministic fallback)
+    // 4. Number of wins (descending)
+    if (a.won !== b.won) {
+      return b.won - a.won;
+    }
+    // 5. Fair play points (not tracked - skip)
+    // 6. Drawing of lots — use alphabetical group order as deterministic fallback
     return a.group.localeCompare(b.group);
   });
 
@@ -99,6 +104,7 @@ export function getRankedThirdPlaceTeams(
     if (a.goalDifference !== b.goalDifference)
       return b.goalDifference - a.goalDifference;
     if (a.goalsFor !== b.goalsFor) return b.goalsFor - a.goalsFor;
+    if (a.won !== b.won) return b.won - a.won;
     return a.group.localeCompare(b.group);
   });
 
@@ -111,19 +117,21 @@ export function getRankedThirdPlaceTeams(
 }
 
 /**
- * R32 matches that have third-place teams as the away team
- * Each match has a "pool" of groups the 3rd place team can come from
- * The group letter cannot match the home team's group winner
+ * R32 matches that have third-place teams as the away team.
+ * Each match has a "pool" of groups whose 3rd-place team can be assigned there.
+ * Pools derived from the official FIFA 495-entry lookup table.
+ * Note: Some matches allow the 3rd-place team from the same group as the
+ * home team's group winner (e.g., 3E vs 1E) per FIFA regulations.
  */
 const R32_THIRD_PLACE_MATCHES = [
-  { matchNumber: 74, homeGroup: "E", pool: ["A", "B", "C", "D", "F"] },
-  { matchNumber: 77, homeGroup: "I", pool: ["C", "D", "F", "G", "H"] },
-  { matchNumber: 79, homeGroup: "A", pool: ["C", "E", "F", "H", "I"] },
-  { matchNumber: 80, homeGroup: "L", pool: ["E", "H", "I", "J", "K"] },
-  { matchNumber: 81, homeGroup: "D", pool: ["B", "E", "F", "I", "J"] },
-  { matchNumber: 82, homeGroup: "G", pool: ["A", "E", "H", "I", "J"] },
-  { matchNumber: 85, homeGroup: "B", pool: ["E", "F", "G", "I", "J"] },
-  { matchNumber: 87, homeGroup: "K", pool: ["D", "E", "I", "J", "L"] },
+  { matchNumber: 74, homeGroup: "E", pool: ["C", "E", "F", "H", "I"] },
+  { matchNumber: 77, homeGroup: "I", pool: ["E", "F", "G", "I", "J"] },
+  { matchNumber: 79, homeGroup: "A", pool: ["B", "E", "F", "I", "J"] },
+  { matchNumber: 80, homeGroup: "L", pool: ["A", "B", "C", "D", "F"] },
+  { matchNumber: 81, homeGroup: "D", pool: ["A", "E", "H", "I", "J"] },
+  { matchNumber: 82, homeGroup: "G", pool: ["C", "D", "F", "G", "H"] },
+  { matchNumber: 85, homeGroup: "B", pool: ["D", "E", "I", "J", "L"] },
+  { matchNumber: 87, homeGroup: "K", pool: ["E", "H", "I", "J", "K"] },
 ];
 
 /**

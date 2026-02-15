@@ -70,7 +70,7 @@ function isTbdTeam(team: Team | null): boolean {
 /**
  * Get the placeholder team for a group's TBD slot
  */
-function getPlaceholderTeam(group: string): Team | null {
+export function getPlaceholderTeam(group: string): Team | null {
   return TBD_TEAMS[group] || null;
 }
 
@@ -121,13 +121,13 @@ export function resolveAllTbdTeams(matches: Match[]): Match[] {
 /**
  * Check if a team ID is a placeholder (negative ID)
  */
-function isPlaceholderTeamId(teamId: number): boolean {
+export function isPlaceholderTeamId(teamId: number): boolean {
   return teamId < 0;
 }
 
 /**
  * Get all placeholder team IDs
  */
-function getAllPlaceholderTeamIds(): number[] {
+export function getAllPlaceholderTeamIds(): number[] {
   return Object.values(TBD_TEAMS).map((t) => t.id);
 }

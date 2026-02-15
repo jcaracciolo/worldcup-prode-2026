@@ -4,19 +4,21 @@
  * Centralized logic for displaying team names and crests across the app.
  * Handles all scenarios:
  * - Real teams with data
+ * - Placeholder teams (UEFA playoffs, Intercontinental playoffs)
  * - Knockout bracket positions (1A, 2B, 3rd)
  * - R16+ source matches (W73, W74)
- *
- * Note: TBD/placeholder teams (UEFA playoffs, Inter-confederation playoffs) are
- * resolved at the API layer (see api-client.ts / tbd-teams.ts) before data
- * reaches the rest of the application. This module does not need to distinguish
- * between real and placeholder teams.
  */
 
 import { Team, Match, FifaMatchId, asFifaMatchId } from "@/types/football";
 import { CalculatedStanding } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
-import { getKnockoutTbdLabel } from "@/lib/r32-bracket";
+import {
+  r32Bracket,
+  r16Bracket,
+  qfBracket,
+  sfBracket,
+} from "@/lib/r32-bracket";
+import { isPlaceholderTeamId } from "@/lib/tbd-teams";
 
 // =====================================================================
 // TYPES
@@ -27,6 +29,8 @@ export interface TeamDisplay {
   team: Team | null;
   /** Display label: "USA", "PO1", "1A", "W73", etc. */
   label: string;
+  /** Whether this is a placeholder (no real team yet) */
+  isPlaceholder: boolean;
 }
 
 export interface TeamDisplayContext {
@@ -43,12 +47,12 @@ export interface TeamDisplayContext {
   };
   /** Group standings for R32 resolution (by group name) */
   groupStandings?: Map<string, CalculatedStanding[]>;
-  /** User knockout predictions (for inferring R16+ teams) */
+  /** User's knockout predictions (for inferring R16+ teams) */
   predictions?: Map<FifaMatchId, LocalPrediction>;
 }
 
 // =====================================================================
-// TLA OVERRIDES - Single source of truth for team abbreviation corrections
+// TLA OVERRIDES
 // =====================================================================
 
 const TEAM_TLA_OVERRIDES: Record<string, string> = {
@@ -82,19 +86,27 @@ export function getTeamDisplay(context: TeamDisplayContext): TeamDisplay {
       ? resolvedTeams?.homeDisplayName
       : resolvedTeams?.awayDisplayName;
 
-  // Case 1: Team from API with valid data
-  if (matchTeam && matchTeam.id !== null && matchTeam.id !== undefined) {
+  // Case 1: Real team from API (valid ID, not a placeholder)
+  if (
+    matchTeam &&
+    matchTeam.id !== null &&
+    matchTeam.id > 0 &&
+    !isPlaceholderTeamId(matchTeam.id)
+  ) {
     return {
       team: matchTeam,
       label: getTeamTla(matchTeam),
+      isPlaceholder: false,
     };
   }
 
   // Case 2: Resolved team from BracketResolver
   if (resolvedTeam && resolvedTeam.id !== null) {
+    const isPlaceholder = isPlaceholderTeamId(resolvedTeam.id);
     return {
       team: resolvedTeam,
-      label: getTeamTla(resolvedTeam),
+      label: isPlaceholder ? resolvedTeam.tla : getTeamTla(resolvedTeam),
+      isPlaceholder,
     };
   }
 
@@ -103,14 +115,26 @@ export function getTeamDisplay(context: TeamDisplayContext): TeamDisplay {
     return {
       team: null,
       label: resolvedDisplayName,
+      isPlaceholder: true,
     };
   }
 
   // Case 4: Calculate bracket label for knockout matches
   if (match.stage !== "GROUP_STAGE" && fifaMatchNumber >= 73) {
+    const label = getBracketLabel(fifaMatchNumber, position);
     return {
       team: null,
-      label: getKnockoutTbdLabel(fifaMatchNumber, position),
+      label,
+      isPlaceholder: true,
+    };
+  }
+
+  // Case 5: Group stage with placeholder team
+  if (matchTeam && isPlaceholderTeamId(matchTeam.id)) {
+    return {
+      team: matchTeam,
+      label: matchTeam.tla,
+      isPlaceholder: true,
     };
   }
 
@@ -118,6 +142,7 @@ export function getTeamDisplay(context: TeamDisplayContext): TeamDisplay {
   return {
     team: null,
     label: "TBD",
+    isPlaceholder: true,
   };
 }
 
@@ -133,6 +158,76 @@ function getTeamTla(team: Team): string {
     return TEAM_TLA_OVERRIDES[team.name];
   }
   return team.tla || team.shortName || team.name || "TBD";
+}
+
+/**
+ * Get the bracket label for a knockout match position.
+ * R32: "1A", "2B", "3rd"
+ * R16+: "W73", "W74", etc.
+ */
+export function getBracketLabel(
+  fifaMatchNumber: FifaMatchId,
+  position: "home" | "away",
+): string {
+  // R32 matches (73-88): Show group position
+  const r32Slot = r32Bracket.find((s) => s.matchNumber === fifaMatchNumber);
+  if (r32Slot) {
+    const pos =
+      position === "home" ? r32Slot.homePosition : r32Slot.awayPosition;
+    if (pos) {
+      const groupLetter = pos.group.replace("GROUP_", "");
+      return `${pos.position}${groupLetter}`;
+    }
+    return "3rd";
+  }
+
+  // R16 matches (89-96): Winner of R32
+  const r16Slot = r16Bracket.find((s) => s.matchNumber === fifaMatchNumber);
+  if (r16Slot) {
+    const sourceMatch =
+      position === "home" ? r16Slot.homeFromR32 : r16Slot.awayFromR32;
+    return `W${sourceMatch}`;
+  }
+
+  // QF matches (97-100): Winner of R16
+  const qfSlot = qfBracket.find((s) => s.matchNumber === fifaMatchNumber);
+  if (qfSlot) {
+    const sourceMatch =
+      position === "home" ? qfSlot.homeFromR16 : qfSlot.awayFromR16;
+    return `W${sourceMatch}`;
+  }
+
+  // SF matches (101-102): Winner of QF
+  const sfSlot = sfBracket.find((s) => s.matchNumber === fifaMatchNumber);
+  if (sfSlot) {
+    const sourceMatch =
+      position === "home" ? sfSlot.homeFromQF : sfSlot.awayFromQF;
+    return `W${sourceMatch}`;
+  }
+
+  // Third place (103): Losers of SF
+  if (fifaMatchNumber === 103) {
+    return position === "home" ? "L101" : "L102";
+  }
+
+  // Final (104): Winners of SF
+  if (fifaMatchNumber === 104) {
+    return position === "home" ? "W101" : "W102";
+  }
+
+  return "TBD";
+}
+
+/**
+ * Check if a team is a real team (positive ID, not a placeholder)
+ */
+export function isRealTeam(team: Team | null): boolean {
+  return (
+    team !== null &&
+    team.id !== null &&
+    team.id > 0 &&
+    !isPlaceholderTeamId(team.id)
+  );
 }
 
 /**
@@ -156,16 +251,51 @@ export function getTeamDisplaySimple(
   position: "home" | "away",
   fifaMatchNumber?: FifaMatchId,
 ): TeamDisplay {
-  // Team with valid data
-  if (team && (team.tla || team.shortName || team.name)) {
+  // Real team with valid ID
+  if (
+    team &&
+    team.id !== null &&
+    team.id !== undefined &&
+    team.id > 0 &&
+    !isPlaceholderTeamId(team.id)
+  ) {
     return {
-      team: (team.id !== null && team.id !== undefined ? team : null) as Team | null,
+      team: team as Team,
       label:
         TEAM_TLA_OVERRIDES[team.name || ""] ||
         team.tla ||
         team.shortName ||
         team.name ||
         "TBD",
+      isPlaceholder: false,
+    };
+  }
+
+  // Placeholder team (PO1, IC1, etc.)
+  if (
+    team &&
+    team.id !== null &&
+    team.id !== undefined &&
+    isPlaceholderTeamId(team.id)
+  ) {
+    return {
+      team: team as Team,
+      label: team.tla || "TBD",
+      isPlaceholder: true,
+    };
+  }
+
+  // Team without ID - just use names
+  if (team && (team.tla || team.shortName || team.name)) {
+    return {
+      team: null,
+      label:
+        TEAM_TLA_OVERRIDES[team.name || ""] ||
+        team.tla ||
+        team.shortName ||
+        team.name ||
+        "TBD",
+      isPlaceholder: true,
     };
   }
 
@@ -173,7 +303,8 @@ export function getTeamDisplaySimple(
   if (fifaMatchNumber && fifaMatchNumber >= 73) {
     return {
       team: null,
-      label: getKnockoutTbdLabel(fifaMatchNumber, position),
+      label: getBracketLabel(fifaMatchNumber, position),
+      isPlaceholder: true,
     };
   }
 
@@ -181,5 +312,6 @@ export function getTeamDisplaySimple(
   return {
     team: null,
     label: "QUA",
+    isPlaceholder: true,
   };
 }

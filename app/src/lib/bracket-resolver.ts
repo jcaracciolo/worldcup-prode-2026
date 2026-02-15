@@ -7,13 +7,9 @@
 import { Match, Team, FifaMatchId, asFifaMatchId } from "@/types/football";
 import { CalculatedStanding } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
-import {
-  r32Bracket,
-  r16Bracket,
-  qfBracket,
-  sfBracket,
-  getKnockoutTbdLabel,
-} from "./r32-bracket";
+import { r32Bracket, r16Bracket, qfBracket, sfBracket } from "./r32-bracket";
+import { getBracketLabel } from "./team-display";
+import { getThirdPlaceTeamForMatch } from "./third-place-ranking";
 
 export interface BracketResolverParams {
   matches: Match[];
@@ -65,9 +61,9 @@ export class BracketResolver {
     away: Team | null,
   ): void {
     const homeDisplayName =
-      home?.tla ?? getKnockoutTbdLabel(fifaNumber, "home");
+      home?.tla ?? getBracketLabel(fifaNumber, "home");
     const awayDisplayName =
-      away?.tla ?? getKnockoutTbdLabel(fifaNumber, "away");
+      away?.tla ?? getBracketLabel(fifaNumber, "away");
     this.resolved.set(fifaNumber, {
       home,
       away,
@@ -282,6 +278,17 @@ export class BracketResolver {
               bracketSlot.awayPosition.group,
               bracketSlot.awayPosition.position,
             );
+          }
+
+          // For third-place slots (awayPosition is null), resolve dynamically
+          if (!awayTeam && bracketSlot.awayPosition === null) {
+            const thirdPlaceResult = getThirdPlaceTeamForMatch(
+              fifaNumber,
+              this.groupStandings,
+            );
+            if (thirdPlaceResult) {
+              awayTeam = thirdPlaceResult.team;
+            }
           }
         }
       }

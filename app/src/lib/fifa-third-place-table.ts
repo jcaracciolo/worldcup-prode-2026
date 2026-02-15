@@ -331,7 +331,7 @@ export const FIFA_THIRD_PLACE_TABLE: Record<string, string[]> = {
   ACDFGHIJ: ["H", "G", "J", "C", "A", "F", "D", "I"],
 
   // Row 251-260
-  ACDEHIJKL: ["E", "J", "I", "C", "A", "D", "L", "K"],
+  ACDEIJKL: ["E", "J", "I", "C", "A", "D", "L", "K"],
   ACDEHJKL: ["H", "J", "E", "C", "A", "D", "L", "K"],
   ACDEHIKL: ["H", "E", "I", "C", "A", "D", "L", "K"],
   ACDEHIJL: ["H", "J", "E", "C", "A", "D", "L", "I"],
@@ -431,7 +431,7 @@ export const FIFA_THIRD_PLACE_TABLE: Record<string, string[]> = {
   ABDFGHIL: ["H", "G", "B", "D", "A", "F", "L", "I"],
   ABDFGHIK: ["H", "G", "B", "D", "A", "F", "I", "K"],
   ABDFGHIJ: ["H", "G", "B", "D", "A", "F", "I", "J"],
-  ABDEHIJKL: ["E", "J", "B", "A", "I", "D", "L", "K"],
+  ABDEIJKL: ["E", "J", "B", "A", "I", "D", "L", "K"],
   ABDEHJKL: ["E", "J", "B", "D", "A", "H", "L", "K"],
   ABDEHIKL: ["E", "I", "B", "D", "A", "H", "L", "K"],
   ABDEHIJL: ["E", "J", "B", "D", "A", "H", "L", "I"],

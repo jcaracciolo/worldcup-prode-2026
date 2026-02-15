@@ -8,10 +8,8 @@ import { useUser, useAllProfiles } from "@/contexts/UserContext";
 import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { useMatchPointsForAllUsers } from "@/contexts/LeaderboardContext";
 import { getMatchInfo } from "@/lib/tournament";
-import {
-  getMaxPossiblePoints,
-  getTeamDisplayName,
-} from "@/lib/scoring";
+import { getMaxPossiblePoints } from "@/lib/scoring";
+import { getTeamDisplaySimple } from "@/lib/team-display";
 import { format } from "date-fns";
 import { Profile } from "@/types/database";
 import { FifaMatchId, asFifaMatchId } from "@/types/football";
@@ -255,23 +253,27 @@ export default function MatchDetailPage() {
                     {match.homeTeam.crest ? (
                       <img
                         src={match.homeTeam.crest}
-                        alt={getTeamDisplayName(
-                          match.homeTeam,
-                          match.id,
-                          "home",
-                          fifaId,
-                        )}
+                        alt={
+                          getTeamDisplaySimple(
+                            match.homeTeam,
+                            match.id,
+                            "home",
+                            fifaId,
+                          ).label
+                        }
                         className="w-12 h-12 sm:w-16 sm:h-16 mx-auto object-contain mb-2 drop-shadow-lg"
                       />
                     ) : (
                       <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-2">
                         <span className="text-lg sm:text-xl font-bold">
-                          {getTeamDisplayName(
-                            match.homeTeam,
-                            match.id,
-                            "home",
-                            fifaId,
-                          )}
+                          {
+                            getTeamDisplaySimple(
+                              match.homeTeam,
+                              match.id,
+                              "home",
+                              fifaId,
+                            ).label
+                          }
                         </span>
                       </div>
                     )}
@@ -279,20 +281,24 @@ export default function MatchDetailPage() {
                       className={`font-bold text-sm ${homeHighlight ? "text-slate-900" : "text-white"}`}
                     >
                       <span className="hidden sm:inline">
-                        {getTeamDisplayName(
-                          match.homeTeam,
-                          match.id,
-                          "home",
-                          fifaId,
-                        )}
+                        {
+                          getTeamDisplaySimple(
+                            match.homeTeam,
+                            match.id,
+                            "home",
+                            fifaId,
+                          ).label
+                        }
                       </span>
                       <span className="sm:hidden">
-                        {getTeamDisplayName(
-                          match.homeTeam,
-                          match.id,
-                          "home",
-                          fifaId,
-                        )}
+                        {
+                          getTeamDisplaySimple(
+                            match.homeTeam,
+                            match.id,
+                            "home",
+                            fifaId,
+                          ).label
+                        }
                       </span>
                     </div>
                   </div>
@@ -323,23 +329,27 @@ export default function MatchDetailPage() {
                     {match.awayTeam.crest ? (
                       <img
                         src={match.awayTeam.crest}
-                        alt={getTeamDisplayName(
-                          match.awayTeam,
-                          match.id,
-                          "away",
-                          fifaId,
-                        )}
+                        alt={
+                          getTeamDisplaySimple(
+                            match.awayTeam,
+                            match.id,
+                            "away",
+                            fifaId,
+                          ).label
+                        }
                         className="w-12 h-12 sm:w-16 sm:h-16 mx-auto object-contain mb-2 drop-shadow-lg"
                       />
                     ) : (
                       <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-2">
                         <span className="text-lg sm:text-xl font-bold">
-                          {getTeamDisplayName(
-                            match.awayTeam,
-                            match.id,
-                            "away",
-                            fifaId,
-                          )}
+                          {
+                            getTeamDisplaySimple(
+                              match.awayTeam,
+                              match.id,
+                              "away",
+                              fifaId,
+                            ).label
+                          }
                         </span>
                       </div>
                     )}
@@ -347,20 +357,24 @@ export default function MatchDetailPage() {
                       className={`font-bold text-sm ${awayHighlight ? "text-slate-900" : "text-white"}`}
                     >
                       <span className="hidden sm:inline">
-                        {getTeamDisplayName(
-                          match.awayTeam,
-                          match.id,
-                          "away",
-                          fifaId,
-                        )}
+                        {
+                          getTeamDisplaySimple(
+                            match.awayTeam,
+                            match.id,
+                            "away",
+                            fifaId,
+                          ).label
+                        }
                       </span>
                       <span className="sm:hidden">
-                        {getTeamDisplayName(
-                          match.awayTeam,
-                          match.id,
-                          "away",
-                          fifaId,
-                        )}
+                        {
+                          getTeamDisplaySimple(
+                            match.awayTeam,
+                            match.id,
+                            "away",
+                            fifaId,
+                          ).label
+                        }
                       </span>
                     </div>
                   </div>

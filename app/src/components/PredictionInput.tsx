@@ -2,7 +2,7 @@
 
 import { Match, Team, FifaMatchId } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
-import { getTeamDisplayName } from "@/lib/scoring";
+import { getTeamDisplaySimple } from "@/lib/team-display";
 import {
   CITY_ABBREVIATIONS,
   formatMatchDate,
@@ -139,14 +139,24 @@ export default function PredictionInput({
               } disabled:opacity-50`}
             >
               {homeTeam?.tla ||
-                getTeamDisplayName(homeTeam, match.id, "home", fifaMatchNumber)}
+                getTeamDisplaySimple(
+                  homeTeam,
+                  match.id,
+                  "home",
+                  fifaMatchNumber,
+                ).label}
             </button>
           ) : (
             <span
               className={`text-[10px] font-semibold truncate px-0.5 py-0.5 rounded ${homeIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
             >
               {homeTeam?.tla ||
-                getTeamDisplayName(homeTeam, match.id, "home", fifaMatchNumber)}
+                getTeamDisplaySimple(
+                  homeTeam,
+                  match.id,
+                  "home",
+                  fifaMatchNumber,
+                ).label}
             </span>
           )}
           <TeamCrest team={homeTeam} size="sm" />
@@ -192,14 +202,24 @@ export default function PredictionInput({
               } disabled:opacity-50`}
             >
               {awayTeam?.tla ||
-                getTeamDisplayName(awayTeam, match.id, "away", fifaMatchNumber)}
+                getTeamDisplaySimple(
+                  awayTeam,
+                  match.id,
+                  "away",
+                  fifaMatchNumber,
+                ).label}
             </button>
           ) : (
             <span
               className={`text-[10px] font-semibold truncate px-0.5 py-0.5 rounded ${awayIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
             >
               {awayTeam?.tla ||
-                getTeamDisplayName(awayTeam, match.id, "away", fifaMatchNumber)}
+                getTeamDisplaySimple(
+                  awayTeam,
+                  match.id,
+                  "away",
+                  fifaMatchNumber,
+                ).label}
             </span>
           )}
         </div>
@@ -242,12 +262,12 @@ export default function PredictionInput({
               >
                 <span className="text-xs font-semibold">
                   {homeTeam?.tla ||
-                    getTeamDisplayName(
+                    getTeamDisplaySimple(
                       homeTeam,
                       match.id,
                       "home",
                       fifaMatchNumber,
-                    )}
+                    ).label}
                 </span>
                 <TeamCrest team={homeTeam} />
               </button>
@@ -263,12 +283,12 @@ export default function PredictionInput({
                   }`}
                 >
                   {homeTeam?.tla ||
-                    getTeamDisplayName(
+                    getTeamDisplaySimple(
                       homeTeam,
                       match.id,
                       "home",
                       fifaMatchNumber,
-                    )}
+                    ).label}
                 </span>
                 <TeamCrest team={homeTeam} />
               </div>
@@ -323,12 +343,12 @@ export default function PredictionInput({
                 <TeamCrest team={awayTeam} />
                 <span className="text-xs font-semibold">
                   {awayTeam?.tla ||
-                    getTeamDisplayName(
+                    getTeamDisplaySimple(
                       awayTeam,
                       match.id,
                       "away",
                       fifaMatchNumber,
-                    )}
+                    ).label}
                 </span>
               </button>
             ) : (
@@ -344,12 +364,12 @@ export default function PredictionInput({
                   }`}
                 >
                   {awayTeam?.tla ||
-                    getTeamDisplayName(
+                    getTeamDisplaySimple(
                       awayTeam,
                       match.id,
                       "away",
                       fifaMatchNumber,
-                    )}
+                    ).label}
                 </span>
               </div>
             )}

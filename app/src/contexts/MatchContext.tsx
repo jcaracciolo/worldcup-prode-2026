@@ -17,7 +17,7 @@ import {
 } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
 import { getMatchInfo, Venue } from "@/lib/tournament";
-import { getTeamDisplayName } from "@/lib/scoring";
+import { getTeamDisplaySimple } from "@/lib/team-display";
 import { calculateAllActualStandings } from "@/lib/standings";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { BracketResolver, ResolvedTeams } from "@/lib/bracket-resolver";
@@ -161,18 +161,18 @@ function enhanceMatch(match: Match, currentTime: Date): MatchWithLiveInfo {
   }
 
   // Compute display names (e.g., "USA", "1A", "W73", "3rd")
-  const homeDisplayName = getTeamDisplayName(
+  const homeDisplayName = getTeamDisplaySimple(
     match.homeTeam,
     match.id,
     "home",
     fifaNumber,
-  );
-  const awayDisplayName = getTeamDisplayName(
+  ).label;
+  const awayDisplayName = getTeamDisplaySimple(
     match.awayTeam,
     match.id,
     "away",
     fifaNumber,
-  );
+  ).label;
 
   return {
     ...match,

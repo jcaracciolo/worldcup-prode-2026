@@ -36,11 +36,8 @@ const LeaderboardContext = createContext<LeaderboardContextValue | null>(null);
 
 export function LeaderboardProvider({ children }: { children: ReactNode }) {
   const { stageLockStatus } = useTime();
-  const {
-    matches,
-    actualGroupStandings,
-    actualThirdPlaceQualifying,
-  } = useMatches();
+  const { matches, actualGroupStandings, actualThirdPlaceQualifying } =
+    useMatches();
   const profiles = useAllProfiles();
   const allPredictions = useAllPredictions();
 
@@ -284,7 +281,10 @@ export function useMatchPointsForAllUsers(matchId: number) {
           breakdown: matchBreakdown,
         };
       })
-      .filter((u) => u.breakdown.length > 0 || scores.some(s => s.userId === u.userId)); // Include users even with 0 points
+      .filter(
+        (u) =>
+          u.breakdown.length > 0 || scores.some((s) => s.userId === u.userId),
+      ); // Include users even with 0 points
 
     return { loading: false, matchPoints };
   }, [matchId, scores, loading]);

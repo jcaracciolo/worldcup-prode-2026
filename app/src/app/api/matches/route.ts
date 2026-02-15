@@ -3,6 +3,7 @@ import { createServerDatabaseService } from "@/lib/services/database-service";
 import { getMatches } from "@/lib/football-api";
 import { Match } from "@/types/football";
 import { buildApiToFifaMapping } from "@/lib/api-client";
+import { resolveAllTbdTeams } from "@/lib/tbd-teams";
 
 export const dynamic = "force-dynamic";
 
@@ -57,13 +58,17 @@ export async function GET() {
     // This is the ONLY place where API IDs are translated to FIFA IDs.
     // All consumers receive FIFA IDs as match.id.
     const apiToFifa = buildApiToFifaMapping(matches);
-    const fifaMatches = matches
+    let fifaMatches = matches
       .map((match) => {
         const fifaNumber = apiToFifa.get(match.id);
         if (fifaNumber === undefined) return null;
         return { ...match, id: fifaNumber as number };
       })
       .filter((m): m is Match => m !== null);
+
+    // Replace TBD teams with placeholder teams (EU playoff winners, IC playoff winners)
+    // This ensures all matches have valid team objects with IDs
+    fifaMatches = resolveAllTbdTeams(fifaMatches);
 
     return NextResponse.json({
       matches: fifaMatches,

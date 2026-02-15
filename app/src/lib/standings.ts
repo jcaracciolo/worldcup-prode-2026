@@ -94,16 +94,25 @@ export function calculateStandingsFromPredictions(
 }
 
 /**
+ * Check if a team is valid (has an ID - can be negative for placeholder teams)
+ * TBD teams from the API are replaced with placeholder teams that have negative IDs
+ */
+function isValidTeam(team: Match["homeTeam"] | Match["awayTeam"]): boolean {
+  return team && team.id !== null && team.id !== undefined;
+}
+
+/**
  * Calculate standings from actual match results
+ * Includes placeholder teams (negative IDs) for TBD qualification slots
  */
 export function calculateActualStandings(
   groupMatches: Match[],
 ): CalculatedStanding[] {
   const teamStats = new Map<number, CalculatedStanding>();
 
-  // Initialize all teams
+  // Initialize all teams (skip null/TBD teams)
   groupMatches.forEach((match) => {
-    if (!teamStats.has(match.homeTeam.id)) {
+    if (isValidTeam(match.homeTeam) && !teamStats.has(match.homeTeam.id)) {
       teamStats.set(match.homeTeam.id, {
         team: match.homeTeam,
         position: 0,
@@ -117,7 +126,7 @@ export function calculateActualStandings(
         lost: 0,
       });
     }
-    if (!teamStats.has(match.awayTeam.id)) {
+    if (isValidTeam(match.awayTeam) && !teamStats.has(match.awayTeam.id)) {
       teamStats.set(match.awayTeam.id, {
         team: match.awayTeam,
         position: 0,
@@ -133,9 +142,11 @@ export function calculateActualStandings(
     }
   });
 
-  // Apply actual results
+  // Apply actual results (skip matches involving TBD teams)
   groupMatches.forEach((match) => {
     if (match.status !== "FINISHED") return;
+    if (!isValidTeam(match.homeTeam) || !isValidTeam(match.awayTeam)) return;
+
     const homeGoals = match.score.fullTime.home;
     const awayGoals = match.score.fullTime.away;
     if (homeGoals === null || awayGoals === null) return;

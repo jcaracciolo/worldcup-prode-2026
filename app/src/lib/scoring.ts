@@ -11,7 +11,6 @@ import {
   getPredictionResult,
   isGroupStageMatch,
 } from "./football-api";
-import { r32Bracket, r16Bracket, qfBracket, sfBracket } from "./r32-bracket";
 import { BracketResolver } from "./bracket-resolver";
 
 // =====================================================================
@@ -89,6 +88,9 @@ export interface PointDetail {
 const TEAM_TLA_OVERRIDES: Record<string, string> = {
   Curaçao: "CUW",
   Curacao: "CUW",
+  "Côte d'Ivoire": "CIV",
+  "Korea Republic": "KOR",
+  "South Korea": "KOR",
 };
 
 /**
@@ -111,17 +113,6 @@ export function getTeamLabel(
   return team.tla || team.shortName || team.name || fallback;
 }
 
-/** @deprecated Use getTeamLabel instead. Kept for backwards compatibility. */
-function getTeamName(
-  team:
-    | { tla?: string | null; shortName?: string | null; name?: string | null }
-    | null
-    | undefined,
-  fallback: string = "QUA",
-): string {
-  return getTeamLabel(team, fallback);
-}
-
 /** Generate consistent TBD labels for a match based on match ID */
 export function getTbdLabels(matchId: number): { home: string; away: string } {
   // Use last 2 digits of match ID for a short identifier
@@ -130,98 +121,6 @@ export function getTbdLabels(matchId: number): { home: string; away: string } {
     home: `${matchNum}H`,
     away: `${matchNum}A`,
   };
-}
-
-/**
- * Generate meaningful TBD labels for knockout matches based on bracket structure
- * R32: "1A" (1st in Group A), "2B" (2nd in Group B), "3rd" (third place)
- * R16+: "W73" (winner of match 73)
- */
-export function getKnockoutTbdLabel(
-  fifaMatchNumber: FifaMatchId,
-  position: "home" | "away",
-): string {
-  // R32 matches (73-88): Show group position like "1A", "2B"
-  const r32Slot = r32Bracket.find((s) => s.matchNumber === fifaMatchNumber);
-  if (r32Slot) {
-    const pos =
-      position === "home" ? r32Slot.homePosition : r32Slot.awayPosition;
-    if (pos) {
-      // Extract group letter from "GROUP_A" -> "A"
-      const groupLetter = pos.group.replace("GROUP_", "");
-      return `${pos.position}${groupLetter}`;
-    }
-    // 3rd place slot - dynamic
-    return "3rd";
-  }
-
-  // R16 matches (89-96): Show winner of R32 match
-  const r16Slot = r16Bracket.find((s) => s.matchNumber === fifaMatchNumber);
-  if (r16Slot) {
-    const sourceMatch =
-      position === "home" ? r16Slot.homeFromR32 : r16Slot.awayFromR32;
-    return `W${sourceMatch}`;
-  }
-
-  // QF matches (97-100): Show winner of R16 match
-  const qfSlot = qfBracket.find((s) => s.matchNumber === fifaMatchNumber);
-  if (qfSlot) {
-    const sourceMatch =
-      position === "home" ? qfSlot.homeFromR16 : qfSlot.awayFromR16;
-    return `W${sourceMatch}`;
-  }
-
-  // SF matches (101-102): Show winner of QF match
-  const sfSlot = sfBracket.find((s) => s.matchNumber === fifaMatchNumber);
-  if (sfSlot) {
-    const sourceMatch =
-      position === "home" ? sfSlot.homeFromQF : sfSlot.awayFromQF;
-    return `W${sourceMatch}`;
-  }
-
-  // Third place (103): Losers of SF
-  if (fifaMatchNumber === 103) {
-    return position === "home" ? "L101" : "L102";
-  }
-
-  // Final (104): Winners of SF
-  if (fifaMatchNumber === 104) {
-    return position === "home" ? "W101" : "W102";
-  }
-
-  // Fallback
-  return position === "home" ? "TBD" : "TBD";
-}
-
-/**
- * Get team display name with consistent TBD fallback
- * Use this in components to display team names
- * For knockout matches with fifaMatchNumber, generates meaningful labels like "1A", "W73"
- */
-export function getTeamDisplayName(
-  team:
-    | { tla?: string | null; shortName?: string | null; name?: string | null }
-    | null
-    | undefined,
-  matchId: number,
-  position: "home" | "away",
-  fifaMatchNumber?: FifaMatchId,
-): string {
-  // Check for override first
-  if (team?.name && TEAM_TLA_OVERRIDES[team.name]) {
-    return TEAM_TLA_OVERRIDES[team.name];
-  }
-  if (team?.tla) return team.tla;
-  if (team?.shortName) return team.shortName;
-  if (team?.name) return team.name;
-
-  // For knockout matches with FIFA number, use meaningful bracket labels
-  if (fifaMatchNumber && fifaMatchNumber >= 73) {
-    return getKnockoutTbdLabel(fifaMatchNumber, position);
-  }
-
-  // Group stage: team not yet qualified for the tournament
-  return "QUA";
 }
 
 function getStageName(stage: string): string {
@@ -453,12 +352,12 @@ export function calculateMatchPointsDetailed(
       // Both teams tied - 1 point each × multiplier
       resultPoints = correctResult ? 2 * multiplier : 0;
       details.push({
-        description: `${getTeamName(match.homeTeam, tbdLabels.home)} tie${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
+        description: `${getTeamLabel(match.homeTeam, tbdLabels.home)} tie${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
         points: 1 * multiplier,
         earned: correctResult,
       });
       details.push({
-        description: `${getTeamName(match.awayTeam, tbdLabels.away)} tie${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
+        description: `${getTeamLabel(match.awayTeam, tbdLabels.away)} tie${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
         points: 1 * multiplier,
         earned: correctResult,
       });
@@ -472,12 +371,12 @@ export function calculateMatchPointsDetailed(
         actualResult === "home" ? tbdLabels.away : tbdLabels.home;
       resultPoints = correctResult ? 2 * multiplier : 0;
       details.push({
-        description: `${getTeamName(winner, winnerFallback)} win${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
+        description: `${getTeamLabel(winner, winnerFallback)} win${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
         points: 1 * multiplier,
         earned: correctResult,
       });
       details.push({
-        description: `${getTeamName(loser, loserFallback)} loss${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
+        description: `${getTeamLabel(loser, loserFallback)} loss${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
         points: 1 * multiplier,
         earned: correctResult,
       });
@@ -489,8 +388,8 @@ export function calculateMatchPointsDetailed(
       actualResult === "draw"
         ? "Draw"
         : actualResult === "home"
-          ? `${getTeamName(match.homeTeam, tbdLabels.home)} win`
-          : `${getTeamName(match.awayTeam, tbdLabels.away)} win`;
+          ? `${getTeamLabel(match.homeTeam, tbdLabels.home)} win`
+          : `${getTeamLabel(match.awayTeam, tbdLabels.away)} win`;
     details.push({
       description: `Correct result (${resultLabel})${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
       points: POINTS_CORRECT_RESULT * multiplier,
@@ -516,7 +415,7 @@ export function calculateMatchPointsDetailed(
     homeTeamMatches && prediction.home_goals === actualHome;
   homeGoalsPoints = correctHomeGoals ? POINTS_CORRECT_GOALS : 0;
   details.push({
-    description: `${getTeamName(match.homeTeam, tbdLabels.home)} goals (${actualHome})`,
+    description: `${getTeamLabel(match.homeTeam, tbdLabels.home)} goals (${actualHome})`,
     points: POINTS_CORRECT_GOALS,
     earned: correctHomeGoals,
     // Show as not applicable if predicted team doesn't match actual team
@@ -528,7 +427,7 @@ export function calculateMatchPointsDetailed(
     awayTeamMatches && prediction.away_goals === actualAway;
   awayGoalsPoints = correctAwayGoals ? POINTS_CORRECT_GOALS : 0;
   details.push({
-    description: `${getTeamName(match.awayTeam, tbdLabels.away)} goals (${actualAway})`,
+    description: `${getTeamLabel(match.awayTeam, tbdLabels.away)} goals (${actualAway})`,
     points: POINTS_CORRECT_GOALS,
     earned: correctAwayGoals,
     // Show as not applicable if predicted team doesn't match actual team
@@ -675,7 +574,10 @@ export function calculateKnockoutPoints(
   match: Match,
   prediction: LocalPrediction | undefined,
   /** User's predicted teams for this match slot (from BracketResolver) */
-  predictedTeams?: { home?: { id: number } | null; away?: { id: number } | null },
+  predictedTeams?: {
+    home?: { id: number } | null;
+    away?: { id: number } | null;
+  },
 ): PointBreakdown[] {
   const points: PointBreakdown[] = [];
   const isLive = isMatchLive(match);
@@ -1125,4 +1027,3 @@ export function calculateTotalPoints(
 
   return { totalPoints, livePoints, breakdown: allBreakdown };
 }
-

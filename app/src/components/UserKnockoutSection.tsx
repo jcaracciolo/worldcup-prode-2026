@@ -9,7 +9,7 @@ import {
   asFifaMatchId,
 } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
-import { getTeamDisplayName } from "@/lib/scoring";
+import { getTeamDisplaySimple } from "@/lib/team-display";
 import { getMatchInfo, Venue } from "@/lib/tournament";
 import { BracketResolver, ResolvedTeams } from "@/lib/bracket-resolver";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
@@ -239,27 +239,36 @@ function KnockoutMatchRow({
                 homeHighlight ? "text-slate-900" : "text-white"
               }`}
             >
-              {getTeamDisplayName(homeTeam, match.id, "home", fifaMatchNumber)}
+              {
+                getTeamDisplaySimple(
+                  homeTeam,
+                  match.id,
+                  "home",
+                  fifaMatchNumber,
+                ).label
+              }
             </span>
             {homeTeam?.crest ? (
               <img
                 src={homeTeam.crest}
-                alt={getTeamDisplayName(
-                  homeTeam,
-                  match.id,
-                  "home",
-                  fifaMatchNumber,
-                )}
+                alt={
+                  getTeamDisplaySimple(
+                    homeTeam,
+                    match.id,
+                    "home",
+                    fifaMatchNumber,
+                  ).label
+                }
                 className="w-6 h-6 object-contain shrink-0"
               />
             ) : (
               <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-[9px] font-bold text-white/60 shrink-0">
-                {getTeamDisplayName(
+                {getTeamDisplaySimple(
                   homeTeam,
                   match.id,
                   "home",
                   fifaMatchNumber,
-                ).substring(0, 3)}
+                ).label.substring(0, 3)}
               </div>
             )}
           </div>
@@ -284,22 +293,24 @@ function KnockoutMatchRow({
             {awayTeam?.crest ? (
               <img
                 src={awayTeam.crest}
-                alt={getTeamDisplayName(
-                  awayTeam,
-                  match.id,
-                  "away",
-                  fifaMatchNumber,
-                )}
+                alt={
+                  getTeamDisplaySimple(
+                    awayTeam,
+                    match.id,
+                    "away",
+                    fifaMatchNumber,
+                  ).label
+                }
                 className="w-6 h-6 object-contain shrink-0"
               />
             ) : (
               <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-[9px] font-bold text-white/60 shrink-0">
-                {getTeamDisplayName(
+                {getTeamDisplaySimple(
                   awayTeam,
                   match.id,
                   "away",
                   fifaMatchNumber,
-                ).substring(0, 3)}
+                ).label.substring(0, 3)}
               </div>
             )}
             <span
@@ -307,7 +318,14 @@ function KnockoutMatchRow({
                 awayHighlight ? "text-slate-900" : "text-white"
               }`}
             >
-              {getTeamDisplayName(awayTeam, match.id, "away", fifaMatchNumber)}
+              {
+                getTeamDisplaySimple(
+                  awayTeam,
+                  match.id,
+                  "away",
+                  fifaMatchNumber,
+                ).label
+              }
             </span>
           </div>
         </div>

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { Match, FifaMatchId, asFifaMatchId } from "@/types/football";
 import { useMatches, MatchWithLiveInfo } from "@/contexts/MatchContext";
-import { getTeamDisplayName } from "@/lib/scoring";
+import { getTeamDisplaySimple } from "@/lib/team-display";
 import { format } from "date-fns";
 import Link from "next/link";
 
@@ -29,18 +29,18 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
       : undefined;
   const homeTeam = resolved?.home ?? match.homeTeam;
   const awayTeam = resolved?.away ?? match.awayTeam;
-  const homeDisplayName = getTeamDisplayName(
+  const homeDisplayName = getTeamDisplaySimple(
     homeTeam,
     match.id,
     "home",
     fifaMatchNumber,
-  );
-  const awayDisplayName = getTeamDisplayName(
+  ).label;
+  const awayDisplayName = getTeamDisplaySimple(
     awayTeam,
     match.id,
     "away",
     fifaMatchNumber,
-  );
+  ).label;
   // Support both Match and MatchWithLiveInfo
   const isLive = hasLiveInfo(match)
     ? match.isLive

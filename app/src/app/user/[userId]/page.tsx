@@ -44,10 +44,8 @@ export default function UserPredictionsPage() {
     !targetProfileState.error;
 
   // Use cached predictions from PredictionsContext
-  const {
-    predictions: predictionsMap,
-    loading: predictionsLoading,
-  } = useUserPredictions(userId);
+  const { predictions: predictionsMap, loading: predictionsLoading } =
+    useUserPredictions(userId);
 
   // Use predictions from context
   const predictions: LocalPrediction[] = Array.from(predictionsMap.values());
@@ -111,11 +109,14 @@ export default function UserPredictionsPage() {
   const totalPoints = userScore?.totalPoints ?? 0;
   const livePoints = userScore?.livePoints ?? 0;
   const breakdown = userScore?.breakdown ?? [];
-  const pointBreakdown = useMemo(() => ({
-    groupStagePoints: userScore?.groupStagePoints ?? 0,
-    groupBonusPoints: userScore?.groupBonusPoints ?? 0,
-    knockoutPoints: userScore?.knockoutPoints ?? 0,
-  }), [userScore]);
+  const pointBreakdown = useMemo(
+    () => ({
+      groupStagePoints: userScore?.groupStagePoints ?? 0,
+      groupBonusPoints: userScore?.groupBonusPoints ?? 0,
+      knockoutPoints: userScore?.knockoutPoints ?? 0,
+    }),
+    [userScore],
+  );
 
   // Visibility rules - show predictions when stage is locked
   const showGroupPredictions = isOwnPredictions || groupStageLocked;

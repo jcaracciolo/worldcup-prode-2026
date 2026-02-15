@@ -21,7 +21,7 @@ export interface Team {
   name: string;
   shortName: string;
   tla: string;
-  crest: string;
+  crest: string | null;
 }
 
 export interface Score {
@@ -149,13 +149,13 @@ export interface PointBreakdown {
   // Optional team info for display
   team?: {
     tla: string;
-    crest: string;
+    crest: string | null;
     name: string;
   };
   // Optional match info for display
   matchInfo?: {
-    homeTeam: { tla: string; crest: string };
-    awayTeam: { tla: string; crest: string };
+    homeTeam: { tla: string; crest: string | null };
+    awayTeam: { tla: string; crest: string | null };
     homeGoals: number;
     awayGoals: number;
     stage: string;

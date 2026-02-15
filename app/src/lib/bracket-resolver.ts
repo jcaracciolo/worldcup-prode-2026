@@ -7,8 +7,13 @@
 import { Match, Team, FifaMatchId, asFifaMatchId } from "@/types/football";
 import { CalculatedStanding } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
-import { r32Bracket, r16Bracket, qfBracket, sfBracket } from "./r32-bracket";
-import { getKnockoutTbdLabel } from "./scoring";
+import {
+  r32Bracket,
+  r16Bracket,
+  qfBracket,
+  sfBracket,
+  getKnockoutTbdLabel,
+} from "./r32-bracket";
 
 export interface BracketResolverParams {
   matches: Match[];
@@ -72,9 +77,12 @@ export class BracketResolver {
   }
 
   // Check if a team from API is valid (not a placeholder/TBD)
+  // Note: Used for knockout matches where we want real teams, not placeholders
+  // Placeholder teams (negative IDs like -1001 for PO1) are considered invalid here
+  // because we want to calculate the actual team from standings
   private isValidApiTeam(team: Team | null): boolean {
     if (!team) return false;
-    // Invalid if no id, or tla is empty or looks like a placeholder (e.g., "TBD", "28A", "1A")
+    // Invalid if no id, or id is placeholder (negative) or zero
     if (!team.id || team.id <= 0) return false;
     if (!team.tla || team.tla.length === 0) return false;
     // Check for placeholder patterns like "1A", "28A", "TBD"
@@ -84,10 +92,12 @@ export class BracketResolver {
   }
 
   // Check if a group has all matches finished (can use actual standings)
+  // All teams now have IDs (including placeholder teams for TBD qualification slots)
   private isGroupComplete(group: string): boolean {
     const groupMatches = this.matches.filter(
       (m) => m.stage === "GROUP_STAGE" && m.group === group,
     );
+    // All matches must be finished with scores
     return groupMatches.every(
       (m) =>
         m.status === "FINISHED" &&

@@ -2,7 +2,7 @@
 
 import { Match, FifaMatchId } from "@/types/football";
 import { MatchWithLiveInfo } from "@/contexts/MatchContext";
-import { getTeamDisplayName } from "@/lib/scoring";
+import { getTeamDisplaySimple } from "@/lib/team-display";
 import Link from "next/link";
 import {
   CITY_ABBREVIATIONS,
@@ -134,7 +134,8 @@ export default function FixtureRow({
             className={`text-xs font-semibold truncate px-1 py-0.5 rounded ${homeIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
           >
             {homeTeam?.tla ||
-              getTeamDisplayName(homeTeam, match.id, "home", fifaMatchNumber)}
+              getTeamDisplaySimple(homeTeam, match.id, "home", fifaMatchNumber)
+                .label}
           </span>
           <TeamCrest team={homeTeam} />
         </div>
@@ -183,7 +184,8 @@ export default function FixtureRow({
             className={`text-xs font-semibold truncate px-1 py-0.5 rounded ${awayIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
           >
             {awayTeam?.tla ||
-              getTeamDisplayName(awayTeam, match.id, "away", fifaMatchNumber)}
+              getTeamDisplaySimple(awayTeam, match.id, "away", fifaMatchNumber)
+                .label}
           </span>
         </div>
 
@@ -275,12 +277,14 @@ export default function FixtureRow({
                   homeIsWinner ? "text-slate-900 font-bold" : "text-white"
                 }`}
               >
-                {getTeamDisplayName(
-                  homeTeam,
-                  match.id,
-                  "home",
-                  fifaMatchNumber,
-                )}
+                {
+                  getTeamDisplaySimple(
+                    homeTeam,
+                    match.id,
+                    "home",
+                    fifaMatchNumber,
+                  ).label
+                }
               </span>
               <TeamCrest team={homeTeam} size="lg" />
             </div>
@@ -338,12 +342,14 @@ export default function FixtureRow({
                   awayIsWinner ? "text-slate-900 font-bold" : "text-white"
                 }`}
               >
-                {getTeamDisplayName(
-                  awayTeam,
-                  match.id,
-                  "away",
-                  fifaMatchNumber,
-                )}
+                {
+                  getTeamDisplaySimple(
+                    awayTeam,
+                    match.id,
+                    "away",
+                    fifaMatchNumber,
+                  ).label
+                }
               </span>
             </div>
           </div>

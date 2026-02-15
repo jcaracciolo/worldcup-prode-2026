@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { PointBreakdown, FifaMatchId, asFifaMatchId } from "@/types/football";
-import { getTeamDisplayName, getTeamLabel } from "@/lib/scoring";
+import { getTeamLabel } from "@/lib/scoring";
+import { getTeamDisplaySimple } from "@/lib/team-display";
 
 interface PointsBreakdownProps {
   breakdown: PointBreakdown[];
@@ -95,13 +96,18 @@ export default function PointsBreakdown({
     // Get team display name with fallback to match ID label
     const getTeamDisplay = (
       team:
-        | { tla?: string; crest?: string; shortName?: string; name?: string }
+        | {
+            tla?: string;
+            crest?: string | null;
+            shortName?: string;
+            name?: string;
+          }
         | undefined,
       matchId: number,
       position: "home" | "away",
     ) => {
       const fifaId = asFifaMatchId(matchId);
-      return getTeamDisplayName(team, matchId, position, fifaId);
+      return getTeamDisplaySimple(team, matchId, position, fifaId).label;
     };
 
     // For group bonus types (advance/position), show team with emoji

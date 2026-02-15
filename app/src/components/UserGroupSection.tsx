@@ -9,7 +9,8 @@ import {
 } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
 import { calculateStandingsFromPredictions } from "@/lib/standings";
-import { getTeamDisplayName, getTeamLabel } from "@/lib/scoring";
+import { getTeamLabel } from "@/lib/scoring";
+import { getTeamDisplaySimple } from "@/lib/team-display";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import StandingsTable from "@/components/StandingsTable";
 import LockedCard from "@/components/LockedCard";
@@ -390,7 +391,7 @@ export function GroupMatchRow({
               homeHighlight ? "text-slate-900 font-semibold" : "text-white/80"
             }
           >
-            {getTeamDisplayName(match.homeTeam, match.id, "home")}
+            {getTeamDisplaySimple(match.homeTeam, match.id, "home").label}
           </span>
           {match.homeTeam.crest ? (
             <img
@@ -426,7 +427,7 @@ export function GroupMatchRow({
               awayHighlight ? "text-slate-900 font-semibold" : "text-white/80"
             }
           >
-            {getTeamDisplayName(match.awayTeam, match.id, "away")}
+            {getTeamDisplaySimple(match.awayTeam, match.id, "away").label}
           </span>
         </div>
       </Link>

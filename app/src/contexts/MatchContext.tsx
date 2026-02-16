@@ -15,7 +15,6 @@ import {
   asFifaMatchId,
   CalculatedStanding,
 } from "@/types/football";
-import { LocalPrediction } from "@/types/database";
 import { getMatchInfo, Venue } from "@/lib/tournament";
 import { getTeamDisplaySimple } from "@/lib/team-display";
 import { calculateAllActualStandings } from "@/lib/standings";
@@ -409,55 +408,4 @@ export function useMatch(fifaId: FifaMatchId): MatchWithLiveInfo | undefined {
   return useMemo(() => {
     return matches.find((m) => m.id === fifaId);
   }, [matches, fifaId]);
-}
-
-/**
- * Hook to get resolved knockout teams.
- *
- * Without arguments, returns actual data from MatchContext
- * (based on real match results: API > calculated > null).
- *
- * When knockout predictions are provided, runs BracketResolver using
- * actual group standings for R32, and predicted knockout winners for R16+.
- *
- * @param predictions - Optional knockout prediction map keyed by FIFA match number
- */
-export function useKnockoutTeams(
-  predictions?: Map<FifaMatchId, LocalPrediction>,
-): Map<FifaMatchId, ResolvedTeams> {
-  const {
-    matches,
-    rawProcessedMatches,
-    resolvedKnockoutTeams,
-    actualGroupStandings,
-    actualThirdPlaceQualifying,
-  } = useMatches();
-
-  const hasPredictions = !!predictions;
-
-  // Resolve knockout bracket using actual standings + knockout predictions.
-  // We use rawProcessedMatches (before actual resolved teams are baked in)
-  // so BracketResolver doesn't treat baked-in teams as API teams and skip
-  // prediction-based resolution for R16+.
-  const predictedTeams = useMemo(() => {
-    if (!hasPredictions || !predictions) {
-      return new Map<FifaMatchId, ResolvedTeams>();
-    }
-    const resolver = new BracketResolver({
-      matches: rawProcessedMatches,
-      predictions,
-      groupStandings: actualGroupStandings,
-      thirdPlaceQualifying: actualThirdPlaceQualifying,
-      useKnockoutPredictions: true,
-    });
-    return resolver.resolve();
-  }, [
-    hasPredictions,
-    rawProcessedMatches,
-    predictions,
-    actualGroupStandings,
-    actualThirdPlaceQualifying,
-  ]);
-
-  return hasPredictions ? predictedTeams : resolvedKnockoutTeams;
 }

@@ -383,7 +383,9 @@ export default function MatchDetailPage() {
 
                   {loadingAllPredictions ? (
                     <div className="text-xs text-white/50 text-center py-2">
-                      <span className="text-lg animate-bounce-spin inline-block">⚽</span>
+                      <span className="text-lg animate-bounce-spin inline-block">
+                        ⚽
+                      </span>
                     </div>
                   ) : allUserPredictions.length === 0 ? (
                     <div className="text-xs text-white/50 text-center py-2">

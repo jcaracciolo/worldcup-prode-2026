@@ -93,7 +93,8 @@ const content = {
         "Get a second chance to predict all knockout matches once the group stage is complete.",
       secondDraft: {
         title: "Second Draft",
-        description: "Once the group stage ends (June 11), a new prediction window opens for knockout matches. You'll know exactly which teams qualified, allowing you to make informed predictions for all 16 Round of 32 matches through to the Final.",
+        description:
+          "Once the group stage ends (June 11), a new prediction window opens for knockout matches. You'll know exactly which teams qualified, allowing you to make informed predictions for all 16 Round of 32 matches through to the Final.",
         note: "The knockout prediction window closes on June 29, before the first R32 match kicks off.",
       },
       r32: {
@@ -112,7 +113,10 @@ const content = {
         scoring: [
           { label: "Correct team wins", points: "1 × multiplier" },
           { label: "Correct team loses", points: "1 × multiplier" },
-          { label: "Correct tie (before penalties)", points: "1 × multiplier (each)" },
+          {
+            label: "Correct tie (before penalties)",
+            points: "1 × multiplier (each)",
+          },
           { label: "Exact goals for each team", points: "2 pts each" },
         ],
         note: "You can only score points for teams you predicted to reach that stage.",
@@ -120,11 +124,41 @@ const content = {
       multipliers: {
         title: "Round Multipliers",
         rounds: [
-          { name: "Round of 32", mult: "1×", result: "2", goals: "4", max: "6" },
-          { name: "Round of 16", mult: "2×", result: "4", goals: "4", max: "8" },
-          { name: "Quarter-finals", mult: "3×", result: "6", goals: "4", max: "10" },
-          { name: "Semi-finals", mult: "4×", result: "8", goals: "4", max: "12" },
-          { name: "Third-place", mult: "5×", result: "10", goals: "4", max: "14" },
+          {
+            name: "Round of 32",
+            mult: "1×",
+            result: "2",
+            goals: "4",
+            max: "6",
+          },
+          {
+            name: "Round of 16",
+            mult: "2×",
+            result: "4",
+            goals: "4",
+            max: "8",
+          },
+          {
+            name: "Quarter-finals",
+            mult: "3×",
+            result: "6",
+            goals: "4",
+            max: "10",
+          },
+          {
+            name: "Semi-finals",
+            mult: "4×",
+            result: "8",
+            goals: "4",
+            max: "12",
+          },
+          {
+            name: "Third-place",
+            mult: "5×",
+            result: "10",
+            goals: "4",
+            max: "14",
+          },
           { name: "Final", mult: "6×", result: "12", goals: "4", max: "16" },
         ],
         headers: ["Round", "Multiplier", "Result pts", "Goal pts", "Max pts"],
@@ -176,8 +210,7 @@ const content = {
     third: "3er Lugar",
     phases: {
       title: "Fases de Puntuación",
-      description:
-        "Los puntos se ganan en tres fases a lo largo del torneo",
+      description: "Los puntos se ganan en tres fases a lo largo del torneo",
     },
     phase1: {
       title: "Fase 1: Predicciones de Fase de Grupos",
@@ -185,7 +218,10 @@ const content = {
       description:
         "Predice el resultado de los 48 partidos de fase de grupos antes de que comience la Copa del Mundo.",
       scoring: [
-        { label: "Resultado correcto (victoria/empate/derrota)", points: "2 pts" },
+        {
+          label: "Resultado correcto (victoria/empate/derrota)",
+          points: "2 pts",
+        },
         { label: "Goles exactos del equipo local", points: "1 pt" },
         { label: "Goles exactos del equipo visitante", points: "1 pt" },
       ],
@@ -197,7 +233,10 @@ const content = {
         breakdown: "Desglose de puntos",
         items: [
           { reason: "Resultado correcto (victoria local)", points: "+2 pts" },
-          { reason: "Goles locales incorrectos (predijiste 2)", points: "+0 pts" },
+          {
+            reason: "Goles locales incorrectos (predijiste 2)",
+            points: "+0 pts",
+          },
           { reason: "Goles visitantes correctos (1)", points: "+1 pt" },
         ],
         total: "Total: 3 / 4 puntos",
@@ -223,12 +262,14 @@ const content = {
           items: [
             {
               team: "🇲🇽 México",
-              result: "Avanzó pero posición incorrecta (predijo 1ro, quedó 2do)",
+              result:
+                "Avanzó pero posición incorrecta (predijo 1ro, quedó 2do)",
               points: "+1 pt",
             },
             {
               team: "🇺🇸 EE.UU.",
-              result: "Avanzó pero posición incorrecta (predijo 2do, quedó 1ro)",
+              result:
+                "Avanzó pero posición incorrecta (predijo 2do, quedó 1ro)",
               points: "+1 pt",
             },
             {
@@ -253,14 +294,18 @@ const content = {
         "Tienes una segunda oportunidad para predecir todos los partidos eliminatorios una vez que termine la fase de grupos.",
       secondDraft: {
         title: "Segundo Draft",
-        description: "Una vez que termina la fase de grupos, se abre una nueva ventana de predicciones para los partidos eliminatorios. Sabrás exactamente qué equipos clasificaron, lo que te permite hacer predicciones informadas desde los 16 partidos de la Ronda de 32 hasta la Final.",
+        description:
+          "Una vez que termina la fase de grupos, se abre una nueva ventana de predicciones para los partidos eliminatorios. Sabrás exactamente qué equipos clasificaron, lo que te permite hacer predicciones informadas desde los 16 partidos de la Ronda de 32 hasta la Final.",
         note: "La ventana de predicciones de eliminatorias se cierra antes del primer partido de R32.",
       },
       r32: {
         title: "Ronda de 32",
         description: "Funciona como la fase de grupos:",
         scoring: [
-          { label: "Resultado correcto (victoria/empate/derrota)", points: "2 pts" },
+          {
+            label: "Resultado correcto (victoria/empate/derrota)",
+            points: "2 pts",
+          },
           { label: "Goles exactos del equipo local", points: "2 pts" },
           { label: "Goles exactos del equipo visitante", points: "2 pts" },
         ],
@@ -268,11 +313,15 @@ const content = {
       },
       advanced: {
         title: "Octavos de final en adelante",
-        description: "Puntuación dividida ganador/perdedor con multiplicadores:",
+        description:
+          "Puntuación dividida ganador/perdedor con multiplicadores:",
         scoring: [
           { label: "Equipo correcto gana", points: "1 × multiplicador" },
           { label: "Equipo correcto pierde", points: "1 × multiplicador" },
-          { label: "Empate correcto (antes de penales)", points: "1 × multiplicador (c/u)" },
+          {
+            label: "Empate correcto (antes de penales)",
+            points: "1 × multiplicador (c/u)",
+          },
           { label: "Goles exactos de cada equipo", points: "2 pts c/u" },
         ],
         note: "Solo puedes ganar puntos por equipos que predijiste que llegarían a esa fase.",
@@ -280,14 +329,38 @@ const content = {
       multipliers: {
         title: "Multiplicadores por Ronda",
         rounds: [
-          { name: "Ronda de 32", mult: "1×", result: "2", goals: "4", max: "6" },
+          {
+            name: "Ronda de 32",
+            mult: "1×",
+            result: "2",
+            goals: "4",
+            max: "6",
+          },
           { name: "Octavos", mult: "2×", result: "4", goals: "4", max: "8" },
           { name: "Cuartos", mult: "3×", result: "6", goals: "4", max: "10" },
-          { name: "Semifinales", mult: "4×", result: "8", goals: "4", max: "12" },
-          { name: "3er puesto", mult: "5×", result: "10", goals: "4", max: "14" },
+          {
+            name: "Semifinales",
+            mult: "4×",
+            result: "8",
+            goals: "4",
+            max: "12",
+          },
+          {
+            name: "3er puesto",
+            mult: "5×",
+            result: "10",
+            goals: "4",
+            max: "14",
+          },
           { name: "Final", mult: "6×", result: "12", goals: "4", max: "16" },
         ],
-        headers: ["Ronda", "Multiplicador", "Pts resultado", "Pts goles", "Máx pts"],
+        headers: [
+          "Ronda",
+          "Multiplicador",
+          "Pts resultado",
+          "Pts goles",
+          "Máx pts",
+        ],
       },
       example: {
         title: "Ejemplo - Cuartos de final (multiplicador 3×)",
@@ -337,7 +410,9 @@ export default function RulesPage() {
         {/* Header with Language Toggle */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white">{t.title}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">
+              {t.title}
+            </h1>
             <p className="text-white/60 mt-1">{t.subtitle}</p>
           </div>
           <button
@@ -365,8 +440,12 @@ export default function RulesPage() {
               </div>
               <div className="mt-4">
                 <span className="text-3xl sm:text-4xl">🥇</span>
-                <div className="mt-2 text-yellow-400 font-bold text-2xl sm:text-3xl">50%</div>
-                <div className="text-white/70 text-xs sm:text-sm mt-1">{t.first}</div>
+                <div className="mt-2 text-yellow-400 font-bold text-2xl sm:text-3xl">
+                  50%
+                </div>
+                <div className="text-white/70 text-xs sm:text-sm mt-1">
+                  {t.first}
+                </div>
               </div>
             </div>
 
@@ -377,8 +456,12 @@ export default function RulesPage() {
               </div>
               <div className="mt-4">
                 <span className="text-3xl sm:text-4xl">🥈</span>
-                <div className="mt-2 text-gray-300 font-bold text-2xl sm:text-3xl">35%</div>
-                <div className="text-white/70 text-xs sm:text-sm mt-1">{t.second}</div>
+                <div className="mt-2 text-gray-300 font-bold text-2xl sm:text-3xl">
+                  35%
+                </div>
+                <div className="text-white/70 text-xs sm:text-sm mt-1">
+                  {t.second}
+                </div>
               </div>
             </div>
 
@@ -389,8 +472,12 @@ export default function RulesPage() {
               </div>
               <div className="mt-4">
                 <span className="text-3xl sm:text-4xl">🥉</span>
-                <div className="mt-2 text-orange-400 font-bold text-2xl sm:text-3xl">15%</div>
-                <div className="text-white/70 text-xs sm:text-sm mt-1">{t.third}</div>
+                <div className="mt-2 text-orange-400 font-bold text-2xl sm:text-3xl">
+                  15%
+                </div>
+                <div className="text-white/70 text-xs sm:text-sm mt-1">
+                  {t.third}
+                </div>
               </div>
             </div>
           </div>
@@ -398,7 +485,9 @@ export default function RulesPage() {
 
         {/* Scoring Phases Overview */}
         <section className="glass-card p-6 mb-8">
-          <h2 className="text-xl font-bold text-white mb-2">{t.phases.title}</h2>
+          <h2 className="text-xl font-bold text-white mb-2">
+            {t.phases.title}
+          </h2>
           <p className="text-white/60 text-sm">{t.phases.description}</p>
         </section>
 
@@ -421,9 +510,14 @@ export default function RulesPage() {
             <table className="w-full">
               <tbody>
                 {t.phase1.scoring.map((item, i) => (
-                  <tr key={i} className="border-b border-white/10 last:border-0">
+                  <tr
+                    key={i}
+                    className="border-b border-white/10 last:border-0"
+                  >
                     <td className="py-2 text-white/80 text-sm">{item.label}</td>
-                    <td className="py-2 text-right text-emerald-400 font-bold">{item.points}</td>
+                    <td className="py-2 text-right text-emerald-400 font-bold">
+                      {item.points}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -443,7 +537,9 @@ export default function RulesPage() {
             <div className="grid sm:grid-cols-2 gap-4 mb-4">
               {/* Prediction */}
               <div className="bg-white/5 rounded-lg p-3">
-                <div className="text-white/50 text-xs mb-2">{t.phase1.example.prediction}</div>
+                <div className="text-white/50 text-xs mb-2">
+                  {t.phase1.example.prediction}
+                </div>
                 <div className="flex items-center justify-center gap-3">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">🇦🇷</span>
@@ -461,7 +557,9 @@ export default function RulesPage() {
 
               {/* Actual */}
               <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3">
-                <div className="text-emerald-400/70 text-xs mb-2">{t.phase1.example.actual}</div>
+                <div className="text-emerald-400/70 text-xs mb-2">
+                  {t.phase1.example.actual}
+                </div>
                 <div className="flex items-center justify-center gap-3">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">🇦🇷</span>
@@ -479,26 +577,36 @@ export default function RulesPage() {
             </div>
 
             {/* Breakdown */}
-            <div className="text-white/50 text-xs mb-2">{t.phase1.example.breakdown}</div>
+            <div className="text-white/50 text-xs mb-2">
+              {t.phase1.example.breakdown}
+            </div>
             <div className="space-y-1">
               {t.phase1.example.items.map((item, i) => (
                 <div
                   key={i}
                   className={`flex justify-between items-center py-1.5 px-2 rounded ${
-                    item.points.includes("+0") ? "bg-red-500/10" : "bg-emerald-500/10"
+                    item.points.includes("+0")
+                      ? "bg-red-500/10"
+                      : "bg-emerald-500/10"
                   }`}
                 >
-                  <span className={`text-sm ${item.points.includes("+0") ? "text-red-300" : "text-emerald-300"}`}>
+                  <span
+                    className={`text-sm ${item.points.includes("+0") ? "text-red-300" : "text-emerald-300"}`}
+                  >
                     {item.reason}
                   </span>
-                  <span className={`font-bold text-sm ${item.points.includes("+0") ? "text-red-400" : "text-emerald-400"}`}>
+                  <span
+                    className={`font-bold text-sm ${item.points.includes("+0") ? "text-red-400" : "text-emerald-400"}`}
+                  >
                     {item.points}
                   </span>
                 </div>
               ))}
             </div>
             <div className="mt-3 pt-2 border-t border-white/20 text-right">
-              <span className="text-white font-bold">{t.phase1.example.total}</span>
+              <span className="text-white font-bold">
+                {t.phase1.example.total}
+              </span>
             </div>
           </div>
         </section>
@@ -522,9 +630,14 @@ export default function RulesPage() {
             <table className="w-full">
               <tbody>
                 {t.phase2.scoring.map((item, i) => (
-                  <tr key={i} className="border-b border-white/10 last:border-0">
+                  <tr
+                    key={i}
+                    className="border-b border-white/10 last:border-0"
+                  >
                     <td className="py-2 text-white/80 text-sm">{item.label}</td>
-                    <td className="py-2 text-right text-blue-400 font-bold">{item.points}</td>
+                    <td className="py-2 text-right text-blue-400 font-bold">
+                      {item.points}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -544,25 +657,35 @@ export default function RulesPage() {
             <div className="grid sm:grid-cols-2 gap-4 mb-4">
               {/* Your Prediction */}
               <div className="bg-white/5 rounded-lg p-3">
-                <div className="text-white/50 text-xs mb-3">{t.phase2.example.yourPrediction}</div>
+                <div className="text-white/50 text-xs mb-3">
+                  {t.phase2.example.yourPrediction}
+                </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="w-6 text-white/50">{t.phase2.example.positions[0]}</span>
+                    <span className="w-6 text-white/50">
+                      {t.phase2.example.positions[0]}
+                    </span>
                     <span>🇲🇽</span>
                     <span className="text-white">Mexico</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="w-6 text-white/50">{t.phase2.example.positions[1]}</span>
+                    <span className="w-6 text-white/50">
+                      {t.phase2.example.positions[1]}
+                    </span>
                     <span>🇺🇸</span>
                     <span className="text-white">USA</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="w-6 text-white/50">{t.phase2.example.positions[2]}</span>
+                    <span className="w-6 text-white/50">
+                      {t.phase2.example.positions[2]}
+                    </span>
                     <span>🇨🇦</span>
                     <span className="text-white">Canada</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="w-6 text-white/50">{t.phase2.example.positions[3]}</span>
+                    <span className="w-6 text-white/50">
+                      {t.phase2.example.positions[3]}
+                    </span>
                     <span>🇯🇲</span>
                     <span className="text-white">Jamaica</span>
                   </div>
@@ -571,28 +694,44 @@ export default function RulesPage() {
 
               {/* Actual Result */}
               <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
-                <div className="text-blue-400/70 text-xs mb-3">{t.phase2.example.actualResult}</div>
+                <div className="text-blue-400/70 text-xs mb-3">
+                  {t.phase2.example.actualResult}
+                </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="w-6 text-blue-400">{t.phase2.example.positions[0]}</span>
+                    <span className="w-6 text-blue-400">
+                      {t.phase2.example.positions[0]}
+                    </span>
                     <span>🇺🇸</span>
                     <span className="text-white font-semibold">USA</span>
-                    <span className="text-xs bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded ml-auto">↑</span>
+                    <span className="text-xs bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded ml-auto">
+                      ↑
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="w-6 text-blue-400">{t.phase2.example.positions[1]}</span>
+                    <span className="w-6 text-blue-400">
+                      {t.phase2.example.positions[1]}
+                    </span>
                     <span>🇲🇽</span>
                     <span className="text-white font-semibold">Mexico</span>
-                    <span className="text-xs bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded ml-auto">↓</span>
+                    <span className="text-xs bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded ml-auto">
+                      ↓
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="w-6 text-blue-400">{t.phase2.example.positions[2]}</span>
+                    <span className="w-6 text-blue-400">
+                      {t.phase2.example.positions[2]}
+                    </span>
                     <span>🇨🇦</span>
                     <span className="text-white font-semibold">Canada</span>
-                    <span className="text-xs bg-emerald-500/30 text-emerald-300 px-1.5 py-0.5 rounded ml-auto">✓</span>
+                    <span className="text-xs bg-emerald-500/30 text-emerald-300 px-1.5 py-0.5 rounded ml-auto">
+                      ✓
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="w-6 text-white/30">{t.phase2.example.positions[3]}</span>
+                    <span className="w-6 text-white/30">
+                      {t.phase2.example.positions[3]}
+                    </span>
                     <span>🇯🇲</span>
                     <span className="text-white/50">Jamaica</span>
                   </div>
@@ -601,28 +740,38 @@ export default function RulesPage() {
             </div>
 
             {/* Analysis */}
-            <div className="text-white/50 text-xs mb-2">{t.phase2.example.analysis.title}</div>
+            <div className="text-white/50 text-xs mb-2">
+              {t.phase2.example.analysis.title}
+            </div>
             <div className="space-y-1">
               {t.phase2.example.analysis.items.map((item, i) => (
                 <div
                   key={i}
                   className={`flex justify-between items-center py-1.5 px-2 rounded ${
-                    item.points.includes("+0") ? "bg-red-500/10" : "bg-blue-500/10"
+                    item.points.includes("+0")
+                      ? "bg-red-500/10"
+                      : "bg-blue-500/10"
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-sm">{item.team}</span>
-                    <span className={`text-xs ${item.points.includes("+0") ? "text-red-300/70" : "text-blue-300/70"}`}>
+                    <span
+                      className={`text-xs ${item.points.includes("+0") ? "text-red-300/70" : "text-blue-300/70"}`}
+                    >
                       {item.result}
                     </span>
                   </div>
-                  <span className={`font-bold text-sm ${item.points.includes("+0") ? "text-red-400" : "text-blue-400"}`}>
+                  <span
+                    className={`font-bold text-sm ${item.points.includes("+0") ? "text-red-400" : "text-blue-400"}`}
+                  >
                     {item.points}
                   </span>
                 </div>
               ))}
             </div>
-            <p className="mt-4 text-white/50 text-xs italic">{t.phase2.example.note}</p>
+            <p className="mt-4 text-white/50 text-xs italic">
+              {t.phase2.example.note}
+            </p>
           </div>
         </section>
 
@@ -646,20 +795,33 @@ export default function RulesPage() {
               <span className="text-lg">📝</span>
               {t.phase3.secondDraft.title}
             </h4>
-            <p className="text-white/70 text-sm mb-2">{t.phase3.secondDraft.description}</p>
-            <p className="text-amber-400/80 text-xs">⏰ {t.phase3.secondDraft.note}</p>
+            <p className="text-white/70 text-sm mb-2">
+              {t.phase3.secondDraft.description}
+            </p>
+            <p className="text-amber-400/80 text-xs">
+              ⏰ {t.phase3.secondDraft.note}
+            </p>
           </div>
 
           {/* R32 Section */}
           <div className="bg-white/5 rounded-lg p-4 mb-6">
-            <h4 className="text-white font-semibold mb-3">{t.phase3.r32.title}</h4>
-            <p className="text-white/60 text-sm mb-3">{t.phase3.r32.description}</p>
+            <h4 className="text-white font-semibold mb-3">
+              {t.phase3.r32.title}
+            </h4>
+            <p className="text-white/60 text-sm mb-3">
+              {t.phase3.r32.description}
+            </p>
             <table className="w-full">
               <tbody>
                 {t.phase3.r32.scoring.map((item, i) => (
-                  <tr key={i} className="border-b border-white/10 last:border-0">
+                  <tr
+                    key={i}
+                    className="border-b border-white/10 last:border-0"
+                  >
                     <td className="py-2 text-white/80 text-sm">{item.label}</td>
-                    <td className="py-2 text-right text-purple-400 font-bold">{item.points}</td>
+                    <td className="py-2 text-right text-purple-400 font-bold">
+                      {item.points}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -671,14 +833,23 @@ export default function RulesPage() {
 
           {/* Advanced rounds Section */}
           <div className="bg-white/5 rounded-lg p-4 mb-6">
-            <h4 className="text-white font-semibold mb-3">{t.phase3.advanced.title}</h4>
-            <p className="text-white/60 text-sm mb-3">{t.phase3.advanced.description}</p>
+            <h4 className="text-white font-semibold mb-3">
+              {t.phase3.advanced.title}
+            </h4>
+            <p className="text-white/60 text-sm mb-3">
+              {t.phase3.advanced.description}
+            </p>
             <table className="w-full">
               <tbody>
                 {t.phase3.advanced.scoring.map((item, i) => (
-                  <tr key={i} className="border-b border-white/10 last:border-0">
+                  <tr
+                    key={i}
+                    className="border-b border-white/10 last:border-0"
+                  >
                     <td className="py-2 text-white/80 text-sm">{item.label}</td>
-                    <td className="py-2 text-right text-purple-400 font-bold">{item.points}</td>
+                    <td className="py-2 text-right text-purple-400 font-bold">
+                      {item.points}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -690,13 +861,18 @@ export default function RulesPage() {
 
           {/* Multipliers Table */}
           <div className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 rounded-lg p-4 mb-6 border border-purple-500/20">
-            <h4 className="text-white font-semibold mb-4">{t.phase3.multipliers.title}</h4>
+            <h4 className="text-white font-semibold mb-4">
+              {t.phase3.multipliers.title}
+            </h4>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/20">
                     {t.phase3.multipliers.headers.map((header, i) => (
-                      <th key={i} className="py-2 px-2 text-left text-white/60 font-medium text-xs">
+                      <th
+                        key={i}
+                        className="py-2 px-2 text-left text-white/60 font-medium text-xs"
+                      >
                         {header}
                       </th>
                     ))}
@@ -704,12 +880,23 @@ export default function RulesPage() {
                 </thead>
                 <tbody>
                   {t.phase3.multipliers.rounds.map((round, i) => (
-                    <tr key={i} className="border-b border-white/10 last:border-0">
-                      <td className="py-2 px-2 text-white font-medium">{round.name}</td>
-                      <td className="py-2 px-2 text-purple-400 font-bold">{round.mult}</td>
-                      <td className="py-2 px-2 text-white/70">{round.result}</td>
+                    <tr
+                      key={i}
+                      className="border-b border-white/10 last:border-0"
+                    >
+                      <td className="py-2 px-2 text-white font-medium">
+                        {round.name}
+                      </td>
+                      <td className="py-2 px-2 text-purple-400 font-bold">
+                        {round.mult}
+                      </td>
+                      <td className="py-2 px-2 text-white/70">
+                        {round.result}
+                      </td>
                       <td className="py-2 px-2 text-white/70">{round.goals}</td>
-                      <td className="py-2 px-2 text-emerald-400 font-bold">{round.max}</td>
+                      <td className="py-2 px-2 text-emerald-400 font-bold">
+                        {round.max}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -727,7 +914,9 @@ export default function RulesPage() {
             <div className="grid sm:grid-cols-2 gap-4 mb-4">
               {/* Prediction */}
               <div className="bg-white/5 rounded-lg p-3">
-                <div className="text-white/50 text-xs mb-2">{t.phase3.example.prediction}</div>
+                <div className="text-white/50 text-xs mb-2">
+                  {t.phase3.example.prediction}
+                </div>
                 <div className="flex items-center justify-center gap-3">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">🇩🇪</span>
@@ -745,7 +934,9 @@ export default function RulesPage() {
 
               {/* Actual */}
               <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
-                <div className="text-purple-400/70 text-xs mb-2">{t.phase3.example.actual}</div>
+                <div className="text-purple-400/70 text-xs mb-2">
+                  {t.phase3.example.actual}
+                </div>
                 <div className="flex items-center justify-center gap-3">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">🇩🇪</span>
@@ -763,26 +954,36 @@ export default function RulesPage() {
             </div>
 
             {/* Breakdown */}
-            <div className="text-white/50 text-xs mb-2">{t.phase3.example.breakdown}</div>
+            <div className="text-white/50 text-xs mb-2">
+              {t.phase3.example.breakdown}
+            </div>
             <div className="space-y-1">
               {t.phase3.example.items.map((item, i) => (
                 <div
                   key={i}
                   className={`flex justify-between items-center py-1.5 px-2 rounded ${
-                    item.points.includes("+0") ? "bg-red-500/10" : "bg-purple-500/10"
+                    item.points.includes("+0")
+                      ? "bg-red-500/10"
+                      : "bg-purple-500/10"
                   }`}
                 >
-                  <span className={`text-sm ${item.points.includes("+0") ? "text-red-300" : "text-purple-300"}`}>
+                  <span
+                    className={`text-sm ${item.points.includes("+0") ? "text-red-300" : "text-purple-300"}`}
+                  >
                     {item.reason}
                   </span>
-                  <span className={`font-bold text-sm ${item.points.includes("+0") ? "text-red-400" : "text-purple-400"}`}>
+                  <span
+                    className={`font-bold text-sm ${item.points.includes("+0") ? "text-red-400" : "text-purple-400"}`}
+                  >
                     {item.points}
                   </span>
                 </div>
               ))}
             </div>
             <div className="mt-3 pt-2 border-t border-white/20 text-right">
-              <span className="text-white font-bold">{t.phase3.example.total}</span>
+              <span className="text-white font-bold">
+                {t.phase3.example.total}
+              </span>
             </div>
           </div>
         </section>
@@ -793,17 +994,23 @@ export default function RulesPage() {
             <span className="text-amber-400">⚖️</span>
             {t.tiebreaker.title}
           </h2>
-          <p className="text-white/60 text-sm mb-4">{t.tiebreaker.description}</p>
+          <p className="text-white/60 text-sm mb-4">
+            {t.tiebreaker.description}
+          </p>
 
           <div className="bg-white/5 rounded-lg p-4">
             <ol className="space-y-2">
               {t.tiebreaker.rules.map((rule, i) => (
-                <li key={i} className="text-white/80 text-sm">{rule}</li>
+                <li key={i} className="text-white/80 text-sm">
+                  {rule}
+                </li>
               ))}
             </ol>
           </div>
 
-          <p className="mt-4 text-white/50 text-xs italic">{t.tiebreaker.note}</p>
+          <p className="mt-4 text-white/50 text-xs italic">
+            {t.tiebreaker.note}
+          </p>
         </section>
 
         {/* Summary */}
@@ -815,19 +1022,27 @@ export default function RulesPage() {
 
           <div className="space-y-3">
             <div className="flex justify-between items-center py-2 border-b border-white/10">
-              <span className="text-white/70 text-sm">{t.summary.groupMatches}</span>
+              <span className="text-white/70 text-sm">
+                {t.summary.groupMatches}
+              </span>
               <span className="text-emerald-400 font-bold">192</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-white/10">
-              <span className="text-white/70 text-sm">{t.summary.groupBonus}</span>
+              <span className="text-white/70 text-sm">
+                {t.summary.groupBonus}
+              </span>
               <span className="text-blue-400 font-bold">72</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-white/10">
-              <span className="text-white/70 text-sm">{t.summary.knockout}</span>
+              <span className="text-white/70 text-sm">
+                {t.summary.knockout}
+              </span>
               <span className="text-purple-400 font-bold">254</span>
             </div>
             <div className="flex justify-between items-center py-3 mt-2 bg-white/10 rounded-lg px-3">
-              <span className="text-white font-semibold">{t.summary.total}</span>
+              <span className="text-white font-semibold">
+                {t.summary.total}
+              </span>
               <span className="text-2xl font-bold text-white">518</span>
             </div>
           </div>

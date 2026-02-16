@@ -127,7 +127,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   return (
     <UserContext.Provider
-      value={{ user, loading, updateProfile, getProfile, getCachedProfile, getAllProfiles, getCachedAllProfiles }}
+      value={{
+        user,
+        loading,
+        updateProfile,
+        getProfile,
+        getCachedProfile,
+        getAllProfiles,
+        getCachedAllProfiles,
+      }}
     >
       {children}
     </UserContext.Provider>

@@ -763,7 +763,10 @@ export function KnockoutMatchRow({
           date={match.utcDate}
           fifaMatchNumber={fifaMatchNumber}
         />
-        <ContentWrapper matchId={match.id} className="flex-1 flex items-center justify-center gap-1 hover:bg-white/5 transition-colors rounded cursor-pointer min-w-0">
+        <ContentWrapper
+          matchId={match.id}
+          className="flex-1 flex items-center justify-center gap-1 hover:bg-white/5 transition-colors rounded cursor-pointer min-w-0"
+        >
           <div className="flex-1 min-w-0 flex items-center justify-end">
             <KnockoutMobileTeamButton
               teamDisplay={homeDisplay}
@@ -801,7 +804,10 @@ export function KnockoutMatchRow({
 
       {/* Desktop Layout */}
       <div className="hidden lg:flex items-center gap-2">
-        <ContentWrapper matchId={match.id} className="flex-1 flex items-center gap-2 hover:bg-white/5 transition-colors rounded px-1 -mx-1 cursor-pointer min-w-0">
+        <ContentWrapper
+          matchId={match.id}
+          className="flex-1 flex items-center gap-2 hover:bg-white/5 transition-colors rounded px-1 -mx-1 cursor-pointer min-w-0"
+        >
           <DateColumn date={match.utcDate} fifaMatchNumber={fifaMatchNumber} />
           <TimeVenueColumn
             time={match.utcDate}

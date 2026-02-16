@@ -14,7 +14,7 @@ import {
 import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
 import { useUser } from "@/contexts/UserContext";
-import { useUserPredictions } from "@/contexts/PredictionsContext";
+import { useUserPredictions, usePredictedMatches } from "@/contexts/PredictionsContext";
 import {
   CalculatedStanding,
   Team,
@@ -67,6 +67,9 @@ export default function PredictionsPage() {
     liveMatches,
     refresh: refreshMatches,
   } = useMatches();
+
+  // Get matches with current user's predicted knockout teams baked in
+  const { resolvedKnockoutTeams: predictedKnockoutTeams } = usePredictedMatches(profile?.id || null);
 
   // Scroll to first live match
   const scrollToFirstLiveMatch = useCallback(() => {
@@ -588,6 +591,7 @@ export default function PredictionsPage() {
             <KnockoutStageSection
               knockoutStages={knockoutStages}
               predictions={predictions}
+              resolvedKnockoutTeams={predictedKnockoutTeams}
               knockoutLocked={knockoutLocked}
               onPredictionChange={handlePredictionChange}
             />

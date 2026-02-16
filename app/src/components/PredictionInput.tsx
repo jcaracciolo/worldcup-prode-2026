@@ -105,8 +105,7 @@ export default function PredictionInput({
   const formattedTime = formatMatchTime(match.utcDate);
   const venue = getVenueFromFifaNumber(fifaMatchNumber);
 
-  const isLive =
-    match.status === "IN_PLAY" || match.status === "PAUSED";
+  const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
 
   return (
     <div

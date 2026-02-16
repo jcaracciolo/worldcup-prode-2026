@@ -339,7 +339,11 @@ export default function PointsBreakdown({
             Prediction:
           </span>
           {renderTeam(
-            predHomeTeam as { tla?: string; crest?: string; shortName?: string },
+            predHomeTeam as {
+              tla?: string;
+              crest?: string;
+              shortName?: string;
+            },
             predHomeTla,
             "home",
             predHomeHighlight,
@@ -349,7 +353,11 @@ export default function PointsBreakdown({
             {predHome ?? "-"}-{predAway ?? "-"}
           </span>
           {renderTeam(
-            predAwayTeam as { tla?: string; crest?: string; shortName?: string },
+            predAwayTeam as {
+              tla?: string;
+              crest?: string;
+              shortName?: string;
+            },
             predAwayTla,
             "away",
             predAwayHighlight,

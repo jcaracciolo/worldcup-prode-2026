@@ -13,7 +13,6 @@ import {
 } from "./football-api";
 import { BracketResolver } from "./bracket-resolver";
 
-
 // =====================================================================
 // SCORING CONSTANTS - Single source of truth for all scoring rules
 // Modify these to change scoring rules across the entire app
@@ -362,10 +361,24 @@ export function calculateKnockoutPoints(
   match: Match,
   prediction: LocalPrediction | undefined,
   /** User's predicted teams for this match slot (from BracketResolver) */
-  predictedTeams: {
-    home?: { id: number; tla?: string; crest?: string | null; shortName?: string; name?: string } | null;
-    away?: { id: number; tla?: string; crest?: string | null; shortName?: string; name?: string } | null;
-  } | undefined,
+  predictedTeams:
+    | {
+        home?: {
+          id: number;
+          tla?: string;
+          crest?: string | null;
+          shortName?: string;
+          name?: string;
+        } | null;
+        away?: {
+          id: number;
+          tla?: string;
+          crest?: string | null;
+          shortName?: string;
+          name?: string;
+        } | null;
+      }
+    | undefined,
 ): PointBreakdown[] {
   const points: PointBreakdown[] = [];
   const isLive = isMatchLive(match);

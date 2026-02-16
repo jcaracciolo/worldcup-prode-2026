@@ -10,9 +10,12 @@ import React, {
   useMemo,
 } from "react";
 import { useDatabase } from "@/contexts/DatabaseContext";
+import { useMatches, MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
-import { FifaMatchId } from "@/types/football";
+import { Match, FifaMatchId, asFifaMatchId } from "@/types/football";
 import { LCE, lceLoading, lceContent, lceError } from "@/types/lce";
+import { BracketResolver, ResolvedTeams } from "@/lib/bracket-resolver";
+import { getTeamDisplaySimple } from "@/lib/team-display";
 
 // =====================================================================
 // TYPES
@@ -479,7 +482,8 @@ export function useUserPredictions(userId: string | null) {
  * Automatically refetches when competition changes (via db dependency).
  */
 export function useAllPredictions(): LCE<AllPredictionsMap> {
-  const { getAllPredictions, getCachedAllPredictions } = usePredictionsContext();
+  const { getAllPredictions, getCachedAllPredictions } =
+    usePredictionsContext();
 
   // Initialize from cache — skip loading if we already have data
   const [state, setState] = useState<LCE<AllPredictionsMap>>(() => {
@@ -501,4 +505,128 @@ export function useAllPredictions(): LCE<AllPredictionsMap> {
   }, [getAllPredictions, getCachedAllPredictions]);
 
   return state;
+}
+
+// =====================================================================
+// PREDICTED MATCHES
+// =====================================================================
+
+/** Return type for usePredictedMatches — mirrors the shape consumers expect from useMatches */
+export interface PredictedMatchesResult {
+  /** Matches with user-predicted knockout teams baked into homeTeam/awayTeam */
+  matches: MatchWithLiveInfo[];
+  /** Resolved knockout teams based on user predictions */
+  resolvedKnockoutTeams: Map<FifaMatchId, ResolvedTeams>;
+}
+
+/**
+ * Build matches with predicted knockout teams baked in.
+ * Pure computation — used by usePredictedMatches to cache results.
+ */
+function buildPredictedMatches(
+  rawProcessedMatches: Match[],
+  contextMatches: MatchWithLiveInfo[],
+  predictions: Map<FifaMatchId, LocalPrediction>,
+  actualGroupStandings: Map<string, import("@/types/football").CalculatedStanding[]>,
+  actualThirdPlaceQualifying: Map<string, boolean>,
+): PredictedMatchesResult {
+  // Run BracketResolver with user's predictions on raw (pre-bake) matches
+  const resolver = new BracketResolver({
+    matches: rawProcessedMatches,
+    predictions,
+    groupStandings: actualGroupStandings,
+    thirdPlaceQualifying: actualThirdPlaceQualifying,
+    useKnockoutPredictions: true,
+  });
+  const resolvedKnockoutTeams = resolver.resolve();
+
+  // Bake predicted teams into context matches (same pattern as MatchContext)
+  const matches = contextMatches.map((m) => {
+    if (m.stage === "GROUP_STAGE") return m;
+    const resolved = resolvedKnockoutTeams.get(asFifaMatchId(m.id));
+    if (!resolved) return m;
+    const homeTeam = resolved.home ?? m.homeTeam;
+    const awayTeam = resolved.away ?? m.awayTeam;
+    return {
+      ...m,
+      homeTeam,
+      awayTeam,
+      homeDisplayName: resolved.homeDisplayName ?? getTeamDisplaySimple(homeTeam, m.id, "home", asFifaMatchId(m.id)).label,
+      awayDisplayName: resolved.awayDisplayName ?? getTeamDisplaySimple(awayTeam, m.id, "away", asFifaMatchId(m.id)).label,
+    };
+  });
+
+  return { matches, resolvedKnockoutTeams };
+}
+
+/**
+ * Hook that returns matches with a user's predicted knockout teams baked in.
+ *
+ * Behaves like useMatches() but with knockout teams resolved from the user's
+ * predictions instead of actual results. Group stage matches are unchanged.
+ *
+ * Results are memoized — recomputed only when predictions or match data change.
+ *
+ * @param userId - User whose predictions drive team resolution (null = no predictions)
+ */
+export function usePredictedMatches(
+  userId: string | null,
+): PredictedMatchesResult {
+  const {
+    matches: contextMatches,
+    rawProcessedMatches,
+    actualGroupStandings,
+    actualThirdPlaceQualifying,
+  } = useMatches();
+
+  const ctx = usePredictionsContext();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _version = ctx.cacheVersion; // Subscribe to cache updates
+
+  const cached = userId ? ctx.getCachedPredictions(userId) : null;
+  const predictions = cached?.predictions ?? null;
+
+  // Trigger fetch if not cached
+  useEffect(() => {
+    if (userId) ctx.ensureFetched(userId);
+  }, [userId, ctx]);
+
+  return useMemo(() => {
+    if (!predictions || predictions.size === 0) {
+      // No predictions — return context matches as-is (actual teams baked in)
+      return {
+        matches: contextMatches,
+        resolvedKnockoutTeams: new Map(),
+      };
+    }
+    return buildPredictedMatches(
+      rawProcessedMatches,
+      contextMatches,
+      predictions,
+      actualGroupStandings,
+      actualThirdPlaceQualifying,
+    );
+  }, [
+    predictions,
+    rawProcessedMatches,
+    contextMatches,
+    actualGroupStandings,
+    actualThirdPlaceQualifying,
+  ]);
+}
+
+/**
+ * Hook to get a single predicted match by FIFA ID for a specific user.
+ *
+ * Returns the match with the user's predicted knockout teams baked in.
+ *
+ * @param userId - User whose predictions drive team resolution
+ * @param fifaId - FIFA match number (1-104)
+ */
+export function usePredictedMatch(
+  userId: string | null,
+  fifaId: FifaMatchId,
+): MatchWithLiveInfo | undefined {
+  const { matches } = usePredictedMatches(userId);
+  return useMemo(() => matches.find((m) => m.id === fifaId), [matches, fifaId]);
 }

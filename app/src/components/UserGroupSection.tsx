@@ -385,11 +385,12 @@ export function GroupMatchRow({
   const homeHighlight = homeWins || isDraw;
   const awayHighlight = awayWins || isDraw;
 
-  const isLive =
-    match.status === "IN_PLAY" || match.status === "PAUSED";
+  const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
 
   return (
-    <div className={`flex items-center gap-2 py-2 text-sm ${isLive ? "border-l-2 border-red-500 pl-1" : ""}`}>
+    <div
+      className={`flex items-center gap-2 py-2 text-sm ${isLive ? "border-l-2 border-red-500 pl-1" : ""}`}
+    >
       <Link
         href={`/match/${match.id}`}
         className="flex-1 flex items-center gap-2 hover:bg-white/5 transition-colors rounded px-1 -mx-1 cursor-pointer"

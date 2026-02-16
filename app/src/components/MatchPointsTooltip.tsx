@@ -66,7 +66,7 @@ export default function MatchPointsTooltip({
     const awayTla = getTeamLabel(match.awayTeam);
     const isGroup = isGroupStageMatch(match);
     const isR32 = match.stage === "LAST_32";
-    const multiplier = isGroup ? 1 : (ROUND_MULTIPLIERS[match.stage] || 1);
+    const multiplier = isGroup ? 1 : ROUND_MULTIPLIERS[match.stage] || 1;
 
     // Find earned points by type from breakdown
     const earned = (type: string) =>
@@ -79,13 +79,33 @@ export default function MatchPointsTooltip({
     if (isGroup) {
       // Group stage: Result (2), Goals home (1), Goals away (1)
       rows.push({ label: "Result", points: earned("result"), maxPoints: 2 });
-      rows.push({ label: `Goals (${homeTla})`, points: earned("goals_home"), maxPoints: 1 });
-      rows.push({ label: `Goals (${awayTla})`, points: earned("goals_away"), maxPoints: 1 });
+      rows.push({
+        label: `Goals (${homeTla})`,
+        points: earned("goals_home"),
+        maxPoints: 1,
+      });
+      rows.push({
+        label: `Goals (${awayTla})`,
+        points: earned("goals_away"),
+        maxPoints: 1,
+      });
     } else if (isR32) {
       // R32: Result (2), Goals home (2), Goals away (2)
-      rows.push({ label: "Result", points: earned("result"), maxPoints: 2 * multiplier });
-      rows.push({ label: `Goals (${homeTla})`, points: earned("goals_home"), maxPoints: 2 });
-      rows.push({ label: `Goals (${awayTla})`, points: earned("goals_away"), maxPoints: 2 });
+      rows.push({
+        label: "Result",
+        points: earned("result"),
+        maxPoints: 2 * multiplier,
+      });
+      rows.push({
+        label: `Goals (${homeTla})`,
+        points: earned("goals_home"),
+        maxPoints: 2,
+      });
+      rows.push({
+        label: `Goals (${awayTla})`,
+        points: earned("goals_away"),
+        maxPoints: 2,
+      });
     } else {
       // R16+: separate entries per team outcome + goals
       const multLabel = multiplier > 1 ? ` (${multiplier}×)` : "";
@@ -109,8 +129,16 @@ export default function MatchPointsTooltip({
           maxPoints: 1 * multiplier,
         });
       }
-      rows.push({ label: `Goals (${homeTla})`, points: earned("goals_home"), maxPoints: 2 });
-      rows.push({ label: `Goals (${awayTla})`, points: earned("goals_away"), maxPoints: 2 });
+      rows.push({
+        label: `Goals (${homeTla})`,
+        points: earned("goals_home"),
+        maxPoints: 2,
+      });
+      rows.push({
+        label: `Goals (${awayTla})`,
+        points: earned("goals_away"),
+        maxPoints: 2,
+      });
     }
 
     return rows;

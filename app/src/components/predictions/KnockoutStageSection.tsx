@@ -1,7 +1,6 @@
 "use client";
 
 import { useTime } from "@/contexts/TimeContext";
-import { useKnockoutTeams } from "@/contexts/MatchContext";
 import {
   Match,
   FifaMatchId,
@@ -9,6 +8,7 @@ import {
   asFifaMatchId,
 } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
+import { ResolvedTeams } from "@/lib/bracket-resolver";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import { KnockoutMatchRow } from "@/components/MatchRowShared";
 
@@ -17,6 +17,8 @@ type ViewMode = "edit" | "fixtures" | "predictions";
 interface KnockoutStageSectionProps {
   knockoutStages: Map<string, Match[]>;
   predictions?: Map<FifaMatchId, LocalPrediction>; // Keyed by FIFA match number (73-104)
+  /** Resolved knockout teams (from usePredictedMatches or context) */
+  resolvedKnockoutTeams: Map<FifaMatchId, ResolvedTeams>;
   knockoutLocked?: boolean;
   /** Pre-computed points breakdown (from LeaderboardContext) */
   breakdown?: PointBreakdown[];
@@ -61,6 +63,7 @@ const KNOCKOUT_STAGE_ORDER = [
 export default function KnockoutStageSection({
   knockoutStages,
   predictions,
+  resolvedKnockoutTeams,
   knockoutLocked = false,
   breakdown = [],
   onPredictionChange,
@@ -68,9 +71,6 @@ export default function KnockoutStageSection({
   readOnly = false,
 }: KnockoutStageSectionProps) {
   const { getCurrentTime } = useTime();
-
-  // Get resolved teams: with predictions → what-if teams, without → actual teams from context
-  const resolvedKnockoutTeams = useKnockoutTeams(predictions);
 
   // Support legacy readOnly prop
   const viewMode: ViewMode = mode ?? (readOnly ? "fixtures" : "edit");

@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
 import { useUser, useProfile } from "@/contexts/UserContext";
-import { useUserPredictions } from "@/contexts/PredictionsContext";
+import { useUserPredictions, usePredictedMatches } from "@/contexts/PredictionsContext";
 import { useUserPosition } from "@/contexts/LeaderboardContext";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -88,6 +88,9 @@ export default function UserPredictionsPage() {
       ),
     [predictions],
   );
+
+  // Get matches with user's predicted knockout teams baked in
+  const { resolvedKnockoutTeams: predictedKnockoutTeams } = usePredictedMatches(userId);
 
   // Group knockout matches by stage
   const knockoutStages = useMemo(() => {
@@ -393,6 +396,7 @@ export default function UserPredictionsPage() {
               <KnockoutStageSection
                 knockoutStages={knockoutStages}
                 predictions={fifaPredictionMap}
+                resolvedKnockoutTeams={predictedKnockoutTeams}
                 breakdown={breakdown}
                 mode="predictions"
               />

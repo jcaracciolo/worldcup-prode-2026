@@ -286,9 +286,7 @@ function SignupForm() {
 
 export default function SignupPage() {
   return (
-    <Suspense
-      fallback={<LoadingSpinner />}
-    >
+    <Suspense fallback={<LoadingSpinner />}>
       <SignupForm />
     </Suspense>
   );

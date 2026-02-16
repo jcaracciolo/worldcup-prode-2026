@@ -75,6 +75,8 @@ interface MatchContextValue {
   actualGroupStandings: Map<string, CalculatedStanding[]>;
   /** Which 3rd place teams qualify based on actual results */
   actualThirdPlaceQualifying: Map<string, boolean>;
+  /** Raw matches before knockout team overlay (needed by BracketResolver with predictions) */
+  rawProcessedMatches: Match[];
 }
 
 const MatchContext = createContext<MatchContextValue | null>(null);
@@ -364,6 +366,7 @@ export function MatchProvider({
     resolvedKnockoutTeams,
     actualGroupStandings,
     actualThirdPlaceQualifying,
+    rawProcessedMatches: processedMatches,
   };
 
   return (
@@ -424,6 +427,7 @@ export function useKnockoutTeams(
 ): Map<FifaMatchId, ResolvedTeams> {
   const {
     matches,
+    rawProcessedMatches,
     resolvedKnockoutTeams,
     actualGroupStandings,
     actualThirdPlaceQualifying,
@@ -431,13 +435,16 @@ export function useKnockoutTeams(
 
   const hasPredictions = !!predictions;
 
-  // Resolve knockout bracket using actual standings + knockout predictions
+  // Resolve knockout bracket using actual standings + knockout predictions.
+  // We use rawProcessedMatches (before actual resolved teams are baked in)
+  // so BracketResolver doesn't treat baked-in teams as API teams and skip
+  // prediction-based resolution for R16+.
   const predictedTeams = useMemo(() => {
     if (!hasPredictions || !predictions) {
       return new Map<FifaMatchId, ResolvedTeams>();
     }
     const resolver = new BracketResolver({
-      matches,
+      matches: rawProcessedMatches,
       predictions,
       groupStandings: actualGroupStandings,
       thirdPlaceQualifying: actualThirdPlaceQualifying,
@@ -446,7 +453,7 @@ export function useKnockoutTeams(
     return resolver.resolve();
   }, [
     hasPredictions,
-    matches,
+    rawProcessedMatches,
     predictions,
     actualGroupStandings,
     actualThirdPlaceQualifying,

@@ -281,14 +281,13 @@ export default function MatchDetailPage() {
                       className={`font-bold text-sm ${homeHighlight ? "text-slate-900" : "text-white"}`}
                     >
                       <span className="hidden sm:inline">
-                        {
+                        {match.homeTeam.name ||
                           getTeamDisplaySimple(
                             match.homeTeam,
                             match.id,
                             "home",
                             fifaId,
-                          ).label
-                        }
+                          ).label}
                       </span>
                       <span className="sm:hidden">
                         {
@@ -357,14 +356,13 @@ export default function MatchDetailPage() {
                       className={`font-bold text-sm ${awayHighlight ? "text-slate-900" : "text-white"}`}
                     >
                       <span className="hidden sm:inline">
-                        {
+                        {match.awayTeam.name ||
                           getTeamDisplaySimple(
                             match.awayTeam,
                             match.id,
                             "away",
                             fifaId,
-                          ).label
-                        }
+                          ).label}
                       </span>
                       <span className="sm:hidden">
                         {

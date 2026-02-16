@@ -37,6 +37,48 @@ import {
 } from "@/types/database";
 
 // =====================================================================
+// HELPERS
+// =====================================================================
+
+/**
+ * Supabase returns at most 1000 rows by default (PostgREST limit).
+ * This helper paginates through all results to ensure no data is lost.
+ */
+async function fetchAllRows<T>(
+  queryBuilder: ReturnType<SupabaseClient["from"]>,
+  selectColumns: string,
+  filters: Record<string, string>,
+  pageSize = 1000,
+): Promise<{ data: T[]; error: string | null }> {
+  const allData: T[] = [];
+  let from = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    let query = queryBuilder
+      .select(selectColumns)
+      .range(from, from + pageSize - 1);
+    for (const [key, value] of Object.entries(filters)) {
+      query = query.eq(key, value);
+    }
+    const { data, error } = await query;
+    if (error) return { data: [], error: error.message };
+    if (!data || data.length === 0) {
+      hasMore = false;
+    } else {
+      allData.push(...(data as T[]));
+      if (data.length < pageSize) {
+        hasMore = false;
+      } else {
+        from += pageSize;
+      }
+    }
+  }
+
+  return { data: allData, error: null };
+}
+
+// =====================================================================
 // TYPES
 // =====================================================================
 
@@ -570,13 +612,15 @@ export function createPredictionService(
         return { data: [], error: null };
       }
       try {
-        const { data, error } = await supabase
-          .from("predictions")
-          .select("*")
-          .eq("competition_id", competitionId);
+        // Use paginated fetch to avoid Supabase's default 1000-row limit
+        const result = await fetchAllRows<Prediction>(
+          supabase.from("predictions"),
+          "*",
+          { competition_id: competitionId },
+        );
 
-        if (error) throw error;
-        return { data: data || [], error: null };
+        if (result.error) throw new Error(result.error);
+        return { data: result.data, error: null };
       } catch (error) {
         console.error("[DB] Failed to get all predictions:", error);
         return {
@@ -677,13 +721,15 @@ export function createOverrideService(
         return { data: [], error: null };
       }
       try {
-        const { data, error } = await supabase
-          .from("group_standings_overrides")
-          .select("*")
-          .eq("competition_id", competitionId);
+        // Use paginated fetch to avoid Supabase's default 1000-row limit
+        const result = await fetchAllRows<GroupStandingsOverride>(
+          supabase.from("group_standings_overrides"),
+          "*",
+          { competition_id: competitionId },
+        );
 
-        if (error) throw error;
-        return { data: data || [], error: null };
+        if (result.error) throw new Error(result.error);
+        return { data: result.data, error: null };
       } catch (error) {
         console.error("[DB] Failed to get all overrides:", error);
         return {

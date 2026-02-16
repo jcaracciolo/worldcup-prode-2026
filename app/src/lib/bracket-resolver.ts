@@ -60,10 +60,8 @@ export class BracketResolver {
     home: Team | null,
     away: Team | null,
   ): void {
-    const homeDisplayName =
-      home?.tla ?? getBracketLabel(fifaNumber, "home");
-    const awayDisplayName =
-      away?.tla ?? getBracketLabel(fifaNumber, "away");
+    const homeDisplayName = home?.tla ?? getBracketLabel(fifaNumber, "home");
+    const awayDisplayName = away?.tla ?? getBracketLabel(fifaNumber, "away");
     this.resolved.set(fifaNumber, {
       home,
       away,
@@ -74,7 +72,7 @@ export class BracketResolver {
 
   // Check if a team from API is valid (not a placeholder/TBD)
   // Note: Used for knockout matches where we want real teams, not placeholders
-  // Placeholder teams (negative IDs like -1001 for PO1) are considered invalid here
+  // Placeholder teams (negative IDs like -1001 for EU1) are considered invalid here
   // because we want to calculate the actual team from standings
   private isValidApiTeam(team: Team | null): boolean {
     if (!team) return false;

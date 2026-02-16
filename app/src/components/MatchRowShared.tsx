@@ -60,7 +60,7 @@ export function getVenueFromFifaNumber(fifaMatchNumber?: FifaMatchId) {
 // Shared component for team crest
 interface TeamCrestProps {
   team: Team | null;
-  /** Optional fallback label when team has no crest (e.g., "PO1", "1A") */
+  /** Optional fallback label when team has no crest (e.g., "EU1", "1A") */
   fallbackLabel?: string;
   size?: "sm" | "md" | "lg";
   className?: string;

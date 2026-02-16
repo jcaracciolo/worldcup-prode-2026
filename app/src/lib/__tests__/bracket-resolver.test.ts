@@ -2,8 +2,17 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { BracketResolver } from "../bracket-resolver";
 import { FifaMatchId, asFifaMatchId } from "@/types/football";
 import { r32Bracket } from "../r32-bracket";
-import { getQualifyingThirdPlaceTeams, assignThirdPlaceToR32, getRankedThirdPlaceTeams, getThirdPlacePoolForMatch } from "../third-place-ranking";
-import { lookupThirdPlaceAssignment, FIFA_THIRD_PLACE_TABLE, THIRD_PLACE_MATCH_ORDER } from "../fifa-third-place-table";
+import {
+  getQualifyingThirdPlaceTeams,
+  assignThirdPlaceToR32,
+  getRankedThirdPlaceTeams,
+  getThirdPlacePoolForMatch,
+} from "../third-place-ranking";
+import {
+  lookupThirdPlaceAssignment,
+  FIFA_THIRD_PLACE_TABLE,
+  THIRD_PLACE_MATCH_ORDER,
+} from "../fifa-third-place-table";
 import {
   buildGroupStandings,
   buildThirdPlaceQualifying,
@@ -14,18 +23,38 @@ import {
   scenarioWithCustomThirdPlace,
   EXPECTED_THIRD_PLACE_ASSIGNMENTS,
   // Teams for assertion
-  TEAM_A1, TEAM_A2, TEAM_A3,
-  TEAM_B1, TEAM_B2, TEAM_B3,
-  TEAM_C1, TEAM_C2, TEAM_C3,
-  TEAM_D1, TEAM_D2, TEAM_D3,
-  TEAM_E1, TEAM_E2, TEAM_E3,
-  TEAM_F1, TEAM_F2, TEAM_F3,
-  TEAM_G1, TEAM_G2, TEAM_G3,
-  TEAM_H1, TEAM_H2, TEAM_H3,
-  TEAM_I1, TEAM_I2,
-  TEAM_J1, TEAM_J2,
-  TEAM_K1, TEAM_K2,
-  TEAM_L1, TEAM_L2,
+  TEAM_A1,
+  TEAM_A2,
+  TEAM_A3,
+  TEAM_B1,
+  TEAM_B2,
+  TEAM_B3,
+  TEAM_C1,
+  TEAM_C2,
+  TEAM_C3,
+  TEAM_D1,
+  TEAM_D2,
+  TEAM_D3,
+  TEAM_E1,
+  TEAM_E2,
+  TEAM_E3,
+  TEAM_F1,
+  TEAM_F2,
+  TEAM_F3,
+  TEAM_G1,
+  TEAM_G2,
+  TEAM_G3,
+  TEAM_H1,
+  TEAM_H2,
+  TEAM_H3,
+  TEAM_I1,
+  TEAM_I2,
+  TEAM_J1,
+  TEAM_J2,
+  TEAM_K1,
+  TEAM_K2,
+  TEAM_L1,
+  TEAM_L2,
 } from "./bracket-resolver.mock";
 
 // Helper: resolve with default settings (no predictions)
@@ -40,7 +69,9 @@ function resolve(scenario: ReturnType<typeof scenarioGroupsFinished>) {
 }
 
 // Helper: resolve with knockout predictions enabled
-function resolveWithPredictions(scenario: ReturnType<typeof scenarioWithPredictions>) {
+function resolveWithPredictions(
+  scenario: ReturnType<typeof scenarioWithPredictions>,
+) {
   const resolver = new BracketResolver({
     matches: scenario.matches,
     predictions: scenario.predictions,
@@ -58,7 +89,10 @@ const fid = asFifaMatchId;
 // =====================================================================
 
 describe("BracketResolver — R32 resolution (all groups finished)", () => {
-  let resolved: Map<FifaMatchId, { home: any; away: any; homeDisplayName: string; awayDisplayName: string }>;
+  let resolved: Map<
+    FifaMatchId,
+    { home: any; away: any; homeDisplayName: string; awayDisplayName: string }
+  >;
 
   beforeEach(() => {
     resolved = resolve(scenarioGroupsFinished());
@@ -121,8 +155,14 @@ describe("BracketResolver — R32 resolution (all groups finished)", () => {
       const r = resolved.get(fid(i))!;
       expect(r.home, `Match ${i} home should not be null`).not.toBeNull();
       expect(r.away, `Match ${i} away should not be null`).not.toBeNull();
-      expect(r.home!.id, `Match ${i} home should have positive ID`).toBeGreaterThan(0);
-      expect(r.away!.id, `Match ${i} away should have positive ID`).toBeGreaterThan(0);
+      expect(
+        r.home!.id,
+        `Match ${i} home should have positive ID`,
+      ).toBeGreaterThan(0);
+      expect(
+        r.away!.id,
+        `Match ${i} away should have positive ID`,
+      ).toBeGreaterThan(0);
     }
   });
 });
@@ -151,9 +191,20 @@ describe("Third-place ranking", () => {
     // Expected order: A(5/+2/6), B(5/+2/5), C(5/+1/5), D(4/+2/5),
     //                 E(4/+1/4), F(4/+1/3), G(4/+0/4), H(4/+0/3),
     //                 I(3/+0/3), J(3/-1/2), K(2/-1/2), L(2/-2/1)
-    const expectedOrder = ["GROUP_A", "GROUP_B", "GROUP_C", "GROUP_D",
-                           "GROUP_E", "GROUP_F", "GROUP_G", "GROUP_H",
-                           "GROUP_I", "GROUP_J", "GROUP_K", "GROUP_L"];
+    const expectedOrder = [
+      "GROUP_A",
+      "GROUP_B",
+      "GROUP_C",
+      "GROUP_D",
+      "GROUP_E",
+      "GROUP_F",
+      "GROUP_G",
+      "GROUP_H",
+      "GROUP_I",
+      "GROUP_J",
+      "GROUP_K",
+      "GROUP_L",
+    ];
     const actualOrder = ranked.map((t) => t.group);
     expect(actualOrder).toEqual(expectedOrder);
   });
@@ -166,7 +217,9 @@ describe("Third-place ranking", () => {
       expect(ranked[i].qualifies, `rank ${i + 1} should qualify`).toBe(true);
     }
     for (let i = 8; i < 12; i++) {
-      expect(ranked[i].qualifies, `rank ${i + 1} should NOT qualify`).toBe(false);
+      expect(ranked[i].qualifies, `rank ${i + 1} should NOT qualify`).toBe(
+        false,
+      );
     }
   });
 
@@ -179,14 +232,24 @@ describe("Third-place ranking", () => {
     const groupI = standings.get("GROUP_I")!;
     groupI[2] = {
       ...groupI[2],
-      points: 3, goalsFor: 3, goalsAgainst: 3, goalDifference: 0,
-      won: 1, drawn: 0, lost: 2,
+      points: 3,
+      goalsFor: 3,
+      goalsAgainst: 3,
+      goalDifference: 0,
+      won: 1,
+      drawn: 0,
+      lost: 2,
     };
     const groupJ = standings.get("GROUP_J")!;
     groupJ[2] = {
       ...groupJ[2],
-      points: 3, goalsFor: 3, goalsAgainst: 3, goalDifference: 0,
-      won: 0, drawn: 3, lost: 0,
+      points: 3,
+      goalsFor: 3,
+      goalsAgainst: 3,
+      goalDifference: 0,
+      won: 0,
+      drawn: 3,
+      lost: 0,
     };
 
     const ranked = getRankedThirdPlaceTeams(standings);
@@ -198,7 +261,9 @@ describe("Third-place ranking", () => {
 
 describe("Third-place FIFA lookup table assignments", () => {
   it("assigns correct groups for ABCDEFGH combination", () => {
-    const groups = ["A", "B", "C", "D", "E", "F", "G", "H"].map((l) => `GROUP_${l}`);
+    const groups = ["A", "B", "C", "D", "E", "F", "G", "H"].map(
+      (l) => `GROUP_${l}`,
+    );
     const assignments = assignThirdPlaceToR32(groups);
 
     // Expected from FIFA table: [H, G, B, C, A, F, D, E]
@@ -247,7 +312,10 @@ describe("Third-place FIFA lookup table assignments", () => {
 
       // All assigned groups must be from the qualifying key
       for (const group of assignments) {
-        expect(key, `Key ${key}: assigned group '${group}' not in key`).toContain(group);
+        expect(
+          key,
+          `Key ${key}: assigned group '${group}' not in key`,
+        ).toContain(group);
       }
       // All 8 groups must be assigned (no duplicates)
       expect(new Set(assignments).size).toBe(8);
@@ -259,7 +327,10 @@ describe("Third-place FIFA lookup table assignments", () => {
     for (const key of Object.keys(FIFA_THIRD_PLACE_TABLE)) {
       const letters = key.split("");
       for (const l of letters) {
-        expect(validGroups.has(l), `Key ${key}: '${l}' is not a valid group`).toBe(true);
+        expect(
+          validGroups.has(l),
+          `Key ${key}: '${l}' is not a valid group`,
+        ).toBe(true);
       }
       expect(letters).toEqual([...letters].sort());
       expect(new Set(letters).size).toBe(8);
@@ -286,44 +357,87 @@ describe("Third-place integration with BracketResolver", () => {
     const scenario = scenarioGroupsFinished();
     const resolved = resolve(scenario);
 
-    for (const [matchId, expected] of Object.entries(EXPECTED_THIRD_PLACE_ASSIGNMENTS)) {
+    for (const [matchId, expected] of Object.entries(
+      EXPECTED_THIRD_PLACE_ASSIGNMENTS,
+    )) {
       const r = resolved.get(fid(Number(matchId)))!;
-      expect(r.away?.tla, `Match ${matchId} away should be ${expected.team.tla}`).toBe(expected.team.tla);
+      expect(
+        r.away?.tla,
+        `Match ${matchId} away should be ${expected.team.tla}`,
+      ).toBe(expected.team.tla);
       expect(r.away?.id).toBe(expected.team.id);
     }
   });
 
   it("different qualifying combination: EFGHIJKL", () => {
-    const scenario = scenarioWithCustomThirdPlace(["E", "F", "G", "H", "I", "J", "K", "L"]);
+    const scenario = scenarioWithCustomThirdPlace([
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+    ]);
     const resolved = resolve(scenario);
 
     // From FIFA table: EFGHIJKL → [E, J, I, F, H, G, L, K]
     const expectedAssignments: Record<number, string> = {
-      74: "E", 77: "J", 79: "I", 80: "F", 81: "H", 82: "G", 85: "L", 87: "K",
+      74: "E",
+      77: "J",
+      79: "I",
+      80: "F",
+      81: "H",
+      82: "G",
+      85: "L",
+      87: "K",
     };
 
     for (const [matchId, groupLetter] of Object.entries(expectedAssignments)) {
       const r = resolved.get(fid(Number(matchId)))!;
       const standings = scenario.groupStandings.get(`GROUP_${groupLetter}`)!;
       const expectedTeam = standings[2].team; // 3rd place
-      expect(r.away?.id, `Match ${matchId}: away should be 3rd from GROUP_${groupLetter}`).toBe(expectedTeam.id);
+      expect(
+        r.away?.id,
+        `Match ${matchId}: away should be 3rd from GROUP_${groupLetter}`,
+      ).toBe(expectedTeam.id);
     }
   });
 
   it("different qualifying combination: ABCDEFGL", () => {
-    const scenario = scenarioWithCustomThirdPlace(["A", "B", "C", "D", "E", "F", "G", "L"]);
+    const scenario = scenarioWithCustomThirdPlace([
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "L",
+    ]);
     const resolved = resolve(scenario);
 
     // From FIFA table: ABCDEFGL → [C, G, B, D, A, F, L, E]
     const expectedAssignments: Record<number, string> = {
-      74: "C", 77: "G", 79: "B", 80: "D", 81: "A", 82: "F", 85: "L", 87: "E",
+      74: "C",
+      77: "G",
+      79: "B",
+      80: "D",
+      81: "A",
+      82: "F",
+      85: "L",
+      87: "E",
     };
 
     for (const [matchId, groupLetter] of Object.entries(expectedAssignments)) {
       const r = resolved.get(fid(Number(matchId)))!;
       const standings = scenario.groupStandings.get(`GROUP_${groupLetter}`)!;
       const expectedTeam = standings[2].team;
-      expect(r.away?.id, `Match ${matchId}: away should be 3rd from GROUP_${groupLetter}`).toBe(expectedTeam.id);
+      expect(
+        r.away?.id,
+        `Match ${matchId}: away should be 3rd from GROUP_${groupLetter}`,
+      ).toBe(expectedTeam.id);
     }
   });
 });
@@ -544,7 +658,13 @@ describe("BracketResolver — API team override", () => {
     const scenario = scenarioGroupsFinished();
     // Inject a valid API team into match 73
     const m73 = scenario.matches.find((m) => m.id === 73)!;
-    m73.homeTeam = { id: 9999, name: "Override Team", shortName: "OVR", tla: "OVR", crest: null };
+    m73.homeTeam = {
+      id: 9999,
+      name: "Override Team",
+      shortName: "OVR",
+      tla: "OVR",
+      crest: null,
+    };
 
     const resolved = resolve(scenario);
     const r73 = resolved.get(fid(73))!;
@@ -555,7 +675,13 @@ describe("BracketResolver — API team override", () => {
   it("ignores placeholder API teams (negative IDs)", () => {
     const scenario = scenarioGroupsFinished();
     const m73 = scenario.matches.find((m) => m.id === 73)!;
-    m73.homeTeam = { id: -1001, name: "PO1", shortName: "PO1", tla: "PO1", crest: null };
+    m73.homeTeam = {
+      id: -1001,
+      name: "EU1",
+      shortName: "EU1",
+      tla: "EU1",
+      crest: null,
+    };
 
     const resolved = resolve(scenario);
     const r73 = resolved.get(fid(73))!;
@@ -566,7 +692,13 @@ describe("BracketResolver — API team override", () => {
   it("ignores TBD API teams", () => {
     const scenario = scenarioGroupsFinished();
     const m73 = scenario.matches.find((m) => m.id === 73)!;
-    m73.homeTeam = { id: 100, name: "TBD", shortName: "TBD", tla: "TBD", crest: null };
+    m73.homeTeam = {
+      id: 100,
+      name: "TBD",
+      shortName: "TBD",
+      tla: "TBD",
+      crest: null,
+    };
 
     const resolved = resolve(scenario);
     const r73 = resolved.get(fid(73))!;
@@ -597,7 +729,10 @@ describe("R32 bracket structure", () => {
   it("home positions cover 1st from each of 12 groups and 2nd from 4 groups", () => {
     const homePositions = r32Bracket
       .filter((s) => s.homePosition !== null)
-      .map((s) => `${s.homePosition!.position}${s.homePosition!.group.replace("GROUP_", "")}`);
+      .map(
+        (s) =>
+          `${s.homePosition!.position}${s.homePosition!.group.replace("GROUP_", "")}`,
+      );
 
     // 8 first-place positions (for 3rd-place matches: E, I, A, L, D, G, B, K)
     // + 8 regular home positions

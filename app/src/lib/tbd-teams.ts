@@ -2,8 +2,8 @@
  * TBD Team Placeholders for FIFA World Cup 2026
  *
  * The 48-team World Cup has 6 TBD slots:
- * - 4 UEFA Nations League playoff winners (teams from Europe's playoff system)
- * - 2 Inter-confederation playoff winners (teams from playoff between confederations)
+ * - 4 UEFA Nations League qualifier winners (teams from Europe's qualifier system)
+ * - 2 Inter-confederation qualifier winners (teams from qualifier between confederations)
  *
  * These teams appear in groups A, B, D, F, I, K based on the draw.
  * We assign synthetic IDs (negative numbers) to avoid collision with real team IDs.
@@ -12,49 +12,49 @@
 import { Team, Match } from "@/types/football";
 
 // Placeholder team definitions with negative IDs
-// Using -1xxx for UEFA playoff winners, -2xxx for Inter-confederation
+// Using -1xxx for UEFA qualifier winners, -2xxx for Inter-confederation
 export const TBD_TEAMS: Record<string, Team> = {
-  // UEFA Nations League Playoff Winners
+  // UEFA Nations League Qualifier Winners
   GROUP_A: {
     id: -1001,
-    name: "UEFA Playoff Winner 1",
-    shortName: "UEFA PO1",
-    tla: "PO1",
+    name: "UEFA Qualifier 1",
+    shortName: "UEFA EU1",
+    tla: "EU1",
     crest: null,
   },
   GROUP_B: {
     id: -1002,
-    name: "UEFA Playoff Winner 2",
-    shortName: "UEFA PO2",
-    tla: "PO2",
+    name: "UEFA Qualifier 2",
+    shortName: "UEFA EU2",
+    tla: "EU2",
     crest: null,
   },
   GROUP_D: {
     id: -1003,
-    name: "UEFA Playoff Winner 3",
-    shortName: "UEFA PO3",
-    tla: "PO3",
+    name: "UEFA Qualifier 3",
+    shortName: "UEFA EU3",
+    tla: "EU3",
     crest: null,
   },
   GROUP_F: {
     id: -1004,
-    name: "UEFA Playoff Winner 4",
-    shortName: "UEFA PO4",
-    tla: "PO4",
+    name: "UEFA Qualifier 4",
+    shortName: "UEFA EU4",
+    tla: "EU4",
     crest: null,
   },
   // Inter-confederation Playoff Winners
   GROUP_I: {
     id: -2001,
-    name: "Intercontinental PO 1",
-    shortName: "IC PO1",
+    name: "Intercontinental Qualifier 1",
+    shortName: "IC1",
     tla: "IC1",
     crest: null,
   },
   GROUP_K: {
     id: -2002,
-    name: "Intercontinental PO 2",
-    shortName: "IC PO2",
+    name: "Intercontinental Qualifier 2",
+    shortName: "IC2",
     tla: "IC2",
     crest: null,
   },

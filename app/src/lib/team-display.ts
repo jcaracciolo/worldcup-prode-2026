@@ -27,7 +27,7 @@ import { isPlaceholderTeamId } from "@/lib/tbd-teams";
 export interface TeamDisplay {
   /** The resolved team object (null if not yet determined) */
   team: Team | null;
-  /** Display label: "USA", "PO1", "1A", "W73", etc. */
+  /** Display label: "USA", "EU1", "1A", "W73", etc. */
   label: string;
   /** Whether this is a placeholder (no real team yet) */
   isPlaceholder: boolean;
@@ -271,7 +271,7 @@ export function getTeamDisplaySimple(
     };
   }
 
-  // Placeholder team (PO1, IC1, etc.)
+  // Placeholder team (EU1, IC1, etc.)
   if (
     team &&
     team.id !== null &&

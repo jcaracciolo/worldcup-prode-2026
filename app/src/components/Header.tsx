@@ -13,7 +13,7 @@ export default function Header() {
   const { userCompetitions, currentCompetitionId, switchCompetition } =
     useDatabase();
   const { isSimulated } = useMatches();
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
 
   // Defer simulation banner to avoid hydration mismatch
   const [mounted, setMounted] = useState(false);
@@ -127,7 +127,9 @@ export default function Header() {
             >
               Rules
             </Link>
-            {user ? (
+            {userLoading ? (
+              <div className="w-16 h-8" />
+            ) : user ? (
               <>
                 <Link
                   href="/predictions"
@@ -254,7 +256,7 @@ export default function Header() {
             >
               Rules
             </Link>
-            {user ? (
+            {userLoading ? null : user ? (
               <>
                 <Link
                   href="/predictions"

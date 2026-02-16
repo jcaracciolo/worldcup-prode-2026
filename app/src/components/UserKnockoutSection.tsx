@@ -195,20 +195,29 @@ function KnockoutMatchRow({
   const awayHighlight =
     awayWins || (isTie && prediction?.winner_id === awayTeam?.id);
 
+  const isLive =
+    match.status === "IN_PLAY" || match.status === "PAUSED";
+
   return (
-    <div className="flex items-center py-3 px-3 rounded-xl bg-slate-800/60 border border-white/5 overflow-hidden">
+    <div className={`flex items-center py-3 px-3 rounded-xl bg-slate-800/60 overflow-visible relative ${isLive ? "border border-red-500/60" : "border border-white/5"}`}>
       <Link
         href={`/match/${match.id}`}
         className="flex-1 flex items-center hover:bg-slate-800/80 transition-colors cursor-pointer rounded-lg -m-2 p-2 min-w-0"
       >
-        {/* Date */}
+        {/* Date or LIVE badge */}
         <div className="w-16 text-center shrink-0 pr-2 border-r border-white/10">
-          <div
-            className="text-xs uppercase font-bold tracking-wide whitespace-nowrap"
-            style={{ color: "var(--date-color)" }}
-          >
-            {formattedDate}
-          </div>
+          {isLive ? (
+            <span className="px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full live-pulse">
+              LIVE
+            </span>
+          ) : (
+            <div
+              className="text-xs uppercase font-bold tracking-wide whitespace-nowrap"
+              style={{ color: "var(--date-color)" }}
+            >
+              {formattedDate}
+            </div>
+          )}
         </div>
 
         {/* Time & Venue */}

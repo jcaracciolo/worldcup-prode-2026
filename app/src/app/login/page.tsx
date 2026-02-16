@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import { useDatabaseService } from "@/contexts/DatabaseContext";
 
 function LoginForm() {
@@ -158,11 +159,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-white/60 text-xl">Loading...</div>
-        </div>
-      }
+      fallback={<LoadingSpinner />}
     >
       <LoginForm />
     </Suspense>

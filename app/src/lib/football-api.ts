@@ -138,7 +138,12 @@ export function isKnockoutMatch(match: Match): boolean {
 }
 
 export function getMatchResult(match: Match): "home" | "away" | "draw" | null {
-  if (match.status !== "FINISHED") return null;
+  if (
+    match.status !== "FINISHED" &&
+    match.status !== "IN_PLAY" &&
+    match.status !== "PAUSED"
+  )
+    return null;
 
   const homeGoals = match.score.fullTime.home;
   const awayGoals = match.score.fullTime.away;

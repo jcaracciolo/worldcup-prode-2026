@@ -13,6 +13,7 @@ import { getTeamDisplaySimple } from "@/lib/team-display";
 import { format } from "date-fns";
 import { Profile } from "@/types/database";
 import { FifaMatchId, asFifaMatchId } from "@/types/football";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 interface UserMatchPrediction {
   userId: string;
@@ -41,11 +42,7 @@ export default function MatchDetailPage() {
   const fifaNumber = match ? (match.id as FifaMatchId) : undefined;
   const matchIdNum = parseInt(matchId);
 
-  // Get centrally calculated points for all users for this match
-  const { loading: pointsLoading, matchPoints } =
-    useMatchPointsForAllUsers(matchIdNum);
-
-  // Loading state from hooks
+  const { matchPoints } = useMatchPointsForAllUsers(matchIdNum);
   const loadingAllPredictions = profiles.loading || allPredictions.loading;
 
   // Combine predictions with centrally calculated points
@@ -112,14 +109,8 @@ export default function MatchDetailPage() {
     profile?.id,
   ]);
 
-  const loading = matchesLoading || pointsLoading;
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-white/60">Loading...</div>
-      </div>
-    );
+  if (matchesLoading && !match) {
+    return <LoadingSpinner />;
   }
 
   if (!match) {
@@ -392,7 +383,7 @@ export default function MatchDetailPage() {
 
                   {loadingAllPredictions ? (
                     <div className="text-xs text-white/50 text-center py-2">
-                      Loading...
+                      <span className="text-lg animate-bounce-spin inline-block">⚽</span>
                     </div>
                   ) : allUserPredictions.length === 0 ? (
                     <div className="text-xs text-white/50 text-center py-2">
@@ -427,9 +418,9 @@ export default function MatchDetailPage() {
                               >
                                 {pred.awayGoals ?? "-"}
                               </span>
-                              {isFinished && (
+                              {(isFinished || isLive) && (
                                 <span
-                                  className={`ml-1 font-bold ${pred.pointsEarned > 0 ? "text-sky-300" : "text-white/30"}`}
+                                  className={`ml-1 font-bold ${pred.pointsEarned > 0 ? "text-sky-300" : "text-white/30"} ${isLive ? "live-pulse" : ""}`}
                                 >
                                   +{pred.pointsEarned}
                                 </span>

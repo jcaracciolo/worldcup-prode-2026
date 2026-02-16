@@ -236,22 +236,6 @@ export function MatchProvider({
     [rawMatches, isSimulated, applySimulation],
   );
 
-  // Transform raw matches to include live info, FIFA number, and venue
-  // match.id is already the FIFA number (converted by the API route)
-  const matches = useMemo(
-    () => processedMatches.map((m) => enhanceMatch(m, currentTime)),
-    [processedMatches, currentTime],
-  );
-
-  // Check if any matches are currently live
-  const hasLiveMatches = useMemo(
-    () => matches.some((m) => m.isLive),
-    [matches],
-  );
-
-  // Get only live matches
-  const liveMatches = useMemo(() => matches.filter((m) => m.isLive), [matches]);
-
   // Calculate actual group standings for knockout team resolution
   const actualGroupStandings = useMemo(
     () => calculateAllActualStandings(processedMatches),
@@ -276,6 +260,37 @@ export function MatchProvider({
     });
     return resolver.resolve();
   }, [processedMatches, actualGroupStandings, actualThirdPlaceQualifying]);
+
+  // Transform raw matches to include live info, FIFA number, venue,
+  // and bake resolved knockout teams into match.homeTeam/match.awayTeam.
+  // This makes knockout team resolution transparent — every consumer
+  // gets correct team data regardless of simulation or API state.
+  const matches = useMemo(
+    () =>
+      processedMatches.map((m) => {
+        const enhanced = enhanceMatch(m, currentTime);
+        if (m.stage === "GROUP_STAGE") return enhanced;
+        const resolved = resolvedKnockoutTeams.get(asFifaMatchId(m.id));
+        if (!resolved) return enhanced;
+        return {
+          ...enhanced,
+          homeTeam: resolved.home ?? enhanced.homeTeam,
+          awayTeam: resolved.away ?? enhanced.awayTeam,
+          homeDisplayName: resolved.homeDisplayName,
+          awayDisplayName: resolved.awayDisplayName,
+        };
+      }),
+    [processedMatches, currentTime, resolvedKnockoutTeams],
+  );
+
+  // Check if any matches are currently live
+  const hasLiveMatches = useMemo(
+    () => matches.some((m) => m.isLive),
+    [matches],
+  );
+
+  // Get only live matches
+  const liveMatches = useMemo(() => matches.filter((m) => m.isLive), [matches]);
 
   // Fetch matches from API
   const fetchMatches = useCallback(async () => {
@@ -386,27 +401,11 @@ export function useMatches(): MatchContextValue {
  * @returns The match with resolved teams and display names, or undefined if not found
  */
 export function useMatch(fifaId: FifaMatchId): MatchWithLiveInfo | undefined {
-  const { matches, resolvedKnockoutTeams } = useMatches();
+  const { matches } = useMatches();
 
   return useMemo(() => {
-    const match = matches.find((m) => m.id === fifaId);
-    if (!match) return undefined;
-
-    // Group stage — teams and display names already computed in enhanceMatch
-    if (match.stage === "GROUP_STAGE") return match;
-
-    // Knockout — overlay resolved teams and display names if available
-    const resolved = resolvedKnockoutTeams.get(fifaId);
-    if (!resolved) return match;
-
-    return {
-      ...match,
-      homeTeam: resolved.home ?? match.homeTeam,
-      awayTeam: resolved.away ?? match.awayTeam,
-      homeDisplayName: resolved.homeDisplayName,
-      awayDisplayName: resolved.awayDisplayName,
-    };
-  }, [matches, resolvedKnockoutTeams, fifaId]);
+    return matches.find((m) => m.id === fifaId);
+  }, [matches, fifaId]);
 }
 
 /**

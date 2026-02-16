@@ -19,6 +19,11 @@ export default function PointsBreakdown({
   const getTypeLabel = (type: PointBreakdown["type"]) => {
     switch (type) {
       case "result":
+      case "knockout_win":
+        return "Result";
+      case "knockout_lose":
+        return "Result";
+      case "knockout_tie":
         return "Result";
       case "goals_home":
       case "goals_away":
@@ -27,12 +32,6 @@ export default function PointsBreakdown({
         return "Advance";
       case "group_position":
         return "Position";
-      case "knockout_win":
-        return "Winner";
-      case "knockout_lose":
-        return "Loser";
-      case "knockout_tie":
-        return "Tie";
       default:
         return "";
     }
@@ -41,6 +40,9 @@ export default function PointsBreakdown({
   const getTypeBgColor = (type: PointBreakdown["type"]) => {
     switch (type) {
       case "result":
+      case "knockout_win":
+      case "knockout_lose":
+      case "knockout_tie":
         return "bg-emerald-500/30 text-emerald-300 border-emerald-500/40";
       case "goals_home":
       case "goals_away":
@@ -48,11 +50,6 @@ export default function PointsBreakdown({
       case "group_advance":
       case "group_position":
         return "bg-purple-500/30 text-purple-300 border-purple-500/40";
-      case "knockout_win":
-        return "bg-amber-500/30 text-amber-300 border-amber-500/40";
-      case "knockout_lose":
-      case "knockout_tie":
-        return "bg-orange-500/30 text-orange-300 border-orange-500/40";
       default:
         return "bg-white/10 text-white/60 border-white/20";
     }
@@ -71,14 +68,14 @@ export default function PointsBreakdown({
   );
   const knockoutPoints = breakdown.filter(
     (b) =>
-      b.type === "knockout_win" ||
-      b.type === "knockout_lose" ||
-      b.type === "knockout_tie" ||
-      ((b.type === "result" ||
+      (b.type === "result" ||
+        b.type === "knockout_win" ||
+        b.type === "knockout_lose" ||
+        b.type === "knockout_tie" ||
         b.type === "goals_home" ||
         b.type === "goals_away") &&
-        b.matchInfo &&
-        b.matchInfo.stage !== "GROUP_STAGE"),
+      b.matchInfo &&
+      b.matchInfo.stage !== "GROUP_STAGE",
   );
 
   const renderItem = (item: PointBreakdown, index: number) => {
@@ -198,6 +195,16 @@ export default function PointsBreakdown({
     };
     const homeTla = getTeamDisplay(homeTeam, item.matchId, "home");
     const awayTla = getTeamDisplay(awayTeam, item.matchId, "away");
+
+    // For knockout, use predicted teams for the prediction row display
+    const predHomeTeam = item.predictedTeamInfo?.homeTeam ?? homeTeam;
+    const predAwayTeam = item.predictedTeamInfo?.awayTeam ?? awayTeam;
+    const predHomeTla = item.predictedTeamInfo?.homeTeam
+      ? getTeamDisplay(item.predictedTeamInfo.homeTeam, item.matchId, "home")
+      : homeTla;
+    const predAwayTla = item.predictedTeamInfo?.awayTeam
+      ? getTeamDisplay(item.predictedTeamInfo.awayTeam, item.matchId, "away")
+      : awayTla;
 
     // Prediction winner
     const predHome = item.prediction?.homeGoals;
@@ -332,8 +339,8 @@ export default function PointsBreakdown({
             Prediction:
           </span>
           {renderTeam(
-            homeTeam,
-            homeTla,
+            predHomeTeam as { tla?: string; crest?: string; shortName?: string },
+            predHomeTla,
             "home",
             predHomeHighlight,
             predAwayWon,
@@ -342,8 +349,8 @@ export default function PointsBreakdown({
             {predHome ?? "-"}-{predAway ?? "-"}
           </span>
           {renderTeam(
-            awayTeam,
-            awayTla,
+            predAwayTeam as { tla?: string; crest?: string; shortName?: string },
+            predAwayTla,
             "away",
             predAwayHighlight,
             predHomeWon,

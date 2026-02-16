@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Team, FifaMatchId, Match } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
+import type { ResolvedTeams } from "@/lib/bracket-resolver";
 import { getTeamLabel } from "@/lib/scoring";
 import { getMatchInfo } from "@/lib/tournament";
 import { ReactNode } from "react";
@@ -380,13 +381,274 @@ export function ScoreDisplay({
 }
 
 // ============================================================
-// Unified Knockout Match Row Component
+// Knockout Match Row — Sub-components (declared outside render)
 // ============================================================
 
-interface ResolvedTeams {
-  home: Team | null;
-  away: Team | null;
+function KnockoutContentLink({
+  children,
+  className,
+  matchId,
+}: {
+  children: ReactNode;
+  className: string;
+  matchId: number;
+}) {
+  return (
+    <Link href={`/match/${matchId}`} className={className}>
+      {children}
+    </Link>
+  );
 }
+
+function KnockoutContentDiv({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className: string;
+  matchId?: number;
+}) {
+  return <div className={className}>{children}</div>;
+}
+
+function KnockoutTeamButton({
+  teamDisplay,
+  position,
+  highlighted,
+  isWinnerSelect,
+  disabled,
+  onWinnerChange,
+}: {
+  teamDisplay: TeamDisplay;
+  position: "home" | "away";
+  highlighted: boolean;
+  isWinnerSelect: boolean;
+  disabled: boolean;
+  onWinnerChange: (teamId: number) => void;
+}) {
+  const isHome = position === "home";
+  const { team, label, isPlaceholder } = teamDisplay;
+
+  if (isWinnerSelect) {
+    return (
+      <button
+        type="button"
+        onClick={() => team?.id && onWinnerChange(team.id)}
+        disabled={disabled || !team?.id}
+        className={`flex items-center gap-2 px-2 py-1 rounded transition-all ${
+          highlighted
+            ? "bg-amber-500/80 text-slate-900 font-bold"
+            : "hover:bg-white/10 text-white"
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+      >
+        {isHome ? (
+          <>
+            <span className="text-sm font-semibold">{label}</span>
+            <TeamCrest
+              team={team}
+              fallbackLabel={isPlaceholder ? label : undefined}
+              size="lg"
+            />
+          </>
+        ) : (
+          <>
+            <TeamCrest
+              team={team}
+              fallbackLabel={isPlaceholder ? label : undefined}
+              size="lg"
+            />
+            <span className="text-sm font-semibold">{label}</span>
+          </>
+        )}
+      </button>
+    );
+  }
+
+  return (
+    <div
+      className={`flex items-center gap-2 px-2 py-1 rounded ${
+        highlighted ? "bg-amber-500/80" : ""
+      }`}
+    >
+      {isHome ? (
+        <>
+          <span
+            className={`text-sm font-semibold ${
+              highlighted ? "text-slate-900 font-bold" : "text-white"
+            }`}
+          >
+            {label}
+          </span>
+          <TeamCrest
+            team={team}
+            fallbackLabel={isPlaceholder ? label : undefined}
+            size="lg"
+          />
+        </>
+      ) : (
+        <>
+          <TeamCrest
+            team={team}
+            fallbackLabel={isPlaceholder ? label : undefined}
+            size="lg"
+          />
+          <span
+            className={`text-sm font-semibold ${
+              highlighted ? "text-slate-900 font-bold" : "text-white"
+            }`}
+          >
+            {label}
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
+function KnockoutMobileTeamButton({
+  teamDisplay,
+  position,
+  highlighted,
+  isWinnerSelect,
+  disabled,
+  onWinnerChange,
+}: {
+  teamDisplay: TeamDisplay;
+  position: "home" | "away";
+  highlighted: boolean;
+  isWinnerSelect: boolean;
+  disabled: boolean;
+  onWinnerChange: (teamId: number) => void;
+}) {
+  const isHome = position === "home";
+  const { team, label, isPlaceholder } = teamDisplay;
+
+  if (isWinnerSelect) {
+    return (
+      <button
+        type="button"
+        onClick={() => team?.id && onWinnerChange(team.id)}
+        disabled={disabled || !team?.id}
+        className={`flex items-center ${isHome ? "flex-row-reverse" : ""} gap-1 px-1 py-0.5 rounded transition-all ${
+          highlighted
+            ? "bg-amber-500/80 text-slate-900"
+            : "hover:bg-white/10 text-white"
+        } disabled:opacity-50`}
+      >
+        <TeamCrest
+          team={team}
+          fallbackLabel={isPlaceholder ? label : undefined}
+          size="sm"
+        />
+        <span className="text-xs font-semibold">{label}</span>
+      </button>
+    );
+  }
+
+  return (
+    <div
+      className={`flex items-center ${isHome ? "flex-row-reverse" : ""} gap-1 px-1 py-0.5 rounded ${
+        highlighted ? "bg-amber-500/80" : ""
+      }`}
+    >
+      <TeamCrest
+        team={team}
+        fallbackLabel={isPlaceholder ? label : undefined}
+        size="sm"
+      />
+      <span
+        className={`text-xs font-semibold ${
+          highlighted ? "text-slate-900" : "text-white"
+        }`}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function KnockoutScoreSection({
+  mobile = false,
+  isEdit,
+  homeGoals,
+  awayGoals,
+  needsWinnerSelect,
+  winnerId,
+  disabled,
+  onHomeChange,
+  onAwayChange,
+}: {
+  mobile?: boolean;
+  isEdit: boolean;
+  homeGoals: number | null;
+  awayGoals: number | null;
+  needsWinnerSelect: boolean;
+  winnerId: number | null;
+  disabled: boolean;
+  onHomeChange: (value: string) => void;
+  onAwayChange: (value: string) => void;
+}) {
+  if (isEdit) {
+    const inputClass = mobile
+      ? "w-7 h-6 text-center text-xs font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
+      : "w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-400 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20 transition-all";
+
+    return (
+      <div className="flex flex-col items-center mx-1 shrink-0">
+        {needsWinnerSelect && !winnerId && !mobile && (
+          <div className="mb-0.5 px-1 py-0.5 text-[8px] leading-tight text-center rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+            Pick winner
+          </div>
+        )}
+        <div className="flex items-center gap-1">
+          <input
+            type="number"
+            min="0"
+            max="20"
+            value={homeGoals ?? ""}
+            onChange={(e) => onHomeChange(e.target.value)}
+            disabled={disabled}
+            className={inputClass}
+            placeholder="-"
+          />
+          <span className="text-white/50 font-bold text-xs">-</span>
+          <input
+            type="number"
+            min="0"
+            max="20"
+            value={awayGoals ?? ""}
+            onChange={(e) => onAwayChange(e.target.value)}
+            disabled={disabled}
+            className={inputClass}
+            placeholder="-"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`flex items-center ${mobile ? "gap-0.5" : "gap-1"} shrink-0`}
+    >
+      <span
+        className={`${mobile ? "w-7 h-6 text-xs" : "w-8 h-7 text-sm"} flex items-center justify-center font-bold text-white bg-white/10 rounded`}
+      >
+        {homeGoals ?? "-"}
+      </span>
+      <span className="text-white/50 font-bold text-xs">-</span>
+      <span
+        className={`${mobile ? "w-7 h-6 text-xs" : "w-8 h-7 text-sm"} flex items-center justify-center font-bold text-white bg-white/10 rounded`}
+      >
+        {awayGoals ?? "-"}
+      </span>
+    </div>
+  );
+}
+
+// ============================================================
+// Unified Knockout Match Row Component
+// ============================================================
 
 type KnockoutMatchRowMode = "edit" | "readonly";
 
@@ -477,231 +739,7 @@ export function KnockoutMatchRow({
 
   // Content wrapper - Link for readonly, div for edit
   const ContentWrapper =
-    mode === "readonly"
-      ? ({
-          children,
-          className,
-        }: {
-          children: ReactNode;
-          className: string;
-        }) => (
-          <Link href={`/match/${match.id}`} className={className}>
-            {children}
-          </Link>
-        )
-      : ({
-          children,
-          className,
-        }: {
-          children: ReactNode;
-          className: string;
-        }) => <div className={className}>{children}</div>;
-
-  // Team button/display for edit mode
-  const TeamButton = ({
-    teamDisplay,
-    position,
-    highlighted,
-  }: {
-    teamDisplay: TeamDisplay;
-    position: "home" | "away";
-    highlighted: boolean;
-  }) => {
-    const isHome = position === "home";
-    const { team, label, isPlaceholder } = teamDisplay;
-
-    if (mode === "edit" && needsWinnerSelect) {
-      return (
-        <button
-          type="button"
-          onClick={() => team?.id && handleWinnerChange(team.id)}
-          disabled={disabled || !team?.id}
-          className={`flex items-center gap-2 px-2 py-1 rounded transition-all ${
-            highlighted
-              ? "bg-amber-500/80 text-slate-900 font-bold"
-              : "hover:bg-white/10 text-white"
-          } disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          {isHome ? (
-            <>
-              <span className="text-sm font-semibold">{label}</span>
-              <TeamCrest
-                team={team}
-                fallbackLabel={isPlaceholder ? label : undefined}
-                size="lg"
-              />
-            </>
-          ) : (
-            <>
-              <TeamCrest
-                team={team}
-                fallbackLabel={isPlaceholder ? label : undefined}
-                size="lg"
-              />
-              <span className="text-sm font-semibold">{label}</span>
-            </>
-          )}
-        </button>
-      );
-    }
-
-    return (
-      <div
-        className={`flex items-center gap-2 px-2 py-1 rounded ${
-          highlighted ? "bg-amber-500/80" : ""
-        }`}
-      >
-        {isHome ? (
-          <>
-            <span
-              className={`text-sm font-semibold ${
-                highlighted ? "text-slate-900 font-bold" : "text-white"
-              }`}
-            >
-              {label}
-            </span>
-            <TeamCrest
-              team={team}
-              fallbackLabel={isPlaceholder ? label : undefined}
-              size="lg"
-            />
-          </>
-        ) : (
-          <>
-            <TeamCrest
-              team={team}
-              fallbackLabel={isPlaceholder ? label : undefined}
-              size="lg"
-            />
-            <span
-              className={`text-sm font-semibold ${
-                highlighted ? "text-slate-900 font-bold" : "text-white"
-              }`}
-            >
-              {label}
-            </span>
-          </>
-        )}
-      </div>
-    );
-  };
-
-  // Mobile team display
-  const MobileTeamButton = ({
-    teamDisplay,
-    position,
-    highlighted,
-  }: {
-    teamDisplay: TeamDisplay;
-    position: "home" | "away";
-    highlighted: boolean;
-  }) => {
-    const isHome = position === "home";
-    const { team, label, isPlaceholder } = teamDisplay;
-
-    if (mode === "edit" && needsWinnerSelect) {
-      return (
-        <button
-          type="button"
-          onClick={() => team?.id && handleWinnerChange(team.id)}
-          disabled={disabled || !team?.id}
-          className={`flex items-center ${isHome ? "flex-row-reverse" : ""} gap-1 px-1 py-0.5 rounded transition-all ${
-            highlighted
-              ? "bg-amber-500/80 text-slate-900"
-              : "hover:bg-white/10 text-white"
-          } disabled:opacity-50`}
-        >
-          <TeamCrest
-            team={team}
-            fallbackLabel={isPlaceholder ? label : undefined}
-            size="sm"
-          />
-          <span className="text-xs font-semibold">{label}</span>
-        </button>
-      );
-    }
-
-    return (
-      <div
-        className={`flex items-center ${isHome ? "flex-row-reverse" : ""} gap-1 px-1 py-0.5 rounded ${
-          highlighted ? "bg-amber-500/80" : ""
-        }`}
-      >
-        <TeamCrest
-          team={team}
-          fallbackLabel={isPlaceholder ? label : undefined}
-          size="sm"
-        />
-        <span
-          className={`text-xs font-semibold ${
-            highlighted ? "text-slate-900" : "text-white"
-          }`}
-        >
-          {label}
-        </span>
-      </div>
-    );
-  };
-
-  // Score section
-  const ScoreSection = ({ mobile = false }: { mobile?: boolean }) => {
-    if (mode === "edit") {
-      const inputClass = mobile
-        ? "w-7 h-6 text-center text-xs font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
-        : "w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-400 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20 transition-all";
-
-      return (
-        <div className="flex flex-col items-center mx-1 shrink-0">
-          {needsWinnerSelect && !winnerId && !mobile && (
-            <div className="mb-0.5 px-1 py-0.5 text-[8px] leading-tight text-center rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
-              Pick winner
-            </div>
-          )}
-          <div className="flex items-center gap-1">
-            <input
-              type="number"
-              min="0"
-              max="20"
-              value={homeGoals ?? ""}
-              onChange={(e) => handleHomeChange(e.target.value)}
-              disabled={disabled}
-              className={inputClass}
-              placeholder="-"
-            />
-            <span className="text-white/50 font-bold text-xs">-</span>
-            <input
-              type="number"
-              min="0"
-              max="20"
-              value={awayGoals ?? ""}
-              onChange={(e) => handleAwayChange(e.target.value)}
-              disabled={disabled}
-              className={inputClass}
-              placeholder="-"
-            />
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div
-        className={`flex items-center ${mobile ? "gap-0.5" : "gap-1"} shrink-0`}
-      >
-        <span
-          className={`${mobile ? "w-7 h-6 text-xs" : "w-8 h-7 text-sm"} flex items-center justify-center font-bold text-white bg-white/10 rounded`}
-        >
-          {homeGoals ?? "-"}
-        </span>
-        <span className="text-white/50 font-bold text-xs">-</span>
-        <span
-          className={`${mobile ? "w-7 h-6 text-xs" : "w-8 h-7 text-sm"} flex items-center justify-center font-bold text-white bg-white/10 rounded`}
-        >
-          {awayGoals ?? "-"}
-        </span>
-      </div>
-    );
-  };
+    mode === "readonly" ? KnockoutContentLink : KnockoutContentDiv;
 
   const borderClass =
     mode === "edit" && needsWinnerSelect
@@ -717,7 +755,7 @@ export function KnockoutMatchRow({
 
   return (
     <div
-      className={`py-1.5 px-2 rounded-lg transition-colors overflow-hidden ${bgClass} ${borderClass}`}
+      className={`py-1.5 px-2 rounded-lg transition-colors overflow-visible relative ${bgClass} ${borderClass}`}
     >
       {/* Mobile Layout */}
       <div className="lg:hidden flex items-center gap-1">
@@ -725,20 +763,36 @@ export function KnockoutMatchRow({
           date={match.utcDate}
           fifaMatchNumber={fifaMatchNumber}
         />
-        <ContentWrapper className="flex-1 flex items-center justify-center gap-1 hover:bg-white/5 transition-colors rounded cursor-pointer min-w-0">
+        <ContentWrapper matchId={match.id} className="flex-1 flex items-center justify-center gap-1 hover:bg-white/5 transition-colors rounded cursor-pointer min-w-0">
           <div className="flex-1 min-w-0 flex items-center justify-end">
-            <MobileTeamButton
+            <KnockoutMobileTeamButton
               teamDisplay={homeDisplay}
               position="home"
               highlighted={homeHighlight}
+              isWinnerSelect={needsWinnerSelect}
+              disabled={disabled}
+              onWinnerChange={handleWinnerChange}
             />
           </div>
-          <ScoreSection mobile />
+          <KnockoutScoreSection
+            mobile
+            isEdit={mode === "edit"}
+            homeGoals={homeGoals}
+            awayGoals={awayGoals}
+            needsWinnerSelect={needsWinnerSelect}
+            winnerId={winnerId}
+            disabled={disabled}
+            onHomeChange={handleHomeChange}
+            onAwayChange={handleAwayChange}
+          />
           <div className="flex-1 min-w-0 flex items-center">
-            <MobileTeamButton
+            <KnockoutMobileTeamButton
               teamDisplay={awayDisplay}
               position="away"
               highlighted={awayHighlight}
+              isWinnerSelect={needsWinnerSelect}
+              disabled={disabled}
+              onWinnerChange={handleWinnerChange}
             />
           </div>
         </ContentWrapper>
@@ -747,25 +801,40 @@ export function KnockoutMatchRow({
 
       {/* Desktop Layout */}
       <div className="hidden lg:flex items-center gap-2">
-        <ContentWrapper className="flex-1 flex items-center gap-2 hover:bg-white/5 transition-colors rounded px-1 -mx-1 cursor-pointer min-w-0">
+        <ContentWrapper matchId={match.id} className="flex-1 flex items-center gap-2 hover:bg-white/5 transition-colors rounded px-1 -mx-1 cursor-pointer min-w-0">
           <DateColumn date={match.utcDate} fifaMatchNumber={fifaMatchNumber} />
           <TimeVenueColumn
             time={match.utcDate}
             fifaMatchNumber={fifaMatchNumber}
           />
           <div className="flex-1 min-w-0 flex items-center justify-end">
-            <TeamButton
+            <KnockoutTeamButton
               teamDisplay={homeDisplay}
               position="home"
               highlighted={homeHighlight}
+              isWinnerSelect={needsWinnerSelect}
+              disabled={disabled}
+              onWinnerChange={handleWinnerChange}
             />
           </div>
-          <ScoreSection />
+          <KnockoutScoreSection
+            isEdit={mode === "edit"}
+            homeGoals={homeGoals}
+            awayGoals={awayGoals}
+            needsWinnerSelect={needsWinnerSelect}
+            winnerId={winnerId}
+            disabled={disabled}
+            onHomeChange={handleHomeChange}
+            onAwayChange={handleAwayChange}
+          />
           <div className="flex-1 min-w-0 flex items-center">
-            <TeamButton
+            <KnockoutTeamButton
               teamDisplay={awayDisplay}
               position="away"
               highlighted={awayHighlight}
+              isWinnerSelect={needsWinnerSelect}
+              disabled={disabled}
+              onWinnerChange={handleWinnerChange}
             />
           </div>
         </ContentWrapper>

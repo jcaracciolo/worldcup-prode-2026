@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
 import { useDatabaseService, useDatabase } from "@/contexts/DatabaseContext";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -178,11 +179,7 @@ export default function SettingsPage() {
   };
 
   if (userLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-white">Loading...</div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

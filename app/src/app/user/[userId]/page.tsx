@@ -8,6 +8,7 @@ import { useUser, useProfile } from "@/contexts/UserContext";
 import { useUserPredictions } from "@/contexts/PredictionsContext";
 import { useUserPosition } from "@/contexts/LeaderboardContext";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import { calculateAllGroupStandings } from "@/lib/standings";
 import { LocalPrediction } from "@/types/database";
 import { FifaMatchId } from "@/types/football";
@@ -122,13 +123,7 @@ export default function UserPredictionsPage() {
   const showKnockoutPredictions = isOwnPredictions || knockoutStageLocked;
 
   if (isLoading || (matchesLoading && matches.length === 0)) {
-    return (
-      <div className="flex-1 flex flex-col">
-        <main className="flex-1 container mx-auto px-4 py-8">
-          <div className="text-center text-white/50 py-12">Loading...</div>
-        </main>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (notFound) {

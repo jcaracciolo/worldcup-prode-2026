@@ -59,6 +59,8 @@ interface PredictionsContextValue {
       }
     >
   >;
+  /** Get cached allPredictions result (null if not yet fetched) */
+  getCachedAllPredictions: () => AllPredictionsMap | null;
   /** Cache version counter — increments on any cache mutation to trigger re-renders */
   cacheVersion: number;
 }
@@ -77,6 +79,15 @@ const EMPTY_CACHE: UserPredictionCache = {
   dirty: false,
 };
 
+/** Type alias for all predictions result */
+type AllPredictionsMap = Map<
+  string,
+  {
+    predictions: LocalPrediction[];
+    overrides: LocalGroupStandingsOverride[];
+  }
+>;
+
 export function PredictionsProvider({
   children,
 }: {
@@ -90,6 +101,8 @@ export function PredictionsProvider({
   const [cacheVersion, setCacheVersion] = useState(0);
   // Track in-flight fetches to avoid duplicate requests
   const fetchingRef = useRef(new Set<string>());
+  // Cache for getAllPredictions result
+  const allPredictionsCacheRef = useRef<AllPredictionsMap | null>(null);
 
   const bumpVersion = useCallback(() => {
     setCacheVersion((v) => v + 1);
@@ -338,10 +351,16 @@ export function PredictionsProvider({
         });
       }
     });
+    allPredictionsCacheRef.current = byUser;
     bumpVersion();
 
     return byUser;
   }, [db, bumpVersion]);
+
+  const getCachedAllPredictions = useCallback(
+    () => allPredictionsCacheRef.current,
+    [],
+  );
 
   const value = useMemo(
     (): PredictionsContextValue => ({
@@ -352,6 +371,7 @@ export function PredictionsProvider({
       setPredictions: setPredictionsInCache,
       savePredictions,
       getAllPredictions,
+      getCachedAllPredictions,
       cacheVersion,
     }),
     [
@@ -362,6 +382,7 @@ export function PredictionsProvider({
       setPredictionsInCache,
       savePredictions,
       getAllPredictions,
+      getCachedAllPredictions,
       cacheVersion,
     ],
   );
@@ -452,25 +473,24 @@ export function useUserPredictions(userId: string | null) {
   };
 }
 
-/** Type alias for all predictions result */
-type AllPredictionsMap = Map<
-  string,
-  {
-    predictions: LocalPrediction[];
-    overrides: LocalGroupStandingsOverride[];
-  }
->;
-
 /**
  * Hook to get all users' predictions.
+ * Initializes from cache to avoid loading flash on repeat navigations.
  * Automatically refetches when competition changes (via db dependency).
  */
 export function useAllPredictions(): LCE<AllPredictionsMap> {
-  const { getAllPredictions } = usePredictionsContext();
-  const [state, setState] = useState<LCE<AllPredictionsMap>>(lceLoading());
+  const { getAllPredictions, getCachedAllPredictions } = usePredictionsContext();
+
+  // Initialize from cache — skip loading if we already have data
+  const [state, setState] = useState<LCE<AllPredictionsMap>>(() => {
+    const cached = getCachedAllPredictions();
+    return cached ? lceContent(cached) : lceLoading();
+  });
 
   useEffect(() => {
-    setState(lceLoading());
+    const cached = getCachedAllPredictions();
+    if (!cached) setState(lceLoading());
+
     getAllPredictions()
       .then((predictions) => {
         setState(lceContent(predictions));
@@ -478,7 +498,7 @@ export function useAllPredictions(): LCE<AllPredictionsMap> {
       .catch((err) => {
         setState(lceError(err.message));
       });
-  }, [getAllPredictions]);
+  }, [getAllPredictions, getCachedAllPredictions]);
 
   return state;
 }

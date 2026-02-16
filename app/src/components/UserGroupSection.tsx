@@ -385,8 +385,11 @@ export function GroupMatchRow({
   const homeHighlight = homeWins || isDraw;
   const awayHighlight = awayWins || isDraw;
 
+  const isLive =
+    match.status === "IN_PLAY" || match.status === "PAUSED";
+
   return (
-    <div className="flex items-center gap-2 py-2 text-sm">
+    <div className={`flex items-center gap-2 py-2 text-sm ${isLive ? "border-l-2 border-red-500 pl-1" : ""}`}>
       <Link
         href={`/match/${match.id}`}
         className="flex-1 flex items-center gap-2 hover:bg-white/5 transition-colors rounded px-1 -mx-1 cursor-pointer"
@@ -414,6 +417,11 @@ export function GroupMatchRow({
           )}
         </div>
         <span className="w-16 text-center font-bold text-white">
+          {isLive && (
+            <span className="text-[8px] text-red-400 font-bold live-pulse block leading-none mb-0.5">
+              LIVE
+            </span>
+          )}
           {prediction?.home_goals ?? "-"} - {prediction?.away_goals ?? "-"}
         </span>
         <div

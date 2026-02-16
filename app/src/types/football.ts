@@ -137,13 +137,13 @@ export interface PointBreakdown {
   points: number;
   type:
     | "result"
+    | "knockout_win"
+    | "knockout_lose"
+    | "knockout_tie"
     | "goals_home"
     | "goals_away"
     | "group_advance"
-    | "group_position"
-    | "knockout_win"
-    | "knockout_lose"
-    | "knockout_tie";
+    | "group_position";
   /** Whether this is from a live match */
   isLive?: boolean;
   // Optional team info for display
@@ -164,6 +164,11 @@ export interface PointBreakdown {
   prediction?: {
     homeGoals: number | null;
     awayGoals: number | null;
+  };
+  // Optional predicted team info (for knockout: teams the user predicted for this slot)
+  predictedTeamInfo?: {
+    homeTeam: { tla: string; crest: string | null; shortName?: string } | null;
+    awayTeam: { tla: string; crest: string | null; shortName?: string } | null;
   };
 }
 

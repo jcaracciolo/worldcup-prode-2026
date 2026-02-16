@@ -48,6 +48,7 @@ export default function MatchPointsTooltip({
     return <div className={className || "w-12 shrink-0"} />;
   }
 
+  // Tooltip only renders for finished/live matches — API will have real teams at that point
   const actualHome = match.score.fullTime.home;
   const actualAway = match.score.fullTime.away;
   const hasActualScore = actualHome !== null && actualAway !== null;

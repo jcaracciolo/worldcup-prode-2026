@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { BracketResolver } from "../bracket-resolver";
-import { FifaMatchId, asFifaMatchId } from "@/types/football";
+import { BracketResolver, ResolvedTeams } from "../bracket-resolver";
+import { FifaMatchId, asFifaMatchId, Team } from "@/types/football";
 import { r32Bracket } from "../r32-bracket";
 import {
   getQualifyingThirdPlaceTeams,
@@ -9,13 +9,11 @@ import {
   getThirdPlacePoolForMatch,
 } from "../third-place-ranking";
 import {
-  lookupThirdPlaceAssignment,
   FIFA_THIRD_PLACE_TABLE,
   THIRD_PLACE_MATCH_ORDER,
 } from "../fifa-third-place-table";
 import {
   buildGroupStandings,
-  buildThirdPlaceQualifying,
   scenarioGroupsFinished,
   scenarioPartialGroups,
   scenarioR32Finished,
@@ -89,10 +87,7 @@ const fid = asFifaMatchId;
 // =====================================================================
 
 describe("BracketResolver — R32 resolution (all groups finished)", () => {
-  let resolved: Map<
-    FifaMatchId,
-    { home: any; away: any; homeDisplayName: string; awayDisplayName: string }
-  >;
+  let resolved: Map<FifaMatchId, ResolvedTeams>;
 
   beforeEach(() => {
     resolved = resolve(scenarioGroupsFinished());
@@ -105,7 +100,7 @@ describe("BracketResolver — R32 resolution (all groups finished)", () => {
   });
 
   // Non-3rd-place R32 matches (home = group winner/runner-up, away = group runner-up)
-  const nonThirdPlaceR32: [number, string, any, string, any][] = [
+  const nonThirdPlaceR32: [number, string, Team, string, Team][] = [
     [73, "2A", TEAM_A2, "2B", TEAM_B2],
     [75, "1F", TEAM_F1, "2C", TEAM_C2],
     [76, "1C", TEAM_C1, "2F", TEAM_F2],
@@ -128,7 +123,7 @@ describe("BracketResolver — R32 resolution (all groups finished)", () => {
   );
 
   // Third-place R32 matches
-  const thirdPlaceR32: [number, any, any][] = [
+  const thirdPlaceR32: [number, Team, Team][] = [
     [74, TEAM_E1, TEAM_H3], // 1E vs 3rd_H(TUN)
     [77, TEAM_I1, TEAM_G3], // 1I vs 3rd_G(NGA)
     [79, TEAM_A1, TEAM_B3], // 1A vs 3rd_B(URU)
@@ -447,7 +442,7 @@ describe("Third-place integration with BracketResolver", () => {
 // =====================================================================
 
 describe("BracketResolver — R16+ with TBD labels (knockout not started)", () => {
-  let resolved: Map<FifaMatchId, any>;
+  let resolved: Map<FifaMatchId, ResolvedTeams>;
 
   beforeEach(() => {
     resolved = resolve(scenarioGroupsFinished());
@@ -499,7 +494,7 @@ describe("BracketResolver — R16+ with TBD labels (knockout not started)", () =
 });
 
 describe("BracketResolver — R16 resolution from finished R32", () => {
-  let resolved: Map<FifaMatchId, any>;
+  let resolved: Map<FifaMatchId, ResolvedTeams>;
 
   beforeEach(() => {
     resolved = resolve(scenarioR32Finished());
@@ -545,7 +540,7 @@ describe("BracketResolver — R16 resolution from finished R32", () => {
 // =====================================================================
 
 describe("BracketResolver — Prediction propagation (useKnockoutPredictions)", () => {
-  let resolved: Map<FifaMatchId, any>;
+  let resolved: Map<FifaMatchId, ResolvedTeams>;
 
   beforeEach(() => {
     resolved = resolveWithPredictions(scenarioWithPredictions());

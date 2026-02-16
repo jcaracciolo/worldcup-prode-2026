@@ -122,12 +122,6 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
       breakdown.forEach((item) => {
         if (item.type === "group_advance" || item.type === "group_position") {
           groupBonusPoints += item.points;
-        } else if (
-          item.type === "knockout_win" ||
-          item.type === "knockout_lose" ||
-          item.type === "knockout_tie"
-        ) {
-          knockoutPoints += item.points;
         } else {
           const match = matches.find((m) => m.id === item.matchId);
           if (match?.stage === "GROUP_STAGE") {

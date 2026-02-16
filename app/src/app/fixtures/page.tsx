@@ -8,6 +8,7 @@ import {
 } from "@/components/predictions";
 import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import { Match, CalculatedStanding, Team } from "@/types/football";
 
@@ -177,11 +178,7 @@ export default function FixturesPage() {
 
   // Only show loading on initial load when we have no data
   if (matchesLoading && matches.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-white/60">Loading fixtures...</div>
-      </div>
-    );
+    return <LoadingSpinner message="Loading fixtures..." />;
   }
 
   return (

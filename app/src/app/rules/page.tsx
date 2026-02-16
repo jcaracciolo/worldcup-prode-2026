@@ -23,7 +23,7 @@ const content = {
       title: "Phase 1: Group Stage Predictions",
       subtitle: "Before the tournament starts",
       description:
-        "Predict the score for all 48 group stage matches before the World Cup begins.",
+        "Predict the score for all 48 group stage matches before the World Cup begins. Group predictions lock on June 11.",
       scoring: [
         { label: "Correct result (win/draw/loss)", points: "2 pts" },
         { label: "Exact goals for home team", points: "1 pt" },
@@ -93,8 +93,8 @@ const content = {
         "Get a second chance to predict all knockout matches once the group stage is complete.",
       secondDraft: {
         title: "Second Draft",
-        description: "Once the group stage ends, a new prediction window opens for knockout matches. You'll know exactly which teams qualified, allowing you to make informed predictions for all 16 Round of 32 matches through to the Final.",
-        note: "The knockout prediction window closes before the first R32 match kicks off.",
+        description: "Once the group stage ends (June 11), a new prediction window opens for knockout matches. You'll know exactly which teams qualified, allowing you to make informed predictions for all 16 Round of 32 matches through to the Final.",
+        note: "The knockout prediction window closes on June 29, before the first R32 match kicks off.",
       },
       r32: {
         title: "Round of 32",

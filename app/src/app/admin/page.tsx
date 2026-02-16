@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDatabaseService } from "@/contexts/DatabaseContext";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import { Profile, Competition } from "@/types/database";
 import { InviteCodeWithUsedBy } from "@/lib/services/database-types";
 import { useSimulation } from "@/contexts/SimulationContext";
@@ -237,11 +238,7 @@ export default function AdminPage() {
 
   // Redirect guards (don't block on codes loading)
   if (userLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-white/60">Loading...</div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!profile || !profile.is_admin) {

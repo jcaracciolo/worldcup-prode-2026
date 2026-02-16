@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
   ReactNode,
 } from "react";
 import { useDatabase } from "@/contexts/DatabaseContext";
@@ -25,10 +26,14 @@ interface UserContextValue {
   updateProfile: (
     updates: Partial<Profile>,
   ) => Promise<{ success: boolean; error?: string }>;
-  /** Get a specific user's profile by ID */
+  /** Get a specific user's profile by ID (fetches & caches) */
   getProfile: (userId: string) => Promise<Profile | null>;
+  /** Get a cached profile instantly (null if not yet fetched) */
+  getCachedProfile: (userId: string) => Profile | null;
   /** Get all profiles for current competition */
   getAllProfiles: () => Promise<Profile[]>;
+  /** Get cached allProfiles result (null if not yet fetched) */
+  getCachedAllProfiles: () => Profile[] | null;
 }
 
 const UserContext = createContext<UserContextValue | null>(null);
@@ -41,6 +46,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const { db } = useDatabase();
   const [user, setUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Shared caches so hooks can skip loading on repeat visits
+  const profileCacheRef = useRef<Map<string, Profile>>(new Map());
+  const allProfilesCacheRef = useRef<Profile[] | null>(null);
 
   // Fetch current user on mount and auth changes
   useEffect(() => {
@@ -88,20 +97,37 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const getAllProfiles = useCallback(async () => {
     const { data } = await db.profiles.getAllProfiles();
-    return data || [];
+    const profiles = data || [];
+    allProfilesCacheRef.current = profiles;
+    // Also populate individual cache
+    for (const p of profiles) {
+      profileCacheRef.current.set(p.id, p);
+    }
+    return profiles;
   }, [db]);
+
+  const getCachedAllProfiles = useCallback(
+    () => allProfilesCacheRef.current,
+    [],
+  );
 
   const getProfile = useCallback(
     async (userId: string) => {
       const { data } = await db.profiles.getProfile(userId);
+      if (data) profileCacheRef.current.set(userId, data);
       return data;
     },
     [db],
   );
 
+  const getCachedProfile = useCallback(
+    (userId: string) => profileCacheRef.current.get(userId) ?? null,
+    [],
+  );
+
   return (
     <UserContext.Provider
-      value={{ user, loading, updateProfile, getProfile, getAllProfiles }}
+      value={{ user, loading, updateProfile, getProfile, getCachedProfile, getAllProfiles, getCachedAllProfiles }}
     >
       {children}
     </UserContext.Provider>
@@ -125,8 +151,14 @@ export function useUser(): UserContextValue {
  * Automatically refetches when competition changes (via db dependency).
  */
 export function useProfile(userId: string | null): LCE<Profile> {
-  const { getProfile } = useUser();
-  const [state, setState] = useState<LCE<Profile>>(lceLoading());
+  const { getProfile, getCachedProfile } = useUser();
+
+  // Initialize from cache — if we already have this profile, skip loading
+  const [state, setState] = useState<LCE<Profile>>(() => {
+    if (!userId) return lceContent(null as unknown as Profile);
+    const cached = getCachedProfile(userId);
+    return cached ? lceContent(cached) : lceLoading();
+  });
 
   useEffect(() => {
     if (!userId) {
@@ -134,7 +166,10 @@ export function useProfile(userId: string | null): LCE<Profile> {
       return;
     }
 
-    setState(lceLoading());
+    // If we have cached data, keep showing it (don't flash loading)
+    const cached = getCachedProfile(userId);
+    if (!cached) setState(lceLoading());
+
     getProfile(userId)
       .then((profile) => {
         setState(profile ? lceContent(profile) : lceError("Profile not found"));
@@ -142,7 +177,7 @@ export function useProfile(userId: string | null): LCE<Profile> {
       .catch((err) => {
         setState(lceError(err.message));
       });
-  }, [userId, getProfile]);
+  }, [userId, getProfile, getCachedProfile]);
 
   return state;
 }
@@ -152,11 +187,18 @@ export function useProfile(userId: string | null): LCE<Profile> {
  * Automatically refetches when competition changes (via db dependency).
  */
 export function useAllProfiles(): LCE<Profile[]> {
-  const { getAllProfiles } = useUser();
-  const [state, setState] = useState<LCE<Profile[]>>(lceLoading());
+  const { getAllProfiles, getCachedAllProfiles } = useUser();
+
+  // Initialize from cache — if we already fetched all profiles, skip loading
+  const [state, setState] = useState<LCE<Profile[]>>(() => {
+    const cached = getCachedAllProfiles();
+    return cached ? lceContent(cached) : lceLoading();
+  });
 
   useEffect(() => {
-    setState(lceLoading());
+    const cached = getCachedAllProfiles();
+    if (!cached) setState(lceLoading());
+
     getAllProfiles()
       .then((profiles) => {
         setState(lceContent(profiles));
@@ -164,7 +206,7 @@ export function useAllProfiles(): LCE<Profile[]> {
       .catch((err) => {
         setState(lceError(err.message));
       });
-  }, [getAllProfiles]);
+  }, [getAllProfiles, getCachedAllProfiles]);
 
   return state;
 }

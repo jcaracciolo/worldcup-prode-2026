@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { GlobalLiveIndicator } from "@/components/MatchStatus";
 import LockedCard from "@/components/LockedCard";
+import { ConfirmModal } from "@/components/Modal";
+import { Toast } from "@/components/Toast";
 import {
   KnockoutStageSection,
   GroupStageSection,
@@ -23,6 +25,7 @@ import {
 import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 
 import { LocalPrediction } from "@/types/database";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function PredictionsPage() {
   const router = useRouter();
@@ -42,6 +45,19 @@ export default function PredictionsPage() {
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Modal & toast state
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error" | "warning";
+  } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    variant?: "danger" | "default";
+    onConfirm: () => void;
+  } | null>(null);
 
   // Use centralized match context for automatic polling
   const {
@@ -228,13 +244,74 @@ export default function PredictionsPage() {
   const handleSave = async () => {
     if (!profile) return;
 
+    // Validation: check for incomplete predictions and knockout ties without winner
+    const warnings: string[] = [];
+
+    // Count unfilled group predictions
+    if (!groupLocked) {
+      const groupMatches = matches.filter((m) => m.stage === "GROUP_STAGE");
+      const unfilledGroup = groupMatches.filter((m) => {
+        const pred = predictions.get(asFifaMatchId(m.id));
+        return !pred || pred.home_goals === null || pred.away_goals === null;
+      });
+      if (unfilledGroup.length > 0) {
+        warnings.push(
+          `${unfilledGroup.length} of ${groupMatches.length} group matches are missing predictions`,
+        );
+      }
+    }
+
+    // Count unfilled knockout predictions and ties without winner
+    if (knockoutOpen && !knockoutLocked) {
+      const koMatches = matches.filter((m) => m.stage !== "GROUP_STAGE");
+      const unfilledKo = koMatches.filter((m) => {
+        const pred = predictions.get(asFifaMatchId(m.id));
+        return !pred || pred.home_goals === null || pred.away_goals === null;
+      });
+      if (unfilledKo.length > 0) {
+        warnings.push(
+          `${unfilledKo.length} of ${koMatches.length} knockout matches are missing predictions`,
+        );
+      }
+
+      const tiesWithoutWinner = koMatches.filter((m) => {
+        const pred = predictions.get(asFifaMatchId(m.id));
+        if (!pred || pred.home_goals === null || pred.away_goals === null)
+          return false;
+        return pred.home_goals === pred.away_goals && !pred.winner_id;
+      });
+      if (tiesWithoutWinner.length > 0) {
+        warnings.push(
+          `${tiesWithoutWinner.length} knockout match${tiesWithoutWinner.length > 1 ? "es have" : " has"} a tie without a penalty winner selected`,
+        );
+      }
+    }
+
+    if (warnings.length > 0) {
+      setConfirmModal({
+        title: "Incomplete Predictions",
+        message: warnings.join(". ") + ". Save anyway?",
+        confirmLabel: "Save Anyway",
+        variant: "default",
+        onConfirm: () => {
+          setConfirmModal(null);
+          doSave();
+        },
+      });
+      return;
+    }
+
+    doSave();
+  };
+
+  const doSave = async () => {
     setSaving(true);
     setError("");
 
     const result = await savePredictions();
 
     if (result.success) {
-      alert("Predictions saved!");
+      setToast({ message: "Predictions saved!", type: "success" });
     } else {
       setError(result.error || "Failed to save predictions");
     }
@@ -243,15 +320,20 @@ export default function PredictionsPage() {
   };
 
   const handleResetPredictions = () => {
-    if (
-      !confirm(
+    setConfirmModal({
+      title: "Reset Predictions",
+      message:
         "Are you sure you want to reset predictions? This will clear scores for unlocked sections.",
-      )
-    ) {
-      return;
-    }
+      confirmLabel: "Reset",
+      variant: "danger",
+      onConfirm: () => {
+        setConfirmModal(null);
+        doReset();
+      },
+    });
+  };
 
-    // Filter out predictions for unlocked sections only
+  const doReset = () => {
     const newPredictions = new Map(predictions);
     matches.forEach((match) => {
       const fifaNumber = asFifaMatchId(match.id);
@@ -273,14 +355,20 @@ export default function PredictionsPage() {
   };
 
   const handleRandomFill = () => {
-    if (
-      !confirm(
+    setConfirmModal({
+      title: "Random Fill",
+      message:
         "This will fill all empty prediction slots with random scores. Continue?",
-      )
-    ) {
-      return;
-    }
+      confirmLabel: "Fill",
+      variant: "default",
+      onConfirm: () => {
+        setConfirmModal(null);
+        doRandomFill();
+      },
+    });
+  };
 
+  const doRandomFill = () => {
     const newPredictions = new Map(predictions);
 
     matches.forEach((match) => {
@@ -334,11 +422,7 @@ export default function PredictionsPage() {
   };
 
   if (loading || showMatchesLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-white/60">Loading...</div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   const groupMatches = matches.filter((m) => m.stage === "GROUP_STAGE");
@@ -519,6 +603,26 @@ export default function PredictionsPage() {
           </p>
         </div>
       </footer>
+
+      {/* Confirm modal */}
+      <ConfirmModal
+        open={!!confirmModal}
+        title={confirmModal?.title ?? ""}
+        message={confirmModal?.message ?? ""}
+        confirmLabel={confirmModal?.confirmLabel}
+        variant={confirmModal?.variant}
+        onConfirm={() => confirmModal?.onConfirm()}
+        onCancel={() => setConfirmModal(null)}
+      />
+
+      {/* Toast notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

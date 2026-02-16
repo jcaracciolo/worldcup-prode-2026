@@ -105,6 +105,9 @@ export default function PredictionInput({
   const formattedTime = formatMatchTime(match.utcDate);
   const venue = getVenueFromFifaNumber(fifaMatchNumber);
 
+  const isLive =
+    match.status === "IN_PLAY" || match.status === "PAUSED";
+
   return (
     <div
       className={`py-1.5 px-2 rounded-lg transition-colors ${
@@ -114,16 +117,26 @@ export default function PredictionInput({
       } ${
         needsWinnerSelect
           ? "border-2 border-amber-400/50"
-          : "border border-white/10"
+          : isLive
+            ? "border border-red-500/60"
+            : "border border-white/10"
       }`}
     >
       {/* Mobile Layout - Single row */}
       <div className="lg:hidden flex items-center gap-1">
         {/* Date+Time+Match# */}
-        <MobileDateColumn
-          date={match.utcDate}
-          fifaMatchNumber={fifaMatchNumber}
-        />
+        {isLive ? (
+          <div className="w-10 shrink-0 flex items-center justify-center">
+            <span className="px-1.5 py-0.5 bg-red-500 text-white text-[8px] font-bold rounded-full live-pulse">
+              LIVE
+            </span>
+          </div>
+        ) : (
+          <MobileDateColumn
+            date={match.utcDate}
+            fifaMatchNumber={fifaMatchNumber}
+          />
+        )}
 
         {/* Home Team */}
         <div className="flex-1 min-w-0 flex items-center justify-end gap-0.5">
@@ -239,7 +252,15 @@ export default function PredictionInput({
 
       {/* Desktop Layout - Compact like profile page */}
       <div className="hidden lg:flex items-center gap-2">
-        <DateColumn date={match.utcDate} fifaMatchNumber={fifaMatchNumber} />
+        {isLive ? (
+          <div className="w-16 shrink-0 flex items-center justify-center">
+            <span className="px-2 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full live-pulse">
+              LIVE
+            </span>
+          </div>
+        ) : (
+          <DateColumn date={match.utcDate} fifaMatchNumber={fifaMatchNumber} />
+        )}
         <TimeVenueColumn
           time={match.utcDate}
           fifaMatchNumber={fifaMatchNumber}

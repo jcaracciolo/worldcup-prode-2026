@@ -12,6 +12,7 @@
 import { Team, Match, FifaMatchId, asFifaMatchId } from "@/types/football";
 import { CalculatedStanding } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
+import type { ResolvedTeams } from "@/lib/bracket-resolver";
 import {
   r32Bracket,
   r16Bracket,
@@ -53,12 +54,7 @@ export interface TeamDisplayContext {
   /** Position in the match */
   position: "home" | "away";
   /** Resolved teams from BracketResolver (if available) */
-  resolvedTeams?: {
-    home: Team | null;
-    away: Team | null;
-    homeDisplayName?: string;
-    awayDisplayName?: string;
-  };
+  resolvedTeams?: ResolvedTeams;
   /** Group standings for R32 resolution (by group name) */
   groupStandings?: Map<string, CalculatedStanding[]>;
   /** User's knockout predictions (for inferring R16+ teams) */

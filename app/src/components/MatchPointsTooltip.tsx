@@ -2,7 +2,12 @@
 
 import { Match, PointBreakdown } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
-import { calculateMatchPoints, getTeamLabel } from "@/lib/scoring";
+import {
+  calculateMatchPoints,
+  getTeamLabel,
+  ROUND_MULTIPLIERS,
+} from "@/lib/scoring";
+import { isGroupStageMatch } from "@/lib/football-api";
 import { useState, useMemo } from "react";
 
 interface MatchPointsTooltipProps {
@@ -33,16 +38,6 @@ export default function MatchPointsTooltip({
     predictedAwayTeam,
   );
 
-  // Derive tooltip detail rows from pre-computed breakdown (centralized scoring)
-  const details = useMemo(() => {
-    if (!matchBreakdown) return null;
-    return matchBreakdown.map((item) => ({
-      description: item.description,
-      points: item.points,
-      earned: true, // All items in breakdown are earned points
-    }));
-  }, [matchBreakdown]);
-
   // Don't render if match not finished/live or no prediction
   if ((!pts.isFinished && !pts.isLive) || !pts.hasPrediction) {
     return <div className={className || "w-12 shrink-0"} />;
@@ -61,6 +56,65 @@ export default function MatchPointsTooltip({
   const isGroupStage = match.stage === "GROUP_STAGE";
   const actualHomeHighlight = actualHomeWon || (isGroupStage && actualDraw);
   const actualAwayHighlight = actualAwayWon || (isGroupStage && actualDraw);
+
+  // Build complete list of scoring categories for this match,
+  // showing 0 for categories where no points were earned.
+  const details = useMemo(() => {
+    if (!hasActualScore) return null;
+
+    const homeTla = getTeamLabel(match.homeTeam);
+    const awayTla = getTeamLabel(match.awayTeam);
+    const isGroup = isGroupStageMatch(match);
+    const isR32 = match.stage === "LAST_32";
+    const multiplier = isGroup ? 1 : (ROUND_MULTIPLIERS[match.stage] || 1);
+
+    // Find earned points by type from breakdown
+    const earned = (type: string) =>
+      matchBreakdown
+        ?.filter((b) => b.type === type)
+        .reduce((sum, b) => sum + b.points, 0) ?? 0;
+
+    const rows: { label: string; points: number; maxPoints: number }[] = [];
+
+    if (isGroup) {
+      // Group stage: Result (2), Goals home (1), Goals away (1)
+      rows.push({ label: "Result", points: earned("result"), maxPoints: 2 });
+      rows.push({ label: `Goals (${homeTla})`, points: earned("goals_home"), maxPoints: 1 });
+      rows.push({ label: `Goals (${awayTla})`, points: earned("goals_away"), maxPoints: 1 });
+    } else if (isR32) {
+      // R32: Result (2), Goals home (2), Goals away (2)
+      rows.push({ label: "Result", points: earned("result"), maxPoints: 2 * multiplier });
+      rows.push({ label: `Goals (${homeTla})`, points: earned("goals_home"), maxPoints: 2 });
+      rows.push({ label: `Goals (${awayTla})`, points: earned("goals_away"), maxPoints: 2 });
+    } else {
+      // R16+: separate entries per team outcome + goals
+      const multLabel = multiplier > 1 ? ` (${multiplier}×)` : "";
+      const isTie = actualHome === actualAway;
+      if (isTie) {
+        // Tie: two knockout_tie entries summed, show as single "Tie" row
+        rows.push({
+          label: `Tie${multLabel}`,
+          points: earned("knockout_tie"),
+          maxPoints: 2 * multiplier,
+        });
+      } else {
+        rows.push({
+          label: `Winner${multLabel}`,
+          points: earned("knockout_win"),
+          maxPoints: 1 * multiplier,
+        });
+        rows.push({
+          label: `Loser${multLabel}`,
+          points: earned("knockout_lose"),
+          maxPoints: 1 * multiplier,
+        });
+      }
+      rows.push({ label: `Goals (${homeTla})`, points: earned("goals_home"), maxPoints: 2 });
+      rows.push({ label: `Goals (${awayTla})`, points: earned("goals_away"), maxPoints: 2 });
+    }
+
+    return rows;
+  }, [match, matchBreakdown, hasActualScore]);
 
   // Determine if small layout (for group stage inline view)
   const isSmall = className?.includes("w-8");
@@ -170,28 +224,25 @@ export default function MatchPointsTooltip({
                 </div>
               </div>
 
-              {/* Points breakdown */}
+              {/* Points breakdown — always show all categories */}
               <div className="mt-2 pt-2 border-t border-white/10 text-xs space-y-1">
-                {details && details.length > 0 ? (
-                  details.map((detail, i) => (
+                {details ? (
+                  details.map((row, i) => (
                     <div key={i} className="flex justify-between gap-4">
-                      <span className="text-white/80">
-                        {detail.description}
-                      </span>
-                      <span className="text-emerald-400 font-bold">
-                        +{detail.points}
+                      <span className="text-white/80">{row.label}</span>
+                      <span
+                        className={
+                          row.points > 0
+                            ? "text-emerald-400 font-bold"
+                            : "text-white/30"
+                        }
+                      >
+                        {row.points > 0 ? `+${row.points}` : "0"}
                       </span>
                     </div>
                   ))
-                ) : pts.total > 0 ? (
-                  <div className="flex justify-between gap-4">
-                    <span className="text-white/80">Points earned</span>
-                    <span className="text-emerald-400 font-bold">
-                      +{pts.total}
-                    </span>
-                  </div>
                 ) : (
-                  <div className="text-white/40">No points earned</div>
+                  <div className="text-white/40">No score data</div>
                 )}
                 <div className="flex justify-between gap-4 pt-1 border-t border-white/10 font-semibold">
                   <span className="text-white/60">Total:</span>

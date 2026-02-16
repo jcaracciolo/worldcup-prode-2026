@@ -1,13 +1,9 @@
 "use client";
 
-import { Match } from "@/types/football";
+import { Match, PointBreakdown } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
-import {
-  calculateMatchPoints,
-  calculateMatchPointsDetailed,
-  getTeamLabel,
-} from "@/lib/scoring";
-import { useState } from "react";
+import { calculateMatchPoints, getTeamLabel } from "@/lib/scoring";
+import { useState, useMemo } from "react";
 
 interface MatchPointsTooltipProps {
   match: Match;
@@ -16,6 +12,8 @@ interface MatchPointsTooltipProps {
   predictedHomeTeam?: { id: number } | null;
   /** For knockout: the team user predicted for away slot */
   predictedAwayTeam?: { id: number } | null;
+  /** Pre-computed breakdown items for this match (from LeaderboardContext) */
+  matchBreakdown?: PointBreakdown[];
   className?: string;
 }
 
@@ -24,6 +22,7 @@ export default function MatchPointsTooltip({
   prediction,
   predictedHomeTeam,
   predictedAwayTeam,
+  matchBreakdown,
   className = "",
 }: MatchPointsTooltipProps) {
   const [showTooltip, setShowTooltip] = useState(false);
@@ -34,15 +33,15 @@ export default function MatchPointsTooltip({
     predictedAwayTeam,
   );
 
-  // Only calculate detailed breakdown when tooltip is shown (expensive)
-  const detailed = showTooltip
-    ? calculateMatchPointsDetailed(
-        match,
-        prediction,
-        predictedHomeTeam,
-        predictedAwayTeam,
-      )
-    : null;
+  // Derive tooltip detail rows from pre-computed breakdown (centralized scoring)
+  const details = useMemo(() => {
+    if (!matchBreakdown) return null;
+    return matchBreakdown.map((item) => ({
+      description: item.description,
+      points: item.points,
+      earned: true, // All items in breakdown are earned points
+    }));
+  }, [matchBreakdown]);
 
   // Don't render if match not finished/live or no prediction
   if ((!pts.isFinished && !pts.isLive) || !pts.hasPrediction) {
@@ -172,26 +171,27 @@ export default function MatchPointsTooltip({
 
               {/* Points breakdown */}
               <div className="mt-2 pt-2 border-t border-white/10 text-xs space-y-1">
-                {detailed?.details.map((detail, i) => (
-                  <div key={i} className="flex justify-between gap-4">
-                    <span
-                      className={
-                        detail.earned ? "text-white/80" : "text-white/40"
-                      }
-                    >
-                      {detail.description}
-                    </span>
-                    <span
-                      className={
-                        detail.earned
-                          ? "text-emerald-400 font-bold"
-                          : "text-white/40"
-                      }
-                    >
-                      {detail.earned ? `+${detail.points}` : "—"}
+                {details && details.length > 0 ? (
+                  details.map((detail, i) => (
+                    <div key={i} className="flex justify-between gap-4">
+                      <span className="text-white/80">
+                        {detail.description}
+                      </span>
+                      <span className="text-emerald-400 font-bold">
+                        +{detail.points}
+                      </span>
+                    </div>
+                  ))
+                ) : pts.total > 0 ? (
+                  <div className="flex justify-between gap-4">
+                    <span className="text-white/80">Points earned</span>
+                    <span className="text-emerald-400 font-bold">
+                      +{pts.total}
                     </span>
                   </div>
-                ))}
+                ) : (
+                  <div className="text-white/40">No points earned</div>
+                )}
                 <div className="flex justify-between gap-4 pt-1 border-t border-white/10 font-semibold">
                   <span className="text-white/60">Total:</span>
                   <span

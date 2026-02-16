@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { Match, FifaMatchId, asFifaMatchId } from "@/types/football";
 import { useMatches, MatchWithLiveInfo } from "@/contexts/MatchContext";
-import { getTeamDisplaySimple } from "@/lib/team-display";
+import { getTeamDisplaySimple, shortLabel } from "@/lib/team-display";
 import { format } from "date-fns";
 import Link from "next/link";
 
@@ -150,7 +150,7 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
               />
             ) : (
               <div className="w-9 h-9 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center text-white/60 font-bold text-xs sm:text-sm">
-                {homeDisplayName.substring(0, 3)}
+                {shortLabel(homeDisplayName)}
               </div>
             )}
             <span
@@ -196,7 +196,7 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
               />
             ) : (
               <div className="w-9 h-9 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center text-white/60 font-bold text-xs sm:text-sm">
-                {awayDisplayName.substring(0, 3)}
+                {shortLabel(awayDisplayName)}
               </div>
             )}
             <span

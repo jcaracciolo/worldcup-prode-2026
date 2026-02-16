@@ -9,6 +9,7 @@ import { ReactNode } from "react";
 import {
   getTeamDisplay,
   getTeamDisplaySimple,
+  shortLabel,
   type TeamDisplay,
 } from "@/lib/team-display";
 
@@ -96,7 +97,7 @@ export function TeamCrest({
     <div
       className={`bg-white/20 rounded-full flex items-center justify-center font-bold text-white/60 shrink-0 ${sizeClass} ${className}`}
     >
-      {label.slice(0, 3)}
+      {shortLabel(label)}
     </div>
   );
 }
@@ -458,14 +459,14 @@ export function KnockoutMatchRow({
   const handleHomeChange = (value: string) => {
     if (!onChange) return;
     const goals = value === "" ? null : parseInt(value, 10);
-    if (goals !== null && (isNaN(goals) || goals < 0)) return;
+    if (goals !== null && (isNaN(goals) || goals < 0 || goals > 20)) return;
     onChange(fifaMatchNumber, goals, awayGoals, winnerId);
   };
 
   const handleAwayChange = (value: string) => {
     if (!onChange) return;
     const goals = value === "" ? null : parseInt(value, 10);
-    if (goals !== null && (isNaN(goals) || goals < 0)) return;
+    if (goals !== null && (isNaN(goals) || goals < 0 || goals > 20)) return;
     onChange(fifaMatchNumber, homeGoals, goals, winnerId);
   };
 

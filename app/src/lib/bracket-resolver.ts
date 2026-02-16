@@ -106,32 +106,66 @@ export class BracketResolver {
     return match?.status === "FINISHED";
   }
 
-  // Get actual winner of a finished knockout match
-  private getActualWinnerByFifa(fifaMatchNumber: FifaMatchId): Team | null {
-    const match = this.matches.find((m) => m.id === fifaMatchNumber);
-    if (!match || match.status !== "FINISHED") return null;
+  // Determine the winning side of a finished match from score/winner fields
+  private getWinningSide(match: Match): "home" | "away" | null {
+    if (match.status !== "FINISHED") return null;
 
     const home = match.score.fullTime.home ?? 0;
     const away = match.score.fullTime.away ?? 0;
 
-    if (home > away) return match.homeTeam;
-    if (away > home) return match.awayTeam;
+    if (home > away) return "home";
+    if (away > home) return "away";
 
-    // Tie - check winner field from the API
-    if (match.score.winner === "HOME_TEAM") return match.homeTeam;
-    if (match.score.winner === "AWAY_TEAM") return match.awayTeam;
+    // Tie - check winner field from the API (penalties, extra time)
+    if (match.score.winner === "HOME_TEAM") return "home";
+    if (match.score.winner === "AWAY_TEAM") return "away";
 
     // Default to home if can't determine
-    return match.homeTeam;
+    return "home";
+  }
+
+  // Get actual winner of a finished knockout match
+  // Priority: API team data → bracket-resolved team
+  private getActualWinnerByFifa(fifaMatchNumber: FifaMatchId): Team | null {
+    const match = this.matches.find((m) => m.id === fifaMatchNumber);
+    if (!match) return null;
+
+    const side = this.getWinningSide(match);
+    if (!side) return null;
+
+    // Prefer API data, fall back to bracket-resolved teams
+    const apiTeam = side === "home" ? match.homeTeam : match.awayTeam;
+    if (this.isValidApiTeam(apiTeam)) return apiTeam;
+
+    const resolved = this.resolved.get(fifaMatchNumber);
+    return resolved
+      ? side === "home"
+        ? resolved.home
+        : resolved.away
+      : apiTeam;
   }
 
   // Get actual loser of a finished knockout match
+  // Priority: API team data → bracket-resolved team
   private getActualLoserByFifa(fifaMatchNumber: FifaMatchId): Team | null {
-    const winner = this.getActualWinnerByFifa(fifaMatchNumber);
-    if (!winner) return null;
     const match = this.matches.find((m) => m.id === fifaMatchNumber);
     if (!match) return null;
-    return match.homeTeam.id === winner.id ? match.awayTeam : match.homeTeam;
+
+    const winningSide = this.getWinningSide(match);
+    if (!winningSide) return null;
+
+    const losingSide = winningSide === "home" ? "away" : "home";
+
+    // Prefer API data, fall back to bracket-resolved teams
+    const apiTeam = losingSide === "home" ? match.homeTeam : match.awayTeam;
+    if (this.isValidApiTeam(apiTeam)) return apiTeam;
+
+    const resolved = this.resolved.get(fifaMatchNumber);
+    return resolved
+      ? losingSide === "home"
+        ? resolved.home
+        : resolved.away
+      : apiTeam;
   }
 
   // match.id IS the FIFA number now, no mapping needed

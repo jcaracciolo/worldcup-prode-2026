@@ -9,7 +9,7 @@ import {
   asFifaMatchId,
 } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
-import { getTeamDisplaySimple } from "@/lib/team-display";
+import { getTeamDisplaySimple, shortLabel } from "@/lib/team-display";
 import { getMatchInfo, Venue } from "@/lib/tournament";
 import { BracketResolver, ResolvedTeams } from "@/lib/bracket-resolver";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
@@ -263,12 +263,14 @@ function KnockoutMatchRow({
               />
             ) : (
               <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-[9px] font-bold text-white/60 shrink-0">
-                {getTeamDisplaySimple(
-                  homeTeam,
-                  match.id,
-                  "home",
-                  fifaMatchNumber,
-                ).label.substring(0, 3)}
+                {shortLabel(
+                  getTeamDisplaySimple(
+                    homeTeam,
+                    match.id,
+                    "home",
+                    fifaMatchNumber,
+                  ).label,
+                )}
               </div>
             )}
           </div>
@@ -305,12 +307,14 @@ function KnockoutMatchRow({
               />
             ) : (
               <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-[9px] font-bold text-white/60 shrink-0">
-                {getTeamDisplaySimple(
-                  awayTeam,
-                  match.id,
-                  "away",
-                  fifaMatchNumber,
-                ).label.substring(0, 3)}
+                {shortLabel(
+                  getTeamDisplaySimple(
+                    awayTeam,
+                    match.id,
+                    "away",
+                    fifaMatchNumber,
+                  ).label,
+                )}
               </div>
             )}
             <span

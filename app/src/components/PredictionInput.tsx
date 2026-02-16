@@ -51,13 +51,13 @@ export default function PredictionInput({
 
   const handleHomeChange = (value: string) => {
     const goals = value === "" ? null : parseInt(value, 10);
-    if (goals !== null && (isNaN(goals) || goals < 0)) return;
+    if (goals !== null && (isNaN(goals) || goals < 0 || goals > 20)) return;
     onChange(fifaMatchNumber, goals, awayGoals, winnerId);
   };
 
   const handleAwayChange = (value: string) => {
     const goals = value === "" ? null : parseInt(value, 10);
-    if (goals !== null && (isNaN(goals) || goals < 0)) return;
+    if (goals !== null && (isNaN(goals) || goals < 0 || goals > 20)) return;
     onChange(fifaMatchNumber, homeGoals, goals, winnerId);
   };
 

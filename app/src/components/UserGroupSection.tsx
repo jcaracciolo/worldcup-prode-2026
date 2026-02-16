@@ -117,6 +117,7 @@ export default function UserGroupSection({
                 actualStandings={groupActualStandings}
                 bonusPoints={bonusPoints}
                 groupComplete={groupComplete}
+                breakdown={breakdown}
               />
             );
           })}
@@ -134,6 +135,8 @@ interface GroupCardProps {
   actualStandings: CalculatedStanding[];
   bonusPoints: PointBreakdown[];
   groupComplete: boolean;
+  /** Full breakdown for filtering per-match items */
+  breakdown: PointBreakdown[];
 }
 
 function GroupCard({
@@ -145,6 +148,7 @@ function GroupCard({
   actualStandings,
   bonusPoints,
   groupComplete,
+  breakdown,
 }: GroupCardProps) {
   const totalBonusPoints = bonusPoints.reduce((sum, b) => sum + b.points, 0);
 
@@ -166,6 +170,7 @@ function GroupCard({
                 key={match.id}
                 match={match}
                 prediction={predictionMap.get(fifaNumber)}
+                matchBreakdown={breakdown.filter((b) => b.matchId === match.id)}
               />
             );
           })}
@@ -351,12 +356,15 @@ export interface GroupMatchRowProps {
   match: Match;
   prediction?: LocalPrediction;
   showPoints?: boolean;
+  /** Pre-computed breakdown items for this match */
+  matchBreakdown?: PointBreakdown[];
 }
 
 export function GroupMatchRow({
   match,
   prediction,
   showPoints = true,
+  matchBreakdown,
 }: GroupMatchRowProps) {
   // Use prediction scores if available, otherwise actual match scores
   const homeGoals = prediction
@@ -436,6 +444,7 @@ export function GroupMatchRow({
         <MatchPointsTooltip
           match={match}
           prediction={prediction}
+          matchBreakdown={matchBreakdown}
           className="w-8"
         />
       )}

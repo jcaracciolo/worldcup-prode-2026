@@ -21,6 +21,20 @@ import {
 import { isPlaceholderTeamId } from "@/lib/tbd-teams";
 
 // =====================================================================
+// HELPERS
+// =====================================================================
+
+/**
+ * Truncate a team label for compact display.
+ * Real TLAs (3 chars) stay at 3; bracket labels like W100, L101 keep 4.
+ */
+export function shortLabel(label: string): string {
+  // Bracket labels with 3-digit match numbers (W100, L101, etc.) → keep full
+  if (/^[WL]\d{3}$/.test(label)) return label;
+  return label.substring(0, 3);
+}
+
+// =====================================================================
 // TYPES
 // =====================================================================
 

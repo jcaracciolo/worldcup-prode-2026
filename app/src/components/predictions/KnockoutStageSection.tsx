@@ -2,7 +2,12 @@
 
 import { useTime } from "@/contexts/TimeContext";
 import { useKnockoutTeams } from "@/contexts/MatchContext";
-import { Match, FifaMatchId, asFifaMatchId } from "@/types/football";
+import {
+  Match,
+  FifaMatchId,
+  PointBreakdown,
+  asFifaMatchId,
+} from "@/types/football";
 import { LocalPrediction } from "@/types/database";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import { KnockoutMatchRow } from "@/components/MatchRowShared";
@@ -13,6 +18,8 @@ interface KnockoutStageSectionProps {
   knockoutStages: Map<string, Match[]>;
   predictions?: Map<FifaMatchId, LocalPrediction>; // Keyed by FIFA match number (73-104)
   knockoutLocked?: boolean;
+  /** Pre-computed points breakdown (from LeaderboardContext) */
+  breakdown?: PointBreakdown[];
   onPredictionChange?: (
     fifaMatchId: FifaMatchId,
     homeGoals: number | null,
@@ -55,6 +62,7 @@ export default function KnockoutStageSection({
   knockoutStages,
   predictions,
   knockoutLocked = false,
+  breakdown = [],
   onPredictionChange,
   mode,
   readOnly = false,
@@ -138,6 +146,9 @@ export default function KnockoutStageSection({
                             prediction={prediction}
                             predictedHomeTeam={resolved?.home ?? null}
                             predictedAwayTeam={resolved?.away ?? null}
+                            matchBreakdown={breakdown.filter(
+                              (b) => b.matchId === match.id,
+                            )}
                             className="w-8 text-right"
                           />
                         }

@@ -28,9 +28,9 @@ export default function TodaysMatches({
 
   // Scroll to first live match
   const scrollToFirstLiveMatch = useCallback(() => {
-    const firstLiveMatch = document.querySelector('.live-match');
+    const firstLiveMatch = document.querySelector(".live-match");
     if (firstLiveMatch) {
-      firstLiveMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      firstLiveMatch.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, []);
 
@@ -77,6 +77,18 @@ export default function TodaysMatches({
     );
   }, [matches, nextMatchDay]);
 
+  // Determine tournament phase for empty-state message
+  const tournamentPhase = useMemo(() => {
+    if (matches.length === 0) return "before"; // no data loaded yet
+    const allFinished = matches.every((m) => m.status === "FINISHED");
+    if (allFinished) return "after";
+    const firstMatchDate = matches
+      .map((m) => m.utcDate.split("T")[0])
+      .sort()[0];
+    if (firstMatchDate && todayStr < firstMatchDate) return "before";
+    return "during";
+  }, [matches, todayStr]);
+
   // Filter to today's matches only if requested, otherwise show all
   const displayMatches = showTodayOnly ? todaysMatches : matches;
 
@@ -120,7 +132,11 @@ export default function TodaysMatches({
           <p className="text-white/50 mt-2">
             {nextMatchDay
               ? `Next matches on ${formatNextMatchDay(nextMatchDay)}`
-              : "The World Cup starts June 11, 2026!"}
+              : tournamentPhase === "after"
+                ? "The World Cup has ended. See you next time!"
+                : tournamentPhase === "during"
+                  ? "No more matches scheduled"
+                  : "The World Cup starts June 11, 2026!"}
           </p>
         </div>
       ) : (

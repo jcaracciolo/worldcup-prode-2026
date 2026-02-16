@@ -41,7 +41,7 @@ export interface SimulationState {
 
 // Simulation tick interval (5 seconds) and time advance per tick (1 minute of game time)
 const SIMULATION_TICK_INTERVAL = 5000; // 5 seconds
-const SIMULATION_TIME_ADVANCE = 1 * 60 * 1000; // 1 minute in milliseconds
+const SIMULATION_TIME_ADVANCE = 0; // TEMPORARILY DISABLED for testing (was: 1 * 60 * 1000)
 
 interface SimulationContextValue {
   /** Whether simulation mode is active */

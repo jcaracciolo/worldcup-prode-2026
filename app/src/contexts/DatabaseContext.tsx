@@ -134,6 +134,25 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
       if (user) {
         await loadUserCompetitions(user.id);
       } else {
+        // Unauthenticated guest: pick a default competition so public data
+        // (leaderboard, predictions panel, profiles) still loads correctly.
+        try {
+          const savedId =
+            typeof window !== "undefined"
+              ? localStorage.getItem(COMPETITION_STORAGE_KEY)
+              : null;
+
+          if (savedId) {
+            setCurrentCompetitionId(savedId);
+          } else {
+            const { data: competitions } = await db.competitions.getAll();
+            if (competitions && competitions.length > 0) {
+              setCurrentCompetitionId(competitions[0].id);
+            }
+          }
+        } catch {
+          // Silently fall back — guest will see empty data
+        }
         setCompetitionLoading(false);
       }
     };

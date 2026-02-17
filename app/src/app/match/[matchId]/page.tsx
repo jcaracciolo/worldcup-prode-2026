@@ -31,7 +31,10 @@ export default function MatchDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center flex-col gap-4">
         <div className="text-xl text-white/60">Match not found</div>
-        <Link href="/fixtures" className="text-sky-400 hover:text-sky-300 text-sm">
+        <Link
+          href="/fixtures"
+          className="text-sky-400 hover:text-sky-300 text-sm"
+        >
           ← Back to fixtures
         </Link>
       </div>

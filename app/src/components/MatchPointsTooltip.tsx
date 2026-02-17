@@ -73,6 +73,7 @@ export default function MatchPointsTooltip({
     const homeTla = getTeamLabel(match.homeTeam);
     const awayTla = getTeamLabel(match.awayTeam);
     const isGroup = isGroupStageMatch(match);
+    const isR32 = match.stage === "LAST_32";
     const multiplier = isGroup ? 1 : ROUND_MULTIPLIERS[match.stage] || 1;
     const multLabel = multiplier > 1 ? ` (${multiplier}×)` : "";
 
@@ -84,7 +85,8 @@ export default function MatchPointsTooltip({
 
     const rows: { label: string; points: number }[] = [];
 
-    if (isGroup) {
+    if (isGroup || isR32) {
+      // Group stage and R32 use a single "Result" line (position-based scoring)
       rows.push({ label: "Result", points: earned("result") });
       rows.push({ label: `Goals (${homeTla})`, points: earned("goals_home") });
       rows.push({ label: `Goals (${awayTla})`, points: earned("goals_away") });

@@ -19,7 +19,7 @@ export function formatStageName(stage: string): string {
     LAST_16: "Round of 16",
     QUARTER_FINALS: "Quarter-Finals",
     SEMI_FINALS: "Semi-Finals",
-    THIRD_PLACE: "3rd Place",
+    THIRD_PLACE: "Third-place Match",
     FINAL: "Final",
   };
   return stageNames[stage] || stage.replace(/_/g, " ");

@@ -103,8 +103,9 @@ export class LiveBracketResolver {
     if (!team) return false;
     if (!team.id || team.id === 0) return false;
     if (!team.tla || team.tla.length === 0) return false;
-    // Bracket-label patterns like "1A", "28A", "TBD" are NOT real teams
+    // Bracket-label patterns like "1A", "28A", "TBD", "W73", "L101" are NOT real teams
     if (/^\d+[A-Z]$/.test(team.tla)) return false;
+    if (/^[WL]\d+$/.test(team.tla)) return false;
     if (team.tla === "TBD" || team.tla === "TBA") return false;
     return true;
   }

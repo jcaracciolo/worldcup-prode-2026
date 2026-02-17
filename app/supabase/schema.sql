@@ -53,7 +53,7 @@ CREATE TABLE predictions (
   match_id INTEGER NOT NULL,
   home_goals INTEGER,
   away_goals INTEGER,
-  winner_id INTEGER, -- For knockout ties, stores the team ID that wins on penalties
+  penalty_winner TEXT CHECK (penalty_winner IN ('HOME', 'AWAY')), -- For knockout ties: which side wins on penalties
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id, competition_id, match_id)

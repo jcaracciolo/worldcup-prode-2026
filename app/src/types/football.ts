@@ -115,7 +115,7 @@ export interface UserPrediction {
   matchId: number;
   homeGoals: number | null;
   awayGoals: number | null;
-  winnerId: number | null;
+  penaltyWinner: "HOME" | "AWAY" | null;
 }
 
 export interface CalculatedStanding {

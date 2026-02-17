@@ -636,7 +636,7 @@ export function createPredictionService(
         match_id: number;
         home_goals: number | null;
         away_goals: number | null;
-        winner_id: number | null;
+        penalty_winner: "HOME" | "AWAY" | null;
       }>,
     ): Promise<ServiceVoidResult> {
       if (!competitionId) {
@@ -651,7 +651,7 @@ export function createPredictionService(
             match_id: p.match_id,
             home_goals: p.home_goals,
             away_goals: p.away_goals,
-            winner_id: p.winner_id,
+            penalty_winner: p.penalty_winner,
           }));
 
         if (predictionsArray.length === 0) {

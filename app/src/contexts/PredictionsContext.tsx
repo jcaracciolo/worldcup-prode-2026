@@ -135,7 +135,7 @@ export function PredictionsProvider({
               match_id: p.match_id,
               home_goals: p.home_goals,
               away_goals: p.away_goals,
-              winner_id: p.winner_id,
+              penalty_winner: p.penalty_winner,
             }),
           );
           const overrides = (overridesResult.data || []).map((o) => ({
@@ -262,7 +262,7 @@ export function PredictionsProvider({
           match_id: p.match_id,
           home_goals: p.home_goals,
           away_goals: p.away_goals,
-          winner_id: p.winner_id,
+          penalty_winner: p.penalty_winner,
         })),
       );
 
@@ -321,7 +321,7 @@ export function PredictionsProvider({
         match_id: p.match_id,
         home_goals: p.home_goals,
         away_goals: p.away_goals,
-        winner_id: p.winner_id,
+        penalty_winner: p.penalty_winner,
       });
     });
 

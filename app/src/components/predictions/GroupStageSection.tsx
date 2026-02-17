@@ -18,7 +18,7 @@ interface GroupStageSectionProps {
     fifaMatchId: FifaMatchId,
     homeGoals: number | null,
     awayGoals: number | null,
-    winnerId?: number | null,
+    penaltyWinner?: "HOME" | "AWAY" | null,
   ) => void;
   onSwapPositions?: (groupName: string, team1: number, team2: number) => void;
   /** Read-only mode: shows actual match scores using disabled PredictionInput */
@@ -83,7 +83,7 @@ export default function GroupStageSection({
                             match_id: fifaNumber,
                             home_goals: match.score.fullTime.home,
                             away_goals: match.score.fullTime.away,
-                            winner_id: null,
+                            penalty_winner: null,
                           };
                           return (
                             <PredictionInput

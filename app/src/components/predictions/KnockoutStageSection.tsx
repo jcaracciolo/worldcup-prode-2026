@@ -20,7 +20,7 @@ interface KnockoutStageSectionProps {
     fifaMatchId: FifaMatchId,
     homeGoals: number | null,
     awayGoals: number | null,
-    winnerId?: number | null,
+    penaltyWinner?: "HOME" | "AWAY" | null,
   ) => void;
   /**
    * View mode:

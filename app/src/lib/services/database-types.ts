@@ -155,7 +155,7 @@ export interface PredictionService {
       match_id: number;
       home_goals: number | null;
       away_goals: number | null;
-      winner_id: number | null;
+      penalty_winner: "HOME" | "AWAY" | null;
     }>,
   ): Promise<ServiceVoidResult>;
 }

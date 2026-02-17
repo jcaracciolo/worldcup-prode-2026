@@ -22,7 +22,7 @@ interface PredictionInputProps {
     fifaMatchId: FifaMatchId,
     homeGoals: number | null,
     awayGoals: number | null,
-    winnerId?: number | null,
+    penaltyWinner?: "HOME" | "AWAY" | null,
   ) => void;
   disabled?: boolean;
   showWinnerSelect?: boolean;
@@ -42,22 +42,23 @@ export default function PredictionInput({
 
   const homeGoals = prediction?.home_goals ?? null;
   const awayGoals = prediction?.away_goals ?? null;
-  const winnerId = prediction?.winner_id ?? null;
+  const penaltyWinner = prediction?.penalty_winner ?? null;
 
   const handleHomeChange = (value: string) => {
     const goals = value === "" ? null : parseInt(value, 10);
     if (goals !== null && (isNaN(goals) || goals < 0 || goals > 20)) return;
-    onChange(fifaMatchNumber, goals, awayGoals, winnerId);
+    onChange(fifaMatchNumber, goals, awayGoals, penaltyWinner);
   };
 
   const handleAwayChange = (value: string) => {
     const goals = value === "" ? null : parseInt(value, 10);
     if (goals !== null && (isNaN(goals) || goals < 0 || goals > 20)) return;
-    onChange(fifaMatchNumber, homeGoals, goals, winnerId);
+    onChange(fifaMatchNumber, homeGoals, goals, penaltyWinner);
   };
 
   const handleWinnerChange = (teamId: number) => {
-    onChange(fifaMatchNumber, homeGoals, awayGoals, teamId);
+    const side = teamId === homeTeam?.id ? "HOME" : "AWAY";
+    onChange(fifaMatchNumber, homeGoals, awayGoals, side);
   };
 
   const hasScore = homeGoals !== null && awayGoals !== null;
@@ -85,12 +86,12 @@ export default function PredictionInput({
   // Determine if each team is the selected winner (for ties) or score-based winner (for non-ties)
   // For group stage: winner highlighted, or BOTH teams on a draw
   const homeIsWinner =
-    (needsWinnerSelect && winnerId === homeTeam?.id) ||
+    (needsWinnerSelect && penaltyWinner === "HOME") ||
     homeWinsOnScore ||
     groupHomeWins ||
     groupIsDraw;
   const awayIsWinner =
-    (needsWinnerSelect && winnerId === awayTeam?.id) ||
+    (needsWinnerSelect && penaltyWinner === "AWAY") ||
     awayWinsOnScore ||
     groupAwayWins ||
     groupIsDraw;
@@ -276,7 +277,7 @@ export default function PredictionInput({
           {/* Score Inputs - compact */}
           <div className="flex flex-col items-center mx-2">
             {/* Tie indicator when winner needed but not selected */}
-            {needsWinnerSelect && !winnerId && (
+            {needsWinnerSelect && !penaltyWinner && (
               <div className="mb-0.5 px-1 py-0.5 text-[8px] leading-tight text-center rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
                 Pick winner
               </div>

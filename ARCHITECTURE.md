@@ -215,7 +215,7 @@ interface LocalPrediction {
   match_id: number; // FIFA match number (1-104)
   home_goals: number | null;
   away_goals: number | null;
-  winner_id: number | null; // For knockout tiebreakers
+  penalty_winner: "HOME" | "AWAY" | null; // For knockout tiebreakers
 }
 
 interface LocalGroupStandingsOverride {

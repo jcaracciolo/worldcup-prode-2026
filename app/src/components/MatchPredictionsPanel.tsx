@@ -37,11 +37,11 @@ export function MatchPredictionsPanel({
     const homeHighlight =
       predHomeWins ||
       (predIsDraw && isGroupStage) ||
-      (predIsDraw && isKnockout && pred.winnerId === match.homeTeam.id);
+      (predIsDraw && isKnockout && pred.penaltyWinner === "HOME");
     const awayHighlight =
       predAwayWins ||
       (predIsDraw && isGroupStage) ||
-      (predIsDraw && isKnockout && pred.winnerId === match.awayTeam.id);
+      (predIsDraw && isKnockout && pred.penaltyWinner === "AWAY");
 
     return { home: homeHighlight, away: awayHighlight };
   };

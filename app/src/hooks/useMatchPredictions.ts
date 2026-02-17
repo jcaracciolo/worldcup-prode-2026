@@ -12,7 +12,7 @@ export interface UserMatchPrediction {
   displayName: string;
   homeGoals: number | null;
   awayGoals: number | null;
-  winnerId: number | null;
+  penaltyWinner: "HOME" | "AWAY" | null;
   pointsEarned: number;
   maxPoints: number;
 }
@@ -65,7 +65,7 @@ export function useMatchPredictions(fifaId: FifaMatchId) {
         displayName: profileData.display_name,
         homeGoals: pred.home_goals,
         awayGoals: pred.away_goals,
-        winnerId: pred.winner_id,
+        penaltyWinner: pred.penalty_winner,
         pointsEarned,
         maxPoints,
       });
@@ -81,7 +81,13 @@ export function useMatchPredictions(fifaId: FifaMatchId) {
     });
 
     return userPredictions;
-  }, [match, profiles.content, allPredictions.content, matchPoints, profile?.id]);
+  }, [
+    match,
+    profiles.content,
+    allPredictions.content,
+    matchPoints,
+    profile?.id,
+  ]);
 
   return {
     match,

@@ -148,9 +148,7 @@ BEGIN
         away_goals := ABS((user_seed * 2 + fifa_match_id * 19 + user_idx * 13) % 4);
         
         -- For knockout, we may need to pick a winner if it's a draw
-        -- winner_id would be the team_id, but since we don't have real team IDs,
-        -- we'll use a placeholder approach: 1 = home wins, 2 = away wins
-        -- The actual winner_id will be populated when real teams are known
+        -- For knockout ties, pick HOME or AWAY as penalty winner
         
         -- Make some predictions draws to test extra time/penalties scenarios
         IF fifa_match_id % 7 = user_idx % 7 THEN
@@ -161,10 +159,11 @@ BEGIN
           winner_choice := NULL; -- Clear winner from score
         END IF;
         
-        -- Note: winner_id should be actual team ID, but we leave it NULL
-        -- since we don't have real team IDs in SQL. The score determines winner.
-        INSERT INTO predictions (user_id, competition_id, match_id, home_goals, away_goals, winner_id)
-        VALUES (user_uuid, comp.id, fifa_match_id, home_goals, away_goals, NULL);
+        INSERT INTO predictions (user_id, competition_id, match_id, home_goals, away_goals, penalty_winner)
+        VALUES (
+          user_uuid, comp.id, fifa_match_id, home_goals, away_goals,
+          CASE WHEN winner_choice = 1 THEN 'HOME' WHEN winner_choice = 2 THEN 'AWAY' ELSE NULL END
+        );
       END LOOP;
       
       RAISE NOTICE '  Created user: % with 104 predictions', user_name;

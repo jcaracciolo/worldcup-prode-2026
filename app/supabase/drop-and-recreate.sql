@@ -109,7 +109,7 @@ CREATE TABLE predictions (
   match_id INTEGER NOT NULL,
   home_goals INTEGER,
   away_goals INTEGER,
-  winner_id INTEGER,
+  penalty_winner TEXT CHECK (penalty_winner IN ('HOME', 'AWAY')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id, competition_id, match_id)

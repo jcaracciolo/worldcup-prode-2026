@@ -123,7 +123,7 @@ export interface Database {
           match_id: number;
           home_goals: number | null;
           away_goals: number | null;
-          winner_id: number | null;
+          penalty_winner: "HOME" | "AWAY" | null;
           created_at: string;
           updated_at: string;
         };
@@ -134,7 +134,7 @@ export interface Database {
           match_id: number;
           home_goals?: number | null;
           away_goals?: number | null;
-          winner_id?: number | null;
+          penalty_winner?: "HOME" | "AWAY" | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -145,7 +145,7 @@ export interface Database {
           match_id?: number;
           home_goals?: number | null;
           away_goals?: number | null;
-          winner_id?: number | null;
+          penalty_winner?: "HOME" | "AWAY" | null;
           created_at?: string;
           updated_at?: string;
         };

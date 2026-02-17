@@ -54,7 +54,7 @@ export interface PredictionEditor {
     fifaMatchId: FifaMatchId,
     homeGoals: number | null,
     awayGoals: number | null,
-    winnerId?: number | null,
+    penaltyWinner?: "HOME" | "AWAY" | null,
   ) => void;
   handleSwapPositions: (
     groupName: string,
@@ -138,14 +138,14 @@ export function usePredictionEditor(): PredictionEditor {
       fifaMatchId: FifaMatchId,
       homeGoals: number | null,
       awayGoals: number | null,
-      winnerId?: number | null,
+      penaltyWinner?: "HOME" | "AWAY" | null,
     ) => {
       const existing = predictions.get(fifaMatchId);
       updatePrediction({
         match_id: fifaMatchId,
         home_goals: homeGoals,
         away_goals: awayGoals,
-        winner_id: winnerId ?? existing?.winner_id ?? null,
+        penalty_winner: penaltyWinner ?? existing?.penalty_winner ?? null,
       });
     },
     [predictions, updatePrediction],
@@ -233,7 +233,7 @@ export function usePredictionEditor(): PredictionEditor {
         const pred = predictions.get(m.id);
         if (!pred || pred.home_goals === null || pred.away_goals === null)
           return false;
-        return pred.home_goals === pred.away_goals && !pred.winner_id;
+        return pred.home_goals === pred.away_goals && !pred.penalty_winner;
       });
       if (tiesWithoutWinner.length > 0) {
         warnings.push(
@@ -339,16 +339,16 @@ export function usePredictionEditor(): PredictionEditor {
       const homeGoals = randomScore();
       const awayGoals = randomScore();
 
-      let winnerId: number | null = null;
+      let penaltyWinner: "HOME" | "AWAY" | null = null;
       if (!isGroupStage && homeGoals === awayGoals) {
-        winnerId = Math.random() < 0.5 ? match.homeTeam.id : match.awayTeam.id;
+        penaltyWinner = Math.random() < 0.5 ? "HOME" : "AWAY";
       }
 
       const updated: LocalPrediction = {
         match_id: fifaNumber,
         home_goals: homeGoals,
         away_goals: awayGoals,
-        winner_id: winnerId,
+        penalty_winner: penaltyWinner,
       };
       newPredictions.set(fifaNumber, updated);
     });

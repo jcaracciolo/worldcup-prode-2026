@@ -449,7 +449,7 @@ predictions
 ├── match_id (int, from Football-Data API)
 ├── home_goals (int)
 ├── away_goals (int)
-├── winner_id (int, nullable, for Final/3rd place ties)
+├── penalty_winner (text, nullable, 'HOME'|'AWAY' for knockout ties)
 ├── created_at
 └── updated_at
 
@@ -550,7 +550,7 @@ Match results are displayed in two contexts: showing **user predictions** vs sho
 
 ### Prediction-Based Highlighting
 
-Shows winner based on user's predicted scores. For knockout ties, uses `winner_id` to determine the advancing team.
+Shows winner based on user's predicted scores. For knockout ties, uses `penalty_winner` to determine the advancing team.
 
 | Component                                              | Route             | Description                                    |
 | ------------------------------------------------------ | ----------------- | ---------------------------------------------- |
@@ -562,7 +562,7 @@ Shows winner based on user's predicted scores. For knockout ties, uses `winner_i
 **Highlighting Rules (Predictions):**
 
 - **Group stage:** Winner highlighted; both teams highlighted on draw
-- **Knockout:** Winner highlighted by score; on ties, `winner_id` determines highlight
+- **Knockout:** Winner highlighted by score; on ties, `penalty_winner` determines highlight
 
 ### Real API Result Highlighting
 

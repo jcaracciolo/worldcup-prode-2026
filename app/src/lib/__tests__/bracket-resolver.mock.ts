@@ -593,7 +593,7 @@ export function buildHomePredictions(): Map<FifaMatchId, LocalPrediction> {
       match_id: i,
       home_goals: 2,
       away_goals: 1,
-      winner_id: null, // Not needed when home_goals > away_goals
+      penalty_winner: null, // Not needed when home_goals > away_goals
     });
   }
   return m;

@@ -4,18 +4,16 @@ import Link from "next/link";
 import { PointBreakdown, asFifaMatchId, Team } from "@/types/football";
 import { getTeamLabel } from "@/lib/scoring";
 import { getTeamDisplaySimple } from "@/lib/team-display";
+import { useUserPosition } from "@/contexts/LeaderboardContext";
 
 interface PointsBreakdownProps {
-  breakdown: PointBreakdown[];
-  totalPoints: number;
-  livePoints?: number;
+  userId: string;
 }
 
-export default function PointsBreakdown({
-  breakdown,
-  totalPoints,
-  livePoints = 0,
-}: PointsBreakdownProps) {
+export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
+  const positionInfo = useUserPosition(userId);
+  const breakdown = positionInfo.userScore?.breakdown ?? [];
+  const totalPoints = positionInfo.userScore?.totalPoints ?? 0;
   const getTypeLabel = (type: PointBreakdown["type"]) => {
     switch (type) {
       case "result":

@@ -4,6 +4,7 @@ import { useTime } from "@/contexts/TimeContext";
 import { FifaMatchId } from "@/types/football";
 import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { LocalPrediction } from "@/types/database";
+import { formatStageName } from "@/lib/format";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import { KnockoutMatchRow } from "@/components/MatchRowShared";
 
@@ -30,18 +31,6 @@ interface KnockoutStageSectionProps {
   mode?: ViewMode;
   /** @deprecated Use mode="fixtures" instead */
   readOnly?: boolean;
-}
-
-function getKnockoutStageName(stage: string): string {
-  const names: Record<string, string> = {
-    LAST_32: "Round of 32",
-    LAST_16: "Round of 16",
-    QUARTER_FINALS: "Quarter Finals",
-    SEMI_FINALS: "Semi Finals",
-    THIRD_PLACE: "Third Place",
-    FINAL: "Final",
-  };
-  return names[stage] || stage;
 }
 
 const KNOCKOUT_STAGE_ORDER = [
@@ -90,7 +79,7 @@ export default function KnockoutStageSection({
           const stageMatches = knockoutStages.get(stage) || [];
           if (stageMatches.length === 0) return null;
 
-          const stageName = getKnockoutStageName(stage);
+          const stageName = formatStageName(stage);
           const sortedMatches = [...stageMatches].sort(
             (a, b) =>
               new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),

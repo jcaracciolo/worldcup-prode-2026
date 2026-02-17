@@ -1,13 +1,14 @@
 "use client";
 
-import { useMemo, useCallback } from "react";
+import { useMemo } from "react";
 import { GlobalLiveIndicator } from "@/components/MatchStatus";
 import {
   GroupStageSection,
   KnockoutStageSection,
 } from "@/components/predictions";
-import { useMatches, MatchWithLiveInfo } from "@/contexts/MatchContext";
+import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
+import { useScrollToLiveMatch } from "@/hooks/useScrollToLiveMatch";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function FixturesPage() {
@@ -18,46 +19,19 @@ export default function FixturesPage() {
     hasLiveMatches,
     liveMatches,
     liveBracket,
+    groups,
+    knockoutStages,
     refresh: refreshMatches,
   } = useMatches();
 
-  // Scroll to first live match
-  const scrollToFirstLiveMatch = useCallback(() => {
-    const firstLiveMatch = document.querySelector(".live-match");
-    if (firstLiveMatch) {
-      firstLiveMatch.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, []);
+  const scrollToFirstLiveMatch = useScrollToLiveMatch();
 
   // Get stage lock status to determine section order
   const { stageLockStatus } = useTime();
   const showKnockoutFirst = stageLockStatus.knockoutStageLocked;
 
-  // Organize matches by groups
-  const groups = useMemo(() => {
-    const groupMatches = matches.filter((m) => m.stage === "GROUP_STAGE");
-    const groupMap = new Map<string, MatchWithLiveInfo[]>();
-    groupMatches.forEach((m) => {
-      if (!m.group) return;
-      if (!groupMap.has(m.group)) groupMap.set(m.group, []);
-      groupMap.get(m.group)!.push(m);
-    });
-    return groupMap;
-  }, [matches]);
-
   // Standings and third-place qualifying come from the live bracket
   const thirdPlaceQualifying = liveBracket.thirdPlaceQualifying;
-
-  // Organize knockout matches by stage
-  const knockoutStages = useMemo(() => {
-    const knockoutMatches = matches.filter((m) => m.stage !== "GROUP_STAGE");
-    const stageMap = new Map<string, MatchWithLiveInfo[]>();
-    knockoutMatches.forEach((m) => {
-      if (!stageMap.has(m.stage)) stageMap.set(m.stage, []);
-      stageMap.get(m.stage)!.push(m);
-    });
-    return stageMap;
-  }, [matches]);
 
   // Count stats
   const stats = useMemo(() => {

@@ -2,7 +2,6 @@ import {
   Match,
   PointBreakdown,
   CalculatedStanding,
-  Team,
   FifaMatchId,
 } from "@/types/football";
 import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
@@ -811,107 +810,6 @@ export function calculateGroupStandingsBonusPoints(
   });
 
   return points;
-}
-
-export function calculateStandingsFromPredictions(
-  groupMatches: (Match & { fifaNumber?: FifaMatchId | null })[],
-  predictions: Map<FifaMatchId, LocalPrediction>, // Keyed by FIFA match number
-  overrides: LocalGroupStandingsOverride[],
-): CalculatedStanding[] {
-  const teamStats = new Map<number, CalculatedStanding>();
-
-  // Initialize teams from matches
-  groupMatches.forEach((match) => {
-    if (!teamStats.has(match.homeTeam.id)) {
-      teamStats.set(match.homeTeam.id, createEmptyStanding(match.homeTeam));
-    }
-    if (!teamStats.has(match.awayTeam.id)) {
-      teamStats.set(match.awayTeam.id, createEmptyStanding(match.awayTeam));
-    }
-  });
-
-  // Calculate stats from predictions (use fifaNumber for lookup)
-  groupMatches.forEach((match) => {
-    const fifaNumber = match.fifaNumber;
-    const prediction = fifaNumber ? predictions.get(fifaNumber) : undefined;
-    if (
-      !prediction ||
-      prediction.home_goals === null ||
-      prediction.away_goals === null
-    ) {
-      return;
-    }
-
-    const homeStats = teamStats.get(match.homeTeam.id)!;
-    const awayStats = teamStats.get(match.awayTeam.id)!;
-
-    homeStats.played++;
-    awayStats.played++;
-
-    homeStats.goalsFor += prediction.home_goals;
-    homeStats.goalsAgainst += prediction.away_goals;
-    awayStats.goalsFor += prediction.away_goals;
-    awayStats.goalsAgainst += prediction.home_goals;
-
-    homeStats.goalDifference = homeStats.goalsFor - homeStats.goalsAgainst;
-    awayStats.goalDifference = awayStats.goalsFor - awayStats.goalsAgainst;
-
-    if (prediction.home_goals > prediction.away_goals) {
-      homeStats.won++;
-      homeStats.points += 3;
-      awayStats.lost++;
-    } else if (prediction.away_goals > prediction.home_goals) {
-      awayStats.won++;
-      awayStats.points += 3;
-      homeStats.lost++;
-    } else {
-      homeStats.drawn++;
-      awayStats.drawn++;
-      homeStats.points += 1;
-      awayStats.points += 1;
-    }
-  });
-
-  // Sort standings
-  let standings = Array.from(teamStats.values()).sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    if (b.goalDifference !== a.goalDifference)
-      return b.goalDifference - a.goalDifference;
-    return b.goalsFor - a.goalsFor;
-  });
-
-  // Apply manual overrides for tiebreakers
-  if (overrides.length > 0) {
-    overrides.forEach((override) => {
-      const teamIndex = standings.findIndex(
-        (s) => s.team.id === override.team_id,
-      );
-      if (teamIndex !== -1) {
-        const [team] = standings.splice(teamIndex, 1);
-        standings.splice(override.position - 1, 0, team);
-      }
-    });
-  }
-
-  // Update positions
-  standings = standings.map((s, i) => ({ ...s, position: i + 1 }));
-
-  return standings;
-}
-
-function createEmptyStanding(team: Team): CalculatedStanding {
-  return {
-    team,
-    position: 0,
-    points: 0,
-    goalsFor: 0,
-    goalsAgainst: 0,
-    goalDifference: 0,
-    played: 0,
-    won: 0,
-    drawn: 0,
-    lost: 0,
-  };
 }
 
 export function calculateTotalPoints(

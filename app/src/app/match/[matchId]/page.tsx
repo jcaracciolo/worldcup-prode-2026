@@ -9,6 +9,7 @@ import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { useMatchPointsForAllUsers } from "@/contexts/LeaderboardContext";
 import { getMatchInfo } from "@/lib/tournament";
 import { getMaxPossiblePoints } from "@/lib/scoring";
+import { formatGroupName, formatStageName } from "@/lib/format";
 import { format } from "date-fns";
 import { Profile } from "@/types/database";
 import { FifaMatchId, asFifaMatchId } from "@/types/football";
@@ -120,29 +121,6 @@ export default function MatchDetailPage() {
   const venueDisplay = matchInfo
     ? `${matchInfo.venue.stadium}, ${matchInfo.venue.city}`
     : match.venue;
-
-  // Format group name: GROUP_A -> Group A
-  const formatGroupName = (group: string | null): string | null => {
-    if (!group) return null;
-    if (group.startsWith("GROUP_")) {
-      return `Group ${group.replace("GROUP_", "")}`;
-    }
-    return group;
-  };
-
-  // Format stage name for display
-  const formatStageName = (stage: string): string => {
-    const stageNames: Record<string, string> = {
-      GROUP_STAGE: "Group Stage",
-      LAST_32: "Round of 32",
-      LAST_16: "Round of 16",
-      QUARTER_FINALS: "Quarter-Finals",
-      SEMI_FINALS: "Semi-Finals",
-      THIRD_PLACE: "3rd Place",
-      FINAL: "Final",
-    };
-    return stageNames[stage] || stage.replace(/_/g, " ");
-  };
 
   const stageDisplay =
     formatGroupName(match.group) || formatStageName(match.stage);

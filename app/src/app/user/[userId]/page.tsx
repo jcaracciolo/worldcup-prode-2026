@@ -60,7 +60,7 @@ export default function UserPredictionsPage() {
   );
 
   // Get matches with user's predicted knockout teams baked in.
-  const { matches: predictedMatches } = usePredictedMatches(userId);
+  const { matches: predictedMatches, knockoutStages } = usePredictedMatches(userId);
 
   // Predictions keyed by FIFA match number (for knockout)
   const fifaPredictionMap = useMemo(
@@ -71,18 +71,7 @@ export default function UserPredictionsPage() {
     [predictions],
   );
 
-  // Group knockout matches by stage (using predicted matches for baked teams)
-  const knockoutStages = useMemo(() => {
-    const stages = new Map<string, typeof predictedMatches>();
-    for (const match of predictedMatches) {
-      if (match.stage !== "GROUP_STAGE") {
-        const existing = stages.get(match.stage) || [];
-        existing.push(match);
-        stages.set(match.stage, existing);
-      }
-    }
-    return stages;
-  }, [predictedMatches]);
+
 
   // Get user's score and position from centralized leaderboard context
   // (avoids re-computing scores that LeaderboardContext already calculated)
@@ -90,7 +79,6 @@ export default function UserPredictionsPage() {
   const userScore = positionInfo.userScore;
   const totalPoints = userScore?.totalPoints ?? 0;
   const livePoints = userScore?.livePoints ?? 0;
-  const breakdown = userScore?.breakdown ?? [];
   const pointBreakdown = useMemo(
     () => ({
       groupStagePoints: userScore?.groupStagePoints ?? 0,
@@ -381,11 +369,7 @@ export default function UserPredictionsPage() {
         {/* Points Breakdown */}
         {(groupStageLocked || knockoutStageLocked) && (
           <section id="points-breakdown">
-            <PointsBreakdown
-              breakdown={breakdown}
-              totalPoints={totalPoints}
-              livePoints={livePoints}
-            />
+            <PointsBreakdown userId={userId} />
           </section>
         )}
       </main>

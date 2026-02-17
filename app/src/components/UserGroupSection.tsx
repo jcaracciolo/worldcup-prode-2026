@@ -26,7 +26,7 @@ export default function UserGroupSection({
   userId,
 }: UserGroupSectionProps) {
   // Pull matches and actual standings from context
-  const { matches, liveBracket } = useMatches();
+  const { groups, liveBracket } = useMatches();
   const actualStandings = liveBracket.groupStandings;
 
   // Get user's predictions from shared cache
@@ -52,18 +52,7 @@ export default function UserGroupSection({
     [predictionsMap],
   );
 
-  // Group matches by group name
-  const groups = useMemo(() => {
-    const map = new Map<string, MatchWithLiveInfo[]>();
-    matches
-      .filter((m) => m.stage === "GROUP_STAGE")
-      .forEach((m) => {
-        if (!m.group) return;
-        if (!map.has(m.group)) map.set(m.group, []);
-        map.get(m.group)!.push(m);
-      });
-    return map;
-  }, [matches]);
+
 
   // Group bonus points by group letter (from centralized breakdown)
   const groupBonusPoints = useMemo(() => {

@@ -574,6 +574,8 @@ export interface PredictedMatchesResult {
   predictedGroupStandings: Map<string, CalculatedStanding[]>;
   /** Which 3rd-place teams qualify based on predicted group standings */
   predictedThirdPlaceQualifying: Map<string, boolean>;
+  /** Knockout matches (with predicted teams baked in) bucketed by stage */
+  knockoutStages: Map<string, MatchWithLiveInfo[]>;
 }
 
 /**
@@ -625,13 +627,24 @@ export function usePredictedMatches(
     return bakeTeamsIntoMatches(contextMatches, bracket);
   }, [contextMatches, bracket]);
 
+  const knockoutStages = useMemo(() => {
+    const map = new Map<string, MatchWithLiveInfo[]>();
+    for (const m of matches) {
+      if (m.stage === "GROUP_STAGE") continue;
+      if (!map.has(m.stage)) map.set(m.stage, []);
+      map.get(m.stage)!.push(m);
+    }
+    return map;
+  }, [matches]);
+
   return useMemo(
     () => ({
       matches,
       predictedGroupStandings: bracket.groupStandings,
       predictedThirdPlaceQualifying: bracket.thirdPlaceQualifying,
+      knockoutStages,
     }),
-    [matches, bracket],
+    [matches, bracket, knockoutStages],
   );
 }
 

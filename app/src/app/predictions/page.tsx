@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { GlobalLiveIndicator } from "@/components/MatchStatus";
@@ -11,13 +11,14 @@ import {
   KnockoutStageSection,
   GroupStageSection,
 } from "@/components/predictions";
-import { useMatches, MatchWithLiveInfo } from "@/contexts/MatchContext";
+import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
 import { useUser } from "@/contexts/UserContext";
 import {
   useUserPredictions,
   usePredictedMatches,
 } from "@/contexts/PredictionsContext";
+import { useScrollToLiveMatch } from "@/hooks/useScrollToLiveMatch";
 import { FifaMatchId } from "@/types/football";
 
 import { LocalPrediction } from "@/types/database";
@@ -61,6 +62,7 @@ export default function PredictionsPage() {
     loading: matchesLoading,
     hasLiveMatches,
     liveMatches,
+    groups,
     refresh: refreshMatches,
   } = useMatches();
 
@@ -70,15 +72,10 @@ export default function PredictionsPage() {
     matches: predictedMatches,
     predictedGroupStandings,
     predictedThirdPlaceQualifying,
+    knockoutStages,
   } = usePredictedMatches(profile?.id || null);
 
-  // Scroll to first live match
-  const scrollToFirstLiveMatch = useCallback(() => {
-    const firstLiveMatch = document.querySelector(".live-match");
-    if (firstLiveMatch) {
-      firstLiveMatch.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, []);
+  const scrollToFirstLiveMatch = useScrollToLiveMatch();
 
   // Get stage lock status from time context (simulation-transparent)
   const { stageLockStatus } = useTime();
@@ -341,22 +338,7 @@ export default function PredictionsPage() {
     return <LoadingSpinner />;
   }
 
-  const groupMatches = matches.filter((m) => m.stage === "GROUP_STAGE");
-  const groups = new Map<string, MatchWithLiveInfo[]>();
-  groupMatches.forEach((m) => {
-    if (!m.group) return;
-    if (!groups.has(m.group)) groups.set(m.group, []);
-    groups.get(m.group)!.push(m);
-  });
 
-  const knockoutMatches = predictedMatches.filter(
-    (m) => m.stage !== "GROUP_STAGE",
-  );
-  const knockoutStages = new Map<string, MatchWithLiveInfo[]>();
-  knockoutMatches.forEach((m) => {
-    if (!knockoutStages.has(m.stage)) knockoutStages.set(m.stage, []);
-    knockoutStages.get(m.stage)!.push(m);
-  });
 
   return (
     <div className="flex-1 flex flex-col">

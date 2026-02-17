@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useCallback } from "react";
+import { useMemo } from "react";
 import { format } from "date-fns";
 import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
 import MatchCard from "@/components/MatchCard";
 import { GlobalLiveIndicator } from "@/components/MatchStatus";
+import { useScrollToLiveMatch } from "@/hooks/useScrollToLiveMatch";
 
 interface TodaysMatchesProps {
   /** Filter matches to show only today's or all */
@@ -26,13 +27,7 @@ export default function TodaysMatches({
     useMatches();
   const { getCurrentTime } = useTime();
 
-  // Scroll to first live match
-  const scrollToFirstLiveMatch = useCallback(() => {
-    const firstLiveMatch = document.querySelector(".live-match");
-    if (firstLiveMatch) {
-      firstLiveMatch.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, []);
+  const scrollToFirstLiveMatch = useScrollToLiveMatch();
 
   // Get today's date in ISO format
   const today = getCurrentTime();

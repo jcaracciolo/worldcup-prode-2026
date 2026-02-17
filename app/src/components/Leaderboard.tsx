@@ -1,17 +1,13 @@
 "use client";
 
-import { UserScore } from "@/types/football";
 import Link from "next/link";
+import { useLeaderboard } from "@/contexts/LeaderboardContext";
+import { useUser } from "@/contexts/UserContext";
 
-interface LeaderboardProps {
-  scores: UserScore[];
-  currentUserId?: string;
-}
-
-export default function Leaderboard({
-  scores,
-  currentUserId,
-}: LeaderboardProps) {
+export default function Leaderboard() {
+  const { scores } = useLeaderboard();
+  const { user } = useUser();
+  const currentUserId = user?.id;
   return (
     <div className="glass-card overflow-hidden">
       <div className="bg-gradient-to-r from-emerald-600 to-green-600 px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-2 sm:gap-3">

@@ -11,8 +11,7 @@ DatabaseProvider              ← Supabase client + competition switching
             └─ MatchProvider  ← Fetches matches from API, enhances with live info, resolves knockout bracket
                  └─ UserProvider          ← Auth state + current user profile
                       └─ PredictionsProvider  ← User predictions cache (per-user and all-users)
-                           └─ ScoringProvider     ← Score calculations (group + knockout + bonus)
-                                └─ LeaderboardProvider  ← Aggregated scores + positions for all users
+                           └─ LeaderboardProvider  ← Aggregated scores + positions for all users
 ```
 
 The `Header` component and `PageTransition` wrapper are rendered **inside** all providers, so every page and the header have access to everything.
@@ -23,7 +22,7 @@ The `Header` component and `PageTransition` wrapper are rendered **inside** all 
 
 **What it provides:** `useDatabase()`, `useDatabaseService()`
 
-**Data source:** Supabase browser client, created via `createBrowserClient()`
+**Data source:** Supabase browser client, created via `createClient()` (aliased locally as `createBrowserClient`)
 
 **Responsibilities:**
 
@@ -36,7 +35,7 @@ The `Header` component and `PageTransition` wrapper are rendered **inside** all 
 | Hook | Returns |
 |------|---------|
 | `useDatabaseService()` | `db` — the service object with sub-services |
-| `useDatabase()` | `db` + `currentCompetitionId` + `switchCompetition()` + `userCompetitions` |
+| `useDatabase()` | `db` + `currentCompetitionId` + `currentCompetition` + `competitionLoading` + `switchCompetition()` + `userCompetitions` + `refreshCompetitions()` |
 
 **Database service structure** (`db.*`):
 
@@ -44,12 +43,12 @@ The `Header` component and `PageTransition` wrapper are rendered **inside** all 
 db.auth          → getUser(), signIn(), signUp(), signOut(), onAuthStateChange()
 db.profiles      → getProfile(), getAllProfiles(), updateProfile()
 db.competitions  → getAll(), getById(), create(), update()
-db.members       → getMemberships(), addMember(), removeMember()
+db.competitionMembers → getMemberships(), addMember(), removeMember()
 db.predictions   → getUserPredictions(), getAllPredictions(), savePredictions()
 db.overrides     → getUserOverrides(), getAllOverrides(), saveOverrides()
 db.inviteCodes   → getByCode(), create(), markUsed()
 db.matchesCache  → getCachedMatches(), updateMatchesCache(), ...
-db.settings      → getSettings(), updateSettings()
+db.tournamentSettings → getSettings(), updateSettings()
 ```
 
 **Key design:** The `db` object is recreated (via `useMemo`) whenever `currentCompetitionId` changes. This means any context that depends on `db` will automatically re-fetch when the user switches competitions.
@@ -228,33 +227,7 @@ interface LocalGroupStandingsOverride {
 
 ---
 
-## Layer 7: ScoringProvider (`contexts/ScoringContext.tsx`)
-
-**What it provides:** `useScoringContext()`, `useUserScore()`, `useMatchScore()`
-
-**Data source:** `useMatches()` (match results) + `useUserPredictions()` (logged-in user's predictions)
-
-**Responsibilities:**
-
-- `calculateUserScore(userId, predictions, overrides)` — computes full breakdown
-- `getMatchScore(matchId, prediction)` — points for a single match
-- `calculatePredictedStandings(group, predictions, overrides)` — group table from predictions
-- `getActualGroupStandings(group)` — group table from actual results
-- `getAdvancingTeamIds()` — set of team IDs that advanced from groups (actual)
-
-**Scoring types:**
-
-```ts
-interface PointBreakdown {
-  type: "exact" | "result" | "correct_diff" | "knockout_win" | "group_advance" | ...;
-  points: number;
-  matchId?: number;
-}
-```
-
----
-
-## Layer 8: LeaderboardProvider (`contexts/LeaderboardContext.tsx`)
+## Layer 7: LeaderboardProvider (`contexts/LeaderboardContext.tsx`)
 
 **What it provides:** `useLeaderboard()`, `useUserPosition(userId)`
 

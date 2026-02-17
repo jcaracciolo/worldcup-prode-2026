@@ -4,13 +4,11 @@ import { useState, useEffect } from "react";
 import TodaysMatches from "@/components/TodaysMatches";
 import Leaderboard from "@/components/Leaderboard";
 import { useUser } from "@/contexts/UserContext";
-import { useLeaderboard } from "@/contexts/LeaderboardContext";
 import { useTime } from "@/contexts/TimeContext";
 import Link from "next/link";
 
 export default function HomePage() {
   const { user: profile } = useUser();
-  const { scores: leaderboard } = useLeaderboard();
   const { stageLockStatus } = useTime();
   const daysLeft = stageLockStatus?.daysUntilKnockoutLocks;
 
@@ -63,7 +61,7 @@ export default function HomePage() {
 
           {/* Leaderboard Section */}
           <div className="lg:col-span-1">
-            <Leaderboard scores={leaderboard} currentUserId={profile?.id} />
+            <Leaderboard />
           </div>
         </div>
       </main>

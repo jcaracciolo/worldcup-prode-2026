@@ -2,6 +2,7 @@
 
 import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { shortLabel } from "@/lib/team-display";
+import { formatGroupName, formatStageName } from "@/lib/format";
 import { format } from "date-fns";
 import Link from "next/link";
 
@@ -15,30 +16,6 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
     match;
   const isFinished = match.status === "FINISHED";
   const matchDate = new Date(match.utcDate);
-
-  // Format group name: GROUP_A -> Group A
-  const formatGroupName = (group: string | null): string | null => {
-    if (!group) return null;
-    // Handle "GROUP_A" format -> "Group A"
-    if (group.startsWith("GROUP_")) {
-      return `Group ${group.replace("GROUP_", "")}`;
-    }
-    return group;
-  };
-
-  // Format stage name for display
-  const formatStageName = (stage: string): string => {
-    const stageNames: Record<string, string> = {
-      GROUP_STAGE: "Group Stage",
-      LAST_32: "Round of 32",
-      LAST_16: "Round of 16",
-      QUARTER_FINALS: "Quarter-Finals",
-      SEMI_FINALS: "Semi-Finals",
-      THIRD_PLACE: "3rd Place",
-      FINAL: "Final",
-    };
-    return stageNames[stage] || stage.replace(/_/g, " ");
-  };
 
   // Determine winner for highlighting
   const homeGoals = match.score.fullTime.home;

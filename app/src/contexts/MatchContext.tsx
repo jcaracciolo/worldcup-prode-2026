@@ -69,6 +69,10 @@ interface MatchContextValue {
   liveBracket: LiveBracket;
   /** Raw matches before knockout team overlay */
   rawProcessedMatches: Match[];
+  /** Group stage matches bucketed by group name (GROUP_A, GROUP_B, etc.) */
+  groups: Map<string, MatchWithLiveInfo[]>;
+  /** Knockout matches bucketed by stage (ROUND_OF_32, ROUND_OF_16, etc.) */
+  knockoutStages: Map<string, MatchWithLiveInfo[]>;
 }
 
 const MatchContext = createContext<MatchContextValue | null>(null);
@@ -276,6 +280,28 @@ export function MatchProvider({
   // Get only live matches
   const liveMatches = useMemo(() => matches.filter((m) => m.isLive), [matches]);
 
+  // Group stage matches bucketed by group name
+  const groups = useMemo(() => {
+    const map = new Map<string, MatchWithLiveInfo[]>();
+    for (const m of matches) {
+      if (m.stage !== "GROUP_STAGE" || !m.group) continue;
+      if (!map.has(m.group)) map.set(m.group, []);
+      map.get(m.group)!.push(m);
+    }
+    return map;
+  }, [matches]);
+
+  // Knockout matches bucketed by stage
+  const knockoutStages = useMemo(() => {
+    const map = new Map<string, MatchWithLiveInfo[]>();
+    for (const m of matches) {
+      if (m.stage === "GROUP_STAGE") continue;
+      if (!map.has(m.stage)) map.set(m.stage, []);
+      map.get(m.stage)!.push(m);
+    }
+    return map;
+  }, [matches]);
+
   // Fetch matches from API
   const fetchMatches = useCallback(async () => {
     try {
@@ -347,6 +373,8 @@ export function MatchProvider({
     isSimulated,
     liveBracket,
     rawProcessedMatches: processedMatches,
+    groups,
+    knockoutStages,
   };
 
   return (

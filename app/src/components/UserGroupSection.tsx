@@ -21,6 +21,8 @@ interface UserGroupSectionProps {
   predictions: LocalPrediction[];
   thirdPlaceQualifying: Map<string, boolean>;
   showPredictions: boolean;
+  /** User whose predictions/points are being viewed */
+  userId: string;
   /** Actual standings from real match results (for scoring comparison) */
   actualStandings?: Map<string, CalculatedStanding[]>;
   /** Centralized points breakdown from scoring system */
@@ -32,6 +34,7 @@ export default function UserGroupSection({
   predictions,
   thirdPlaceQualifying,
   showPredictions,
+  userId,
   actualStandings,
   breakdown = [],
 }: UserGroupSectionProps) {
@@ -114,10 +117,10 @@ export default function UserGroupSection({
                 thirdPlaceQualifies={
                   thirdPlaceQualifying.get(groupName) || false
                 }
+                userId={userId}
                 actualStandings={groupActualStandings}
                 bonusPoints={bonusPoints}
                 groupComplete={groupComplete}
-                breakdown={breakdown}
               />
             );
           })}
@@ -132,11 +135,10 @@ interface GroupCardProps {
   standings: CalculatedStanding[];
   predictionMap: Map<number, LocalPrediction>;
   thirdPlaceQualifies: boolean;
+  userId: string;
   actualStandings: CalculatedStanding[];
   bonusPoints: PointBreakdown[];
   groupComplete: boolean;
-  /** Full breakdown for filtering per-match items */
-  breakdown: PointBreakdown[];
 }
 
 function GroupCard({
@@ -145,10 +147,10 @@ function GroupCard({
   standings,
   predictionMap,
   thirdPlaceQualifies,
+  userId,
   actualStandings,
   bonusPoints,
   groupComplete,
-  breakdown,
 }: GroupCardProps) {
   const totalBonusPoints = bonusPoints.reduce((sum, b) => sum + b.points, 0);
 
@@ -170,7 +172,7 @@ function GroupCard({
                 key={match.id}
                 match={match}
                 prediction={predictionMap.get(fifaNumber)}
-                matchBreakdown={breakdown.filter((b) => b.matchId === match.id)}
+                userId={userId}
               />
             );
           })}
@@ -356,15 +358,15 @@ export interface GroupMatchRowProps {
   match: Match;
   prediction?: LocalPrediction;
   showPoints?: boolean;
-  /** Pre-computed breakdown items for this match */
-  matchBreakdown?: PointBreakdown[];
+  /** User whose points to display */
+  userId?: string;
 }
 
 export function GroupMatchRow({
   match,
   prediction,
   showPoints = true,
-  matchBreakdown,
+  userId,
 }: GroupMatchRowProps) {
   // Use prediction scores if available, otherwise actual match scores
   const homeGoals = prediction
@@ -449,11 +451,10 @@ export function GroupMatchRow({
         </div>
       </Link>
       {/* Points earned - outside Link so tap works */}
-      {showPoints && (
+      {showPoints && userId && (
         <MatchPointsTooltip
-          match={match}
-          prediction={prediction}
-          matchBreakdown={matchBreakdown}
+          matchId={asFifaMatchId(match.id)}
+          userId={userId}
           className="w-8"
         />
       )}

@@ -4,11 +4,9 @@ import { useTime } from "@/contexts/TimeContext";
 import {
   Match,
   FifaMatchId,
-  PointBreakdown,
   asFifaMatchId,
 } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
-import { ResolvedTeams } from "@/lib/bracket-resolver";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import { KnockoutMatchRow } from "@/components/MatchRowShared";
 
@@ -17,11 +15,9 @@ type ViewMode = "edit" | "fixtures" | "predictions";
 interface KnockoutStageSectionProps {
   knockoutStages: Map<string, Match[]>;
   predictions?: Map<FifaMatchId, LocalPrediction>; // Keyed by FIFA match number (73-104)
-  /** Resolved knockout teams (from usePredictedMatches or context) */
-  resolvedKnockoutTeams: Map<FifaMatchId, ResolvedTeams>;
   knockoutLocked?: boolean;
-  /** Pre-computed points breakdown (from LeaderboardContext) */
-  breakdown?: PointBreakdown[];
+  /** User whose points to display (required for predictions mode) */
+  userId?: string;
   onPredictionChange?: (
     fifaMatchId: FifaMatchId,
     homeGoals: number | null,
@@ -63,9 +59,8 @@ const KNOCKOUT_STAGE_ORDER = [
 export default function KnockoutStageSection({
   knockoutStages,
   predictions,
-  resolvedKnockoutTeams,
   knockoutLocked = false,
-  breakdown = [],
+  userId,
   onPredictionChange,
   mode,
   readOnly = false,
@@ -116,7 +111,6 @@ export default function KnockoutStageSection({
                       <KnockoutMatchRow
                         key={match.id}
                         match={match}
-                        resolvedTeams={resolvedKnockoutTeams.get(fifaNumber)}
                         fifaMatchNumber={fifaNumber}
                         mode="readonly"
                         scores={{
@@ -128,7 +122,6 @@ export default function KnockoutStageSection({
                   }
 
                   const prediction = predictions?.get(fifaNumber);
-                  const resolved = resolvedKnockoutTeams.get(fifaNumber);
 
                   if (viewMode === "predictions") {
                     // Read-only predictions with points tooltip
@@ -137,20 +130,16 @@ export default function KnockoutStageSection({
                         key={match.id}
                         match={match}
                         prediction={prediction}
-                        resolvedTeams={resolved}
                         fifaMatchNumber={fifaNumber}
                         mode="readonly"
                         pointsTooltip={
-                          <MatchPointsTooltip
-                            match={match}
-                            prediction={prediction}
-                            predictedHomeTeam={resolved?.home ?? null}
-                            predictedAwayTeam={resolved?.away ?? null}
-                            matchBreakdown={breakdown.filter(
-                              (b) => b.matchId === match.id,
-                            )}
-                            className="w-8 text-right"
-                          />
+                          userId ? (
+                            <MatchPointsTooltip
+                              matchId={fifaNumber}
+                              userId={userId}
+                              className="w-8 text-right"
+                            />
+                          ) : undefined
                         }
                       />
                     );
@@ -164,7 +153,6 @@ export default function KnockoutStageSection({
                       key={match.id}
                       match={match}
                       prediction={prediction}
-                      resolvedTeams={resolved}
                       fifaMatchNumber={fifaNumber}
                       mode="edit"
                       onChange={onPredictionChange}

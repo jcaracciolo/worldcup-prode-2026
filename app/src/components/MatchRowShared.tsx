@@ -3,12 +3,10 @@
 import Link from "next/link";
 import { Team, FifaMatchId, Match } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
-import type { ResolvedTeams } from "@/lib/bracket-resolver";
 import { getTeamLabel } from "@/lib/scoring";
 import { getMatchInfo } from "@/lib/tournament";
 import { ReactNode } from "react";
 import {
-  getTeamDisplay,
   getTeamDisplaySimple,
   shortLabel,
   type TeamDisplay,
@@ -655,8 +653,6 @@ type KnockoutMatchRowMode = "edit" | "readonly";
 interface KnockoutMatchRowProps {
   match: Match;
   prediction?: LocalPrediction;
-  /** Resolved teams for this match (from useKnockoutTeams hook) */
-  resolvedTeams?: ResolvedTeams;
   fifaMatchNumber: FifaMatchId;
   mode: KnockoutMatchRowMode;
   // Override scores (e.g., show actual match results instead of predictions)
@@ -677,7 +673,6 @@ interface KnockoutMatchRowProps {
 export function KnockoutMatchRow({
   match,
   prediction,
-  resolvedTeams,
   fifaMatchNumber,
   mode,
   scores,
@@ -686,17 +681,19 @@ export function KnockoutMatchRow({
   showWinnerSelect = false,
   pointsTooltip,
 }: KnockoutMatchRowProps) {
-  // Use getTeamDisplay for consistent team resolution
-  const homeDisplay = getTeamDisplay({
-    match,
-    position: "home",
-    resolvedTeams,
-  });
-  const awayDisplay = getTeamDisplay({
-    match,
-    position: "away",
-    resolvedTeams,
-  });
+  // Teams are already baked into the match (by MatchContext or usePredictedMatches)
+  const homeDisplay = getTeamDisplaySimple(
+    match.homeTeam,
+    match.id,
+    "home",
+    fifaMatchNumber,
+  );
+  const awayDisplay = getTeamDisplaySimple(
+    match.awayTeam,
+    match.id,
+    "away",
+    fifaMatchNumber,
+  );
 
   const homeTeam = homeDisplay.team;
   const awayTeam = awayDisplay.team;

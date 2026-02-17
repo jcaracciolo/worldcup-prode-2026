@@ -102,7 +102,6 @@ export default function FixturesPage() {
     hasLiveMatches,
     liveMatches,
     refresh: refreshMatches,
-    resolvedKnockoutTeams,
   } = useMatches();
 
   // Scroll to first live match
@@ -232,7 +231,6 @@ export default function FixturesPage() {
             {knockoutStages.size > 0 && (
               <KnockoutStageSection
                 knockoutStages={knockoutStages}
-                resolvedKnockoutTeams={resolvedKnockoutTeams}
                 readOnly={true}
               />
             )}
@@ -259,7 +257,6 @@ export default function FixturesPage() {
             {knockoutStages.size > 0 && (
               <KnockoutStageSection
                 knockoutStages={knockoutStages}
-                resolvedKnockoutTeams={resolvedKnockoutTeams}
                 readOnly={true}
               />
             )}

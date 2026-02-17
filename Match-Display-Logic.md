@@ -4,78 +4,108 @@ How teams and scores are resolved and shown across every match-display surface i
 
 ---
 
-## 1. Data Pipeline (MatchContext)
+## 1. Data Pipeline
 
-**File:** `app/src/contexts/MatchContext.tsx`
-
-All match data flows through a single pipeline:
+### 1.1 API Layer (`/api/matches`)
 
 ```
-rawMatches (from API)
+FIFA API response
+  → resolveAllTbdTeams()    ← replaces null teams with placeholder objects
+                               (EU1–EU4 for UEFA qualifiers, IC1–IC2 for intercontinental)
+                               using synthetic negative IDs (-1001, -2001, etc.)
+  → rawMatches              ← all 104 matches have team objects (some with negative IDs)
+```
+
+### 1.2 MatchContext (`app/src/contexts/MatchContext.tsx`)
+
+```
+rawMatches (from API, with TBD placeholders already resolved)
   → applySimulation()
-  → processedMatches          ← "raw" knockout teams (placeholders or API originals)
-  → actualGroupStandings      ← computed from processedMatches
-  → actualThirdPlaceQualifying
-  → resolvedKnockoutTeams     ← BracketResolver(processedMatches, NO predictions)
-  → matches                   ← processedMatches + baked-in resolved knockout teams
+  → processedMatches              ← "raw" knockout teams (placeholders or API originals)
+  → actualGroupStandings          ← computed from processedMatches
+  → actualThirdPlaceQualifying    ← computed from actualGroupStandings
+  → resolvedKnockoutTeams         ← BracketResolver(processedMatches, NO predictions)
+  → matches                       ← processedMatches + baked-in resolved knockout teams
 ```
+
+**Why this order?** Each step depends on the previous:
+- Standings need match results (scores) → must come after `processedMatches`
+- 3rd-place qualifying needs all group standings → must come after `actualGroupStandings`
+- Knockout resolution needs standings + 3rd-place → must come after both
+- Baking needs resolved knockout teams → must come last
+
+### 1.3 PredictionsContext — Predicted Matches (`app/src/contexts/PredictionsContext.tsx`)
+
+```
+rawProcessedMatches (from MatchContext, pre-bake)
+  + actualGroupStandings (from MatchContext — for R32 team resolution)
+  + actualThirdPlaceQualifying (from MatchContext — for R32 team resolution)
+  + user's predictions (from PredictionsContext cache)
+  → calculateAllGroupStandings(rawProcessedMatches, predictions)
+  → predictedGroupStandings          ← group standings from user's predicted scores
+  → getQualifyingThirdPlaceTeams(predictedGroupStandings)
+  → predictedThirdPlaceQualifying    ← which 3rd-place teams qualify per predictions
+  → BracketResolver(rawProcessedMatches, predictions,
+                     actualGroupStandings, actualThirdPlaceQualifying,
+                     useKnockoutPredictions: true)
+  → resolvedKnockoutTeams (internal, not exposed)
+  → predicted matches             ← context matches + baked-in predicted knockout teams
+```
+
+**R32 matchups come from actual FIFA data** (API teams → actual group standings → placeholders
+if groups haven't finished). This ensures the R32 shows real opponents.
+
+**R32 winners and all later rounds come from predictions.** The user's predicted
+scores determine who advances — actual match results are ignored. This shows
+the user's predicted bracket path through the tournament.
 
 ### What "baking" does
 
-For every knockout match, the `matches` array replaces `match.homeTeam` / `match.awayTeam` with the resolved team from `resolvedKnockoutTeams` (if available). This means any consumer reading `matches` from context sees the actual resolved teams transparently — no need to cross-reference `resolvedKnockoutTeams` separately.
+For every knockout match, replaces `match.homeTeam` / `match.awayTeam` with the resolved team (if available) and computes `homeDisplayName` / `awayDisplayName`. Consumers see correct teams transparently.
 
-### Context values exposed
+**Two kinds of baking:**
+- **MatchContext** bakes **actual** resolved teams (from real match results)
+- **`usePredictedMatches(userId)`** bakes **predicted** resolved teams (from a user's predictions)
+
+### Context values exposed (MatchContext)
 
 | Value | Type | Description |
 |-------|------|-------------|
-| `matches` | `Match[]` | Enhanced matches with **baked-in** knockout teams |
-| `rawProcessedMatches` | `Match[]` | Pre-bake matches (original API teams/placeholders) |
+| `matches` | `MatchWithLiveInfo[]` | Enhanced matches with **actual** knockout teams baked in |
+| `rawProcessedMatches` | `Match[]` | Pre-bake matches (needed by `usePredictedMatches`) |
 | `resolvedKnockoutTeams` | `Map<FifaMatchId, ResolvedTeams>` | Actual-result knockout resolution |
 | `actualGroupStandings` | `Map<string, CalculatedStanding[]>` | Standings computed from actual results |
 | `actualThirdPlaceQualifying` | `Map<string, boolean>` | Which 3rd-place teams qualify |
 
-### Context hooks
+### Hooks
 
-| Hook | Returns | Used for |
-|------|---------|----------|
-| `useMatches()` | Full context object | General match listing |
-| `useMatch(fifaId)` | Single match from `matches` (baked) | Match detail page |
-| `useKnockoutTeams(predictions?)` | `Map<FifaMatchId, ResolvedTeams>` | Team resolution for knockout display |
+| Hook | Location | Returns | Used for |
+|------|----------|---------|----------|
+| `useMatches()` | MatchContext | Full context object | General match listing, actual teams |
+| `useMatch(fifaId)` | MatchContext | Single match (baked) | Match detail page |
+| `usePredictedMatches(userId)` | PredictionsContext | `{ matches, predictedGroupStandings, predictedThirdPlaceQualifying }` | Profile page, predictions page |
+| `usePredictedMatch(userId, fifaId)` | PredictionsContext | Single match with predicted teams | (Available for future use) |
 
-### useKnockoutTeams behavior
-
-- **Without predictions**: Returns `resolvedKnockoutTeams` from context (actual results only).
-- **With predictions**: Runs a **new** `BracketResolver` on `rawProcessedMatches` (NOT `matches`) with `useKnockoutPredictions: true`. This resolves R16+ teams based on the user's predicted winners, chaining forward through the bracket.
-
-> **Critical**: Must use `rawProcessedMatches` (pre-bake), not `matches` (post-bake). If `matches` were used, `BracketResolver.isValidApiTeam()` would see the baked-in actual teams as "real API teams" and skip prediction-based resolution — causing R16+ to show actual teams (e.g. "GER") instead of the user's predicted teams, or bracket labels like "W99" when the actual team was baked but doesn't match what the user predicted.
+> **Critical**: `usePredictedMatches` uses `rawProcessedMatches` (pre-bake), not `matches` (post-bake), when running BracketResolver. If `matches` were used, `BracketResolver.isValidApiTeam()` would see baked-in actual teams as "real API teams" and skip prediction-based resolution. R32 matchups use actual group standings (real opponents). R32 winners and all subsequent rounds use predictions exclusively.
 
 ---
 
-## 2. Team Resolution Functions
+## 2. Team Resolution Function
 
 **File:** `app/src/lib/team-display.ts`
 
-### `getTeamDisplay(context)` — Full resolution
+### `getTeamDisplaySimple(team, matchId, position, fifaNumber?)` — Single unified function
 
-Used by: `KnockoutMatchRow` (shared, in `MatchRowShared.tsx`)
-
-Priority:
-1. **Real API team** from `match.homeTeam`/`match.awayTeam` (valid id, non-placeholder)
-2. **Resolved team** from `resolvedTeams` (passed as prop from `useKnockoutTeams`)
-3. **Resolved display name** from `resolvedTeams`
-4. **Bracket label** computed from FIFA number (e.g. "1A", "W73")
-5. **Fallback**: "TBD"
-
-### `getTeamDisplaySimple(team, matchId, position, fifaNumber?)` — Simple resolution
-
-Used by: `MatchCard`, `UserKnockoutSection`, `PredictionInput`, match detail page
+Used by: **all** match display components (`KnockoutMatchRow`, `MatchCard`, `PredictionInput`, match detail page, etc.)
 
 Priority:
-1. **Real team** with valid ID → use TLA
-2. **Placeholder team** (id in placeholder range) → use TLA as-is
+1. **Real team** with valid ID → use TLA (with overrides for special names)
+2. **Placeholder team** (id in placeholder range) → use TLA as-is (EU1, IC1, etc.)
 3. **Team without ID** → use tla/shortName/name
-4. **Bracket label** from FIFA number
-5. **Fallback**: "TBD"
+4. **Bracket label** from FIFA number (1A, W73, L101, etc.)
+5. **Fallback**: "QUA" for group stage, bracket label for knockout
+
+This works because matches always have their teams baked in — by MatchContext for actual teams, or by `usePredictedMatches` for predicted teams. No separate `resolvedTeams` prop is needed.
 
 ### `getBracketLabel(fifaNumber, position)` — Bracket position string
 
@@ -92,15 +122,15 @@ Resolves knockout bracket teams stage by stage: R32 → R16 → QF → SF → 3r
 ### Per-match resolution priority:
 1. **API team** — `isValidApiTeam()`: non-null, id > 0, not placeholder, valid TLA
 2. **Calculated team** — from group standings (R32) or winner/loser of feeder match (R16+)
-3. **Predicted team** — only when `useKnockoutPredictions: true` and match isn't finished
+3. **Predicted team** — when `useKnockoutPredictions: true`, predictions are **always** used for winner/loser determination (even if match is finished). This ensures the bracket shows the user's predicted path, not actual results.
 4. **null** → UI falls back to bracket labels
 
 ### Two invocation modes:
 
-| Mode | `useKnockoutPredictions` | Where used | Effect on R16+ |
-|------|--------------------------|------------|-----------------|
-| Actual only | `false` (default) | MatchContext (context-level resolution) | R16+ returns null for unplayed matches |
-| With predictions | `true` | `useKnockoutTeams(predictions)` | R16+ chains predicted winners forward |
+| Mode | `useKnockoutPredictions` | Where used | What it does |
+|------|--------------------------|------------|---------------|
+| Actual only | `false` (default) | MatchContext (context-level resolution) | Uses actual group standings + actual match results. Unplayed matches return null (TBD). |
+| Prediction | `true` | `usePredictedMatches(userId)` in PredictionsContext | R32 matchups from actual data (real opponents). R32 winners and all later rounds from user's predicted scores. Actual match results are ignored for winner determination. |
 
 ---
 
@@ -108,19 +138,19 @@ Resolves knockout bracket teams stage by stage: R32 → R16 → QF → SF → 3r
 
 ### 4.1 Home Page — Today's Matches
 
-**Component:** `MatchCard` (`src/components/MatchCard.tsx`)  
+**Component:** `MatchCard` (`src/components/MatchCard.tsx`)
 **Rendered by:** `TodaysMatches` on the home page (`src/app/page.tsx`)
 
 | Aspect | How it works |
 |--------|-------------|
-| **Teams** | Uses `matches` from context (baked). Additionally overlays `resolvedKnockoutTeams` for knockout matches: `resolved?.home ?? match.homeTeam`. Displays via `getTeamDisplaySimple()`. |
+| **Teams** | Uses `matches` from context (baked). Teams are already resolved — displays via `getTeamDisplaySimple(match.homeTeam, ...)`. |
 | **Score** | Actual result: `match.score.fullTime.home / .away` |
 | **Predictions** | None shown |
 | **Whose data** | Actual match results only |
 
 ### 4.2 Fixtures Page
 
-**Components:** `GroupStageSection` (readOnly) + `KnockoutStageSection` (mode="fixtures")  
+**Components:** `GroupStageSection` (readOnly) + `KnockoutStageSection` (mode="fixtures")
 **File:** `src/app/fixtures/page.tsx`
 
 #### Group stage
@@ -133,13 +163,13 @@ Resolves knockout bracket teams stage by stage: R32 → R16 → QF → SF → 3r
 #### Knockout stage
 | Aspect | How it works |
 |--------|-------------|
-| **Teams** | `useKnockoutTeams()` called with **no predictions** → returns `resolvedKnockoutTeams` from context (actual). Passed to `KnockoutMatchRow` as `resolvedTeams` prop. Displayed via `getTeamDisplay()`. |
+| **Teams** | Uses `matches` from context (baked with actual teams). `KnockoutStageSection` receives knockout matches directly. Displayed via `getTeamDisplaySimple()`. |
 | **Score** | Actual results: `scores={{ home: match.score.fullTime.home, away: match.score.fullTime.away }}` |
 | **Predictions** | None |
 
 ### 4.3 Predictions Page (Current User Editing)
 
-**Components:** `GroupStageSection` + `KnockoutStageSection` (mode="edit")  
+**Components:** `GroupStageSection` + `KnockoutStageSection` (mode="edit")
 **File:** `src/app/predictions/page.tsx`
 
 #### Group stage
@@ -152,14 +182,14 @@ Resolves knockout bracket teams stage by stage: R32 → R16 → QF → SF → 3r
 #### Knockout stage
 | Aspect | How it works |
 |--------|-------------|
-| **Teams** | `useKnockoutTeams(predictions)` → runs BracketResolver on `rawProcessedMatches` with `useKnockoutPredictions: true`. R32 teams from actual group standings. R16+ teams from user's **predicted winners**, chained forward. |
+| **Teams** | `usePredictedMatches(userId)` → returns `matches` with predicted teams baked in. Knockout matches passed to `KnockoutStageSection`. R32 teams from **actual** group standings (real opponents). R16+ teams from user's **predicted winners**, chained forward. Displayed via `getTeamDisplaySimple()`. |
 | **Score** | User's prediction: editable inputs |
 | **Winner select** | Shown for ties — user picks penalty winner |
 | **Whose data** | Current logged-in user's predictions |
 
 ### 4.4 User Profile Page (Viewing Someone's Predictions)
 
-**Components:** `UserGroupSection` + `KnockoutStageSection` (mode="predictions")  
+**Components:** `UserGroupSection` + `KnockoutStageSection` (mode="predictions")
 **File:** `src/app/user/[userId]/page.tsx`
 
 #### Group stage — `UserGroupSection` → `GroupMatchRow`
@@ -173,7 +203,7 @@ Resolves knockout bracket teams stage by stage: R32 → R16 → QF → SF → 3r
 #### Knockout stage — `KnockoutStageSection` → `KnockoutMatchRow` (shared)
 | Aspect | How it works |
 |--------|-------------|
-| **Teams** | `useKnockoutTeams(predictions)` called with the **viewed user's predictions**. Runs BracketResolver on `rawProcessedMatches` with `useKnockoutPredictions: true`. Shows teams as the viewed user predicted them. |
+| **Teams** | `usePredictedMatches(userId)` → returns `matches` with viewed user's predicted teams baked in. Knockout matches passed to `KnockoutStageSection`. Shows teams as the viewed user predicted them. Displayed via `getTeamDisplaySimple()`. |
 | **Score** | Viewed user's prediction: `prediction?.home_goals / .away_goals` |
 | **Points** | `MatchPointsTooltip` passed as `pointsTooltip` prop |
 | **Whose data** | The viewed user (userId) |
@@ -210,34 +240,24 @@ Resolves knockout bracket teams stage by stage: R32 → R16 → QF → SF → 3r
 
 ---
 
-## 5. UserKnockoutSection (Currently Unused)
-
-**File:** `src/components/UserKnockoutSection.tsx`
-
-> **Note:** This component is defined but **not imported or used anywhere** in the app. The profile page uses `KnockoutStageSection` instead. This component is dead code.
-
-It has its own local `KnockoutMatchRow` and its own `BracketResolver` instance. If it were used, it would receive raw `matches` as a prop (not from context), run BracketResolver **without** `useKnockoutPredictions: true`, meaning only R32 teams would resolve from standings — R16+ would show null/bracket labels.
-
----
-
-## 6. Component → Team Resolution Summary
+## 5. Component → Team Resolution Summary
 
 | Display Location | Component Chain | Team Resolution Method | Matches Source |
 |------------------|----------------|----------------------|----------------|
-| Home / Today's Matches | `MatchCard` | `resolvedKnockoutTeams` overlay + `getTeamDisplaySimple()` | `matches` (baked) |
-| Fixtures / Group | `GroupStageSection` → `PredictionInput` | `match.homeTeam` direct | `matches` (baked) |
-| Fixtures / Knockout | `KnockoutStageSection` → `KnockoutMatchRow` | `useKnockoutTeams()` (no predictions) → `getTeamDisplay()` | `resolvedKnockoutTeams` from context |
-| Predictions / Group | `GroupStageSection` → `PredictionInput` | `match.homeTeam` direct | `matches` (baked) |
-| Predictions / Knockout | `KnockoutStageSection` → `KnockoutMatchRow` | `useKnockoutTeams(predictions)` → `getTeamDisplay()` | `rawProcessedMatches` via BracketResolver |
-| Profile / Group | `UserGroupSection` → `GroupMatchRow` | `getTeamDisplaySimple(match.homeTeam)` | `matches` (baked) |
-| Profile / Knockout | `KnockoutStageSection` → `KnockoutMatchRow` | `useKnockoutTeams(predictions)` → `getTeamDisplay()` | `rawProcessedMatches` via BracketResolver |
-| Match Detail Header | inline | `getTeamDisplaySimple(match.homeTeam)` | `matches` (baked) via `useMatch()` |
+| Home / Today's Matches | `MatchCard` | `getTeamDisplaySimple(match.homeTeam)` | `matches` (baked, actual) |
+| Fixtures / Group | `GroupStageSection` → `PredictionInput` | `match.homeTeam` direct | `matches` (baked, actual) |
+| Fixtures / Knockout | `KnockoutStageSection` → `KnockoutMatchRow` | `getTeamDisplaySimple(match.homeTeam)` | `matches` (baked, actual) |
+| Predictions / Group | `GroupStageSection` → `PredictionInput` | `match.homeTeam` direct | `matches` (baked, actual) |
+| Predictions / Knockout | `KnockoutStageSection` → `KnockoutMatchRow` | `getTeamDisplaySimple(match.homeTeam)` | `usePredictedMatches(userId).matches` (baked, predicted) |
+| Profile / Group | `UserGroupSection` → `GroupMatchRow` | `getTeamDisplaySimple(match.homeTeam)` | `matches` (baked, actual) |
+| Profile / Knockout | `KnockoutStageSection` → `KnockoutMatchRow` | `getTeamDisplaySimple(match.homeTeam)` | `usePredictedMatches(userId).matches` (baked, predicted) |
+| Match Detail Header | inline | `getTeamDisplaySimple(match.homeTeam)` | `matches` (baked, actual) via `useMatch()` |
 | Match Detail Predictions | inline | Scores only, no team re-resolution | N/A |
 | Tooltip | `MatchPointsTooltip` | `match.homeTeam` (baked) for labels; `predictedHomeTeam` prop for scoring calc | `matches` (baked) |
 
 ---
 
-## 7. Score Display Summary
+## 6. Score Display Summary
 
 | Display Location | What's Shown | Source |
 |------------------|-------------|--------|

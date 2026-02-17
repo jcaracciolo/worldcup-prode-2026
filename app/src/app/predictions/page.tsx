@@ -69,7 +69,7 @@ export default function PredictionsPage() {
   } = useMatches();
 
   // Get matches with current user's predicted knockout teams baked in
-  const { resolvedKnockoutTeams: predictedKnockoutTeams } = usePredictedMatches(profile?.id || null);
+  const { matches: predictedMatches } = usePredictedMatches(profile?.id || null);
 
   // Scroll to first live match
   const scrollToFirstLiveMatch = useCallback(() => {
@@ -448,7 +448,7 @@ export default function PredictionsPage() {
   // Calculate which 3rd place teams qualify (best 8 of 12)
   const thirdPlaceQualifying = getQualifyingThirdPlaceTeams(groupStandings);
 
-  const knockoutMatches = matches.filter((m) => m.stage !== "GROUP_STAGE");
+  const knockoutMatches = predictedMatches.filter((m) => m.stage !== "GROUP_STAGE");
   const knockoutStages = new Map<string, Match[]>();
   knockoutMatches.forEach((m) => {
     if (!knockoutStages.has(m.stage)) knockoutStages.set(m.stage, []);
@@ -591,7 +591,6 @@ export default function PredictionsPage() {
             <KnockoutStageSection
               knockoutStages={knockoutStages}
               predictions={predictions}
-              resolvedKnockoutTeams={predictedKnockoutTeams}
               knockoutLocked={knockoutLocked}
               onPredictionChange={handlePredictionChange}
             />

@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
 import { Match, FifaMatchId, asFifaMatchId } from "@/types/football";
-import { useMatches, MatchWithLiveInfo } from "@/contexts/MatchContext";
+import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { getTeamDisplaySimple, shortLabel } from "@/lib/team-display";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -20,23 +19,16 @@ function hasLiveInfo(
 }
 
 export default function MatchCard({ match, showDate = false }: MatchCardProps) {
-  // Resolve knockout teams from context
-  const { resolvedKnockoutTeams } = useMatches();
   const fifaMatchNumber = asFifaMatchId(match.id);
-  const resolved =
-    match.stage !== "GROUP_STAGE"
-      ? resolvedKnockoutTeams.get(fifaMatchNumber)
-      : undefined;
-  const homeTeam = resolved?.home ?? match.homeTeam;
-  const awayTeam = resolved?.away ?? match.awayTeam;
+  // Teams are already baked into the match by MatchContext
   const homeDisplayName = getTeamDisplaySimple(
-    homeTeam,
+    match.homeTeam,
     match.id,
     "home",
     fifaMatchNumber,
   ).label;
   const awayDisplayName = getTeamDisplaySimple(
-    awayTeam,
+    match.awayTeam,
     match.id,
     "away",
     fifaMatchNumber,
@@ -142,9 +134,9 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
           <div
             className={`flex-1 flex flex-col items-center gap-1 sm:gap-2 p-1.5 sm:p-2 rounded-lg ${homeHighlight ? "bg-amber-500/80" : ""} ${awayWon ? "opacity-50" : ""}`}
           >
-            {homeTeam.crest ? (
+            {match.homeTeam?.crest ? (
               <img
-                src={homeTeam.crest}
+                src={match.homeTeam.crest}
                 alt={homeDisplayName}
                 className="w-9 h-9 sm:w-12 sm:h-12 object-contain drop-shadow-md"
               />
@@ -188,9 +180,9 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
           <div
             className={`flex-1 flex flex-col items-center gap-1 sm:gap-2 p-1.5 sm:p-2 rounded-lg ${awayHighlight ? "bg-amber-500/80" : ""} ${homeWon ? "opacity-50" : ""}`}
           >
-            {awayTeam.crest ? (
+            {match.awayTeam?.crest ? (
               <img
-                src={awayTeam.crest}
+                src={match.awayTeam.crest}
                 alt={awayDisplayName}
                 className="w-9 h-9 sm:w-12 sm:h-12 object-contain drop-shadow-md"
               />

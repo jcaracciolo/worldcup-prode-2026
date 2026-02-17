@@ -9,10 +9,7 @@
  * - R16+ source matches (W73, W74)
  */
 
-import { Team, Match, FifaMatchId, asFifaMatchId } from "@/types/football";
-import { CalculatedStanding } from "@/types/football";
-import { LocalPrediction } from "@/types/database";
-import type { ResolvedTeams } from "@/lib/bracket-resolver";
+import { Team, FifaMatchId } from "@/types/football";
 import {
   r32Bracket,
   r16Bracket,
@@ -48,19 +45,6 @@ export interface TeamDisplay {
   isPlaceholder: boolean;
 }
 
-export interface TeamDisplayContext {
-  /** The match being displayed */
-  match: Match;
-  /** Position in the match */
-  position: "home" | "away";
-  /** Resolved teams from BracketResolver (if available) */
-  resolvedTeams?: ResolvedTeams;
-  /** Group standings for R32 resolution (by group name) */
-  groupStandings?: Map<string, CalculatedStanding[]>;
-  /** User's knockout predictions (for inferring R16+ teams) */
-  predictions?: Map<FifaMatchId, LocalPrediction>;
-}
-
 // =====================================================================
 // TLA OVERRIDES
 // =====================================================================
@@ -72,103 +56,8 @@ const TEAM_TLA_OVERRIDES: Record<string, string> = {
 };
 
 // =====================================================================
-// MAIN FUNCTION
-// =====================================================================
-
-/**
- * Get the display information for a team in a match.
- *
- * Priority order:
- * 1. Real team from match data (API has determined the team)
- * 2. Resolved team from BracketResolver
- * 3. Bracket position label (1A, W73, etc.)
- */
-export function getTeamDisplay(context: TeamDisplayContext): TeamDisplay {
-  const { match, position, resolvedTeams } = context;
-  const fifaMatchNumber = asFifaMatchId(match.id);
-
-  // Get the team from match or resolved teams
-  const matchTeam = position === "home" ? match.homeTeam : match.awayTeam;
-  const resolvedTeam =
-    position === "home" ? resolvedTeams?.home : resolvedTeams?.away;
-  const resolvedDisplayName =
-    position === "home"
-      ? resolvedTeams?.homeDisplayName
-      : resolvedTeams?.awayDisplayName;
-
-  // Case 1: Real team from API (valid ID, not a placeholder)
-  if (
-    matchTeam &&
-    matchTeam.id !== null &&
-    matchTeam.id > 0 &&
-    !isPlaceholderTeamId(matchTeam.id)
-  ) {
-    return {
-      team: matchTeam,
-      label: getTeamTla(matchTeam),
-      isPlaceholder: false,
-    };
-  }
-
-  // Case 2: Resolved team from BracketResolver
-  if (resolvedTeam && resolvedTeam.id !== null) {
-    const isPlaceholder = isPlaceholderTeamId(resolvedTeam.id);
-    return {
-      team: resolvedTeam,
-      label: isPlaceholder ? resolvedTeam.tla : getTeamTla(resolvedTeam),
-      isPlaceholder,
-    };
-  }
-
-  // Case 3: Use display name from BracketResolver
-  if (resolvedDisplayName) {
-    return {
-      team: null,
-      label: resolvedDisplayName,
-      isPlaceholder: true,
-    };
-  }
-
-  // Case 4: Calculate bracket label for knockout matches
-  if (match.stage !== "GROUP_STAGE" && fifaMatchNumber >= 73) {
-    const label = getBracketLabel(fifaMatchNumber, position);
-    return {
-      team: null,
-      label,
-      isPlaceholder: true,
-    };
-  }
-
-  // Case 5: Group stage with placeholder team
-  if (matchTeam && isPlaceholderTeamId(matchTeam.id)) {
-    return {
-      team: matchTeam,
-      label: matchTeam.tla,
-      isPlaceholder: true,
-    };
-  }
-
-  // Fallback: Unknown team
-  return {
-    team: null,
-    label: "TBD",
-    isPlaceholder: true,
-  };
-}
-
-// =====================================================================
 // HELPER FUNCTIONS
 // =====================================================================
-
-/**
- * Get the TLA for a team, with overrides for special cases
- */
-function getTeamTla(team: Team): string {
-  if (team.name && TEAM_TLA_OVERRIDES[team.name]) {
-    return TEAM_TLA_OVERRIDES[team.name];
-  }
-  return team.tla || team.shortName || team.name || "TBD";
-}
 
 /**
  * Get the bracket label for a knockout match position.
@@ -241,9 +130,19 @@ export function isRealTeam(team: Team | null): boolean {
 }
 
 /**
- * Simple team display helper for when you only have a team object.
- * Use this in components that don't have full match context (e.g., TeamName).
- * For knockout resolution with bracket-resolver, use the full getTeamDisplay.
+ * Get display information for a team.
+ *
+ * Works with any team object — matches should already have their teams
+ * baked in (by MatchContext for actual teams, or usePredictedMatches for
+ * predicted teams). This is the single team display function used across
+ * the entire app.
+ *
+ * Priority order:
+ * 1. Real team with valid ID (returns TLA, not a placeholder)
+ * 2. Placeholder team (EU1, IC1, etc.)
+ * 3. Team without ID but with name/TLA
+ * 4. Knockout bracket label (1A, W73, etc.)
+ * 5. Fallback: "QUA" for group stage, bracket label for knockout
  */
 export function getTeamDisplaySimple(
   team:

@@ -7,9 +7,7 @@ import { useTime } from "@/contexts/TimeContext";
 import { useUser, useProfile } from "@/contexts/UserContext";
 import { useUserPredictions, usePredictedMatches } from "@/contexts/PredictionsContext";
 import { useUserPosition } from "@/contexts/LeaderboardContext";
-import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { calculateAllGroupStandings } from "@/lib/standings";
 import { LocalPrediction } from "@/types/database";
 import { FifaMatchId } from "@/types/football";
 import PointsBreakdown from "@/components/PointsBreakdown";
@@ -62,23 +60,12 @@ export default function UserPredictionsPage() {
     knockoutStageOpen ? "knockout" : "group",
   );
 
-  // Calculate predicted standings
-  const predictionMap = useMemo(
-    () => new Map(predictions.map((p) => [p.match_id, p])),
-    [predictions],
-  );
-
-  const predictedStandings = useMemo(
-    () => calculateAllGroupStandings(matches, predictionMap),
-    [matches, predictionMap],
-  );
-
-  const thirdPlaceQualifying = useMemo(
-    () => getQualifyingThirdPlaceTeams(predictedStandings),
-    [predictedStandings],
-  );
-
-  // API ID to FIFA match number mapping (from context)
+  // Get matches with user's predicted knockout teams baked in,
+  // plus predicted group standings and third-place qualifying.
+  const {
+    matches: predictedMatches,
+    predictedThirdPlaceQualifying: thirdPlaceQualifying,
+  } = usePredictedMatches(userId);
 
   // Predictions keyed by FIFA match number (for knockout)
   const fifaPredictionMap = useMemo(
@@ -89,13 +76,10 @@ export default function UserPredictionsPage() {
     [predictions],
   );
 
-  // Get matches with user's predicted knockout teams baked in
-  const { resolvedKnockoutTeams: predictedKnockoutTeams } = usePredictedMatches(userId);
-
-  // Group knockout matches by stage
+  // Group knockout matches by stage (using predicted matches for baked teams)
   const knockoutStages = useMemo(() => {
-    const stages = new Map<string, typeof matches>();
-    for (const match of matches) {
+    const stages = new Map<string, typeof predictedMatches>();
+    for (const match of predictedMatches) {
       if (match.stage !== "GROUP_STAGE") {
         const existing = stages.get(match.stage) || [];
         existing.push(match);
@@ -103,7 +87,7 @@ export default function UserPredictionsPage() {
       }
     }
     return stages;
-  }, [matches]);
+  }, [predictedMatches]);
 
   // Get user's score and position from centralized leaderboard context
   // (avoids re-computing scores that LeaderboardContext already calculated)
@@ -376,6 +360,7 @@ export default function UserPredictionsPage() {
             predictions={predictions}
             thirdPlaceQualifying={thirdPlaceQualifying}
             showPredictions={showGroupPredictions}
+            userId={userId}
             actualStandings={actualStandings}
             breakdown={breakdown}
           />
@@ -396,8 +381,7 @@ export default function UserPredictionsPage() {
               <KnockoutStageSection
                 knockoutStages={knockoutStages}
                 predictions={fifaPredictionMap}
-                resolvedKnockoutTeams={predictedKnockoutTeams}
-                breakdown={breakdown}
+                userId={userId}
                 mode="predictions"
               />
             )}

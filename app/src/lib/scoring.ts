@@ -466,9 +466,30 @@ export function calculateKnockoutPoints(
     : undefined;
 
   // For knockout, we award points for correct result (win or tie)
-  // R32: single "result" entry (teams are fixed by group standings)
-  // R16+: separate win/lose or tie entries (user also predicts which teams play)
+  // R32: single "result" entry (teams are fixed by group standings, position-based)
+  // R16+: team-based — compare by team identity, not home/away position
   const isR32 = match.stage === "LAST_32";
+
+  // Build set of predicted team IDs for team-based matching (R16+)
+  const predictedTeamIds = new Set<number>();
+  if (predictedTeams?.home?.id != null)
+    predictedTeamIds.add(predictedTeams.home.id);
+  if (predictedTeams?.away?.id != null)
+    predictedTeamIds.add(predictedTeams.away.id);
+
+  // For R16+: determine which team the user predicted to win/lose (by team identity)
+  const predictedWinnerTeam =
+    predictedResult === "home"
+      ? predictedTeams?.home
+      : predictedResult === "away"
+        ? predictedTeams?.away
+        : null;
+  const predictedLoserTeam =
+    predictedResult === "home"
+      ? predictedTeams?.away
+      : predictedResult === "away"
+        ? predictedTeams?.home
+        : null;
 
   if (actualResult === "draw") {
     if (predictedResult === "draw") {
@@ -484,45 +505,64 @@ export function calculateKnockoutPoints(
           prediction: predictionInfo,
           predictedTeamInfo,
         });
+      } else if (!predictedTeams) {
+        // R16+ fallback: no predicted team data — use position-based (like R32)
+        points.push({
+          matchId: match.id,
+          description: `${stageName} tie${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
+          points: 2 * multiplier,
+          type: "result",
+          isLive,
+          matchInfo,
+          prediction: predictionInfo,
+          predictedTeamInfo,
+        });
       } else {
-        // R16+: separate tie entries per team
-        points.push({
-          matchId: match.id,
-          description: `${stageName} tie${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
-          points: 1 * multiplier,
-          type: "knockout_tie",
-          isLive,
-          team: {
-            tla: homeTeam.tla,
-            crest: homeTeam.crest,
-            name: homeTeam.name,
-          },
-          matchInfo,
-          prediction: predictionInfo,
-          predictedTeamInfo,
-        });
-        points.push({
-          matchId: match.id,
-          description: `${stageName} tie${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
-          points: 1 * multiplier,
-          type: "knockout_tie",
-          isLive,
-          team: {
-            tla: awayTeam.tla,
-            crest: awayTeam.crest,
-            name: awayTeam.name,
-          },
-          matchInfo,
-          prediction: predictionInfo,
-          predictedTeamInfo,
-        });
+        // R16+: per-team tie — award if user predicted that team (anywhere in their bracket)
+        if (predictedTeamIds.has(homeTeam.id)) {
+          points.push({
+            matchId: match.id,
+            description: `${stageName} tie${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
+            points: 1 * multiplier,
+            type: "knockout_tie",
+            isLive,
+            team: {
+              tla: homeTeam.tla,
+              crest: homeTeam.crest,
+              name: homeTeam.name,
+            },
+            matchInfo,
+            prediction: predictionInfo,
+            predictedTeamInfo,
+          });
+        }
+        if (predictedTeamIds.has(awayTeam.id)) {
+          points.push({
+            matchId: match.id,
+            description: `${stageName} tie${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
+            points: 1 * multiplier,
+            type: "knockout_tie",
+            isLive,
+            team: {
+              tla: awayTeam.tla,
+              crest: awayTeam.crest,
+              name: awayTeam.name,
+            },
+            matchInfo,
+            prediction: predictionInfo,
+            predictedTeamInfo,
+          });
+        }
       }
     }
   } else {
-    // Home or Away won
-    if (predictedResult === actualResult) {
-      if (isR32) {
-        // R32: single result entry
+    // One team won
+    const actualWinner = actualResult === "home" ? homeTeam : awayTeam;
+    const actualLoser = actualResult === "home" ? awayTeam : homeTeam;
+
+    if (isR32) {
+      // R32: position-based (teams are fixed by group standings)
+      if (predictedResult === actualResult) {
         points.push({
           matchId: match.id,
           description: `${stageName} win`,
@@ -533,28 +573,59 @@ export function calculateKnockoutPoints(
           prediction: predictionInfo,
           predictedTeamInfo,
         });
-      } else {
-        // R16+: separate winner/loser entries
-        const winner = actualResult === "home" ? homeTeam : awayTeam;
-        const loser = actualResult === "home" ? awayTeam : homeTeam;
+      }
+    } else if (!predictedTeams) {
+      // R16+ fallback: no predicted team data — use position-based (like R32)
+      if (predictedResult === actualResult) {
+        points.push({
+          matchId: match.id,
+          description: `${stageName} win${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
+          points: 2 * multiplier,
+          type: "result",
+          isLive,
+          matchInfo,
+          prediction: predictionInfo,
+          predictedTeamInfo,
+        });
+      }
+    } else {
+      // R16+: team-based — did user predict this specific team to win/lose?
+      const winnerCorrect =
+        predictedWinnerTeam != null &&
+        predictedWinnerTeam.id === actualWinner.id;
+      const loserCorrect =
+        predictedLoserTeam != null &&
+        predictedLoserTeam.id === actualLoser.id;
+
+      if (winnerCorrect) {
         points.push({
           matchId: match.id,
           description: `${stageName} winner${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
           points: 1 * multiplier,
           type: "knockout_win",
           isLive,
-          team: { tla: winner.tla, crest: winner.crest, name: winner.name },
+          team: {
+            tla: actualWinner.tla,
+            crest: actualWinner.crest,
+            name: actualWinner.name,
+          },
           matchInfo,
           prediction: predictionInfo,
           predictedTeamInfo,
         });
+      }
+      if (loserCorrect) {
         points.push({
           matchId: match.id,
           description: `${stageName} loser${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
           points: 1 * multiplier,
           type: "knockout_lose",
           isLive,
-          team: { tla: loser.tla, crest: loser.crest, name: loser.name },
+          team: {
+            tla: actualLoser.tla,
+            crest: actualLoser.crest,
+            name: actualLoser.name,
+          },
           matchInfo,
           prediction: predictionInfo,
           predictedTeamInfo,
@@ -563,53 +634,101 @@ export function calculateKnockoutPoints(
     }
   }
 
-  // 2 points for exact goals in knockout (no multiplier for goals)
-  // Only award if the user's predicted team matches the actual team in that slot
-  const homeTeamMatches =
-    !predictedTeams ||
-    !predictedTeams.home ||
-    predictedTeams.home.id === homeTeam.id;
-  const awayTeamMatches =
-    !predictedTeams ||
-    !predictedTeams.away ||
-    predictedTeams.away.id === awayTeam.id;
+  // 2 points for exact goals in knockout
+  if (isR32) {
+    // R32: position-based (teams are fixed by group standings)
+    if (prediction.home_goals === actualHomeGoals) {
+      const homeTla = getTeamLabel(homeTeam);
+      points.push({
+        matchId: match.id,
+        description: `Correct goals (${homeTla})`,
+        points: 2,
+        type: "goals_home",
+        isLive,
+        team: {
+          tla: homeTeam.tla,
+          crest: homeTeam.crest,
+          name: homeTeam.name,
+        },
+        matchInfo,
+        prediction: predictionInfo,
+        predictedTeamInfo,
+      });
+    }
+    if (prediction.away_goals === actualAwayGoals) {
+      const awayTla = getTeamLabel(awayTeam);
+      points.push({
+        matchId: match.id,
+        description: `Correct goals (${awayTla})`,
+        points: 2,
+        type: "goals_away",
+        isLive,
+        team: {
+          tla: awayTeam.tla,
+          crest: awayTeam.crest,
+          name: awayTeam.name,
+        },
+        matchInfo,
+        prediction: predictionInfo,
+        predictedTeamInfo,
+      });
+    }
+  } else {
+    // R16+: team-based — find which predicted goals correspond to each actual team
+    // e.g. if user predicted TeamA in home slot with 3 goals, but TeamA is actually away,
+    // still compare the user's predicted 3 goals against TeamA's actual goals
+    const homePredGoals = !predictedTeams
+      ? prediction.home_goals
+      : predictedTeams.home?.id === homeTeam.id
+        ? prediction.home_goals
+        : predictedTeams.away?.id === homeTeam.id
+          ? prediction.away_goals
+          : null;
 
-  if (homeTeamMatches && prediction.home_goals === actualHomeGoals) {
-    const homeTla = getTeamLabel(homeTeam);
-    points.push({
-      matchId: match.id,
-      description: `Correct goals (${homeTla})`,
-      points: 2,
-      type: "goals_home",
-      isLive,
-      team: {
-        tla: homeTeam.tla,
-        crest: homeTeam.crest,
-        name: homeTeam.name,
-      },
-      matchInfo,
-      prediction: predictionInfo,
-      predictedTeamInfo,
-    });
-  }
+    const awayPredGoals = !predictedTeams
+      ? prediction.away_goals
+      : predictedTeams.home?.id === awayTeam.id
+        ? prediction.home_goals
+        : predictedTeams.away?.id === awayTeam.id
+          ? prediction.away_goals
+          : null;
 
-  if (awayTeamMatches && prediction.away_goals === actualAwayGoals) {
-    const awayTla = getTeamLabel(awayTeam);
-    points.push({
-      matchId: match.id,
-      description: `Correct goals (${awayTla})`,
-      points: 2,
-      type: "goals_away",
-      isLive,
-      team: {
-        tla: awayTeam.tla,
-        crest: awayTeam.crest,
-        name: awayTeam.name,
-      },
-      matchInfo,
-      prediction: predictionInfo,
-      predictedTeamInfo,
-    });
+    if (homePredGoals !== null && homePredGoals === actualHomeGoals) {
+      const homeTla = getTeamLabel(homeTeam);
+      points.push({
+        matchId: match.id,
+        description: `Correct goals (${homeTla})`,
+        points: 2,
+        type: "goals_home",
+        isLive,
+        team: {
+          tla: homeTeam.tla,
+          crest: homeTeam.crest,
+          name: homeTeam.name,
+        },
+        matchInfo,
+        prediction: predictionInfo,
+        predictedTeamInfo,
+      });
+    }
+    if (awayPredGoals !== null && awayPredGoals === actualAwayGoals) {
+      const awayTla = getTeamLabel(awayTeam);
+      points.push({
+        matchId: match.id,
+        description: `Correct goals (${awayTla})`,
+        points: 2,
+        type: "goals_away",
+        isLive,
+        team: {
+          tla: awayTeam.tla,
+          crest: awayTeam.crest,
+          name: awayTeam.name,
+        },
+        matchInfo,
+        prediction: predictionInfo,
+        predictedTeamInfo,
+      });
+    }
   }
 
   return points;
@@ -840,6 +959,7 @@ export function calculateTotalPoints(
     groupStandings: allPredictedStandings,
     thirdPlaceQualifying: predictedThirdPlaceQualifying || new Map(),
     useKnockoutPredictions: true, // Use user's knockout predictions for R16+
+    alwaysResolveFromStandings: true, // Never use API teams — always resolve from user's predicted standings
   }).resolve();
 
   // Calculate match points - use fifaNumber for prediction lookup

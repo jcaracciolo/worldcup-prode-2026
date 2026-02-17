@@ -667,7 +667,7 @@ describe("BracketResolver — API team override", () => {
     expect(r73.away?.tla).toBe("ARG"); // standings-based for away
   });
 
-  it("ignores placeholder API teams (negative IDs)", () => {
+  it("accepts placeholder API teams (negative IDs) as valid teams", () => {
     const scenario = scenarioGroupsFinished();
     const m73 = scenario.matches.find((m) => m.id === 73)!;
     m73.homeTeam = {
@@ -680,8 +680,8 @@ describe("BracketResolver — API team override", () => {
 
     const resolved = resolve(scenario);
     const r73 = resolved.get(fid(73))!;
-    // Should fall back to standings, not use the placeholder
-    expect(r73.home?.tla).toBe("MEX"); // 2A from standings
+    // EU1 is a real team in the tournament — it should be used as-is
+    expect(r73.home?.tla).toBe("EU1");
   });
 
   it("ignores TBD API teams", () => {

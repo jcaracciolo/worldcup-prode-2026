@@ -1,8 +1,14 @@
-// Bracket Resolver - resolves knockout teams using ACTUAL results when available
-// Priority order:
-// 1. API teams - if the API has valid teams (not TBD/placeholders), use them
-// 2. Actual results - if a group/match is finished, use the real results
-// 3. TBD placeholder - if group isn't complete, return null (UI shows "1A", "2B", etc.)
+// Bracket Resolver - resolves knockout teams from group standings and match results
+//
+// Two modes:
+// 1. Actual mode (default): uses real match results and actual group standings.
+//    Priority: API teams → actual results → null (TBD placeholder).
+//
+// 2. Prediction mode (useKnockoutPredictions: true): R32 matchups still come
+//    from actual data (real teams or placeholders). But R32 winners and all
+//    subsequent rounds are resolved from user predictions, not actual results.
+//    This shows the user's predicted bracket: who they think wins each match.
+//
 // The FIFA bracket structure defines which matches feed into which
 import { Match, Team, FifaMatchId, asFifaMatchId } from "@/types/football";
 import { CalculatedStanding } from "@/types/football";
@@ -17,11 +23,19 @@ export interface BracketResolverParams {
   groupStandings: Map<string, CalculatedStanding[]>;
   thirdPlaceQualifying: Map<string, boolean>;
   /**
-   * When true, use knockout predictions to resolve later rounds (R16+)
-   * when actual match results are not yet available.
-   * R32 is always resolved from actual data (API teams → group standings → TBD).
+   * When true, knockout match winners/losers are resolved from predictions:
+   * - R32 matchups still come from actual data (API teams / actual group standings)
+   * - R32 winners come from user's predicted scores (not actual results)
+   * - R16+ teams chain from predicted winners of previous rounds
+   * This shows the user's predicted bracket, not what actually happened.
    */
   useKnockoutPredictions?: boolean;
+  /**
+   * When true, always resolve teams from standings/predictions, never from API teams.
+   * Used by the scoring path to compute the user's predicted bracket
+   * (what teams the user predicted for each slot based on their group predictions).
+   */
+  alwaysResolveFromStandings?: boolean;
 }
 
 export interface ResolvedTeams {
@@ -40,6 +54,7 @@ export class BracketResolver {
   private groupStandings: Map<string, CalculatedStanding[]>;
   private thirdPlaceQualifying: Map<string, boolean>;
   private useKnockoutPredictions: boolean; // Use knockout predictions for R16+ when unfinished
+  private alwaysResolveFromStandings: boolean; // Skip API teams, always use standings/predictions
   private resolved: Map<FifaMatchId, ResolvedTeams>; // FIFA match number -> teams
 
   constructor(params: BracketResolverParams) {
@@ -48,6 +63,7 @@ export class BracketResolver {
     this.groupStandings = params.groupStandings;
     this.thirdPlaceQualifying = params.thirdPlaceQualifying;
     this.useKnockoutPredictions = params.useKnockoutPredictions || false;
+    this.alwaysResolveFromStandings = params.alwaysResolveFromStandings || false;
     this.resolved = new Map();
   }
 
@@ -70,16 +86,14 @@ export class BracketResolver {
     });
   }
 
-  // Check if a team from API is valid (not a placeholder/TBD)
-  // Note: Used for knockout matches where we want real teams, not placeholders
-  // Placeholder teams (negative IDs like -1001 for EU1) are considered invalid here
-  // because we want to calculate the actual team from standings
+  // Check if a team from API is valid (not a bracket-label placeholder like "1A", "TBD")
+  // Placeholder teams with negative IDs (EU1, IC2, etc.) ARE valid — they represent
+  // real teams in the simulation/tournament that play, score, and advance.
   private isValidApiTeam(team: Team | null): boolean {
     if (!team) return false;
-    // Invalid if no id, or id is placeholder (negative) or zero
-    if (!team.id || team.id <= 0) return false;
+    if (!team.id || team.id === 0) return false;
     if (!team.tla || team.tla.length === 0) return false;
-    // Check for placeholder patterns like "1A", "28A", "TBD"
+    // Check for bracket-label patterns like "1A", "28A", "TBD" — these are NOT real teams
     if (/^\d+[A-Z]$/.test(team.tla)) return false;
     if (team.tla === "TBD" || team.tla === "TBA") return false;
     return true;
@@ -170,8 +184,8 @@ export class BracketResolver {
 
   // match.id IS the FIFA number now, no mapping needed
 
-  // Get team from group standings - only returns a team if group is complete
-  // R32 always uses actual data, never predicted group standings
+  // Get team from group standings - only returns a team if group is complete.
+  // R32 always uses actual group standings (real matchups), never predicted.
   private getTeamFromStandings(group: string, position: number): Team | null {
     // Only return a team if the group has finished all matches
     if (!this.isGroupComplete(group)) {
@@ -188,33 +202,35 @@ export class BracketResolver {
     return standing?.team || null;
   }
 
-  // Get winner of a match - only returns team if match is finished
-  // When usePredictedStandings is true, falls back to predicted winner
+  // Get winner of a match
+  // In prediction mode: always uses predicted winner (shows user's predicted bracket)
+  // In actual mode: only returns team if match is finished
   private getWinnerByFifa(fifaMatchNumber: FifaMatchId): Team | null {
-    // Always use actual winner if match is finished
-    if (this.isKnockoutMatchFinished(fifaMatchNumber)) {
-      return this.getActualWinnerByFifa(fifaMatchNumber);
-    }
-
-    // In knockout predictions mode, use prediction to determine winner
+    // In prediction mode, always use predicted winner — don't fall back to actual results
     if (this.useKnockoutPredictions) {
       return this.getPredictedWinnerByFifa(fifaMatchNumber);
+    }
+
+    // Actual mode: only use real results for finished matches
+    if (this.isKnockoutMatchFinished(fifaMatchNumber)) {
+      return this.getActualWinnerByFifa(fifaMatchNumber);
     }
 
     return null; // UI will show placeholder
   }
 
-  // Get loser of a match - only returns team if match is finished
-  // When usePredictedStandings is true, falls back to predicted loser
+  // Get loser of a match
+  // In prediction mode: always uses predicted loser (shows user's predicted bracket)
+  // In actual mode: only returns team if match is finished
   private getLoserByFifa(fifaMatchNumber: FifaMatchId): Team | null {
-    // Always use actual loser if match is finished
-    if (this.isKnockoutMatchFinished(fifaMatchNumber)) {
-      return this.getActualLoserByFifa(fifaMatchNumber);
-    }
-
-    // In knockout predictions mode, use prediction to determine loser
+    // In prediction mode, always use predicted loser — don't fall back to actual results
     if (this.useKnockoutPredictions) {
       return this.getPredictedLoserByFifa(fifaMatchNumber);
+    }
+
+    // Actual mode: only use real results for finished matches
+    if (this.isKnockoutMatchFinished(fifaMatchNumber)) {
+      return this.getActualLoserByFifa(fifaMatchNumber);
     }
 
     return null; // UI will show placeholder
@@ -285,9 +301,9 @@ export class BracketResolver {
     for (const match of r32Matches) {
       const fifaNumber = asFifaMatchId(match.id);
 
-      // First, check if API already has valid teams
-      const apiHomeValid = this.isValidApiTeam(match.homeTeam);
-      const apiAwayValid = this.isValidApiTeam(match.awayTeam);
+      // Check if API already has valid teams (skip when resolving from standings)
+      const apiHomeValid = !this.alwaysResolveFromStandings && this.isValidApiTeam(match.homeTeam);
+      const apiAwayValid = !this.alwaysResolveFromStandings && this.isValidApiTeam(match.awayTeam);
 
       // Use API teams if valid, otherwise calculate
       let homeTeam: Team | null = apiHomeValid ? match.homeTeam : null;
@@ -336,9 +352,9 @@ export class BracketResolver {
     for (const match of r16Matches) {
       const fifaNumber = asFifaMatchId(match.id);
 
-      // First, check if API already has valid teams
-      const apiHomeValid = this.isValidApiTeam(match.homeTeam);
-      const apiAwayValid = this.isValidApiTeam(match.awayTeam);
+      // Check if API already has valid teams (skip when resolving from standings)
+      const apiHomeValid = !this.alwaysResolveFromStandings && this.isValidApiTeam(match.homeTeam);
+      const apiAwayValid = !this.alwaysResolveFromStandings && this.isValidApiTeam(match.awayTeam);
 
       // Use API teams if valid, otherwise calculate
       let homeTeam: Team | null = apiHomeValid ? match.homeTeam : null;
@@ -370,9 +386,9 @@ export class BracketResolver {
     for (const match of qfMatches) {
       const fifaNumber = asFifaMatchId(match.id);
 
-      // First, check if API already has valid teams
-      const apiHomeValid = this.isValidApiTeam(match.homeTeam);
-      const apiAwayValid = this.isValidApiTeam(match.awayTeam);
+      // Check if API already has valid teams (skip when resolving from standings)
+      const apiHomeValid = !this.alwaysResolveFromStandings && this.isValidApiTeam(match.homeTeam);
+      const apiAwayValid = !this.alwaysResolveFromStandings && this.isValidApiTeam(match.awayTeam);
 
       // Use API teams if valid, otherwise calculate
       let homeTeam: Team | null = apiHomeValid ? match.homeTeam : null;
@@ -402,9 +418,9 @@ export class BracketResolver {
     for (const match of sfMatches) {
       const fifaNumber = asFifaMatchId(match.id);
 
-      // First, check if API already has valid teams
-      const apiHomeValid = this.isValidApiTeam(match.homeTeam);
-      const apiAwayValid = this.isValidApiTeam(match.awayTeam);
+      // Check if API already has valid teams (skip when resolving from standings)
+      const apiHomeValid = !this.alwaysResolveFromStandings && this.isValidApiTeam(match.homeTeam);
+      const apiAwayValid = !this.alwaysResolveFromStandings && this.isValidApiTeam(match.awayTeam);
 
       // Use API teams if valid, otherwise calculate
       let homeTeam: Team | null = apiHomeValid ? match.homeTeam : null;
@@ -434,9 +450,9 @@ export class BracketResolver {
 
     const fifaNumber = asFifaMatchId(thirdPlaceMatch.id);
 
-    // First, check if API already has valid teams
-    const apiHomeValid = this.isValidApiTeam(thirdPlaceMatch.homeTeam);
-    const apiAwayValid = this.isValidApiTeam(thirdPlaceMatch.awayTeam);
+    // Check if API already has valid teams (skip when resolving from standings)
+    const apiHomeValid = !this.alwaysResolveFromStandings && this.isValidApiTeam(thirdPlaceMatch.homeTeam);
+    const apiAwayValid = !this.alwaysResolveFromStandings && this.isValidApiTeam(thirdPlaceMatch.awayTeam);
 
     // Use API teams if valid, otherwise calculate from SF losers
     const homeTeam = apiHomeValid
@@ -456,9 +472,9 @@ export class BracketResolver {
 
     const fifaNumber = asFifaMatchId(finalMatch.id);
 
-    // First, check if API already has valid teams
-    const apiHomeValid = this.isValidApiTeam(finalMatch.homeTeam);
-    const apiAwayValid = this.isValidApiTeam(finalMatch.awayTeam);
+    // Check if API already has valid teams (skip when resolving from standings)
+    const apiHomeValid = !this.alwaysResolveFromStandings && this.isValidApiTeam(finalMatch.homeTeam);
+    const apiAwayValid = !this.alwaysResolveFromStandings && this.isValidApiTeam(finalMatch.awayTeam);
 
     // Use API teams if valid, otherwise calculate from SF winners
     const homeTeam = apiHomeValid

@@ -12,10 +12,12 @@ import React, {
 import { useDatabase } from "@/contexts/DatabaseContext";
 import { useMatches, MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
-import { Match, FifaMatchId, asFifaMatchId } from "@/types/football";
+import { Match, FifaMatchId, asFifaMatchId, CalculatedStanding } from "@/types/football";
 import { LCE, lceLoading, lceContent, lceError } from "@/types/lce";
-import { BracketResolver, ResolvedTeams } from "@/lib/bracket-resolver";
+import { BracketResolver } from "@/lib/bracket-resolver";
 import { getTeamDisplaySimple } from "@/lib/team-display";
+import { calculateAllGroupStandings } from "@/lib/standings";
+import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 
 // =====================================================================
 // TYPES
@@ -515,22 +517,48 @@ export function useAllPredictions(): LCE<AllPredictionsMap> {
 export interface PredictedMatchesResult {
   /** Matches with user-predicted knockout teams baked into homeTeam/awayTeam */
   matches: MatchWithLiveInfo[];
-  /** Resolved knockout teams based on user predictions */
-  resolvedKnockoutTeams: Map<FifaMatchId, ResolvedTeams>;
+  /** Group standings computed from user's predicted group match scores */
+  predictedGroupStandings: Map<string, CalculatedStanding[]>;
+  /** Which 3rd-place teams qualify based on predicted group standings */
+  predictedThirdPlaceQualifying: Map<string, boolean>;
 }
 
 /**
  * Build matches with predicted knockout teams baked in.
  * Pure computation — used by usePredictedMatches to cache results.
+ *
+ * - Group standings and third-place qualifying are computed from the user's
+ *   predicted group match scores (for display and downstream consumption).
+ * - R32 matchups come from actual data (API teams / actual group standings).
+ *   Before groups finish, placeholders ("1A", "2B") are shown.
+ * - R32 winners come from user's predicted scores (not actual results).
+ * - R16+ teams chain from predicted winners of previous rounds.
+ *
+ * This shows the user's predicted bracket path through the tournament.
  */
 function buildPredictedMatches(
   rawProcessedMatches: Match[],
   contextMatches: MatchWithLiveInfo[],
   predictions: Map<FifaMatchId, LocalPrediction>,
-  actualGroupStandings: Map<string, import("@/types/football").CalculatedStanding[]>,
+  actualGroupStandings: Map<string, CalculatedStanding[]>,
   actualThirdPlaceQualifying: Map<string, boolean>,
 ): PredictedMatchesResult {
-  // Run BracketResolver with user's predictions on raw (pre-bake) matches
+  // Compute predicted group standings from user's group predictions
+  const predictionMapByNumber = new Map<number, LocalPrediction>();
+  predictions.forEach((pred, fifaId) => {
+    predictionMapByNumber.set(fifaId as number, pred);
+  });
+  const predictedGroupStandings = calculateAllGroupStandings(
+    rawProcessedMatches,
+    predictionMapByNumber,
+  );
+  const predictedThirdPlaceQualifying = getQualifyingThirdPlaceTeams(
+    predictedGroupStandings,
+  );
+
+  // Run BracketResolver with user's predictions on raw (pre-bake) matches.
+  // Actual group standings are used for R32 team resolution (real matchups).
+  // Predictions are used for knockout winners (R32+).
   const resolver = new BracketResolver({
     matches: rawProcessedMatches,
     predictions,
@@ -556,7 +584,7 @@ function buildPredictedMatches(
     };
   });
 
-  return { matches, resolvedKnockoutTeams };
+  return { matches, predictedGroupStandings, predictedThirdPlaceQualifying };
 }
 
 /**
@@ -596,7 +624,8 @@ export function usePredictedMatches(
       // No predictions — return context matches as-is (actual teams baked in)
       return {
         matches: contextMatches,
-        resolvedKnockoutTeams: new Map(),
+        predictedGroupStandings: new Map(),
+        predictedThirdPlaceQualifying: new Map(),
       };
     }
     return buildPredictedMatches(

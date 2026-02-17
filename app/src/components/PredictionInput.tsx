@@ -1,8 +1,8 @@
 "use client";
 
-import { Match, Team, FifaMatchId } from "@/types/football";
+import { FifaMatchId } from "@/types/football";
+import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { LocalPrediction } from "@/types/database";
-import { getTeamDisplaySimple } from "@/lib/team-display";
 import {
   CITY_ABBREVIATIONS,
   formatMatchDate,
@@ -16,7 +16,7 @@ import {
 } from "@/components/MatchRowShared";
 
 interface PredictionInputProps {
-  match: Match;
+  match: MatchWithLiveInfo;
   prediction?: LocalPrediction;
   onChange: (
     fifaMatchId: FifaMatchId,
@@ -26,8 +26,6 @@ interface PredictionInputProps {
   ) => void;
   disabled?: boolean;
   showWinnerSelect?: boolean;
-  resolvedHomeTeam?: Team | null;
-  resolvedAwayTeam?: Team | null;
   fifaMatchNumber: FifaMatchId; // FIFA match number (1-104) - REQUIRED
 }
 
@@ -37,13 +35,10 @@ export default function PredictionInput({
   onChange,
   disabled = false,
   showWinnerSelect = false,
-  resolvedHomeTeam,
-  resolvedAwayTeam,
   fifaMatchNumber,
 }: PredictionInputProps) {
-  // Use resolved teams if provided, otherwise fall back to match teams
-  const homeTeam = resolvedHomeTeam ?? match.homeTeam;
-  const awayTeam = resolvedAwayTeam ?? match.awayTeam;
+  const homeTeam = match.homeTeam;
+  const awayTeam = match.awayTeam;
 
   const homeGoals = prediction?.home_goals ?? null;
   const awayGoals = prediction?.away_goals ?? null;
@@ -150,25 +145,13 @@ export default function PredictionInput({
                   : "text-white hover:bg-white/10"
               } disabled:opacity-50`}
             >
-              {homeTeam?.tla ||
-                getTeamDisplaySimple(
-                  homeTeam,
-                  match.id,
-                  "home",
-                  fifaMatchNumber,
-                ).label}
+              {homeTeam?.tla || match.homeDisplayName}
             </button>
           ) : (
             <span
               className={`text-[10px] font-semibold truncate px-0.5 py-0.5 rounded ${homeIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
             >
-              {homeTeam?.tla ||
-                getTeamDisplaySimple(
-                  homeTeam,
-                  match.id,
-                  "home",
-                  fifaMatchNumber,
-                ).label}
+              {homeTeam?.tla || match.homeDisplayName}
             </span>
           )}
           <TeamCrest team={homeTeam} size="sm" />
@@ -213,25 +196,13 @@ export default function PredictionInput({
                   : "text-white hover:bg-white/10"
               } disabled:opacity-50`}
             >
-              {awayTeam?.tla ||
-                getTeamDisplaySimple(
-                  awayTeam,
-                  match.id,
-                  "away",
-                  fifaMatchNumber,
-                ).label}
+              {awayTeam?.tla || match.awayDisplayName}
             </button>
           ) : (
             <span
               className={`text-[10px] font-semibold truncate px-0.5 py-0.5 rounded ${awayIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
             >
-              {awayTeam?.tla ||
-                getTeamDisplaySimple(
-                  awayTeam,
-                  match.id,
-                  "away",
-                  fifaMatchNumber,
-                ).label}
+              {awayTeam?.tla || match.awayDisplayName}
             </span>
           )}
         </div>
@@ -281,13 +252,7 @@ export default function PredictionInput({
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <span className="text-xs font-semibold">
-                  {homeTeam?.tla ||
-                    getTeamDisplaySimple(
-                      homeTeam,
-                      match.id,
-                      "home",
-                      fifaMatchNumber,
-                    ).label}
+                  {homeTeam?.tla || match.homeDisplayName}
                 </span>
                 <TeamCrest team={homeTeam} />
               </button>
@@ -302,13 +267,7 @@ export default function PredictionInput({
                     homeIsWinner ? "text-slate-900 font-bold" : "text-white"
                   }`}
                 >
-                  {homeTeam?.tla ||
-                    getTeamDisplaySimple(
-                      homeTeam,
-                      match.id,
-                      "home",
-                      fifaMatchNumber,
-                    ).label}
+                  {homeTeam?.tla || match.homeDisplayName}
                 </span>
                 <TeamCrest team={homeTeam} />
               </div>
@@ -362,13 +321,7 @@ export default function PredictionInput({
               >
                 <TeamCrest team={awayTeam} />
                 <span className="text-xs font-semibold">
-                  {awayTeam?.tla ||
-                    getTeamDisplaySimple(
-                      awayTeam,
-                      match.id,
-                      "away",
-                      fifaMatchNumber,
-                    ).label}
+                  {awayTeam?.tla || match.awayDisplayName}
                 </span>
               </button>
             ) : (
@@ -383,13 +336,7 @@ export default function PredictionInput({
                     awayIsWinner ? "text-slate-900 font-bold" : "text-white"
                   }`}
                 >
-                  {awayTeam?.tla ||
-                    getTeamDisplaySimple(
-                      awayTeam,
-                      match.id,
-                      "away",
-                      fifaMatchNumber,
-                    ).label}
+                  {awayTeam?.tla || match.awayDisplayName}
                 </span>
               </div>
             )}

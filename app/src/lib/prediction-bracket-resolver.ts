@@ -12,7 +12,6 @@ import {
   Match,
   Team,
   FifaMatchId,
-  asFifaMatchId,
   CalculatedStanding,
 } from "@/types/football";
 import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
@@ -207,7 +206,7 @@ export class PredictionBracketResolver {
   private resolveR32(): void {
     const r32Matches = this.matches.filter((m) => m.stage === "LAST_32");
     for (const match of r32Matches) {
-      const fifaNumber = asFifaMatchId(match.id);
+      const fifaNumber = match.id;
       const liveTeams = this.liveBracket.teams.get(fifaNumber);
       this.setResolved(
         fifaNumber,
@@ -221,7 +220,7 @@ export class PredictionBracketResolver {
   private resolveR16(): void {
     const r16Matches = this.matches.filter((m) => m.stage === "LAST_16");
     for (const match of r16Matches) {
-      const fifaNumber = asFifaMatchId(match.id);
+      const fifaNumber = match.id;
       const bracketSlot = r16Bracket.find((b) => b.matchNumber === fifaNumber);
       if (!bracketSlot) {
         this.setResolved(fifaNumber, null, null);
@@ -237,7 +236,7 @@ export class PredictionBracketResolver {
   private resolveQF(): void {
     const qfMatches = this.matches.filter((m) => m.stage === "QUARTER_FINALS");
     for (const match of qfMatches) {
-      const fifaNumber = asFifaMatchId(match.id);
+      const fifaNumber = match.id;
       const bracketSlot = qfBracket.find((b) => b.matchNumber === fifaNumber);
       if (!bracketSlot) {
         this.setResolved(fifaNumber, null, null);
@@ -253,7 +252,7 @@ export class PredictionBracketResolver {
   private resolveSF(): void {
     const sfMatches = this.matches.filter((m) => m.stage === "SEMI_FINALS");
     for (const match of sfMatches) {
-      const fifaNumber = asFifaMatchId(match.id);
+      const fifaNumber = match.id;
       const bracketSlot = sfBracket.find((b) => b.matchNumber === fifaNumber);
       if (!bracketSlot) {
         this.setResolved(fifaNumber, null, null);
@@ -269,7 +268,7 @@ export class PredictionBracketResolver {
   private resolveThirdPlace(): void {
     const thirdPlaceMatch = this.matches.find((m) => m.stage === "THIRD_PLACE");
     if (!thirdPlaceMatch) return;
-    const fifaNumber = asFifaMatchId(thirdPlaceMatch.id);
+    const fifaNumber = thirdPlaceMatch.id;
     const homeTeam = this.getPredictedLoserByFifa(sfBracket[0].matchNumber);
     const awayTeam = this.getPredictedLoserByFifa(sfBracket[1].matchNumber);
     this.setResolved(fifaNumber, homeTeam, awayTeam);
@@ -279,7 +278,7 @@ export class PredictionBracketResolver {
   private resolveFinal(): void {
     const finalMatch = this.matches.find((m) => m.stage === "FINAL");
     if (!finalMatch) return;
-    const fifaNumber = asFifaMatchId(finalMatch.id);
+    const fifaNumber = finalMatch.id;
     const homeTeam = this.getPredictedWinnerByFifa(sfBracket[0].matchNumber);
     const awayTeam = this.getPredictedWinnerByFifa(sfBracket[1].matchNumber);
     this.setResolved(fifaNumber, homeTeam, awayTeam);

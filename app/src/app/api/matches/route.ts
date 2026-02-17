@@ -62,7 +62,7 @@ export async function GET() {
       .map((match) => {
         const fifaNumber = apiToFifa.get(match.id);
         if (fifaNumber === undefined) return null;
-        return { ...match, id: fifaNumber as number };
+        return { ...match, id: fifaNumber };
       })
       .filter((m): m is Match => m !== null);
 

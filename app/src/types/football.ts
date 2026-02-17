@@ -35,7 +35,7 @@ export interface FullTimeScore {
 }
 
 export interface Match {
-  id: number;
+  id: FifaMatchId;
   utcDate: string;
   status:
     | "SCHEDULED"

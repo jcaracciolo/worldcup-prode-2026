@@ -1,7 +1,8 @@
 "use client";
 
 import { useTime } from "@/contexts/TimeContext";
-import { Match, FifaMatchId, asFifaMatchId } from "@/types/football";
+import { FifaMatchId } from "@/types/football";
+import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { LocalPrediction } from "@/types/database";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import { KnockoutMatchRow } from "@/components/MatchRowShared";
@@ -9,7 +10,7 @@ import { KnockoutMatchRow } from "@/components/MatchRowShared";
 type ViewMode = "edit" | "fixtures" | "predictions";
 
 interface KnockoutStageSectionProps {
-  knockoutStages: Map<string, Match[]>;
+  knockoutStages: Map<string, MatchWithLiveInfo[]>;
   predictions?: Map<FifaMatchId, LocalPrediction>; // Keyed by FIFA match number (73-104)
   knockoutLocked?: boolean;
   /** User whose points to display (required for predictions mode) */
@@ -100,7 +101,7 @@ export default function KnockoutStageSection({
               <h3 className="font-bold text-sm mb-2 text-white">{stageName}</h3>
               <div className="grid md:grid-cols-2 gap-1.5">
                 {sortedMatches.map((match) => {
-                  const fifaNumber = asFifaMatchId(match.id);
+                  const fifaNumber = match.id;
 
                   if (viewMode === "fixtures") {
                     return (

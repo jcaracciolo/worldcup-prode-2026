@@ -1,25 +1,19 @@
 "use client";
 
 import { useTime } from "@/contexts/TimeContext";
-import {
-  Match,
-  CalculatedStanding,
-  FifaMatchId,
-  asFifaMatchId,
-} from "@/types/football";
+import { CalculatedStanding, FifaMatchId } from "@/types/football";
+import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { LocalPrediction } from "@/types/database";
 import PredictionInput from "@/components/PredictionInput";
 import StandingsTable from "@/components/StandingsTable";
 
 interface GroupStageSectionProps {
-  groups: Map<string, Match[]>;
+  groups: Map<string, MatchWithLiveInfo[]>;
   predictions?: Map<FifaMatchId, LocalPrediction>; // Keyed by FIFA match number (1-72)
   groupLocked?: boolean;
   thirdPlaceQualifying: Map<string, boolean>;
-  calculateStandings: (
-    groupMatches: Match[],
-    groupName?: string,
-  ) => CalculatedStanding[];
+  /** Pre-computed standings per group (from usePredictedBracket or liveBracket) */
+  groupStandings: Map<string, CalculatedStanding[]>;
   onPredictionChange?: (
     fifaMatchId: FifaMatchId,
     homeGoals: number | null,
@@ -36,7 +30,7 @@ export default function GroupStageSection({
   predictions,
   groupLocked = false,
   thirdPlaceQualifying,
-  calculateStandings,
+  groupStandings,
   onPredictionChange,
   onSwapPositions,
   readOnly = false,
@@ -59,7 +53,7 @@ export default function GroupStageSection({
         {Array.from(groups.entries())
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([groupName, groupMatchList]) => {
-            const standings = calculateStandings(groupMatchList, groupName);
+            const standings = groupStandings.get(groupName) ?? [];
             const sortedMatches = [...groupMatchList].sort(
               (a, b) =>
                 new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
@@ -81,7 +75,7 @@ export default function GroupStageSection({
                     </h4>
                     <div className="space-y-0.5">
                       {sortedMatches.map((match) => {
-                        const fifaNumber = asFifaMatchId(match.id);
+                        const fifaNumber = match.id;
 
                         if (readOnly) {
                           // Show actual match scores using PredictionInput in disabled mode

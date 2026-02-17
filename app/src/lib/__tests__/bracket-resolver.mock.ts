@@ -13,7 +13,13 @@
  *     → assignments [M74, M77, M79, M80, M81, M82, M85, M87] = ["H","G","B","C","A","F","D","E"]
  */
 
-import { Match, Team, FifaMatchId, CalculatedStanding } from "@/types/football";
+import {
+  Match,
+  Team,
+  FifaMatchId,
+  asFifaMatchId,
+  CalculatedStanding,
+} from "@/types/football";
 import { LocalPrediction } from "@/types/database";
 
 // =====================================================================
@@ -316,7 +322,7 @@ function makeGroupMatch(
         ? "AWAY_TEAM"
         : "DRAW";
   return {
-    id,
+    id: asFifaMatchId(id),
     utcDate: `2026-06-${11 + Math.floor(id / 6)}T17:00:00Z`,
     status: "FINISHED",
     matchday: 1,
@@ -363,7 +369,7 @@ function makeKnockoutMatch(
     : null;
 
   return {
-    id,
+    id: asFifaMatchId(id),
     utcDate: nextMatchDate(),
     status,
     matchday: 0,

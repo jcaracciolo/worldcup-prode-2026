@@ -11,21 +11,14 @@ import {
   KnockoutStageSection,
   GroupStageSection,
 } from "@/components/predictions";
-import { useMatches } from "@/contexts/MatchContext";
+import { useMatches, MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
 import { useUser } from "@/contexts/UserContext";
 import {
   useUserPredictions,
   usePredictedMatches,
 } from "@/contexts/PredictionsContext";
-import {
-  CalculatedStanding,
-  Team,
-  Match,
-  FifaMatchId,
-  asFifaMatchId,
-} from "@/types/football";
-import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
+import { FifaMatchId } from "@/types/football";
 
 import { LocalPrediction } from "@/types/database";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -71,10 +64,13 @@ export default function PredictionsPage() {
     refresh: refreshMatches,
   } = useMatches();
 
-  // Get matches with current user's predicted knockout teams baked in
-  const { matches: predictedMatches } = usePredictedMatches(
-    profile?.id || null,
-  );
+  // Get matches with current user's predicted knockout teams baked in,
+  // plus predicted group standings and third-place qualifying (override-aware)
+  const {
+    matches: predictedMatches,
+    predictedGroupStandings,
+    predictedThirdPlaceQualifying,
+  } = usePredictedMatches(profile?.id || null);
 
   // Scroll to first live match
   const scrollToFirstLiveMatch = useCallback(() => {
@@ -124,101 +120,13 @@ export default function PredictionsPage() {
     });
   };
 
-  const calculateStandings = useCallback(
-    (groupMatches: Match[], groupName?: string): CalculatedStanding[] => {
-      const teamStats = new Map<number, CalculatedStanding>();
-
-      // Initialize teams
-      groupMatches.forEach((match) => {
-        if (!teamStats.has(match.homeTeam.id)) {
-          teamStats.set(match.homeTeam.id, createEmptyStanding(match.homeTeam));
-        }
-        if (!teamStats.has(match.awayTeam.id)) {
-          teamStats.set(match.awayTeam.id, createEmptyStanding(match.awayTeam));
-        }
-      });
-
-      // Calculate from predictions (match.id is the FIFA number)
-      groupMatches.forEach((match) => {
-        const fifaNumber = asFifaMatchId(match.id);
-
-        const prediction = predictions.get(fifaNumber);
-        if (
-          !prediction ||
-          prediction.home_goals === null ||
-          prediction.away_goals === null
-        )
-          return;
-
-        const homeStats = teamStats.get(match.homeTeam.id)!;
-        const awayStats = teamStats.get(match.awayTeam.id)!;
-
-        homeStats.played++;
-        awayStats.played++;
-        homeStats.goalsFor += prediction.home_goals;
-        homeStats.goalsAgainst += prediction.away_goals;
-        awayStats.goalsFor += prediction.away_goals;
-        awayStats.goalsAgainst += prediction.home_goals;
-        homeStats.goalDifference = homeStats.goalsFor - homeStats.goalsAgainst;
-        awayStats.goalDifference = awayStats.goalsFor - awayStats.goalsAgainst;
-
-        if (prediction.home_goals > prediction.away_goals) {
-          homeStats.won++;
-          homeStats.points += 3;
-          awayStats.lost++;
-        } else if (prediction.away_goals > prediction.home_goals) {
-          awayStats.won++;
-          awayStats.points += 3;
-          homeStats.lost++;
-        } else {
-          homeStats.drawn++;
-          awayStats.drawn++;
-          homeStats.points += 1;
-          awayStats.points += 1;
-        }
-      });
-
-      let standings = Array.from(teamStats.values())
-        .sort((a, b) => {
-          if (b.points !== a.points) return b.points - a.points;
-          if (b.goalDifference !== a.goalDifference)
-            return b.goalDifference - a.goalDifference;
-          return b.goalsFor - a.goalsFor;
-        })
-        .map((s, i) => ({ ...s, position: i + 1 }));
-
-      // Apply manual position overrides for tiebreakers
-      if (groupName) {
-        const groupOverrides = overrides.filter(
-          (o) => o.group_name === groupName,
-        );
-        if (groupOverrides.length > 0) {
-          // Sort by override positions
-          standings = standings
-            .map((s) => {
-              const override = groupOverrides.find(
-                (o) => o.team_id === s.team.id,
-              );
-              return { ...s, position: override?.position || s.position };
-            })
-            .sort((a, b) => a.position - b.position)
-            .map((s, i) => ({ ...s, position: i + 1 }));
-        }
-      }
-
-      return standings;
-    },
-    [predictions, overrides],
-  );
-
   const handleSwapPositions = (
     groupName: string,
     teamId1: number,
     teamId2: number,
   ) => {
-    // Find current positions
-    const groupMatches = matches.filter((m) => m.group === groupName);
-    const standings = calculateStandings(groupMatches, groupName);
+    // Find current positions from predicted standings
+    const standings = predictedGroupStandings.get(groupName) ?? [];
 
     const team1Standing = standings.find((s) => s.team.id === teamId1);
     const team2Standing = standings.find((s) => s.team.id === teamId2);
@@ -259,7 +167,7 @@ export default function PredictionsPage() {
     if (!groupLocked) {
       const groupMatches = matches.filter((m) => m.stage === "GROUP_STAGE");
       const unfilledGroup = groupMatches.filter((m) => {
-        const pred = predictions.get(asFifaMatchId(m.id));
+        const pred = predictions.get(m.id);
         return !pred || pred.home_goals === null || pred.away_goals === null;
       });
       if (unfilledGroup.length > 0) {
@@ -273,7 +181,7 @@ export default function PredictionsPage() {
     if (knockoutOpen && !knockoutLocked) {
       const koMatches = matches.filter((m) => m.stage !== "GROUP_STAGE");
       const unfilledKo = koMatches.filter((m) => {
-        const pred = predictions.get(asFifaMatchId(m.id));
+        const pred = predictions.get(m.id);
         return !pred || pred.home_goals === null || pred.away_goals === null;
       });
       if (unfilledKo.length > 0) {
@@ -283,7 +191,7 @@ export default function PredictionsPage() {
       }
 
       const tiesWithoutWinner = koMatches.filter((m) => {
-        const pred = predictions.get(asFifaMatchId(m.id));
+        const pred = predictions.get(m.id);
         if (!pred || pred.home_goals === null || pred.away_goals === null)
           return false;
         return pred.home_goals === pred.away_goals && !pred.winner_id;
@@ -344,7 +252,7 @@ export default function PredictionsPage() {
   const doReset = () => {
     const newPredictions = new Map(predictions);
     matches.forEach((match) => {
-      const fifaNumber = asFifaMatchId(match.id);
+      const fifaNumber = match.id;
 
       const isGroupStage = match.stage === "GROUP_STAGE";
       if (isGroupStage && !groupLocked) {
@@ -380,7 +288,7 @@ export default function PredictionsPage() {
     const newPredictions = new Map(predictions);
 
     matches.forEach((match) => {
-      const fifaNumber = asFifaMatchId(match.id);
+      const fifaNumber = match.id;
 
       // Check if already has a prediction
       const existing = newPredictions.get(fifaNumber);
@@ -434,29 +342,17 @@ export default function PredictionsPage() {
   }
 
   const groupMatches = matches.filter((m) => m.stage === "GROUP_STAGE");
-  const groups = new Map<string, Match[]>();
+  const groups = new Map<string, MatchWithLiveInfo[]>();
   groupMatches.forEach((m) => {
     if (!m.group) return;
     if (!groups.has(m.group)) groups.set(m.group, []);
     groups.get(m.group)!.push(m);
   });
 
-  // Calculate standings for each group (for R32 preview)
-  const groupStandings = new Map<string, CalculatedStanding[]>();
-  groups.forEach((groupMatchList, groupName) => {
-    groupStandings.set(
-      groupName,
-      calculateStandings(groupMatchList, groupName),
-    );
-  });
-
-  // Calculate which 3rd place teams qualify (best 8 of 12)
-  const thirdPlaceQualifying = getQualifyingThirdPlaceTeams(groupStandings);
-
   const knockoutMatches = predictedMatches.filter(
     (m) => m.stage !== "GROUP_STAGE",
   );
-  const knockoutStages = new Map<string, Match[]>();
+  const knockoutStages = new Map<string, MatchWithLiveInfo[]>();
   knockoutMatches.forEach((m) => {
     if (!knockoutStages.has(m.stage)) knockoutStages.set(m.stage, []);
     knockoutStages.get(m.stage)!.push(m);
@@ -585,8 +481,8 @@ export default function PredictionsPage() {
             groups={groups}
             predictions={predictions}
             groupLocked={groupLocked}
-            thirdPlaceQualifying={thirdPlaceQualifying}
-            calculateStandings={calculateStandings}
+            thirdPlaceQualifying={predictedThirdPlaceQualifying}
+            groupStandings={predictedGroupStandings}
             onPredictionChange={handlePredictionChange}
             onSwapPositions={handleSwapPositions}
           />
@@ -635,19 +531,4 @@ export default function PredictionsPage() {
       )}
     </div>
   );
-}
-
-function createEmptyStanding(team: Team): CalculatedStanding {
-  return {
-    team,
-    position: 0,
-    points: 0,
-    goalsFor: 0,
-    goalsAgainst: 0,
-    goalDifference: 0,
-    played: 0,
-    won: 0,
-    drawn: 0,
-    lost: 0,
-  };
 }

@@ -1,16 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Team, FifaMatchId, Match } from "@/types/football";
+import { Team, FifaMatchId } from "@/types/football";
+import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { LocalPrediction } from "@/types/database";
 import { getTeamLabel } from "@/lib/scoring";
 import { getMatchInfo } from "@/lib/tournament";
 import { ReactNode } from "react";
-import {
-  getTeamDisplaySimple,
-  shortLabel,
-  type TeamDisplay,
-} from "@/lib/team-display";
+import { shortLabel } from "@/lib/team-display";
 
 // City name to 3-letter abbreviation mapping
 export const CITY_ABBREVIATIONS: Record<string, string> = {
@@ -208,156 +205,6 @@ export function MobileDateColumn({
   );
 }
 
-// Team name display component
-interface TeamNameProps {
-  team: Team | null;
-  matchId: number;
-  position: "home" | "away";
-  fifaMatchNumber?: FifaMatchId;
-  highlighted?: boolean;
-  size?: "sm" | "md";
-  useTla?: boolean;
-}
-
-export function TeamName({
-  team,
-  matchId,
-  position,
-  fifaMatchNumber,
-  highlighted = false,
-  size = "md",
-  useTla = false,
-}: TeamNameProps) {
-  const textSize = size === "sm" ? "text-[10px]" : "text-sm";
-  const display = getTeamDisplaySimple(
-    team,
-    matchId,
-    position,
-    fifaMatchNumber,
-  );
-  const name = useTla && team?.tla ? team.tla : display.label;
-
-  return (
-    <span
-      className={`${textSize} font-semibold truncate ${
-        highlighted ? "text-slate-900" : "text-white/80"
-      }`}
-    >
-      {name}
-    </span>
-  );
-}
-
-// Combined team display (crest + name) for desktop
-interface TeamBlockProps {
-  team: Team | null;
-  matchId: number;
-  position: "home" | "away";
-  fifaMatchNumber?: FifaMatchId;
-  highlighted?: boolean;
-  className?: string;
-}
-
-export function TeamBlock({
-  team,
-  matchId,
-  position,
-  fifaMatchNumber,
-  highlighted = false,
-  className = "",
-}: TeamBlockProps) {
-  const isHome = position === "home";
-
-  return (
-    <div
-      className={`flex-1 flex items-center ${isHome ? "justify-end" : ""} gap-1.5 px-1.5 py-0.5 rounded ${
-        highlighted ? "bg-amber-500/80" : ""
-      } ${className}`}
-    >
-      {isHome ? (
-        <>
-          <TeamName
-            team={team}
-            matchId={matchId}
-            position={position}
-            fifaMatchNumber={fifaMatchNumber}
-            highlighted={highlighted}
-          />
-          <TeamCrest team={team} size="md" />
-        </>
-      ) : (
-        <>
-          <TeamCrest team={team} size="md" />
-          <TeamName
-            team={team}
-            matchId={matchId}
-            position={position}
-            fifaMatchNumber={fifaMatchNumber}
-            highlighted={highlighted}
-          />
-        </>
-      )}
-    </div>
-  );
-}
-
-// Mobile team display (smaller sizes)
-interface MobileTeamDisplayProps {
-  team: Team | null;
-  matchId: number;
-  position: "home" | "away";
-  fifaMatchNumber?: FifaMatchId;
-  highlighted?: boolean;
-  useTla?: boolean;
-}
-
-export function MobileTeamDisplay({
-  team,
-  matchId,
-  position,
-  fifaMatchNumber,
-  highlighted = false,
-  useTla = true,
-}: MobileTeamDisplayProps) {
-  const isHome = position === "home";
-
-  return (
-    <div
-      className={`flex-1 flex items-center ${isHome ? "justify-end" : ""} gap-1 px-1 py-0.5 rounded ${
-        highlighted ? "bg-amber-500/80" : ""
-      }`}
-    >
-      {isHome ? (
-        <>
-          <TeamName
-            team={team}
-            matchId={matchId}
-            position={position}
-            fifaMatchNumber={fifaMatchNumber}
-            highlighted={highlighted}
-            size="sm"
-            useTla={useTla}
-          />
-          <TeamCrest team={team} size="sm" />
-        </>
-      ) : (
-        <>
-          <TeamCrest team={team} size="sm" />
-          <TeamName
-            team={team}
-            matchId={matchId}
-            position={position}
-            fifaMatchNumber={fifaMatchNumber}
-            highlighted={highlighted}
-            size="sm"
-            useTla={useTla}
-          />
-        </>
-      )}
-    </div>
-  );
-}
-
 // Score display (read-only)
 interface ScoreDisplayProps {
   homeGoals: number | null | undefined;
@@ -410,14 +257,16 @@ function KnockoutContentDiv({
 }
 
 function KnockoutTeamButton({
-  teamDisplay,
+  team,
+  label,
   position,
   highlighted,
   isWinnerSelect,
   disabled,
   onWinnerChange,
 }: {
-  teamDisplay: TeamDisplay;
+  team: Team | null;
+  label: string;
   position: "home" | "away";
   highlighted: boolean;
   isWinnerSelect: boolean;
@@ -425,7 +274,6 @@ function KnockoutTeamButton({
   onWinnerChange: (teamId: number) => void;
 }) {
   const isHome = position === "home";
-  const { team, label, isPlaceholder } = teamDisplay;
 
   if (isWinnerSelect) {
     return (
@@ -442,19 +290,11 @@ function KnockoutTeamButton({
         {isHome ? (
           <>
             <span className="text-sm font-semibold">{label}</span>
-            <TeamCrest
-              team={team}
-              fallbackLabel={isPlaceholder ? label : undefined}
-              size="lg"
-            />
+            <TeamCrest team={team} fallbackLabel={label} size="lg" />
           </>
         ) : (
           <>
-            <TeamCrest
-              team={team}
-              fallbackLabel={isPlaceholder ? label : undefined}
-              size="lg"
-            />
+            <TeamCrest team={team} fallbackLabel={label} size="lg" />
             <span className="text-sm font-semibold">{label}</span>
           </>
         )}
@@ -477,19 +317,11 @@ function KnockoutTeamButton({
           >
             {label}
           </span>
-          <TeamCrest
-            team={team}
-            fallbackLabel={isPlaceholder ? label : undefined}
-            size="lg"
-          />
+          <TeamCrest team={team} fallbackLabel={label} size="lg" />
         </>
       ) : (
         <>
-          <TeamCrest
-            team={team}
-            fallbackLabel={isPlaceholder ? label : undefined}
-            size="lg"
-          />
+          <TeamCrest team={team} fallbackLabel={label} size="lg" />
           <span
             className={`text-sm font-semibold ${
               highlighted ? "text-slate-900 font-bold" : "text-white"
@@ -504,14 +336,16 @@ function KnockoutTeamButton({
 }
 
 function KnockoutMobileTeamButton({
-  teamDisplay,
+  team,
+  label,
   position,
   highlighted,
   isWinnerSelect,
   disabled,
   onWinnerChange,
 }: {
-  teamDisplay: TeamDisplay;
+  team: Team | null;
+  label: string;
   position: "home" | "away";
   highlighted: boolean;
   isWinnerSelect: boolean;
@@ -519,7 +353,6 @@ function KnockoutMobileTeamButton({
   onWinnerChange: (teamId: number) => void;
 }) {
   const isHome = position === "home";
-  const { team, label, isPlaceholder } = teamDisplay;
 
   if (isWinnerSelect) {
     return (
@@ -533,11 +366,7 @@ function KnockoutMobileTeamButton({
             : "hover:bg-white/10 text-white"
         } disabled:opacity-50`}
       >
-        <TeamCrest
-          team={team}
-          fallbackLabel={isPlaceholder ? label : undefined}
-          size="sm"
-        />
+        <TeamCrest team={team} fallbackLabel={label} size="sm" />
         <span className="text-xs font-semibold">{label}</span>
       </button>
     );
@@ -549,11 +378,7 @@ function KnockoutMobileTeamButton({
         highlighted ? "bg-amber-500/80" : ""
       }`}
     >
-      <TeamCrest
-        team={team}
-        fallbackLabel={isPlaceholder ? label : undefined}
-        size="sm"
-      />
+      <TeamCrest team={team} fallbackLabel={label} size="sm" />
       <span
         className={`text-xs font-semibold ${
           highlighted ? "text-slate-900" : "text-white"
@@ -651,7 +476,7 @@ function KnockoutScoreSection({
 type KnockoutMatchRowMode = "edit" | "readonly";
 
 interface KnockoutMatchRowProps {
-  match: Match;
+  match: MatchWithLiveInfo;
   prediction?: LocalPrediction;
   fifaMatchNumber: FifaMatchId;
   mode: KnockoutMatchRowMode;
@@ -681,22 +506,8 @@ export function KnockoutMatchRow({
   showWinnerSelect = false,
   pointsTooltip,
 }: KnockoutMatchRowProps) {
-  // Teams are already baked into the match (by MatchContext or usePredictedMatches)
-  const homeDisplay = getTeamDisplaySimple(
-    match.homeTeam,
-    match.id,
-    "home",
-    fifaMatchNumber,
-  );
-  const awayDisplay = getTeamDisplaySimple(
-    match.awayTeam,
-    match.id,
-    "away",
-    fifaMatchNumber,
-  );
-
-  const homeTeam = homeDisplay.team;
-  const awayTeam = awayDisplay.team;
+  const homeTeam = match.homeTeam;
+  const awayTeam = match.awayTeam;
 
   // Prediction values (or overridden scores)
   const homeGoals = scores ? scores.home : (prediction?.home_goals ?? null);
@@ -766,7 +577,8 @@ export function KnockoutMatchRow({
         >
           <div className="flex-1 min-w-0 flex items-center justify-end">
             <KnockoutMobileTeamButton
-              teamDisplay={homeDisplay}
+              team={homeTeam}
+              label={match.homeDisplayName}
               position="home"
               highlighted={homeHighlight}
               isWinnerSelect={needsWinnerSelect}
@@ -787,7 +599,8 @@ export function KnockoutMatchRow({
           />
           <div className="flex-1 min-w-0 flex items-center">
             <KnockoutMobileTeamButton
-              teamDisplay={awayDisplay}
+              team={awayTeam}
+              label={match.awayDisplayName}
               position="away"
               highlighted={awayHighlight}
               isWinnerSelect={needsWinnerSelect}
@@ -812,7 +625,8 @@ export function KnockoutMatchRow({
           />
           <div className="flex-1 min-w-0 flex items-center justify-end">
             <KnockoutTeamButton
-              teamDisplay={homeDisplay}
+              team={homeTeam}
+              label={match.homeDisplayName}
               position="home"
               highlighted={homeHighlight}
               isWinnerSelect={needsWinnerSelect}
@@ -832,7 +646,8 @@ export function KnockoutMatchRow({
           />
           <div className="flex-1 min-w-0 flex items-center">
             <KnockoutTeamButton
-              teamDisplay={awayDisplay}
+              team={awayTeam}
+              label={match.awayDisplayName}
               position="away"
               highlighted={awayHighlight}
               isWinnerSelect={needsWinnerSelect}

@@ -6,10 +6,9 @@ import {
   GroupStageSection,
   KnockoutStageSection,
 } from "@/components/predictions";
-import { useMatches } from "@/contexts/MatchContext";
+import { useMatches, MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { Match, CalculatedStanding } from "@/types/football";
 
 export default function FixturesPage() {
   // Use centralized match context
@@ -37,7 +36,7 @@ export default function FixturesPage() {
   // Organize matches by groups
   const groups = useMemo(() => {
     const groupMatches = matches.filter((m) => m.stage === "GROUP_STAGE");
-    const groupMap = new Map<string, Match[]>();
+    const groupMap = new Map<string, MatchWithLiveInfo[]>();
     groupMatches.forEach((m) => {
       if (!m.group) return;
       if (!groupMap.has(m.group)) groupMap.set(m.group, []);
@@ -47,22 +46,12 @@ export default function FixturesPage() {
   }, [matches]);
 
   // Standings and third-place qualifying come from the live bracket
-  const calculateStandings = useCallback(
-    (_groupMatches: Match[], groupName?: string): CalculatedStanding[] => {
-      if (groupName) {
-        return liveBracket.groupStandings.get(groupName) ?? [];
-      }
-      return [];
-    },
-    [liveBracket.groupStandings],
-  );
-
   const thirdPlaceQualifying = liveBracket.thirdPlaceQualifying;
 
   // Organize knockout matches by stage
   const knockoutStages = useMemo(() => {
     const knockoutMatches = matches.filter((m) => m.stage !== "GROUP_STAGE");
-    const stageMap = new Map<string, Match[]>();
+    const stageMap = new Map<string, MatchWithLiveInfo[]>();
     knockoutMatches.forEach((m) => {
       if (!stageMap.has(m.stage)) stageMap.set(m.stage, []);
       stageMap.get(m.stage)!.push(m);
@@ -145,7 +134,7 @@ export default function FixturesPage() {
             <GroupStageSection
               groups={groups}
               thirdPlaceQualifying={thirdPlaceQualifying}
-              calculateStandings={calculateStandings}
+              groupStandings={liveBracket.groupStandings}
               readOnly={true}
             />
           </>
@@ -155,7 +144,7 @@ export default function FixturesPage() {
             <GroupStageSection
               groups={groups}
               thirdPlaceQualifying={thirdPlaceQualifying}
-              calculateStandings={calculateStandings}
+              groupStandings={liveBracket.groupStandings}
               readOnly={true}
             />
 

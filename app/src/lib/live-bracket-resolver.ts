@@ -8,13 +8,7 @@
 //   2. Calculated team (from completed group standings / finished match results)
 //   3. null → display name falls back to bracket label (1A, W73, L101, etc.)
 
-import {
-  Match,
-  Team,
-  FifaMatchId,
-  asFifaMatchId,
-  CalculatedStanding,
-} from "@/types/football";
+import { Match, Team, FifaMatchId, CalculatedStanding } from "@/types/football";
 import { r32Bracket, r16Bracket, qfBracket, sfBracket } from "./r32-bracket";
 import { getBracketLabel } from "./team-display";
 import {
@@ -193,7 +187,7 @@ export class LiveBracketResolver {
   private resolveR32(): void {
     const r32Matches = this.matches.filter((m) => m.stage === "LAST_32");
     for (const match of r32Matches) {
-      const fifaNumber = asFifaMatchId(match.id);
+      const fifaNumber = match.id;
       const apiHomeValid = this.isValidApiTeam(match.homeTeam);
       const apiAwayValid = this.isValidApiTeam(match.awayTeam);
 
@@ -236,7 +230,7 @@ export class LiveBracketResolver {
   private resolveR16(): void {
     const r16Matches = this.matches.filter((m) => m.stage === "LAST_16");
     for (const match of r16Matches) {
-      const fifaNumber = asFifaMatchId(match.id);
+      const fifaNumber = match.id;
       const apiHomeValid = this.isValidApiTeam(match.homeTeam);
       const apiAwayValid = this.isValidApiTeam(match.awayTeam);
 
@@ -263,7 +257,7 @@ export class LiveBracketResolver {
   private resolveQF(): void {
     const qfMatches = this.matches.filter((m) => m.stage === "QUARTER_FINALS");
     for (const match of qfMatches) {
-      const fifaNumber = asFifaMatchId(match.id);
+      const fifaNumber = match.id;
       const apiHomeValid = this.isValidApiTeam(match.homeTeam);
       const apiAwayValid = this.isValidApiTeam(match.awayTeam);
 
@@ -288,7 +282,7 @@ export class LiveBracketResolver {
   private resolveSF(): void {
     const sfMatches = this.matches.filter((m) => m.stage === "SEMI_FINALS");
     for (const match of sfMatches) {
-      const fifaNumber = asFifaMatchId(match.id);
+      const fifaNumber = match.id;
       const apiHomeValid = this.isValidApiTeam(match.homeTeam);
       const apiAwayValid = this.isValidApiTeam(match.awayTeam);
 
@@ -313,7 +307,7 @@ export class LiveBracketResolver {
   private resolveThirdPlace(): void {
     const thirdPlaceMatch = this.matches.find((m) => m.stage === "THIRD_PLACE");
     if (!thirdPlaceMatch) return;
-    const fifaNumber = asFifaMatchId(thirdPlaceMatch.id);
+    const fifaNumber = thirdPlaceMatch.id;
     const apiHomeValid = this.isValidApiTeam(thirdPlaceMatch.homeTeam);
     const apiAwayValid = this.isValidApiTeam(thirdPlaceMatch.awayTeam);
     const homeTeam = apiHomeValid
@@ -329,7 +323,7 @@ export class LiveBracketResolver {
   private resolveFinal(): void {
     const finalMatch = this.matches.find((m) => m.stage === "FINAL");
     if (!finalMatch) return;
-    const fifaNumber = asFifaMatchId(finalMatch.id);
+    const fifaNumber = finalMatch.id;
     const apiHomeValid = this.isValidApiTeam(finalMatch.homeTeam);
     const apiAwayValid = this.isValidApiTeam(finalMatch.awayTeam);
     const homeTeam = apiHomeValid

@@ -9,7 +9,6 @@ import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { useMatchPointsForAllUsers } from "@/contexts/LeaderboardContext";
 import { getMatchInfo } from "@/lib/tournament";
 import { getMaxPossiblePoints } from "@/lib/scoring";
-import { getTeamDisplaySimple } from "@/lib/team-display";
 import { format } from "date-fns";
 import { Profile } from "@/types/database";
 import { FifaMatchId, asFifaMatchId } from "@/types/football";
@@ -38,16 +37,12 @@ export default function MatchDetailPage() {
   // Get match with resolved knockout teams baked in
   const match = useMatch(fifaId);
 
-  // match.id IS the FIFA number
-  const fifaNumber = match ? (match.id as FifaMatchId) : undefined;
-  const matchIdNum = parseInt(matchId);
-
-  const { matchPoints } = useMatchPointsForAllUsers(matchIdNum);
+  const { matchPoints } = useMatchPointsForAllUsers(fifaId);
   const loadingAllPredictions = profiles.loading || allPredictions.loading;
 
   // Combine predictions with centrally calculated points
   const allUserPredictions = useMemo(() => {
-    if (!match || !fifaNumber) return [];
+    if (!match || !match.id) return [];
     if (!profiles.content || !allPredictions.content) return [];
 
     const profilesList = profiles.content;
@@ -69,7 +64,7 @@ export default function MatchDetailPage() {
 
       // Find prediction for this match
       const pred = userData.predictions.find(
-        (p) => (p.match_id as FifaMatchId) === fifaNumber,
+        (p) => (p.match_id as FifaMatchId) === match.id,
       );
 
       if (!pred) return;
@@ -102,7 +97,6 @@ export default function MatchDetailPage() {
     return userPredictions;
   }, [
     match,
-    fifaNumber,
     profiles.content,
     allPredictions.content,
     matchPoints,
@@ -122,7 +116,7 @@ export default function MatchDetailPage() {
   }
 
   // Get venue from tournament.ts using FIFA number
-  const matchInfo = fifaNumber ? getMatchInfo(fifaNumber) : null;
+  const matchInfo = match.id ? getMatchInfo(match.id) : null;
   const venueDisplay = matchInfo
     ? `${matchInfo.venue.stadium}, ${matchInfo.venue.city}`
     : match.venue;
@@ -214,9 +208,9 @@ export default function MatchDetailPage() {
               <div className="flex items-center gap-2">
                 <span className="text-lg">🏆</span>
                 <span className="text-white font-semibold">{stageDisplay}</span>
-                {fifaNumber && (
+                {match.id && (
                   <span className="text-xs px-2 py-0.5 bg-blue-500/30 rounded text-blue-300 font-mono">
-                    #{fifaNumber}
+                    #{match.id}
                   </span>
                 )}
               </div>
@@ -244,27 +238,13 @@ export default function MatchDetailPage() {
                     {match.homeTeam.crest ? (
                       <img
                         src={match.homeTeam.crest}
-                        alt={
-                          getTeamDisplaySimple(
-                            match.homeTeam,
-                            match.id,
-                            "home",
-                            fifaId,
-                          ).label
-                        }
+                        alt={match.homeDisplayName}
                         className="w-12 h-12 sm:w-16 sm:h-16 mx-auto object-contain mb-2 drop-shadow-lg"
                       />
                     ) : (
                       <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-2">
                         <span className="text-lg sm:text-xl font-bold">
-                          {
-                            getTeamDisplaySimple(
-                              match.homeTeam,
-                              match.id,
-                              "home",
-                              fifaId,
-                            ).label
-                          }
+                          {match.homeDisplayName}
                         </span>
                       </div>
                     )}
@@ -272,24 +252,9 @@ export default function MatchDetailPage() {
                       className={`font-bold text-sm ${homeHighlight ? "text-slate-900" : "text-white"}`}
                     >
                       <span className="hidden sm:inline">
-                        {match.homeTeam.name ||
-                          getTeamDisplaySimple(
-                            match.homeTeam,
-                            match.id,
-                            "home",
-                            fifaId,
-                          ).label}
+                        {match.homeTeam.name || match.homeDisplayName}
                       </span>
-                      <span className="sm:hidden">
-                        {
-                          getTeamDisplaySimple(
-                            match.homeTeam,
-                            match.id,
-                            "home",
-                            fifaId,
-                          ).label
-                        }
-                      </span>
+                      <span className="sm:hidden">{match.homeDisplayName}</span>
                     </div>
                   </div>
 
@@ -319,27 +284,13 @@ export default function MatchDetailPage() {
                     {match.awayTeam.crest ? (
                       <img
                         src={match.awayTeam.crest}
-                        alt={
-                          getTeamDisplaySimple(
-                            match.awayTeam,
-                            match.id,
-                            "away",
-                            fifaId,
-                          ).label
-                        }
+                        alt={match.awayDisplayName}
                         className="w-12 h-12 sm:w-16 sm:h-16 mx-auto object-contain mb-2 drop-shadow-lg"
                       />
                     ) : (
                       <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-white/20 rounded-full flex items-center justify-center mb-2">
                         <span className="text-lg sm:text-xl font-bold">
-                          {
-                            getTeamDisplaySimple(
-                              match.awayTeam,
-                              match.id,
-                              "away",
-                              fifaId,
-                            ).label
-                          }
+                          {match.awayDisplayName}
                         </span>
                       </div>
                     )}
@@ -347,24 +298,9 @@ export default function MatchDetailPage() {
                       className={`font-bold text-sm ${awayHighlight ? "text-slate-900" : "text-white"}`}
                     >
                       <span className="hidden sm:inline">
-                        {match.awayTeam.name ||
-                          getTeamDisplaySimple(
-                            match.awayTeam,
-                            match.id,
-                            "away",
-                            fifaId,
-                          ).label}
+                        {match.awayTeam.name || match.awayDisplayName}
                       </span>
-                      <span className="sm:hidden">
-                        {
-                          getTeamDisplaySimple(
-                            match.awayTeam,
-                            match.id,
-                            "away",
-                            fifaId,
-                          ).label
-                        }
-                      </span>
+                      <span className="sm:hidden">{match.awayDisplayName}</span>
                     </div>
                   </div>
                 </div>

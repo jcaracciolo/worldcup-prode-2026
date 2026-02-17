@@ -59,12 +59,8 @@ export default function UserPredictionsPage() {
     knockoutStageOpen ? "knockout" : "group",
   );
 
-  // Get matches with user's predicted knockout teams baked in,
-  // plus predicted group standings and third-place qualifying.
-  const {
-    matches: predictedMatches,
-    predictedThirdPlaceQualifying: thirdPlaceQualifying,
-  } = usePredictedMatches(userId);
+  // Get matches with user's predicted knockout teams baked in.
+  const { matches: predictedMatches } = usePredictedMatches(userId);
 
   // Predictions keyed by FIFA match number (for knockout)
   const fifaPredictionMap = useMemo(
@@ -355,8 +351,6 @@ export default function UserPredictionsPage() {
         {/* Group Stage */}
         {activeTab === "group" && (
           <UserGroupSection
-            predictions={predictions}
-            thirdPlaceQualifying={thirdPlaceQualifying}
             showPredictions={showGroupPredictions}
             userId={userId}
           />

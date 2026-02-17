@@ -1,34 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Match,
-  CalculatedStanding,
-  PointBreakdown,
-  asFifaMatchId,
-} from "@/types/football";
+import { CalculatedStanding, PointBreakdown } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
-import { calculateStandingsFromPredictions } from "@/lib/standings";
 import { getTeamLabel } from "@/lib/scoring";
-import { getTeamDisplaySimple } from "@/lib/team-display";
-import { useMatches } from "@/contexts/MatchContext";
+import { useMatches, MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { useUserPosition } from "@/contexts/LeaderboardContext";
+import {
+  useUserPredictions,
+  usePredictedBracket,
+} from "@/contexts/PredictionsContext";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import StandingsTable from "@/components/StandingsTable";
 import LockedCard from "@/components/LockedCard";
 import { useMemo, useState } from "react";
 
 interface UserGroupSectionProps {
-  predictions: LocalPrediction[];
-  thirdPlaceQualifying: Map<string, boolean>;
   showPredictions: boolean;
   /** User whose predictions/points are being viewed */
   userId: string;
 }
 
 export default function UserGroupSection({
-  predictions,
-  thirdPlaceQualifying,
   showPredictions,
   userId,
 }: UserGroupSectionProps) {
@@ -36,21 +29,32 @@ export default function UserGroupSection({
   const { matches, liveBracket } = useMatches();
   const actualStandings = liveBracket.groupStandings;
 
+  // Get user's predictions from shared cache
+  const { predictions: predictionsMap } = useUserPredictions(userId);
+
+  // Get predicted bracket for override-aware standings + third-place qualifying
+  const predictedBracket = usePredictedBracket(userId);
+  const predictedGroupStandings = predictedBracket.groupStandings;
+  const thirdPlaceQualifying = predictedBracket.thirdPlaceQualifying;
+
   // Get centralized breakdown from leaderboard context
   const positionInfo = useUserPosition(userId);
   const breakdown = useMemo(
     () => positionInfo.userScore?.breakdown ?? [],
     [positionInfo.userScore?.breakdown],
   );
-  // Predictions are keyed by FIFA number
+  // Predictions keyed by FIFA number (for match row lookups)
   const predictionMap = useMemo(
-    () => new Map(predictions.map((p) => [p.match_id, p])),
-    [predictions],
+    () =>
+      new Map(
+        Array.from(predictionsMap.entries()).map(([k, v]) => [k as number, v]),
+      ),
+    [predictionsMap],
   );
 
   // Group matches by group name
   const groups = useMemo(() => {
-    const map = new Map<string, Match[]>();
+    const map = new Map<string, MatchWithLiveInfo[]>();
     matches
       .filter((m) => m.stage === "GROUP_STAGE")
       .forEach((m) => {
@@ -99,10 +103,7 @@ export default function UserGroupSection({
         {Array.from(groups.entries())
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([groupName, groupMatchList]) => {
-            const standings = calculateStandingsFromPredictions(
-              groupMatchList,
-              predictionMap,
-            );
+            const standings = predictedGroupStandings.get(groupName) ?? [];
             // Get actual standings for this group
             const groupActualStandings = actualStandings?.get(groupName) || [];
             // Check if all group matches are finished
@@ -135,7 +136,7 @@ export default function UserGroupSection({
 
 interface GroupCardProps {
   groupName: string;
-  matches: Match[];
+  matches: MatchWithLiveInfo[];
   standings: CalculatedStanding[];
   predictionMap: Map<number, LocalPrediction>;
   thirdPlaceQualifies: boolean;
@@ -170,7 +171,7 @@ function GroupCard({
             Predictions
           </h4>
           {matches.map((match) => {
-            const fifaNumber = asFifaMatchId(match.id);
+            const fifaNumber = match.id;
             return (
               <GroupMatchRow
                 key={match.id}
@@ -359,7 +360,7 @@ function StandingsPointsTooltip({
 }
 
 export interface GroupMatchRowProps {
-  match: Match;
+  match: MatchWithLiveInfo;
   prediction?: LocalPrediction;
   showPoints?: boolean;
   /** User whose points to display */
@@ -409,7 +410,7 @@ export function GroupMatchRow({
               homeHighlight ? "text-slate-900 font-semibold" : "text-white/80"
             }
           >
-            {getTeamDisplaySimple(match.homeTeam, match.id, "home").label}
+            {match.homeDisplayName}
           </span>
           {match.homeTeam.crest ? (
             <img
@@ -450,14 +451,14 @@ export function GroupMatchRow({
               awayHighlight ? "text-slate-900 font-semibold" : "text-white/80"
             }
           >
-            {getTeamDisplaySimple(match.awayTeam, match.id, "away").label}
+            {match.awayDisplayName}
           </span>
         </div>
       </Link>
       {/* Points earned - outside Link so tap works */}
       {showPoints && userId && (
         <MatchPointsTooltip
-          matchId={asFifaMatchId(match.id)}
+          matchId={match.id}
           userId={userId}
           className="w-8"
         />

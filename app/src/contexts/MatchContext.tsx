@@ -9,12 +9,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import {
-  Match,
-  FifaMatchId,
-  asFifaMatchId,
-  CalculatedStanding,
-} from "@/types/football";
+import { Match, FifaMatchId, CalculatedStanding } from "@/types/football";
 import { getMatchInfo, Venue } from "@/lib/tournament";
 import { getTeamDisplaySimple } from "@/lib/team-display";
 import {
@@ -145,7 +140,7 @@ function enhanceMatch(match: Match, currentTime: Date): MatchWithLiveInfo {
   const period = determinePeriod(match, elapsedMinutes);
 
   // match.id IS the FIFA number (converted by the API route)
-  const fifaNumber = asFifaMatchId(match.id);
+  const fifaNumber = match.id;
 
   // Get static venue from tournament data (only available for knockout matches 73-104)
   const matchInfo = fifaNumber ? getMatchInfo(fifaNumber) : null;
@@ -162,16 +157,14 @@ function enhanceMatch(match: Match, currentTime: Date): MatchWithLiveInfo {
   // Compute display names (e.g., "USA", "1A", "W73", "3rd")
   const homeDisplayName = getTeamDisplaySimple(
     match.homeTeam,
-    match.id,
-    "home",
     fifaNumber,
-  ).label;
+    "home",
+  );
   const awayDisplayName = getTeamDisplaySimple(
     match.awayTeam,
-    match.id,
-    "away",
     fifaNumber,
-  ).label;
+    "away",
+  );
 
   return {
     ...match,
@@ -261,7 +254,7 @@ export function MatchProvider({
       processedMatches.map((m) => {
         const enhanced = enhanceMatch(m, currentTime);
         if (m.stage === "GROUP_STAGE") return enhanced;
-        const resolved = resolvedKnockoutTeams.get(asFifaMatchId(m.id));
+        const resolved = resolvedKnockoutTeams.get(m.id);
         if (!resolved) return enhanced;
         return {
           ...enhanced,

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { PointBreakdown, FifaMatchId, asFifaMatchId } from "@/types/football";
+import { PointBreakdown, asFifaMatchId, Team } from "@/types/football";
 import { getTeamLabel } from "@/lib/scoring";
 import { getTeamDisplaySimple } from "@/lib/team-display";
 
@@ -92,19 +92,12 @@ export default function PointsBreakdown({
 
     // Get team display name with fallback to match ID label
     const getTeamDisplay = (
-      team:
-        | {
-            tla?: string;
-            crest?: string | null;
-            shortName?: string;
-            name?: string;
-          }
-        | undefined,
+      team: Partial<Team> | undefined,
       matchId: number,
       position: "home" | "away",
     ) => {
       const fifaId = asFifaMatchId(matchId);
-      return getTeamDisplaySimple(team, matchId, position, fifaId).label;
+      return getTeamDisplaySimple(team, fifaId, position);
     };
 
     // For group bonus types (advance/position), show team with emoji
@@ -183,16 +176,8 @@ export default function PointsBreakdown({
     }
 
     // Match-based layout: Score | Reason | Prediction | Result
-    const homeTeam = item.matchInfo.homeTeam as {
-      tla?: string;
-      crest?: string;
-      shortName?: string;
-    };
-    const awayTeam = item.matchInfo.awayTeam as {
-      tla?: string;
-      crest?: string;
-      shortName?: string;
-    };
+    const homeTeam = item.matchInfo.homeTeam as Partial<Team>;
+    const awayTeam = item.matchInfo.awayTeam as Partial<Team>;
     const homeTla = getTeamDisplay(homeTeam, item.matchId, "home");
     const awayTla = getTeamDisplay(awayTeam, item.matchId, "away");
 
@@ -232,7 +217,7 @@ export default function PointsBreakdown({
 
     // Render team with flag - compact version
     const renderTeam = (
-      team: { tla?: string; crest?: string; shortName?: string } | undefined,
+      team: Partial<Team> | undefined,
       tla: string,
       position: "home" | "away",
       highlight: boolean,

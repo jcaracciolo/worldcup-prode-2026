@@ -12,15 +12,9 @@ import React, {
 import { useDatabase } from "@/contexts/DatabaseContext";
 import { useMatches, MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
-import {
-  Match,
-  FifaMatchId,
-  asFifaMatchId,
-  CalculatedStanding,
-} from "@/types/football";
+import { FifaMatchId, CalculatedStanding } from "@/types/football";
 import { LCE, lceLoading, lceContent, lceError } from "@/types/lce";
 import { PredictionBracketResolver } from "@/lib/prediction-bracket-resolver";
-import { LiveBracket } from "@/lib/live-bracket-resolver";
 import { getTeamDisplaySimple } from "@/lib/team-display";
 
 // =====================================================================
@@ -514,51 +508,86 @@ export function useAllPredictions(): LCE<AllPredictionsMap> {
 }
 
 // =====================================================================
-// PREDICTED MATCHES
+// PREDICTED BRACKET
+// =====================================================================
+
+import { PredictedBracket } from "@/lib/prediction-bracket-resolver";
+
+const EMPTY_BRACKET: PredictedBracket = {
+  kind: "predicted",
+  teams: new Map(),
+  groupStandings: new Map(),
+  thirdPlaceQualifying: new Map(),
+};
+
+/**
+ * Hook that resolves a user's predicted bracket.
+ *
+ * Returns the PredictedBracket which includes:
+ * - teams: Map of knockout match teams (keyed by FIFA match number)
+ * - groupStandings: predicted group standings from user's predictions + overrides
+ * - thirdPlaceQualifying: which 3rd-place teams qualify
+ *
+ * This is the single source of truth for a user's predicted bracket.
+ * usePredictedMatches composes on top of this to bake teams into MatchWithLiveInfo[].
+ *
+ * @param userId - User whose predictions drive team resolution (null = no predictions)
+ */
+export function usePredictedBracket(userId: string | null): PredictedBracket {
+  const { rawProcessedMatches, liveBracket } = useMatches();
+
+  const ctx = usePredictionsContext();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _version = ctx.cacheVersion; // Subscribe to cache updates
+
+  const cached = userId ? ctx.getCachedPredictions(userId) : null;
+  const predictions = cached?.predictions ?? null;
+  const overrides = cached?.overrides ?? null;
+
+  // Trigger fetch if not cached
+  useEffect(() => {
+    if (userId) ctx.ensureFetched(userId);
+  }, [userId, ctx]);
+
+  return useMemo(() => {
+    if (!predictions || predictions.size === 0) {
+      return EMPTY_BRACKET;
+    }
+    return new PredictionBracketResolver({
+      liveBracket,
+      matches: rawProcessedMatches,
+      predictions,
+      groupOverrides: overrides ?? undefined,
+    }).resolve();
+  }, [predictions, overrides, rawProcessedMatches, liveBracket]);
+}
+
+// =====================================================================
+// PREDICTED MATCHES (baked from bracket)
 // =====================================================================
 
 /** Return type for usePredictedMatches — mirrors the shape consumers expect from useMatches */
 export interface PredictedMatchesResult {
   /** Matches with user-predicted knockout teams baked into homeTeam/awayTeam */
   matches: MatchWithLiveInfo[];
-  /** Group standings computed from user's predicted group match scores */
+  /** Group standings computed from user's predicted group match scores + overrides */
   predictedGroupStandings: Map<string, CalculatedStanding[]>;
   /** Which 3rd-place teams qualify based on predicted group standings */
   predictedThirdPlaceQualifying: Map<string, boolean>;
 }
 
 /**
- * Build matches with predicted knockout teams baked in.
- * Pure computation — used by usePredictedMatches to cache results.
- *
- * - R32 teams come from the live bracket (actual matchups).
- * - R32 winners come from user's predicted scores.
- * - R16+ teams chain from predicted winners.
- * - Predicted group standings are computed from user's group predictions.
- *
- * This shows the user's predicted bracket path through the tournament.
+ * Bake predicted teams from a PredictedBracket into MatchWithLiveInfo[].
+ * Knockout matches get their homeTeam/awayTeam/displayNames overlaid.
+ * Group stage matches pass through unchanged.
  */
-function buildPredictedMatches(
-  matches: Match[],
+function bakeTeamsIntoMatches(
   contextMatches: MatchWithLiveInfo[],
-  predictions: Map<FifaMatchId, LocalPrediction>,
-  liveBracket: LiveBracket,
-): PredictedMatchesResult {
-  // Run PredictionBracketResolver: R32 from live, R16+ from predictions
-  const predictedBracket = new PredictionBracketResolver({
-    liveBracket,
-    matches,
-    predictions,
-  }).resolve();
-
-  const resolvedKnockoutTeams = predictedBracket.teams;
-  const predictedGroupStandings = predictedBracket.groupStandings;
-  const predictedThirdPlaceQualifying = predictedBracket.thirdPlaceQualifying;
-
-  // Bake predicted teams into context matches (same pattern as MatchContext)
-  const bakedMatches = contextMatches.map((m) => {
+  bracket: PredictedBracket,
+): MatchWithLiveInfo[] {
+  return contextMatches.map((m) => {
     if (m.stage === "GROUP_STAGE") return m;
-    const resolved = resolvedKnockoutTeams.get(asFifaMatchId(m.id));
+    const resolved = bracket.teams.get(m.id);
     if (!resolved) return m;
     const homeTeam = resolved.home ?? m.homeTeam;
     const awayTeam = resolved.away ?? m.awayTeam;
@@ -568,67 +597,42 @@ function buildPredictedMatches(
       awayTeam,
       homeDisplayName:
         resolved.homeDisplayName ??
-        getTeamDisplaySimple(homeTeam, m.id, "home", asFifaMatchId(m.id)).label,
+        getTeamDisplaySimple(homeTeam, m.id, "home"),
       awayDisplayName:
         resolved.awayDisplayName ??
-        getTeamDisplaySimple(awayTeam, m.id, "away", asFifaMatchId(m.id)).label,
+        getTeamDisplaySimple(awayTeam, m.id, "away"),
     };
   });
-
-  return {
-    matches: bakedMatches,
-    predictedGroupStandings,
-    predictedThirdPlaceQualifying,
-  };
 }
 
 /**
  * Hook that returns matches with a user's predicted knockout teams baked in.
  *
- * Behaves like useMatches() but with knockout teams resolved from the user's
- * predictions instead of actual results. Group stage matches are unchanged.
- *
- * Results are memoized — recomputed only when predictions or match data change.
+ * Composes on usePredictedBracket: resolves the bracket, then overlays
+ * predicted teams onto MatchWithLiveInfo[] so downstream components
+ * (KnockoutMatchRow, etc.) can use match.homeTeam/awayTeam uniformly.
  *
  * @param userId - User whose predictions drive team resolution (null = no predictions)
  */
 export function usePredictedMatches(
   userId: string | null,
 ): PredictedMatchesResult {
-  const {
-    matches: contextMatches,
-    rawProcessedMatches,
-    liveBracket,
-  } = useMatches();
+  const { matches: contextMatches } = useMatches();
+  const bracket = usePredictedBracket(userId);
 
-  const ctx = usePredictionsContext();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _version = ctx.cacheVersion; // Subscribe to cache updates
+  const matches = useMemo(() => {
+    if (bracket === EMPTY_BRACKET) return contextMatches;
+    return bakeTeamsIntoMatches(contextMatches, bracket);
+  }, [contextMatches, bracket]);
 
-  const cached = userId ? ctx.getCachedPredictions(userId) : null;
-  const predictions = cached?.predictions ?? null;
-
-  // Trigger fetch if not cached
-  useEffect(() => {
-    if (userId) ctx.ensureFetched(userId);
-  }, [userId, ctx]);
-
-  return useMemo(() => {
-    if (!predictions || predictions.size === 0) {
-      // No predictions — return context matches as-is (actual teams baked in)
-      return {
-        matches: contextMatches,
-        predictedGroupStandings: new Map(),
-        predictedThirdPlaceQualifying: new Map(),
-      };
-    }
-    return buildPredictedMatches(
-      rawProcessedMatches,
-      contextMatches,
-      predictions,
-      liveBracket,
-    );
-  }, [predictions, rawProcessedMatches, contextMatches, liveBracket]);
+  return useMemo(
+    () => ({
+      matches,
+      predictedGroupStandings: bracket.groupStandings,
+      predictedThirdPlaceQualifying: bracket.thirdPlaceQualifying,
+    }),
+    [matches, bracket],
+  );
 }
 
 /**

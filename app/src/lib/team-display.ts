@@ -33,19 +33,6 @@ export function shortLabel(label: string): string {
 }
 
 // =====================================================================
-// TYPES
-// =====================================================================
-
-export interface TeamDisplay {
-  /** The resolved team object (null if not yet determined) */
-  team: Team | null;
-  /** Display label: "USA", "EU1", "1A", "W73", etc. */
-  label: string;
-  /** Whether this is a placeholder (no real team yet) */
-  isPlaceholder: boolean;
-}
-
-// =====================================================================
 // TLA OVERRIDES
 // =====================================================================
 
@@ -118,19 +105,7 @@ export function getBracketLabel(
 }
 
 /**
- * Check if a team is a real team (positive ID, not a placeholder)
- */
-export function isRealTeam(team: Team | null): boolean {
-  return (
-    team !== null &&
-    team.id !== null &&
-    team.id > 0 &&
-    !isPlaceholderTeamId(team.id)
-  );
-}
-
-/**
- * Get display information for a team.
+ * Get the display label for a team.
  *
  * Works with any team object — matches should already have their teams
  * baked in (by MatchContext for actual teams, or usePredictedMatches for
@@ -145,21 +120,10 @@ export function isRealTeam(team: Team | null): boolean {
  * 5. Fallback: "QUA" for group stage, bracket label for knockout
  */
 export function getTeamDisplaySimple(
-  team:
-    | Team
-    | {
-        id?: number | null;
-        tla?: string | null;
-        shortName?: string | null;
-        name?: string | null;
-        crest?: string | null;
-      }
-    | null
-    | undefined,
-  matchId: number,
+  team: Partial<Team> | null | undefined,
+  fifaMatchId: FifaMatchId,
   position: "home" | "away",
-  fifaMatchNumber?: FifaMatchId,
-): TeamDisplay {
+): string {
   // Real team with valid ID
   if (
     team &&
@@ -168,16 +132,13 @@ export function getTeamDisplaySimple(
     team.id > 0 &&
     !isPlaceholderTeamId(team.id)
   ) {
-    return {
-      team: team as Team,
-      label:
-        TEAM_TLA_OVERRIDES[team.name || ""] ||
-        team.tla ||
-        team.shortName ||
-        team.name ||
-        "TBD",
-      isPlaceholder: false,
-    };
+    return (
+      TEAM_TLA_OVERRIDES[team.name || ""] ||
+      team.tla ||
+      team.shortName ||
+      team.name ||
+      "TBD"
+    );
   }
 
   // Placeholder team (EU1, IC1, etc.)
@@ -187,40 +148,25 @@ export function getTeamDisplaySimple(
     team.id !== undefined &&
     isPlaceholderTeamId(team.id)
   ) {
-    return {
-      team: team as Team,
-      label: team.tla || "TBD",
-      isPlaceholder: true,
-    };
+    return team.tla || "TBD";
   }
 
   // Team without ID - just use names
   if (team && (team.tla || team.shortName || team.name)) {
-    return {
-      team: null,
-      label:
-        TEAM_TLA_OVERRIDES[team.name || ""] ||
-        team.tla ||
-        team.shortName ||
-        team.name ||
-        "TBD",
-      isPlaceholder: true,
-    };
+    return (
+      TEAM_TLA_OVERRIDES[team.name || ""] ||
+      team.tla ||
+      team.shortName ||
+      team.name ||
+      "TBD"
+    );
   }
 
   // Knockout match without team - show bracket label
-  if (fifaMatchNumber && fifaMatchNumber >= 73) {
-    return {
-      team: null,
-      label: getBracketLabel(fifaMatchNumber, position),
-      isPlaceholder: true,
-    };
+  if (fifaMatchId && fifaMatchId >= 73) {
+    return getBracketLabel(fifaMatchId, position);
   }
 
   // Group stage without team - qualifier placeholder
-  return {
-    team: null,
-    label: "QUA",
-    isPlaceholder: true,
-  };
+  return "QUA";
 }

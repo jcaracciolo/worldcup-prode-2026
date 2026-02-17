@@ -1,48 +1,20 @@
 "use client";
 
-import { Match, FifaMatchId, asFifaMatchId } from "@/types/football";
 import { MatchWithLiveInfo } from "@/contexts/MatchContext";
-import { getTeamDisplaySimple, shortLabel } from "@/lib/team-display";
+import { shortLabel } from "@/lib/team-display";
 import { format } from "date-fns";
 import Link from "next/link";
 
 interface MatchCardProps {
-  match: Match | MatchWithLiveInfo;
+  match: MatchWithLiveInfo;
   showDate?: boolean;
 }
 
-// Type guard to check if match has live info
-function hasLiveInfo(
-  match: Match | MatchWithLiveInfo,
-): match is MatchWithLiveInfo {
-  return "isLive" in match && "elapsedMinutes" in match;
-}
-
 export default function MatchCard({ match, showDate = false }: MatchCardProps) {
-  const fifaMatchNumber = asFifaMatchId(match.id);
-  // Teams are already baked into the match by MatchContext
-  const homeDisplayName = getTeamDisplaySimple(
-    match.homeTeam,
-    match.id,
-    "home",
-    fifaMatchNumber,
-  ).label;
-  const awayDisplayName = getTeamDisplaySimple(
-    match.awayTeam,
-    match.id,
-    "away",
-    fifaMatchNumber,
-  ).label;
-  // Support both Match and MatchWithLiveInfo
-  const isLive = hasLiveInfo(match)
-    ? match.isLive
-    : match.status === "IN_PLAY" || match.status === "PAUSED";
+  const { homeDisplayName, awayDisplayName, isLive, elapsedMinutes, period } =
+    match;
   const isFinished = match.status === "FINISHED";
   const matchDate = new Date(match.utcDate);
-
-  // Get elapsed minutes if available
-  const elapsedMinutes = hasLiveInfo(match) ? match.elapsedMinutes : null;
-  const period = hasLiveInfo(match) ? match.period : null;
 
   // Format group name: GROUP_A -> Group A
   const formatGroupName = (group: string | null): string | null => {
@@ -205,8 +177,7 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
             <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-emerald-500/20 text-emerald-400 text-[10px] sm:text-xs font-semibold rounded-full">
               {formatGroupName(match.group) || formatStageName(match.stage)}
             </span>
-            {/* Use venueDisplay from MatchWithLiveInfo if available, otherwise fall back to match.venue */}
-            {hasLiveInfo(match) && match.venueDisplay ? (
+            {match.venueDisplay ? (
               <span className="text-white/40 text-[10px] sm:text-xs">
                 📍 {match.venueDisplay}
               </span>

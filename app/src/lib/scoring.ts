@@ -12,6 +12,7 @@ import {
 } from "./football-api";
 import { LiveBracket } from "./live-bracket-resolver";
 import { PredictionBracketResolver } from "./prediction-bracket-resolver";
+import { getTeamLabel } from "./team-display";
 
 // =====================================================================
 // SCORING CONSTANTS - Single source of truth for all scoring rules
@@ -57,48 +58,8 @@ export interface MatchPointsResult {
   isLive: boolean;
 }
 
-// =====================================================================
-// UTILITY FUNCTIONS - Team display names and helpers
-// =====================================================================
-
-/** Team abbreviation overrides for teams with missing or non-standard TLA */
-const TEAM_TLA_OVERRIDES: Record<string, string> = {
-  Curaçao: "CUW",
-  Curacao: "CUW",
-  "Côte d'Ivoire": "CIV",
-  "Korea Republic": "KOR",
-  "South Korea": "KOR",
-};
-
-/**
- * Get team abbreviation with fallbacks - use for standings and non-match contexts.
- * Default fallback is "QUA" for teams that haven't qualified to the World Cup yet.
- * For knockout bracket labels, use getTeamDisplayName instead.
- */
-export function getTeamLabel(
-  team:
-    | { tla?: string | null; shortName?: string | null; name?: string | null }
-    | null
-    | undefined,
-  fallback: string = "QUA",
-): string {
-  if (!team) return fallback;
-  // Check for override first
-  if (team.name && TEAM_TLA_OVERRIDES[team.name]) {
-    return TEAM_TLA_OVERRIDES[team.name];
-  }
-  return team.tla || team.shortName || team.name || fallback;
-}
-
-/** Generate consistent TBD labels for a match based on match ID */
-export function getTbdLabels(matchId: number): { home: string; away: string } {
-  // Use last 2 digits of match ID for a short identifier
-  const matchNum = matchId % 100;
-  return {
-    home: `${matchNum}H`,
-    away: `${matchNum}A`,
-  };
-}
+// Re-export getTeamLabel from its canonical home for backward compatibility
+export { getTeamLabel } from "./team-display";
 
 // =====================================================================
 // SINGLE-MATCH SCORING FUNCTIONS

@@ -1,108 +1,27 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useMemo } from "react";
 import Link from "next/link";
-import { useMatches, useMatch } from "@/contexts/MatchContext";
-import { useUser, useAllProfiles } from "@/contexts/UserContext";
-import { useAllPredictions } from "@/contexts/PredictionsContext";
-import { useMatchPointsForAllUsers } from "@/contexts/LeaderboardContext";
+import { useMatchPredictions } from "@/hooks/useMatchPredictions";
+import { MatchPredictionsPanel } from "@/components/MatchPredictionsPanel";
 import { getMatchInfo } from "@/lib/tournament";
-import { getMaxPossiblePoints } from "@/lib/scoring";
 import { formatGroupName, formatStageName } from "@/lib/format";
 import { format } from "date-fns";
-import { Profile } from "@/types/database";
-import { FifaMatchId, asFifaMatchId } from "@/types/football";
+import { asFifaMatchId } from "@/types/football";
 import LoadingSpinner from "@/components/LoadingSpinner";
-
-interface UserMatchPrediction {
-  userId: string;
-  displayName: string;
-  homeGoals: number | null;
-  awayGoals: number | null;
-  winnerId: number | null;
-  pointsEarned: number;
-  maxPoints: number;
-}
 
 export default function MatchDetailPage() {
   const params = useParams();
   const matchId = params.matchId as string;
-  const { user: profile } = useUser();
-  const profiles = useAllProfiles();
-  const allPredictions = useAllPredictions();
-
-  const { loading: matchesLoading } = useMatches();
   const fifaId = asFifaMatchId(parseInt(matchId));
 
-  // Get match with resolved knockout teams baked in
-  const match = useMatch(fifaId);
-
-  const { matchPoints } = useMatchPointsForAllUsers(fifaId);
-  const loadingAllPredictions = profiles.loading || allPredictions.loading;
-
-  // Combine predictions with centrally calculated points
-  const allUserPredictions = useMemo(() => {
-    if (!match || !match.id) return [];
-    if (!profiles.content || !allPredictions.content) return [];
-
-    const profilesList = profiles.content;
-    const allPredictionsMap = allPredictions.content;
-
-    const maxPoints = getMaxPossiblePoints(match);
-
-    // Build a map of userId -> points from centralized calculation
-    const pointsByUser = new Map<string, number>();
-    matchPoints.forEach((mp) => {
-      pointsByUser.set(mp.userId, mp.pointsEarned);
-    });
-
-    const userPredictions: UserMatchPrediction[] = [];
-
-    profilesList.forEach((profileData: Profile) => {
-      const userData = allPredictionsMap.get(profileData.id);
-      if (!userData) return;
-
-      // Find prediction for this match
-      const pred = userData.predictions.find(
-        (p) => (p.match_id as FifaMatchId) === match.id,
-      );
-
-      if (!pred) return;
-
-      // Get points from centralized calculation (already handles knockout team matching)
-      const pointsEarned = pointsByUser.get(profileData.id) || 0;
-
-      userPredictions.push({
-        userId: profileData.id,
-        displayName: profileData.display_name,
-        homeGoals: pred.home_goals,
-        awayGoals: pred.away_goals,
-        winnerId: pred.winner_id,
-        pointsEarned,
-        maxPoints,
-      });
-    });
-
-    // Sort: current user first, then by points (highest first), then by name
-    userPredictions.sort((a, b) => {
-      // Current user always first
-      if (a.userId === profile?.id) return -1;
-      if (b.userId === profile?.id) return 1;
-      // Then sort by points
-      if (b.pointsEarned !== a.pointsEarned)
-        return b.pointsEarned - a.pointsEarned;
-      return a.displayName.localeCompare(b.displayName);
-    });
-
-    return userPredictions;
-  }, [
+  const {
     match,
-    profiles.content,
-    allPredictions.content,
-    matchPoints,
-    profile?.id,
-  ]);
+    matchesLoading,
+    predictions: allUserPredictions,
+    loading: loadingAllPredictions,
+    currentUserId,
+  } = useMatchPredictions(fifaId);
 
   if (matchesLoading && !match) {
     return <LoadingSpinner />;
@@ -152,28 +71,6 @@ export default function MatchDetailPage() {
   // Highlight calculation for actual result
   const homeHighlight = homeWon || (isDraw && isGroupStage);
   const awayHighlight = awayWon || (isDraw && isGroupStage);
-
-  // Prediction highlighting helper
-  const getPredictionHighlight = (pred: UserMatchPrediction) => {
-    const predHasScore = pred.homeGoals !== null && pred.awayGoals !== null;
-    if (!predHasScore) return { home: false, away: false };
-
-    const predHomeWins = pred.homeGoals! > pred.awayGoals!;
-    const predAwayWins = pred.awayGoals! > pred.homeGoals!;
-    const predIsDraw = pred.homeGoals === pred.awayGoals;
-    const isKnockout = !isGroupStage;
-
-    const homeHighlight =
-      predHomeWins ||
-      (predIsDraw && isGroupStage) ||
-      (predIsDraw && isKnockout && pred.winnerId === match.homeTeam.id);
-    const awayHighlight =
-      predAwayWins ||
-      (predIsDraw && isGroupStage) ||
-      (predIsDraw && isKnockout && pred.winnerId === match.awayTeam.id);
-
-    return { home: homeHighlight, away: awayHighlight };
-  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -284,79 +181,12 @@ export default function MatchDetailPage() {
                 </div>
 
                 {/* Right: Predictions Panel */}
-                <div className="lg:w-56 xl:w-64 bg-slate-900/70 rounded-xl p-3 backdrop-blur-sm border border-white/10">
-                  <div className="text-xs font-semibold text-white/80 mb-2 flex items-center gap-1.5">
-                    <span>👥</span>
-                    <span>Predictions</span>
-                    {allUserPredictions.length > 0 && (
-                      <span className="text-white/50">
-                        ({allUserPredictions.length})
-                      </span>
-                    )}
-                  </div>
-
-                  {loadingAllPredictions ? (
-                    <div className="text-xs text-white/50 text-center py-2">
-                      <span className="text-lg animate-bounce-spin inline-block">
-                        ⚽
-                      </span>
-                    </div>
-                  ) : allUserPredictions.length === 0 ? (
-                    <div className="text-xs text-white/50 text-center py-2">
-                      No predictions yet
-                    </div>
-                  ) : (
-                    <div className="space-y-1 max-h-[140px] overflow-y-auto">
-                      {allUserPredictions.map((pred) => {
-                        const highlight = getPredictionHighlight(pred);
-                        const isCurrentUser = profile?.id === pred.userId;
-
-                        return (
-                          <Link
-                            key={pred.userId}
-                            href={`/user/${pred.userId}`}
-                            className={`flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg text-xs transition-all hover:bg-white/10 ${isCurrentUser ? "bg-sky-500/20 border border-sky-400/40" : ""}`}
-                          >
-                            <span
-                              className={`truncate flex-1 ${isCurrentUser ? "text-sky-200 font-medium" : "text-white/90"}`}
-                            >
-                              {pred.displayName}
-                            </span>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <span
-                                className={`px-1 rounded ${highlight.home ? "bg-amber-400 text-slate-900 font-bold" : "text-white/70"}`}
-                              >
-                                {pred.homeGoals ?? "-"}
-                              </span>
-                              <span className="text-white/40">-</span>
-                              <span
-                                className={`px-1 rounded ${highlight.away ? "bg-amber-400 text-slate-900 font-bold" : "text-white/70"}`}
-                              >
-                                {pred.awayGoals ?? "-"}
-                              </span>
-                              {(isFinished || isLive) && (
-                                <span
-                                  className={`ml-1 font-bold ${pred.pointsEarned > 0 ? "text-sky-300" : "text-white/30"} ${isLive ? "live-pulse" : ""}`}
-                                >
-                                  +{pred.pointsEarned}
-                                </span>
-                              )}
-                            </div>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {!profile && allUserPredictions.length > 0 && (
-                    <Link
-                      href="/login"
-                      className="block text-center text-xs text-sky-300 hover:text-sky-200 mt-2"
-                    >
-                      Log in to highlight yours
-                    </Link>
-                  )}
-                </div>
+                <MatchPredictionsPanel
+                  match={match}
+                  predictions={allUserPredictions}
+                  loading={loadingAllPredictions}
+                  currentUserId={currentUserId}
+                />
               </div>
             </div>
 

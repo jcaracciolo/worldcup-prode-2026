@@ -1,8 +1,8 @@
 "use client";
 
 import { FifaMatchId } from "@/types/football";
+import { getTeamLabel } from "@/lib/team-display";
 import {
-  getTeamLabel,
   getMaxPossiblePoints,
   ROUND_MULTIPLIERS,
 } from "@/lib/scoring";

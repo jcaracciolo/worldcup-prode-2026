@@ -11,80 +11,50 @@ import {
   KnockoutStageSection,
   GroupStageSection,
 } from "@/components/predictions";
-import { useMatches } from "@/contexts/MatchContext";
-import { useTime } from "@/contexts/TimeContext";
-import { useUser } from "@/contexts/UserContext";
-import {
-  useUserPredictions,
-  usePredictedMatches,
-} from "@/contexts/PredictionsContext";
 import { useScrollToLiveMatch } from "@/hooks/useScrollToLiveMatch";
-import { FifaMatchId } from "@/types/football";
-
-import { LocalPrediction } from "@/types/database";
+import { usePredictionEditor } from "@/hooks/usePredictionEditor";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function PredictionsPage() {
   const router = useRouter();
-  const { user: profile, loading: userLoading } = useUser();
 
-  // Predictions from shared context cache — single source of truth
   const {
-    predictions,
-    overrides,
-    loading: predictionsLoading,
-    dirty: hasLocalEdits,
-    updatePrediction,
-    updateOverrides,
-    setPredictions,
-    savePredictions,
-  } = useUserPredictions(profile?.id || null);
-
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  // Modal & toast state
-  const [toast, setToast] = useState<{
-    message: string;
-    type: "success" | "error" | "warning";
-  } | null>(null);
-  const [confirmModal, setConfirmModal] = useState<{
-    title: string;
-    message: string;
-    confirmLabel?: string;
-    variant?: "danger" | "default";
-    onConfirm: () => void;
-  } | null>(null);
-
-  // Use centralized match context for automatic polling
-  const {
+    // Auth
+    profile,
+    userLoading,
+    // Match data
     matches,
-    loading: matchesLoading,
+    matchesLoading,
     hasLiveMatches,
     liveMatches,
     groups,
-    refresh: refreshMatches,
-  } = useMatches();
-
-  // Get matches with current user's predicted knockout teams baked in,
-  // plus predicted group standings and third-place qualifying (override-aware)
-  const {
-    matches: predictedMatches,
+    // Prediction data
+    predictions,
+    predictionsLoading,
     predictedGroupStandings,
     predictedThirdPlaceQualifying,
     knockoutStages,
-  } = usePredictedMatches(profile?.id || null);
+    // Lock status
+    groupLocked,
+    knockoutOpen,
+    knockoutLocked,
+    daysUntilKnockoutLocks,
+    // Editing
+    handlePredictionChange,
+    handleSwapPositions,
+    handleSave,
+    handleResetPredictions,
+    handleRandomFill,
+    // UI state
+    saving,
+    error,
+    toast,
+    setToast,
+    confirmModal,
+    setConfirmModal,
+  } = usePredictionEditor();
 
   const scrollToFirstLiveMatch = useScrollToLiveMatch();
-
-  // Get stage lock status from time context (simulation-transparent)
-  const { stageLockStatus } = useTime();
-  const {
-    groupStageLocked: groupLocked,
-    knockoutStageOpen: knockoutOpen,
-    knockoutStageLocked: knockoutLocked,
-    daysUntilKnockoutLocks,
-  } = stageLockStatus;
 
   // Tab state - default to knockout if it's open
   const [activeTab, setActiveTab] = useState<"group" | "knockout">(() =>
@@ -98,247 +68,13 @@ export default function PredictionsPage() {
     }
   }, [userLoading, profile, router]);
 
-  // Derived loading state - only show loading on initial load when we have no data
+  // Derived loading state
   const loading = userLoading || (predictionsLoading && predictions.size === 0);
   const showMatchesLoading = matchesLoading && matches.length === 0;
-
-  const handlePredictionChange = (
-    fifaMatchId: FifaMatchId,
-    homeGoals: number | null,
-    awayGoals: number | null,
-    winnerId?: number | null,
-  ) => {
-    const existing = predictions.get(fifaMatchId);
-    updatePrediction({
-      match_id: fifaMatchId,
-      home_goals: homeGoals,
-      away_goals: awayGoals,
-      winner_id: winnerId ?? existing?.winner_id ?? null,
-    });
-  };
-
-  const handleSwapPositions = (
-    groupName: string,
-    teamId1: number,
-    teamId2: number,
-  ) => {
-    // Find current positions from predicted standings
-    const standings = predictedGroupStandings.get(groupName) ?? [];
-
-    const team1Standing = standings.find((s) => s.team.id === teamId1);
-    const team2Standing = standings.find((s) => s.team.id === teamId2);
-
-    if (!team1Standing || !team2Standing) return;
-
-    // Create new overrides swapping positions
-    const newOverrides = overrides.filter(
-      (o) =>
-        !(
-          o.group_name === groupName &&
-          (o.team_id === teamId1 || o.team_id === teamId2)
-        ),
-    );
-
-    // Add swapped positions
-    newOverrides.push({
-      group_name: groupName,
-      team_id: teamId1,
-      position: team2Standing.position,
-    });
-    newOverrides.push({
-      group_name: groupName,
-      team_id: teamId2,
-      position: team1Standing.position,
-    });
-
-    updateOverrides(newOverrides);
-  };
-
-  const handleSave = async () => {
-    if (!profile) return;
-
-    // Validation: check for incomplete predictions and knockout ties without winner
-    const warnings: string[] = [];
-
-    // Count unfilled group predictions
-    if (!groupLocked) {
-      const groupMatches = matches.filter((m) => m.stage === "GROUP_STAGE");
-      const unfilledGroup = groupMatches.filter((m) => {
-        const pred = predictions.get(m.id);
-        return !pred || pred.home_goals === null || pred.away_goals === null;
-      });
-      if (unfilledGroup.length > 0) {
-        warnings.push(
-          `${unfilledGroup.length} of ${groupMatches.length} group matches are missing predictions`,
-        );
-      }
-    }
-
-    // Count unfilled knockout predictions and ties without winner
-    if (knockoutOpen && !knockoutLocked) {
-      const koMatches = matches.filter((m) => m.stage !== "GROUP_STAGE");
-      const unfilledKo = koMatches.filter((m) => {
-        const pred = predictions.get(m.id);
-        return !pred || pred.home_goals === null || pred.away_goals === null;
-      });
-      if (unfilledKo.length > 0) {
-        warnings.push(
-          `${unfilledKo.length} of ${koMatches.length} knockout matches are missing predictions`,
-        );
-      }
-
-      const tiesWithoutWinner = koMatches.filter((m) => {
-        const pred = predictions.get(m.id);
-        if (!pred || pred.home_goals === null || pred.away_goals === null)
-          return false;
-        return pred.home_goals === pred.away_goals && !pred.winner_id;
-      });
-      if (tiesWithoutWinner.length > 0) {
-        warnings.push(
-          `${tiesWithoutWinner.length} knockout match${tiesWithoutWinner.length > 1 ? "es have" : " has"} a tie without a penalty winner selected`,
-        );
-      }
-    }
-
-    if (warnings.length > 0) {
-      setConfirmModal({
-        title: "Incomplete Predictions",
-        message: warnings.join(". ") + ". Save anyway?",
-        confirmLabel: "Save Anyway",
-        variant: "default",
-        onConfirm: () => {
-          setConfirmModal(null);
-          doSave();
-        },
-      });
-      return;
-    }
-
-    doSave();
-  };
-
-  const doSave = async () => {
-    setSaving(true);
-    setError("");
-
-    const result = await savePredictions();
-
-    if (result.success) {
-      setToast({ message: "Predictions saved!", type: "success" });
-    } else {
-      setError(result.error || "Failed to save predictions");
-    }
-
-    setSaving(false);
-  };
-
-  const handleResetPredictions = () => {
-    setConfirmModal({
-      title: "Reset Predictions",
-      message:
-        "Are you sure you want to reset predictions? This will clear scores for unlocked sections.",
-      confirmLabel: "Reset",
-      variant: "danger",
-      onConfirm: () => {
-        setConfirmModal(null);
-        doReset();
-      },
-    });
-  };
-
-  const doReset = () => {
-    const newPredictions = new Map(predictions);
-    matches.forEach((match) => {
-      const fifaNumber = match.id;
-
-      const isGroupStage = match.stage === "GROUP_STAGE";
-      if (isGroupStage && !groupLocked) {
-        newPredictions.delete(fifaNumber);
-      }
-      if (!isGroupStage && knockoutOpen && !knockoutLocked) {
-        newPredictions.delete(fifaNumber);
-      }
-    });
-    setPredictions(newPredictions);
-
-    // Clear overrides only if group stage isn't locked
-    if (!groupLocked) {
-      updateOverrides([]);
-    }
-  };
-
-  const handleRandomFill = () => {
-    setConfirmModal({
-      title: "Random Fill",
-      message:
-        "This will fill all empty prediction slots with random scores. Continue?",
-      confirmLabel: "Fill",
-      variant: "default",
-      onConfirm: () => {
-        setConfirmModal(null);
-        doRandomFill();
-      },
-    });
-  };
-
-  const doRandomFill = () => {
-    const newPredictions = new Map(predictions);
-
-    matches.forEach((match) => {
-      const fifaNumber = match.id;
-
-      // Check if already has a prediction
-      const existing = newPredictions.get(fifaNumber);
-      if (
-        existing &&
-        existing.home_goals !== null &&
-        existing.away_goals !== null
-      ) {
-        return; // Skip if already predicted
-      }
-
-      const isGroupStage = match.stage === "GROUP_STAGE";
-
-      // Only fill if section is unlocked
-      if (isGroupStage && groupLocked) return;
-      if (!isGroupStage && (!knockoutOpen || knockoutLocked)) return;
-
-      // Generate random scores (0-4 range, weighted toward lower scores)
-      const randomScore = () => {
-        const r = Math.random();
-        if (r < 0.4) return 0;
-        if (r < 0.7) return 1;
-        if (r < 0.85) return 2;
-        if (r < 0.95) return 3;
-        return 4;
-      };
-
-      const homeGoals = randomScore();
-      const awayGoals = randomScore();
-
-      // For knockout ties, randomly pick a winner
-      let winnerId: number | null = null;
-      if (!isGroupStage && homeGoals === awayGoals) {
-        winnerId = Math.random() < 0.5 ? match.homeTeam.id : match.awayTeam.id;
-      }
-
-      const updated: LocalPrediction = {
-        match_id: fifaNumber,
-        home_goals: homeGoals,
-        away_goals: awayGoals,
-        winner_id: winnerId,
-      };
-      newPredictions.set(fifaNumber, updated);
-    });
-
-    setPredictions(newPredictions);
-  };
 
   if (loading || showMatchesLoading) {
     return <LoadingSpinner />;
   }
-
-
 
   return (
     <div className="flex-1 flex flex-col">

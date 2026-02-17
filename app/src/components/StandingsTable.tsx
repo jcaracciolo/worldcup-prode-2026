@@ -1,7 +1,7 @@
 "use client";
 
 import { CalculatedStanding } from "@/types/football";
-import { getTeamLabel } from "@/lib/scoring";
+import { getTeamLabel } from "@/lib/team-display";
 
 interface StandingsTableProps {
   standings: CalculatedStanding[];

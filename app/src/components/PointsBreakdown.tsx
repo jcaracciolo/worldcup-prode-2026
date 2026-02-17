@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { PointBreakdown, asFifaMatchId, Team } from "@/types/football";
-import { getTeamLabel } from "@/lib/scoring";
+import { getTeamLabel } from "@/lib/team-display";
 import { getTeamDisplaySimple } from "@/lib/team-display";
 import { useUserPosition } from "@/contexts/LeaderboardContext";
 

@@ -37,10 +37,31 @@ export function shortLabel(label: string): string {
 // =====================================================================
 
 const TEAM_TLA_OVERRIDES: Record<string, string> = {
+  Curaçao: "CUW",
+  Curacao: "CUW",
   "Côte d'Ivoire": "CIV",
   "Korea Republic": "KOR",
   "South Korea": "KOR",
 };
+
+/**
+ * Get team abbreviation with fallbacks — for standings and non-match contexts.
+ * Default fallback is "QUA" for teams that haven't qualified yet.
+ * For knockout bracket labels, use getTeamDisplaySimple instead.
+ */
+export function getTeamLabel(
+  team:
+    | { tla?: string | null; shortName?: string | null; name?: string | null }
+    | null
+    | undefined,
+  fallback: string = "QUA",
+): string {
+  if (!team) return fallback;
+  if (team.name && TEAM_TLA_OVERRIDES[team.name]) {
+    return TEAM_TLA_OVERRIDES[team.name];
+  }
+  return team.tla || team.shortName || team.name || fallback;
+}
 
 // =====================================================================
 // HELPER FUNCTIONS

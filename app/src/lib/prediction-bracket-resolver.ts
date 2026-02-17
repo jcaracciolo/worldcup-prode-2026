@@ -1,12 +1,14 @@
 // PredictionBracketResolver — Resolves a user's predicted knockout bracket.
 //
-// R32 teams come from the LiveBracket (users predict on actual R32 matchups).
+// R32 teams come from the LiveBracket (actual matchups) when available.
+// Pre-tournament fallback: R32 teams are derived from the user's predicted
+// group standings + third-place qualification.
 // R32 winners and all subsequent rounds come from the user's predictions.
-// Also computes predicted group standings from the user's group predictions.
 //
-// Resolution priority per slot:
-//   1. Predicted winner/loser from user's score predictions
-//   2. null → display name falls back to bracket label (W73, L101, etc.)
+// Resolution priority per R32 slot:
+//   1. Live bracket team (actual group stage results)
+//   2. Predicted group standings team (from user's group predictions)
+//   3. null → display name falls back to bracket label (1A, 2B, etc.)
 
 import {
   Match,
@@ -16,9 +18,12 @@ import {
 } from "@/types/football";
 import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
 import { ResolvedTeams, LiveBracket } from "./live-bracket-resolver";
-import { r16Bracket, qfBracket, sfBracket } from "./r32-bracket";
+import { r32Bracket, r16Bracket, qfBracket, sfBracket } from "./r32-bracket";
 import { getBracketLabel } from "./team-display";
-import { getQualifyingThirdPlaceTeams } from "./third-place-ranking";
+import {
+  getQualifyingThirdPlaceTeams,
+  getThirdPlaceTeamForMatch,
+} from "./third-place-ranking";
 import {
   calculateAllGroupStandings,
   calculateStandingsFromPredictions,
@@ -60,6 +65,8 @@ export class PredictionBracketResolver {
   private predictions: Map<FifaMatchId, LocalPrediction>;
   private groupOverrides: LocalGroupStandingsOverride[];
   private resolved: Map<FifaMatchId, ResolvedTeams>;
+  private predictedStandings: Map<string, CalculatedStanding[]> = new Map();
+  private predictedThirdPlaceQualifying: Map<string, boolean> = new Map();
 
   constructor(params: PredictionBracketParams) {
     this.liveBracket = params.liveBracket;
@@ -74,7 +81,11 @@ export class PredictionBracketResolver {
     const groupStandings = this.computePredictedStandings();
     const thirdPlaceQualifying = getQualifyingThirdPlaceTeams(groupStandings);
 
-    // R32 teams come from the live bracket (actual matchups)
+    // Store for use in resolveR32 fallback
+    this.predictedStandings = groupStandings;
+    this.predictedThirdPlaceQualifying = thirdPlaceQualifying;
+
+    // R32 teams come from the live bracket, falling back to predicted standings
     this.resolveR32();
 
     // R16+ teams come from chaining predicted winners
@@ -202,17 +213,64 @@ export class PredictionBracketResolver {
   // Resolution per round
   // -------------------------------------------------------------------
 
-  /** R32: copy teams from the live bracket (users predict on actual matchups) */
+  /** Look up a team from predicted group standings by group + position */
+  private getTeamFromPredictedStandings(
+    group: string,
+    position: number,
+  ): Team | null {
+    const standings = this.predictedStandings.get(group);
+    if (!standings || standings.length < position) return null;
+    const standing = standings.find((s) => s.position === position);
+    if (position === 3 && !this.predictedThirdPlaceQualifying.get(group)) {
+      return null;
+    }
+    return standing?.team || null;
+  }
+
+  /**
+   * R32: live bracket teams → predicted group standings fallback.
+   * Pre-tournament the live bracket is empty, so we resolve R32 teams
+   * from the user's predicted group standings instead.
+   */
   private resolveR32(): void {
     const r32Matches = this.matches.filter((m) => m.stage === "LAST_32");
     for (const match of r32Matches) {
       const fifaNumber = match.id;
       const liveTeams = this.liveBracket.teams.get(fifaNumber);
-      this.setResolved(
-        fifaNumber,
-        liveTeams?.home ?? null,
-        liveTeams?.away ?? null,
-      );
+
+      let homeTeam: Team | null = liveTeams?.home ?? null;
+      let awayTeam: Team | null = liveTeams?.away ?? null;
+
+      // Fall back to predicted standings when live bracket has no teams
+      if (!homeTeam || !awayTeam) {
+        const bracketSlot = r32Bracket.find(
+          (b) => b.matchNumber === fifaNumber,
+        );
+        if (bracketSlot) {
+          if (!homeTeam && bracketSlot.homePosition) {
+            homeTeam = this.getTeamFromPredictedStandings(
+              bracketSlot.homePosition.group,
+              bracketSlot.homePosition.position,
+            );
+          }
+          if (!awayTeam && bracketSlot.awayPosition) {
+            awayTeam = this.getTeamFromPredictedStandings(
+              bracketSlot.awayPosition.group,
+              bracketSlot.awayPosition.position,
+            );
+          }
+          // Third-place slots (awayPosition is null) — resolve dynamically
+          if (!awayTeam && bracketSlot.awayPosition === null) {
+            const thirdPlaceResult = getThirdPlaceTeamForMatch(
+              fifaNumber,
+              this.predictedStandings,
+            );
+            if (thirdPlaceResult) awayTeam = thirdPlaceResult.team;
+          }
+        }
+      }
+
+      this.setResolved(fifaNumber, homeTeam, awayTeam);
     }
   }
 

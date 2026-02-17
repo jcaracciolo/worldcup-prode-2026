@@ -6,7 +6,7 @@ import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { LocalPrediction } from "@/types/database";
 import { formatStageName } from "@/lib/format";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
-import { KnockoutMatchRow } from "@/components/MatchRowShared";
+import { KnockoutMatchRow } from "@/components/match-row";
 
 type ViewMode = "edit" | "fixtures" | "predictions";
 

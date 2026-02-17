@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CalculatedStanding, PointBreakdown } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
-import { getTeamLabel } from "@/lib/scoring";
+import { getTeamLabel } from "@/lib/team-display";
 import { useMatches, MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { useUserPosition } from "@/contexts/LeaderboardContext";
 import {
@@ -51,8 +51,6 @@ export default function UserGroupSection({
       ),
     [predictionsMap],
   );
-
-
 
   // Group bonus points by group letter (from centralized breakdown)
   const groupBonusPoints = useMemo(() => {

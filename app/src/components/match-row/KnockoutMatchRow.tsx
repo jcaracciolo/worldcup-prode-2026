@@ -4,230 +4,11 @@ import Link from "next/link";
 import { Team, FifaMatchId } from "@/types/football";
 import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { LocalPrediction } from "@/types/database";
-import { getTeamLabel } from "@/lib/scoring";
-import { getMatchInfo } from "@/lib/tournament";
 import { ReactNode } from "react";
-import { shortLabel } from "@/lib/team-display";
+import { TeamCrest } from "./TeamCrest";
+import { DateColumn, TimeVenueColumn, MobileDateColumn } from "./DateColumns";
 
-// City name to 3-letter abbreviation mapping
-export const CITY_ABBREVIATIONS: Record<string, string> = {
-  "Mexico City": "MXC",
-  Miami: "MIA",
-  Vancouver: "VAN",
-  "New York": "NYC",
-  "Los Angeles": "LAX",
-  Dallas: "DAL",
-  Houston: "HOU",
-  Seattle: "SEA",
-  "San Francisco": "SFO",
-  Boston: "BOS",
-  Monterrey: "MTY",
-  Atlanta: "ATL",
-  Philadelphia: "PHI",
-  "Kansas City": "KAN",
-  Toronto: "TOR",
-  Guadalajara: "GDL",
-};
-
-// Format helpers
-export function formatMatchDate(utcDate: string): string {
-  return new Date(utcDate).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-}
-
-export function formatMatchTime(utcDate: string): string {
-  return new Date(utcDate).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-export function getVenueAbbreviation(city: string): string {
-  return CITY_ABBREVIATIONS[city] || city.substring(0, 3).toUpperCase();
-}
-
-export function getVenueFromFifaNumber(fifaMatchNumber?: FifaMatchId) {
-  if (!fifaMatchNumber) return null;
-  const matchInfo = getMatchInfo(fifaMatchNumber);
-  return matchInfo?.venue || null;
-}
-
-// Shared component for team crest
-interface TeamCrestProps {
-  team: Team | null;
-  /** Optional fallback label when team has no crest (e.g., "EU1", "1A") */
-  fallbackLabel?: string;
-  size?: "sm" | "md" | "lg";
-  className?: string;
-}
-
-const sizeClasses = {
-  sm: "w-4 h-4 text-[6px]",
-  md: "w-5 h-5 text-[8px]",
-  lg: "w-7 h-7 text-[10px]",
-};
-
-export function TeamCrest({
-  team,
-  fallbackLabel,
-  size = "md",
-  className = "",
-}: TeamCrestProps) {
-  const sizeClass = sizeClasses[size];
-
-  if (team?.crest) {
-    return (
-      <img
-        src={team.crest}
-        alt={getTeamLabel(team)}
-        className={`object-contain shrink-0 ${sizeClass.split(" ").slice(0, 2).join(" ")} ${className}`}
-      />
-    );
-  }
-
-  // Show fallback label, team TLA, or "TBD"
-  const label = fallbackLabel || team?.tla || "TBD";
-  return (
-    <div
-      className={`bg-white/20 rounded-full flex items-center justify-center font-bold text-white/60 shrink-0 ${sizeClass} ${className}`}
-    >
-      {shortLabel(label)}
-    </div>
-  );
-}
-
-// Date column for desktop layout
-interface DateColumnProps {
-  date: string;
-  fifaMatchNumber?: FifaMatchId;
-  /** Custom content instead of date (e.g., "FT" or "LIVE") */
-  customContent?: ReactNode;
-  className?: string;
-}
-
-export function DateColumn({
-  date,
-  fifaMatchNumber,
-  customContent,
-  className = "",
-}: DateColumnProps) {
-  return (
-    <div
-      className={`w-16 text-center shrink-0 pr-2 border-r border-white/10 ${className}`}
-    >
-      {customContent || (
-        <div
-          className="text-xs uppercase font-bold tracking-wide whitespace-nowrap"
-          style={{ color: "var(--date-color)" }}
-        >
-          {formatMatchDate(date)}
-        </div>
-      )}
-      {fifaMatchNumber && (
-        <div className="text-[9px] text-white/40">#{fifaMatchNumber}</div>
-      )}
-    </div>
-  );
-}
-
-// Time & Venue column for desktop layout
-interface TimeVenueColumnProps {
-  time: string;
-  fifaMatchNumber?: FifaMatchId;
-  className?: string;
-}
-
-export function TimeVenueColumn({
-  time,
-  fifaMatchNumber,
-  className = "",
-}: TimeVenueColumnProps) {
-  const venue = getVenueFromFifaNumber(fifaMatchNumber);
-
-  return (
-    <div
-      className={`w-20 shrink-0 px-2 border-r border-white/10 text-center ${className}`}
-    >
-      <div className="text-xs text-white/70 font-medium">
-        {formatMatchTime(time)}
-      </div>
-      {venue && (
-        <div
-          className="text-[10px] font-semibold truncate"
-          style={{ color: "var(--venue-color)" }}
-        >
-          {getVenueAbbreviation(venue.city)}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Mobile date/time/match# column
-interface MobileDateColumnProps {
-  date: string;
-  fifaMatchNumber?: FifaMatchId;
-  /** Custom content instead of date/time (e.g., "FT" or "LIVE") */
-  customContent?: ReactNode;
-}
-
-export function MobileDateColumn({
-  date,
-  fifaMatchNumber,
-  customContent,
-}: MobileDateColumnProps) {
-  return (
-    <div className="w-14 shrink-0 pr-2 border-r border-white/10 relative">
-      {fifaMatchNumber && (
-        <span className="absolute -top-1 left-0 text-[7px] text-white/30">
-          #{fifaMatchNumber}
-        </span>
-      )}
-      {customContent || (
-        <div className="flex flex-col items-center leading-tight pt-1">
-          <span
-            style={{ color: "var(--date-color)" }}
-            className="text-xs font-bold"
-          >
-            {formatMatchDate(date)}
-          </span>
-          <span
-            style={{ color: "var(--date-color)" }}
-            className="text-[10px] font-medium"
-          >
-            {formatMatchTime(date)}
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Score display (read-only)
-interface ScoreDisplayProps {
-  homeGoals: number | null | undefined;
-  awayGoals: number | null | undefined;
-  size?: "sm" | "md";
-}
-
-export function ScoreDisplay({
-  homeGoals,
-  awayGoals,
-  size = "md",
-}: ScoreDisplayProps) {
-  const textClass = size === "sm" ? "w-12 text-xs" : "w-16 text-base";
-  return (
-    <span className={`${textClass} text-center font-bold text-white`}>
-      {homeGoals ?? "-"} - {awayGoals ?? "-"}
-    </span>
-  );
-}
-
-// ============================================================
-// Knockout Match Row — Sub-components (declared outside render)
-// ============================================================
+// ── Content wrappers ────────────────────────────────────────────────
 
 function KnockoutContentLink({
   children,
@@ -255,6 +36,8 @@ function KnockoutContentDiv({
 }) {
   return <div className={className}>{children}</div>;
 }
+
+// ── Team buttons ────────────────────────────────────────────────────
 
 function KnockoutTeamButton({
   team,
@@ -390,6 +173,8 @@ function KnockoutMobileTeamButton({
   );
 }
 
+// ── Score section ───────────────────────────────────────────────────
+
 function KnockoutScoreSection({
   mobile = false,
   isEdit,
@@ -469,9 +254,7 @@ function KnockoutScoreSection({
   );
 }
 
-// ============================================================
-// Unified Knockout Match Row Component
-// ============================================================
+// ── Main component ──────────────────────────────────────────────────
 
 type KnockoutMatchRowMode = "edit" | "readonly";
 

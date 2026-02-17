@@ -13,7 +13,7 @@ import {
   TimeVenueColumn,
   MobileDateColumn,
   TeamCrest,
-} from "@/components/MatchRowShared";
+} from "@/components/match-row";
 
 interface PredictionInputProps {
   match: MatchWithLiveInfo;

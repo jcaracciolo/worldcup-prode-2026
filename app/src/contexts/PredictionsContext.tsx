@@ -12,12 +12,16 @@ import React, {
 import { useDatabase } from "@/contexts/DatabaseContext";
 import { useMatches, MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
-import { Match, FifaMatchId, asFifaMatchId, CalculatedStanding } from "@/types/football";
+import {
+  Match,
+  FifaMatchId,
+  asFifaMatchId,
+  CalculatedStanding,
+} from "@/types/football";
 import { LCE, lceLoading, lceContent, lceError } from "@/types/lce";
-import { BracketResolver } from "@/lib/bracket-resolver";
+import { PredictionBracketResolver } from "@/lib/prediction-bracket-resolver";
+import { LiveBracket } from "@/lib/live-bracket-resolver";
 import { getTeamDisplaySimple } from "@/lib/team-display";
-import { calculateAllGroupStandings } from "@/lib/standings";
-import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
 
 // =====================================================================
 // TYPES
@@ -527,49 +531,32 @@ export interface PredictedMatchesResult {
  * Build matches with predicted knockout teams baked in.
  * Pure computation — used by usePredictedMatches to cache results.
  *
- * - Group standings and third-place qualifying are computed from the user's
- *   predicted group match scores (for display and downstream consumption).
- * - R32 matchups come from actual data (API teams / actual group standings).
- *   Before groups finish, placeholders ("1A", "2B") are shown.
- * - R32 winners come from user's predicted scores (not actual results).
- * - R16+ teams chain from predicted winners of previous rounds.
+ * - R32 teams come from the live bracket (actual matchups).
+ * - R32 winners come from user's predicted scores.
+ * - R16+ teams chain from predicted winners.
+ * - Predicted group standings are computed from user's group predictions.
  *
  * This shows the user's predicted bracket path through the tournament.
  */
 function buildPredictedMatches(
-  rawProcessedMatches: Match[],
+  matches: Match[],
   contextMatches: MatchWithLiveInfo[],
   predictions: Map<FifaMatchId, LocalPrediction>,
-  actualGroupStandings: Map<string, CalculatedStanding[]>,
-  actualThirdPlaceQualifying: Map<string, boolean>,
+  liveBracket: LiveBracket,
 ): PredictedMatchesResult {
-  // Compute predicted group standings from user's group predictions
-  const predictionMapByNumber = new Map<number, LocalPrediction>();
-  predictions.forEach((pred, fifaId) => {
-    predictionMapByNumber.set(fifaId as number, pred);
-  });
-  const predictedGroupStandings = calculateAllGroupStandings(
-    rawProcessedMatches,
-    predictionMapByNumber,
-  );
-  const predictedThirdPlaceQualifying = getQualifyingThirdPlaceTeams(
-    predictedGroupStandings,
-  );
-
-  // Run BracketResolver with user's predictions on raw (pre-bake) matches.
-  // Actual group standings are used for R32 team resolution (real matchups).
-  // Predictions are used for knockout winners (R32+).
-  const resolver = new BracketResolver({
-    matches: rawProcessedMatches,
+  // Run PredictionBracketResolver: R32 from live, R16+ from predictions
+  const predictedBracket = new PredictionBracketResolver({
+    liveBracket,
+    matches,
     predictions,
-    groupStandings: actualGroupStandings,
-    thirdPlaceQualifying: actualThirdPlaceQualifying,
-    useKnockoutPredictions: true,
-  });
-  const resolvedKnockoutTeams = resolver.resolve();
+  }).resolve();
+
+  const resolvedKnockoutTeams = predictedBracket.teams;
+  const predictedGroupStandings = predictedBracket.groupStandings;
+  const predictedThirdPlaceQualifying = predictedBracket.thirdPlaceQualifying;
 
   // Bake predicted teams into context matches (same pattern as MatchContext)
-  const matches = contextMatches.map((m) => {
+  const bakedMatches = contextMatches.map((m) => {
     if (m.stage === "GROUP_STAGE") return m;
     const resolved = resolvedKnockoutTeams.get(asFifaMatchId(m.id));
     if (!resolved) return m;
@@ -579,12 +566,20 @@ function buildPredictedMatches(
       ...m,
       homeTeam,
       awayTeam,
-      homeDisplayName: resolved.homeDisplayName ?? getTeamDisplaySimple(homeTeam, m.id, "home", asFifaMatchId(m.id)).label,
-      awayDisplayName: resolved.awayDisplayName ?? getTeamDisplaySimple(awayTeam, m.id, "away", asFifaMatchId(m.id)).label,
+      homeDisplayName:
+        resolved.homeDisplayName ??
+        getTeamDisplaySimple(homeTeam, m.id, "home", asFifaMatchId(m.id)).label,
+      awayDisplayName:
+        resolved.awayDisplayName ??
+        getTeamDisplaySimple(awayTeam, m.id, "away", asFifaMatchId(m.id)).label,
     };
   });
 
-  return { matches, predictedGroupStandings, predictedThirdPlaceQualifying };
+  return {
+    matches: bakedMatches,
+    predictedGroupStandings,
+    predictedThirdPlaceQualifying,
+  };
 }
 
 /**
@@ -603,8 +598,7 @@ export function usePredictedMatches(
   const {
     matches: contextMatches,
     rawProcessedMatches,
-    actualGroupStandings,
-    actualThirdPlaceQualifying,
+    liveBracket,
   } = useMatches();
 
   const ctx = usePredictionsContext();
@@ -632,16 +626,9 @@ export function usePredictedMatches(
       rawProcessedMatches,
       contextMatches,
       predictions,
-      actualGroupStandings,
-      actualThirdPlaceQualifying,
+      liveBracket,
     );
-  }, [
-    predictions,
-    rawProcessedMatches,
-    contextMatches,
-    actualGroupStandings,
-    actualThirdPlaceQualifying,
-  ]);
+  }, [predictions, rawProcessedMatches, contextMatches, liveBracket]);
 }
 
 /**

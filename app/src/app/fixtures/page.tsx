@@ -9,90 +9,7 @@ import {
 import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
-import { Match, CalculatedStanding, Team } from "@/types/football";
-
-// Calculate standings from actual match results (not predictions)
-function calculateActualStandings(groupMatches: Match[]): CalculatedStanding[] {
-  const teamStats = new Map<number, CalculatedStanding>();
-
-  // Initialize teams from matches
-  groupMatches.forEach((match) => {
-    if (!teamStats.has(match.homeTeam.id)) {
-      teamStats.set(match.homeTeam.id, createEmptyStanding(match.homeTeam));
-    }
-    if (!teamStats.has(match.awayTeam.id)) {
-      teamStats.set(match.awayTeam.id, createEmptyStanding(match.awayTeam));
-    }
-  });
-
-  // Calculate stats from actual results
-  groupMatches.forEach((match) => {
-    if (match.status !== "FINISHED") return;
-
-    const homeGoals = match.score.fullTime.home;
-    const awayGoals = match.score.fullTime.away;
-    if (homeGoals === null || awayGoals === null) return;
-
-    const homeStats = teamStats.get(match.homeTeam.id)!;
-    const awayStats = teamStats.get(match.awayTeam.id)!;
-
-    homeStats.played++;
-    awayStats.played++;
-
-    homeStats.goalsFor += homeGoals;
-    homeStats.goalsAgainst += awayGoals;
-    awayStats.goalsFor += awayGoals;
-    awayStats.goalsAgainst += homeGoals;
-
-    homeStats.goalDifference = homeStats.goalsFor - homeStats.goalsAgainst;
-    awayStats.goalDifference = awayStats.goalsFor - awayStats.goalsAgainst;
-
-    if (homeGoals > awayGoals) {
-      homeStats.won++;
-      homeStats.points += 3;
-      awayStats.lost++;
-    } else if (awayGoals > homeGoals) {
-      awayStats.won++;
-      awayStats.points += 3;
-      homeStats.lost++;
-    } else {
-      homeStats.drawn++;
-      awayStats.drawn++;
-      homeStats.points += 1;
-      awayStats.points += 1;
-    }
-  });
-
-  // Sort standings and assign positions
-  const sorted = Array.from(teamStats.values()).sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    if (b.goalDifference !== a.goalDifference)
-      return b.goalDifference - a.goalDifference;
-    return b.goalsFor - a.goalsFor;
-  });
-
-  sorted.forEach((standing, index) => {
-    standing.position = index + 1;
-  });
-
-  return sorted;
-}
-
-function createEmptyStanding(team: Team): CalculatedStanding {
-  return {
-    team,
-    position: 0,
-    points: 0,
-    goalsFor: 0,
-    goalsAgainst: 0,
-    goalDifference: 0,
-    played: 0,
-    won: 0,
-    drawn: 0,
-    lost: 0,
-  };
-}
+import { Match, CalculatedStanding } from "@/types/football";
 
 export default function FixturesPage() {
   // Use centralized match context
@@ -101,6 +18,7 @@ export default function FixturesPage() {
     loading: matchesLoading,
     hasLiveMatches,
     liveMatches,
+    liveBracket,
     refresh: refreshMatches,
   } = useMatches();
 
@@ -128,30 +46,18 @@ export default function FixturesPage() {
     return groupMap;
   }, [matches]);
 
-  // Calculate standings for all groups
-  const groupStandings = useMemo(() => {
-    const standingsMap = new Map<string, CalculatedStanding[]>();
-    groups.forEach((groupMatchList, groupName) => {
-      standingsMap.set(groupName, calculateActualStandings(groupMatchList));
-    });
-    return standingsMap;
-  }, [groups]);
-
-  // Wrap calculateStandings to match the interface expected by GroupStageSection
+  // Standings and third-place qualifying come from the live bracket
   const calculateStandings = useCallback(
-    (groupMatches: Match[], groupName?: string): CalculatedStanding[] => {
-      if (groupName && groupStandings.has(groupName)) {
-        return groupStandings.get(groupName)!;
+    (_groupMatches: Match[], groupName?: string): CalculatedStanding[] => {
+      if (groupName) {
+        return liveBracket.groupStandings.get(groupName) ?? [];
       }
-      return calculateActualStandings(groupMatches);
+      return [];
     },
-    [groupStandings],
+    [liveBracket.groupStandings],
   );
 
-  // Calculate which 3rd place teams qualify
-  const thirdPlaceQualifying = useMemo(() => {
-    return getQualifyingThirdPlaceTeams(groupStandings);
-  }, [groupStandings]);
+  const thirdPlaceQualifying = liveBracket.thirdPlaceQualifying;
 
   // Organize knockout matches by stage
   const knockoutStages = useMemo(() => {

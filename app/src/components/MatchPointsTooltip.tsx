@@ -95,14 +95,28 @@ export default function MatchPointsTooltip({
         rows.push({
           label: `${homeTla} tie${multLabel}`,
           points: matchBreakdown
-            .filter((b) => (b.type === "knockout_tie" || b.type === "result") && (b.team?.tla === match.homeTeam.tla || b.type === "result"))
-            .reduce((sum, b) => sum + (b.type === "result" ? b.points / 2 : b.points), 0),
+            .filter(
+              (b) =>
+                (b.type === "knockout_tie" || b.type === "result") &&
+                (b.team?.tla === match.homeTeam.tla || b.type === "result"),
+            )
+            .reduce(
+              (sum, b) => sum + (b.type === "result" ? b.points / 2 : b.points),
+              0,
+            ),
         });
         rows.push({
           label: `${awayTla} tie${multLabel}`,
           points: matchBreakdown
-            .filter((b) => (b.type === "knockout_tie" || b.type === "result") && (b.team?.tla === match.awayTeam.tla || b.type === "result"))
-            .reduce((sum, b) => sum + (b.type === "result" ? b.points / 2 : b.points), 0),
+            .filter(
+              (b) =>
+                (b.type === "knockout_tie" || b.type === "result") &&
+                (b.team?.tla === match.awayTeam.tla || b.type === "result"),
+            )
+            .reduce(
+              (sum, b) => sum + (b.type === "result" ? b.points / 2 : b.points),
+              0,
+            ),
         });
       } else {
         const winnerTla = actualHome > actualAway ? homeTla : awayTla;
@@ -272,9 +286,7 @@ export default function MatchPointsTooltip({
                   <span className="text-white/60">Total:</span>
                   <span
                     className={
-                      total > 0
-                        ? "text-emerald-400 font-bold"
-                        : "text-white/40"
+                      total > 0 ? "text-emerald-400 font-bold" : "text-white/40"
                     }
                   >
                     {total} / {maxPossible}

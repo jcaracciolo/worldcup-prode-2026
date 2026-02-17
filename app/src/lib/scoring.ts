@@ -11,7 +11,8 @@ import {
   getPredictionResult,
   isGroupStageMatch,
 } from "./football-api";
-import { BracketResolver } from "./bracket-resolver";
+import { LiveBracket } from "./live-bracket-resolver";
+import { PredictionBracketResolver } from "./prediction-bracket-resolver";
 
 // =====================================================================
 // SCORING CONSTANTS - Single source of truth for all scoring rules
@@ -594,8 +595,7 @@ export function calculateKnockoutPoints(
         predictedWinnerTeam != null &&
         predictedWinnerTeam.id === actualWinner.id;
       const loserCorrect =
-        predictedLoserTeam != null &&
-        predictedLoserTeam.id === actualLoser.id;
+        predictedLoserTeam != null && predictedLoserTeam.id === actualLoser.id;
 
       if (winnerCorrect) {
         points.push({
@@ -918,9 +918,7 @@ export function calculateTotalPoints(
   matches: (Match & { fifaNumber?: FifaMatchId | null })[],
   predictions: LocalPrediction[], // Keyed by FIFA match number (match_id)
   groupOverrides: LocalGroupStandingsOverride[],
-  actualGroupStandings: Map<string, CalculatedStanding[]>,
-  advancingTeamIds: Set<number>,
-  predictedThirdPlaceQualifying?: Map<string, boolean>, // User's predicted 3rd place qualifying
+  liveBracket: LiveBracket,
 ): { totalPoints: number; livePoints: number; breakdown: PointBreakdown[] } {
   // Predictions are keyed by FIFA match number
   const predictionMap = new Map<FifaMatchId, LocalPrediction>(
@@ -928,44 +926,36 @@ export function calculateTotalPoints(
   );
   const allBreakdown: PointBreakdown[] = [];
 
-  // Calculate all predicted group standings first (needed for BracketResolver)
-  const groupMatches = matches.filter(isGroupStageMatch);
-  const groupedMatches = new Map<string, Match[]>();
-  groupMatches.forEach((match) => {
-    if (!match.group) return;
-    if (!groupedMatches.has(match.group)) {
-      groupedMatches.set(match.group, []);
-    }
-    groupedMatches.get(match.group)!.push(match);
+  // Derive advancing team IDs from actual standings in the live bracket
+  const advancingTeamIds = new Set<number>();
+  liveBracket.groupStandings.forEach((standings, groupName) => {
+    standings.forEach((standing, index) => {
+      if (index < 2) {
+        advancingTeamIds.add(standing.team.id);
+      } else if (
+        index === 2 &&
+        liveBracket.thirdPlaceQualifying.get(groupName)
+      ) {
+        advancingTeamIds.add(standing.team.id);
+      }
+    });
   });
 
-  const allPredictedStandings = new Map<string, CalculatedStanding[]>();
-  groupedMatches.forEach((groupMatchList, groupName) => {
-    const groupOverridesForGroup = groupOverrides.filter(
-      (o) => o.group_name === groupName,
-    );
-    const predictedStandings = calculateStandingsFromPredictions(
-      groupMatchList,
-      predictionMap,
-      groupOverridesForGroup,
-    );
-    allPredictedStandings.set(groupName, predictedStandings);
-  });
-
-  // Run BracketResolver with user's predicted group standings to get their predicted knockout teams
-  const userPredictedTeams = new BracketResolver({
+  // Build user's predicted bracket: R32 teams from live, R16+ from predictions.
+  // Also computes predicted group standings (with overrides) for standings bonus.
+  const predictedBracket = new PredictionBracketResolver({
+    liveBracket,
     matches,
     predictions: predictionMap,
-    groupStandings: allPredictedStandings,
-    thirdPlaceQualifying: predictedThirdPlaceQualifying || new Map(),
-    useKnockoutPredictions: true, // Use user's knockout predictions for R16+
-    alwaysResolveFromStandings: true, // Never use API teams — always resolve from user's predicted standings
+    groupOverrides,
   }).resolve();
+
+  const userPredictedTeams = predictedBracket.teams;
+  const allPredictedStandings = predictedBracket.groupStandings;
+  const predictedThirdPlaceQualifying = predictedBracket.thirdPlaceQualifying;
 
   // Calculate match points - use fifaNumber for prediction lookup
   matches.forEach((match) => {
-    // match.id IS the FIFA number (converted at API layer)
-    // fifaNumber field is just for enhanced matches with explicit typing
     const fifaNumber = (match.fifaNumber ?? match.id) as FifaMatchId;
     const prediction = predictionMap.get(fifaNumber);
 
@@ -981,9 +971,19 @@ export function calculateTotalPoints(
   });
 
   // Calculate group standings bonus points
+  const groupMatches = matches.filter(isGroupStageMatch);
+  const groupedMatches = new Map<string, Match[]>();
+  groupMatches.forEach((match) => {
+    if (!match.group) return;
+    if (!groupedMatches.has(match.group)) {
+      groupedMatches.set(match.group, []);
+    }
+    groupedMatches.get(match.group)!.push(match);
+  });
+
   groupedMatches.forEach((groupMatchList, groupName) => {
     const predictedStandings = allPredictedStandings.get(groupName);
-    const actualStandings = actualGroupStandings.get(groupName);
+    const actualStandings = liveBracket.groupStandings.get(groupName);
 
     // Check if all matches in this group are finished (6 matches per group)
     const finishedMatches = groupMatchList.filter(

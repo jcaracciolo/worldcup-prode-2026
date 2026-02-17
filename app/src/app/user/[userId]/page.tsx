@@ -5,7 +5,10 @@ import { useParams } from "next/navigation";
 import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
 import { useUser, useProfile } from "@/contexts/UserContext";
-import { useUserPredictions, usePredictedMatches } from "@/contexts/PredictionsContext";
+import {
+  useUserPredictions,
+  usePredictedMatches,
+} from "@/contexts/PredictionsContext";
 import { useUserPosition } from "@/contexts/LeaderboardContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { LocalPrediction } from "@/types/database";
@@ -19,11 +22,7 @@ import Link from "next/link";
 export default function UserPredictionsPage() {
   const params = useParams();
   const userId = params.userId as string;
-  const {
-    matches,
-    loading: matchesLoading,
-    actualGroupStandings: actualStandings,
-  } = useMatches();
+  const { matches, loading: matchesLoading } = useMatches();
   const { stageLockStatus } = useTime();
   const { user: currentProfile } = useUser();
 
@@ -356,13 +355,10 @@ export default function UserPredictionsPage() {
         {/* Group Stage */}
         {activeTab === "group" && (
           <UserGroupSection
-            matches={matches}
             predictions={predictions}
             thirdPlaceQualifying={thirdPlaceQualifying}
             showPredictions={showGroupPredictions}
             userId={userId}
-            actualStandings={actualStandings}
-            breakdown={breakdown}
           />
         )}
 

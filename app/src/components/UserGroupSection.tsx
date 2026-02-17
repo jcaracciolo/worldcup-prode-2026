@@ -11,33 +11,37 @@ import { LocalPrediction } from "@/types/database";
 import { calculateStandingsFromPredictions } from "@/lib/standings";
 import { getTeamLabel } from "@/lib/scoring";
 import { getTeamDisplaySimple } from "@/lib/team-display";
+import { useMatches } from "@/contexts/MatchContext";
+import { useUserPosition } from "@/contexts/LeaderboardContext";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import StandingsTable from "@/components/StandingsTable";
 import LockedCard from "@/components/LockedCard";
 import { useMemo, useState } from "react";
 
 interface UserGroupSectionProps {
-  matches: Match[];
   predictions: LocalPrediction[];
   thirdPlaceQualifying: Map<string, boolean>;
   showPredictions: boolean;
   /** User whose predictions/points are being viewed */
   userId: string;
-  /** Actual standings from real match results (for scoring comparison) */
-  actualStandings?: Map<string, CalculatedStanding[]>;
-  /** Centralized points breakdown from scoring system */
-  breakdown?: PointBreakdown[];
 }
 
 export default function UserGroupSection({
-  matches,
   predictions,
   thirdPlaceQualifying,
   showPredictions,
   userId,
-  actualStandings,
-  breakdown = [],
 }: UserGroupSectionProps) {
+  // Pull matches and actual standings from context
+  const { matches, liveBracket } = useMatches();
+  const actualStandings = liveBracket.groupStandings;
+
+  // Get centralized breakdown from leaderboard context
+  const positionInfo = useUserPosition(userId);
+  const breakdown = useMemo(
+    () => positionInfo.userScore?.breakdown ?? [],
+    [positionInfo.userScore?.breakdown],
+  );
   // Predictions are keyed by FIFA number
   const predictionMap = useMemo(
     () => new Map(predictions.map((p) => [p.match_id, p])),

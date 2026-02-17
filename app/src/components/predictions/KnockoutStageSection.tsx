@@ -1,11 +1,7 @@
 "use client";
 
 import { useTime } from "@/contexts/TimeContext";
-import {
-  Match,
-  FifaMatchId,
-  asFifaMatchId,
-} from "@/types/football";
+import { Match, FifaMatchId, asFifaMatchId } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import { KnockoutMatchRow } from "@/components/MatchRowShared";

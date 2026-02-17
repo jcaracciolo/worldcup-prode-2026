@@ -17,13 +17,15 @@ import {
 } from "@/types/football";
 import { getMatchInfo, Venue } from "@/lib/tournament";
 import { getTeamDisplaySimple } from "@/lib/team-display";
-import { calculateAllActualStandings } from "@/lib/standings";
-import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
-import { BracketResolver, ResolvedTeams } from "@/lib/bracket-resolver";
+import {
+  LiveBracketResolver,
+  ResolvedTeams,
+  LiveBracket,
+} from "@/lib/live-bracket-resolver";
 import { useSimulation } from "./SimulationContext";
 import { useTime } from "./TimeContext";
 
-export type { ResolvedTeams } from "@/lib/bracket-resolver";
+export type { ResolvedTeams, LiveBracket } from "@/lib/live-bracket-resolver";
 
 // =====================================================================
 // TYPES
@@ -68,13 +70,9 @@ interface MatchContextValue {
   refresh: () => Promise<void>;
   /** Whether simulation mode is active */
   isSimulated: boolean;
-  /** Knockout teams resolved from actual results (API > calculated > null) */
-  resolvedKnockoutTeams: Map<FifaMatchId, ResolvedTeams>;
-  /** Actual group standings from real match results */
-  actualGroupStandings: Map<string, CalculatedStanding[]>;
-  /** Which 3rd place teams qualify based on actual results */
-  actualThirdPlaceQualifying: Map<string, boolean>;
-  /** Raw matches before knockout team overlay (needed by BracketResolver with predictions) */
+  /** Full live bracket (teams + actual group standings + third-place qualifying) */
+  liveBracket: LiveBracket;
+  /** Raw matches before knockout team overlay */
   rawProcessedMatches: Match[];
 }
 
@@ -237,30 +235,22 @@ export function MatchProvider({
     [rawMatches, isSimulated, applySimulation],
   );
 
-  // Calculate actual group standings for knockout team resolution
-  const actualGroupStandings = useMemo(
-    () => calculateAllActualStandings(processedMatches),
-    [processedMatches],
-  );
+  // Resolve the live bracket: computes actual group standings, third-place
+  // qualifying, and knockout teams from match results.
+  const liveBracket = useMemo(() => {
+    if (processedMatches.length === 0) {
+      return {
+        kind: "live" as const,
+        teams: new Map<FifaMatchId, ResolvedTeams>(),
+        groupStandings: new Map<string, CalculatedStanding[]>(),
+        thirdPlaceQualifying: new Map<string, boolean>(),
+      };
+    }
+    return new LiveBracketResolver(processedMatches).resolve();
+  }, [processedMatches]);
 
-  // Calculate qualifying 3rd place teams from actual results
-  const actualThirdPlaceQualifying = useMemo(
-    () => getQualifyingThirdPlaceTeams(actualGroupStandings),
-    [actualGroupStandings],
-  );
-
-  // Resolve knockout teams from actual results (not user predictions)
-  // Priority: API teams > calculated from completed groups/matches > null (TBD)
-  const resolvedKnockoutTeams = useMemo(() => {
-    if (processedMatches.length === 0) return new Map();
-    const resolver = new BracketResolver({
-      matches: processedMatches,
-      predictions: new Map(), // No predictions — actual results only
-      groupStandings: actualGroupStandings,
-      thirdPlaceQualifying: actualThirdPlaceQualifying,
-    });
-    return resolver.resolve();
-  }, [processedMatches, actualGroupStandings, actualThirdPlaceQualifying]);
+  // Convenience alias for internal use (match enhancement below)
+  const resolvedKnockoutTeams = liveBracket.teams;
 
   // Transform raw matches to include live info, FIFA number, venue,
   // and bake resolved knockout teams into match.homeTeam/match.awayTeam.
@@ -362,9 +352,7 @@ export function MatchProvider({
     lastUpdated,
     refresh,
     isSimulated,
-    resolvedKnockoutTeams,
-    actualGroupStandings,
-    actualThirdPlaceQualifying,
+    liveBracket,
     rawProcessedMatches: processedMatches,
   };
 

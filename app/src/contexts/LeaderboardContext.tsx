@@ -12,10 +12,7 @@ import { useMatches } from "@/contexts/MatchContext";
 import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { useAllProfiles } from "@/contexts/UserContext";
 import { UserScore, FifaMatchId } from "@/types/football";
-import { LocalPrediction, Prediction } from "@/types/database";
 import { calculateTotalPoints } from "@/lib/scoring";
-import { getQualifyingThirdPlaceTeams } from "@/lib/third-place-ranking";
-import { calculateAllGroupStandings } from "@/lib/standings";
 
 // =====================================================================
 // TYPES
@@ -36,8 +33,7 @@ const LeaderboardContext = createContext<LeaderboardContextValue | null>(null);
 
 export function LeaderboardProvider({ children }: { children: ReactNode }) {
   const { stageLockStatus } = useTime();
-  const { matches, actualGroupStandings, actualThirdPlaceQualifying } =
-    useMatches();
+  const { matches, liveBracket } = useMatches();
   const profiles = useAllProfiles();
   const allPredictions = useAllPredictions();
 
@@ -70,18 +66,8 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
       }));
     }
 
-    // Use actual standings already computed by MatchContext (via lib/standings.ts)
-    // instead of duplicating the calculation here
-    const advancingTeamIds = new Set<number>();
-    actualGroupStandings.forEach((standings, groupName) => {
-      standings.forEach((standing, index) => {
-        if (index < 2) {
-          advancingTeamIds.add(standing.team.id);
-        } else if (index === 2 && actualThirdPlaceQualifying.get(groupName)) {
-          advancingTeamIds.add(standing.team.id);
-        }
-      });
-    });
+    // Use actual standings from the live bracket for advancing team determination
+    // (advancingTeamIds is now computed inside calculateTotalPoints)
 
     // Calculate scores for each user
     const calculatedScores: UserScore[] = profileList.map((profile) => {
@@ -94,25 +80,11 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
         fifaNumber: m.fifaNumber as FifaMatchId | null,
       }));
 
-      // Calculate user's predicted standings to determine their 3rd place qualifying
-      const predictionMap = new Map<number, LocalPrediction>(
-        predictions.map((p: Prediction) => [p.match_id, p]),
-      );
-      const userPredictedStandings = calculateAllGroupStandings(
-        matches,
-        predictionMap,
-      );
-      const userThirdPlaceQualifying = getQualifyingThirdPlaceTeams(
-        userPredictedStandings,
-      );
-
       const { totalPoints, livePoints, breakdown } = calculateTotalPoints(
         matchesWithFifa,
         predictions,
         groupOverrides,
-        actualGroupStandings,
-        advancingTeamIds,
-        userThirdPlaceQualifying,
+        liveBracket,
       );
 
       let groupStagePoints = 0;
@@ -167,8 +139,7 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
     stageLockStatus.knockoutStageLocked,
     profiles.content,
     allPredictions.content,
-    actualGroupStandings,
-    actualThirdPlaceQualifying,
+    liveBracket,
   ]);
 
   const getPosition = useCallback(

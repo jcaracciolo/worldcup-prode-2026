@@ -34,7 +34,13 @@ function makeTeam(tla: string, name?: string): Team {
 }
 
 function nullTeam(): Team {
-  return { id: 0, name: "", shortName: "", tla: "", crest: null } as unknown as Team;
+  return {
+    id: 0,
+    name: "",
+    shortName: "",
+    tla: "",
+    crest: null,
+  } as unknown as Team;
 }
 
 // =====================================================================
@@ -136,7 +142,18 @@ function makeStanding(
   const won = explicitWon ?? Math.floor(points / 3);
   const drawn = points - won * 3;
   const lost = played - won - drawn;
-  return { team, position, points, goalsFor: gf, goalsAgainst: ga, goalDifference: gd, played, won, drawn, lost };
+  return {
+    team,
+    position,
+    points,
+    goalsFor: gf,
+    goalsAgainst: ga,
+    goalDifference: gd,
+    played,
+    won,
+    drawn,
+    lost,
+  };
 }
 
 export function buildGroupStandings(): Map<string, CalculatedStanding[]> {
@@ -227,7 +244,16 @@ export function buildGroupStandings(): Map<string, CalculatedStanding[]> {
  */
 export function buildThirdPlaceQualifying(): Map<string, boolean> {
   const m = new Map<string, boolean>();
-  const qualifiers = ["GROUP_A", "GROUP_B", "GROUP_C", "GROUP_D", "GROUP_E", "GROUP_F", "GROUP_G", "GROUP_H"];
+  const qualifiers = [
+    "GROUP_A",
+    "GROUP_B",
+    "GROUP_C",
+    "GROUP_D",
+    "GROUP_E",
+    "GROUP_F",
+    "GROUP_G",
+    "GROUP_H",
+  ];
   const nonQualifiers = ["GROUP_I", "GROUP_J", "GROUP_K", "GROUP_L"];
   for (const g of qualifiers) m.set(g, true);
   for (const g of nonQualifiers) m.set(g, false);
@@ -247,7 +273,10 @@ export function buildThirdPlaceQualifying(): Map<string, boolean> {
  *   Match 85 (vs 1B=BRA) ← 3rd D = BEL
  *   Match 87 (vs 1K=UKR) ← 3rd E = CRO
  */
-export const EXPECTED_THIRD_PLACE_ASSIGNMENTS: Record<number, { group: string; team: Team }> = {
+export const EXPECTED_THIRD_PLACE_ASSIGNMENTS: Record<
+  number,
+  { group: string; team: Team }
+> = {
   74: { group: "GROUP_H", team: TEAM_H3 }, // TUN
   77: { group: "GROUP_G", team: TEAM_G3 }, // NGA
   79: { group: "GROUP_B", team: TEAM_B3 }, // URU
@@ -281,7 +310,11 @@ function makeGroupMatch(
   awayGoals: number,
 ): Match {
   const winner =
-    homeGoals > awayGoals ? "HOME_TEAM" : awayGoals > homeGoals ? "AWAY_TEAM" : "DRAW";
+    homeGoals > awayGoals
+      ? "HOME_TEAM"
+      : awayGoals > homeGoals
+        ? "AWAY_TEAM"
+        : "DRAW";
   return {
     id,
     utcDate: `2026-06-${11 + Math.floor(id / 6)}T17:00:00Z`,
@@ -319,10 +352,14 @@ function makeKnockoutMatch(
   const homeGoals = options?.homeGoals ?? null;
   const awayGoals = options?.awayGoals ?? null;
   const winner: Match["score"]["winner"] = isFinished
-    ? options?.winner ??
+    ? (options?.winner ??
       (homeGoals !== null && awayGoals !== null
-        ? homeGoals > awayGoals ? "HOME_TEAM" : awayGoals > homeGoals ? "AWAY_TEAM" : "DRAW"
-        : null)
+        ? homeGoals > awayGoals
+          ? "HOME_TEAM"
+          : awayGoals > homeGoals
+            ? "AWAY_TEAM"
+            : "DRAW"
+        : null))
     : null;
 
   return {
@@ -358,27 +395,43 @@ function makeGroupMatches(
 ): Match[] {
   // 6 matches: round robin of 4 teams (AB, CD, AC, BD, AD, BC)
   const pairs: [number, number][] = [
-    [0, 1], [2, 3], [0, 2], [1, 3], [0, 3], [1, 2],
+    [0, 1],
+    [2, 3],
+    [0, 2],
+    [1, 3],
+    [0, 3],
+    [1, 2],
   ];
   return pairs.map(([h, a], i) =>
-    makeGroupMatch(startId + i, group, teams[h], teams[a], (3 - i) > 0 ? 2 : 1, i < 3 ? 0 : 1),
+    makeGroupMatch(
+      startId + i,
+      group,
+      teams[h],
+      teams[a],
+      3 - i > 0 ? 2 : 1,
+      i < 3 ? 0 : 1,
+    ),
   );
 }
 
 export function buildGroupStageMatches(): Match[] {
+  // Team arrays are ordered so that computed standings match the expected
+  // group positions: team[0]=1st, team[2]=2nd, team[1]=3rd, team[3]=4th.
+  // (With the generic scores from makeGroupMatches, positions 2 and 3
+  //  are at array indices 2 and 1 respectively.)
   const groups: [string, Team[]][] = [
-    ["GROUP_A", [TEAM_A1, TEAM_A2, TEAM_A3, TEAM_A4]],
-    ["GROUP_B", [TEAM_B1, TEAM_B2, TEAM_B3, TEAM_B4]],
-    ["GROUP_C", [TEAM_C1, TEAM_C2, TEAM_C3, TEAM_C4]],
-    ["GROUP_D", [TEAM_D1, TEAM_D2, TEAM_D3, TEAM_D4]],
-    ["GROUP_E", [TEAM_E1, TEAM_E2, TEAM_E3, TEAM_E4]],
-    ["GROUP_F", [TEAM_F1, TEAM_F2, TEAM_F3, TEAM_F4]],
-    ["GROUP_G", [TEAM_G1, TEAM_G2, TEAM_G3, TEAM_G4]],
-    ["GROUP_H", [TEAM_H1, TEAM_H2, TEAM_H3, TEAM_H4]],
-    ["GROUP_I", [TEAM_I1, TEAM_I2, TEAM_I3, TEAM_I4]],
-    ["GROUP_J", [TEAM_J1, TEAM_J2, TEAM_J3, TEAM_J4]],
-    ["GROUP_K", [TEAM_K1, TEAM_K2, TEAM_K3, TEAM_K4]],
-    ["GROUP_L", [TEAM_L1, TEAM_L2, TEAM_L3, TEAM_L4]],
+    ["GROUP_A", [TEAM_A1, TEAM_A3, TEAM_A2, TEAM_A4]],
+    ["GROUP_B", [TEAM_B1, TEAM_B3, TEAM_B2, TEAM_B4]],
+    ["GROUP_C", [TEAM_C1, TEAM_C3, TEAM_C2, TEAM_C4]],
+    ["GROUP_D", [TEAM_D1, TEAM_D3, TEAM_D2, TEAM_D4]],
+    ["GROUP_E", [TEAM_E1, TEAM_E3, TEAM_E2, TEAM_E4]],
+    ["GROUP_F", [TEAM_F1, TEAM_F3, TEAM_F2, TEAM_F4]],
+    ["GROUP_G", [TEAM_G1, TEAM_G3, TEAM_G2, TEAM_G4]],
+    ["GROUP_H", [TEAM_H1, TEAM_H3, TEAM_H2, TEAM_H4]],
+    ["GROUP_I", [TEAM_I1, TEAM_I3, TEAM_I2, TEAM_I4]],
+    ["GROUP_J", [TEAM_J1, TEAM_J3, TEAM_J2, TEAM_J4]],
+    ["GROUP_K", [TEAM_K1, TEAM_K3, TEAM_K2, TEAM_K4]],
+    ["GROUP_L", [TEAM_L1, TEAM_L3, TEAM_L2, TEAM_L4]],
   ];
 
   const matches: Match[] = [];
@@ -648,7 +701,8 @@ export function scenarioWithCustomThirdPlace(qualifyingGroups: string[]) {
   }
 
   const qualifying = new Map<string, boolean>();
-  for (let c = 65; c <= 76; c++) { // A-L
+  for (let c = 65; c <= 76; c++) {
+    // A-L
     const letter = String.fromCharCode(c);
     qualifying.set(`GROUP_${letter}`, qualifyingGroups.includes(letter));
   }
@@ -662,4 +716,4 @@ export function scenarioWithCustomThirdPlace(qualifyingGroups: string[]) {
 }
 
 // Re-export for convenience in tests
-export { makeKnockoutMatch, nullTeam };
+export { makeKnockoutMatch, nullTeam, makeGroupMatch };

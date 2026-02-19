@@ -13,6 +13,12 @@ echo -e "${YELLOW}=== World Cup Prode Azure Deployment ===${NC}"
 RESOURCE_GROUP="worldcupprode-rg"
 APP_NAME="worldcupprode"
 APP_DIR="app"
+SUBSCRIPTION_ID="7fe479bb-796e-4f40-ad28-b5f075ca5c02"
+
+# Set the correct Azure subscription
+echo -e "${YELLOW}Setting Azure subscription...${NC}"
+az account set --subscription "$SUBSCRIPTION_ID"
+echo -e "${GREEN}✓ Subscription set${NC}"
 
 # Change to script directory
 cd "$(dirname "$0")"

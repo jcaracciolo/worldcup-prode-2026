@@ -43,7 +43,7 @@ const UserContext = createContext<UserContextValue | null>(null);
 // =====================================================================
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const { db } = useDatabase();
+  const { authService, db } = useDatabase();
   const [user, setUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -51,18 +51,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const profileCacheRef = useRef<Map<string, Profile>>(new Map());
   const allProfilesCacheRef = useRef<Profile[] | null>(null);
 
-  // Fetch current user on mount and auth changes
+  // Fetch current user on mount and auth changes.
+  // Depends on authService (stable) — NOT on db — so competition switches
+  // don't trigger a re-fetch / loading flash.
   useEffect(() => {
     const fetchUser = async () => {
       setLoading(true);
       try {
-        const { data: authUser } = await db.auth.getUser();
-        if (authUser) {
-          const { data: profile } = await db.profiles.getProfile(authUser.id);
-          setUser(profile);
-        } else {
-          setUser(null);
-        }
+        const { data: profile } = await authService.getUserProfile();
+        setUser(profile);
       } catch {
         setUser(null);
       } finally {
@@ -72,14 +69,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     fetchUser();
 
-    const { unsubscribe } = db.auth.onAuthStateChange((event) => {
+    const { unsubscribe } = authService.onAuthStateChange((event) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
         fetchUser();
       }
     });
 
     return () => unsubscribe();
-  }, [db]);
+  }, [authService]);
 
   const updateProfile = useCallback(
     async (updates: Partial<Profile>) => {

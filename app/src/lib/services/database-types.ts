@@ -253,6 +253,9 @@ export interface AuthService {
   /** Get the current authenticated user */
   getUser(): Promise<ServiceResult<AuthUser>>;
 
+  /** Get the current authenticated user's profile */
+  getUserProfile(): Promise<ServiceResult<Profile>>;
+
   /** Sign in with email and password */
   signInWithPassword(
     email: string,

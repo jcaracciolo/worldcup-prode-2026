@@ -10,10 +10,14 @@ import React, {
 } from "react";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import {
+  AuthService,
   DatabaseService,
   CURRENT_DB_VERSION,
 } from "@/lib/services/database-types";
-import { createDatabaseServiceFromClient } from "@/lib/services/database-shared";
+import {
+  createAuthService,
+  createDatabaseServiceFromClient,
+} from "@/lib/services/database-shared";
 import { Competition } from "@/types/database";
 
 // =====================================================================
@@ -23,7 +27,9 @@ import { Competition } from "@/types/database";
 const COMPETITION_STORAGE_KEY = "worldcupprode_competition_id";
 
 interface DatabaseContextValue {
-  /** The database service instance (for mutations) */
+  /** Stable auth service — NOT recreated on competition switch */
+  authService: AuthService;
+  /** The database service instance (competition-scoped, for data mutations) */
   db: DatabaseService;
   /** Current competition ID */
   currentCompetitionId: string | null;
@@ -57,28 +63,35 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
   const [userCompetitions, setUserCompetitions] = useState<Competition[]>([]);
   const [competitionLoading, setCompetitionLoading] = useState(true);
 
-  // Create the database service with competition ID
-  // Recreated when competition changes, triggering re-renders in consumers that depend on [db]
+  // Stable Supabase client reference (singleton, never changes)
+  const supabaseClient = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    return createBrowserClient();
+  }, []);
+
+  // Stable auth service — created once, never recreated on competition switch.
+  // This prevents auth-dependent consumers (e.g. UserContext) from re-running
+  // their effects when only the competition changes.
+  const authService = useMemo(() => {
+    if (!supabaseClient) return null;
+    return createAuthService(supabaseClient);
+  }, [supabaseClient]);
+
+  // Competition-scoped database service.
+  // Recreated when competition changes, but auth operations should use
+  // authService above instead of db.auth.
   const db = useMemo(() => {
-    // During SSR/build, return null - will be initialized client-side
-    if (typeof window === "undefined") {
-      // Return a minimal service for SSR (won't be used)
-      return null;
-    }
-
-    const supabase = createBrowserClient();
-    if (!supabase) {
-      console.warn("Failed to create Supabase client");
-      return null;
-    }
-
-    return createDatabaseServiceFromClient(supabase, currentCompetitionId);
-  }, [currentCompetitionId]);
+    if (!supabaseClient) return null;
+    return createDatabaseServiceFromClient(
+      supabaseClient,
+      currentCompetitionId,
+    );
+  }, [supabaseClient, currentCompetitionId]);
 
   // Load user's competitions after auth
   const loadUserCompetitions = useCallback(
     async (userId: string) => {
-      if (!db) return;
+      if (!db || !authService) return;
 
       setCompetitionLoading(true);
       try {
@@ -121,16 +134,17 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
         setCompetitionLoading(false);
       }
     },
-    [db],
+    [db, authService],
   );
 
-  // Listen for auth changes to load competitions
+  // Listen for auth changes to load competitions.
+  // Uses authService (stable) so this effect doesn't re-run on competition switch.
   useEffect(() => {
-    if (!db) return;
+    if (!authService || !db) return;
 
     // Check for existing user on mount
     const checkUser = async () => {
-      const { data: user } = await db.auth.getUser();
+      const { data: user } = await authService.getUser();
       if (user) {
         await loadUserCompetitions(user.id);
       } else {
@@ -160,7 +174,7 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
     checkUser();
 
     // Subscribe to auth changes
-    const { unsubscribe } = db.auth.onAuthStateChange((event, session) => {
+    const { unsubscribe } = authService.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
         loadUserCompetitions(session.user.id);
       } else if (event === "SIGNED_OUT") {
@@ -173,7 +187,7 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
     return () => {
       unsubscribe();
     };
-  }, [db, loadUserCompetitions]);
+  }, [authService, db, loadUserCompetitions]);
 
   // Switch competition
   const switchCompetition = useCallback(
@@ -203,12 +217,12 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
 
   // Refresh competitions list
   const refreshCompetitions = useCallback(async () => {
-    if (!db) return;
-    const { data: user } = await db.auth.getUser();
+    if (!authService) return;
+    const { data: user } = await authService.getUser();
     if (user) {
       await loadUserCompetitions(user.id);
     }
-  }, [db, loadUserCompetitions]);
+  }, [authService, loadUserCompetitions]);
 
   // Get current competition object
   const currentCompetition = useMemo(() => {
@@ -216,15 +230,17 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
     return userCompetitions.find((c) => c.id === currentCompetitionId) || null;
   }, [currentCompetitionId, userCompetitions]);
 
-  // Don't render children until db is ready (client-side only)
-  if (typeof window !== "undefined" && !db) {
+  // Don't render children until db and authService are ready (client-side only)
+  if (typeof window !== "undefined" && (!db || !authService)) {
     return null;
   }
 
   // For SSR, render children but with a placeholder db
   const contextDb = db || createPlaceholderDb();
+  const contextAuth = authService || createPlaceholderDb().auth;
 
   const value: DatabaseContextValue = {
+    authService: contextAuth,
     db: contextDb,
     currentCompetitionId,
     currentCompetition,
@@ -282,6 +298,7 @@ function createPlaceholderDb(): DatabaseService {
   return {
     auth: {
       getUser: notAvailable,
+      getUserProfile: notAvailable,
       signInWithPassword: notAvailable,
       signUp: notAvailable,
       signOut: notAvailable,

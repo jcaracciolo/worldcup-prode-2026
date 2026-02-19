@@ -44,6 +44,23 @@ function LoginForm() {
       return;
     }
 
+    // Wait for the auth state change event to fire before navigating.
+    // This ensures cookies are properly set and the server-side middleware
+    // will see the authenticated session on the next request.
+    await new Promise<void>((resolve) => {
+      const { unsubscribe } = db.auth.onAuthStateChange((event) => {
+        if (event === "SIGNED_IN") {
+          unsubscribe();
+          resolve();
+        }
+      });
+      // Safety timeout - don't hang forever if the event doesn't fire
+      setTimeout(() => {
+        unsubscribe();
+        resolve();
+      }, 3000);
+    });
+
     router.push(redirect);
     router.refresh();
   };

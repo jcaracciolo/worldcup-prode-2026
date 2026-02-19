@@ -90,24 +90,21 @@ export function MobileDateColumn({
   customContent,
 }: MobileDateColumnProps) {
   return (
-    <div className="w-14 shrink-0 pr-2 border-r border-white/10 relative">
+    <div className="w-14 shrink-0 pr-2 border-r border-white/10 relative flex items-center">
       {fifaMatchNumber && (
         <span className="absolute -top-1 left-0 text-[7px] text-white/30">
           #{fifaMatchNumber}
         </span>
       )}
       {customContent || (
-        <div className="flex flex-col items-center leading-tight pt-1">
+        <div className="flex flex-col items-center leading-tight w-full">
           <span
             style={{ color: "var(--date-color)" }}
             className="text-xs font-bold"
           >
             {formatMatchDate(date)}
           </span>
-          <span
-            style={{ color: "var(--date-color)" }}
-            className="text-[10px] font-medium"
-          >
+          <span className="text-[10px] font-medium text-white/60">
             {formatMatchTime(date)}
           </span>
         </div>

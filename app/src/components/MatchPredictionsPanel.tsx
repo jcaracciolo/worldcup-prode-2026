@@ -65,7 +65,13 @@ export function MatchPredictionsPanel({
           No predictions yet
         </div>
       ) : (
-        <div className="space-y-1 max-h-[140px] overflow-y-auto">
+        <div
+          className="space-y-1 max-h-[300px] overflow-y-auto relative"
+          style={{
+            scrollbarWidth: "thin",
+            scrollbarColor: "rgba(255,255,255,0.3) transparent",
+          }}
+        >
           {predictions.map((pred) => {
             const highlight = getPredictionHighlight(pred);
             const isCurrentUser = currentUserId === pred.userId;
@@ -74,7 +80,7 @@ export function MatchPredictionsPanel({
               <Link
                 key={pred.userId}
                 href={`/user/${pred.userId}`}
-                className={`flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg text-xs transition-all hover:bg-white/10 ${isCurrentUser ? "bg-sky-500/20 border border-sky-400/40" : ""}`}
+                className={`flex items-center justify-between gap-1.5 px-2 py-2.5 rounded-lg text-xs transition-all hover:bg-white/10 min-h-[44px] ${isCurrentUser ? "bg-sky-500/20 border border-sky-400/40" : ""}`}
               >
                 <span
                   className={`truncate flex-1 ${isCurrentUser ? "text-sky-200 font-medium" : "text-white/90"}`}

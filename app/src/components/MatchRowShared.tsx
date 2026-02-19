@@ -64,8 +64,8 @@ interface TeamCrestProps {
 }
 
 const sizeClasses = {
-  sm: "w-4 h-4 text-[6px]",
-  md: "w-5 h-5 text-[8px]",
+  sm: "w-5 h-5 text-[7px]",
+  md: "w-6 h-6 text-[8px]",
   lg: "w-7 h-7 text-[10px]",
 };
 
@@ -179,24 +179,21 @@ export function MobileDateColumn({
   customContent,
 }: MobileDateColumnProps) {
   return (
-    <div className="w-14 shrink-0 pr-2 border-r border-white/10 relative">
+    <div className="w-14 shrink-0 pr-2 border-r border-white/10 relative flex items-center">
       {fifaMatchNumber && (
         <span className="absolute -top-1 left-0 text-[7px] text-white/30">
           #{fifaMatchNumber}
         </span>
       )}
       {customContent || (
-        <div className="flex flex-col items-center leading-tight pt-1">
+        <div className="flex flex-col items-center leading-tight w-full">
           <span
             style={{ color: "var(--date-color)" }}
             className="text-xs font-bold"
           >
             {formatMatchDate(date)}
           </span>
-          <span
-            style={{ color: "var(--date-color)" }}
-            className="text-[10px] font-medium"
-          >
+          <span className="text-[10px] font-medium text-white/60">
             {formatMatchTime(date)}
           </span>
         </div>
@@ -360,7 +357,7 @@ function KnockoutMobileTeamButton({
         type="button"
         onClick={() => team?.id && onWinnerChange(team.id)}
         disabled={disabled || !team?.id}
-        className={`flex items-center ${isHome ? "flex-row-reverse" : ""} gap-1 px-1 py-0.5 rounded transition-all ${
+        className={`flex items-center ${isHome ? "flex-row-reverse" : ""} gap-1.5 px-1 py-0.5 rounded transition-all ${
           highlighted
             ? "bg-amber-500/80 text-slate-900"
             : "hover:bg-white/10 text-white"
@@ -374,7 +371,7 @@ function KnockoutMobileTeamButton({
 
   return (
     <div
-      className={`flex items-center ${isHome ? "flex-row-reverse" : ""} gap-1 px-1 py-0.5 rounded ${
+      className={`flex items-center ${isHome ? "flex-row-reverse" : ""} gap-1.5 px-1 py-0.5 rounded ${
         highlighted ? "bg-amber-500/80" : ""
       }`}
     >
@@ -413,7 +410,7 @@ function KnockoutScoreSection({
 }) {
   if (isEdit) {
     const inputClass = mobile
-      ? "w-7 h-6 text-center text-xs font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
+      ? "w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
       : "w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-400 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20 transition-all";
 
     return (
@@ -455,13 +452,13 @@ function KnockoutScoreSection({
       className={`flex items-center ${mobile ? "gap-0.5" : "gap-1"} shrink-0`}
     >
       <span
-        className={`${mobile ? "w-7 h-6 text-xs" : "w-8 h-7 text-sm"} flex items-center justify-center font-bold text-white bg-white/10 rounded`}
+        className={`${mobile ? "w-8 h-7 text-sm" : "w-8 h-7 text-sm"} flex items-center justify-center font-bold text-white bg-white/10 rounded`}
       >
         {homeGoals ?? "-"}
       </span>
       <span className="text-white/50 font-bold text-xs">-</span>
       <span
-        className={`${mobile ? "w-7 h-6 text-xs" : "w-8 h-7 text-sm"} flex items-center justify-center font-bold text-white bg-white/10 rounded`}
+        className={`${mobile ? "w-8 h-7 text-sm" : "w-8 h-7 text-sm"} flex items-center justify-center font-bold text-white bg-white/10 rounded`}
       >
         {awayGoals ?? "-"}
       </span>

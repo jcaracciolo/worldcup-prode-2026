@@ -1036,6 +1036,40 @@ export function createAuthService(supabase: SupabaseClient): AuthService {
       }
     },
 
+    async getUserProfile(): Promise<ServiceResult<Profile>> {
+      try {
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
+        if (authError) throw authError;
+        if (!user) return { data: null, error: null };
+
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (error) throw error;
+        return { data, error: null };
+      } catch (error) {
+        const isSessionMissing =
+          error instanceof Error && error.name === "AuthSessionMissingError";
+        if (!isSessionMissing) {
+          console.error("[Auth] Failed to get user profile:", error);
+        }
+        return {
+          data: null,
+          error: isSessionMissing
+            ? null
+            : error instanceof Error
+              ? error.message
+              : "Unknown error",
+        };
+      }
+    },
+
     async signInWithPassword(
       email: string,
       password: string,
@@ -1090,8 +1124,10 @@ export function createAuthService(supabase: SupabaseClient): AuthService {
 
     async signOut(): Promise<ServiceVoidResult> {
       try {
-        // Use 'global' scope to properly invalidate session on both client and server
-        const { error } = await supabase.auth.signOut({ scope: "global" });
+        // Use 'local' scope to only sign out the current browser/tab.
+        // 'global' scope invalidates sessions on ALL devices/tabs which can
+        // cause unexpected auth loss in other open tabs.
+        const { error } = await supabase.auth.signOut({ scope: "local" });
         if (error) throw error;
         return { success: true, error: null };
       } catch (error) {

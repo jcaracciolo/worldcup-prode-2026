@@ -134,13 +134,13 @@ export default function PredictionInput({
         )}
 
         {/* Home Team */}
-        <div className="flex-1 min-w-0 flex items-center justify-end gap-0.5">
+        <div className="flex-1 min-w-0 flex items-center justify-end gap-1.5">
           {needsWinnerSelect ? (
             <button
               type="button"
               onClick={() => homeTeam?.id && handleWinnerChange(homeTeam.id)}
               disabled={disabled || !homeTeam?.id}
-              className={`text-[10px] font-semibold truncate px-0.5 py-0.5 rounded transition-all ${
+              className={`text-xs font-semibold truncate px-0.5 py-0.5 rounded transition-all ${
                 homeIsWinner
                   ? "bg-amber-500/80 text-slate-900"
                   : "text-white hover:bg-white/10"
@@ -150,7 +150,7 @@ export default function PredictionInput({
             </button>
           ) : (
             <span
-              className={`text-[10px] font-semibold truncate px-0.5 py-0.5 rounded ${homeIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
+              className={`text-xs font-semibold truncate px-0.5 py-0.5 rounded ${homeIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
             >
               {homeTeam?.tla || match.homeDisplayName}
             </span>
@@ -167,10 +167,10 @@ export default function PredictionInput({
             value={homeGoals ?? ""}
             onChange={(e) => handleHomeChange(e.target.value)}
             disabled={disabled}
-            className="w-7 h-6 text-center text-xs font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
+            className="w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
             placeholder="-"
           />
-          <span className="text-white/50 font-bold text-[10px]">-</span>
+          <span className="text-white/50 font-bold text-xs">-</span>
           <input
             type="number"
             min="0"
@@ -178,20 +178,20 @@ export default function PredictionInput({
             value={awayGoals ?? ""}
             onChange={(e) => handleAwayChange(e.target.value)}
             disabled={disabled}
-            className="w-7 h-6 text-center text-xs font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
+            className="w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
             placeholder="-"
           />
         </div>
 
         {/* Away Team */}
-        <div className="flex-1 min-w-0 flex items-center gap-0.5">
+        <div className="flex-1 min-w-0 flex items-center gap-1.5">
           <TeamCrest team={awayTeam} size="sm" />
           {needsWinnerSelect ? (
             <button
               type="button"
               onClick={() => awayTeam?.id && handleWinnerChange(awayTeam.id)}
               disabled={disabled || !awayTeam?.id}
-              className={`text-[10px] font-semibold truncate px-0.5 py-0.5 rounded transition-all ${
+              className={`text-xs font-semibold truncate px-0.5 py-0.5 rounded transition-all ${
                 awayIsWinner
                   ? "bg-amber-500/80 text-slate-900"
                   : "text-white hover:bg-white/10"
@@ -201,24 +201,14 @@ export default function PredictionInput({
             </button>
           ) : (
             <span
-              className={`text-[10px] font-semibold truncate px-0.5 py-0.5 rounded ${awayIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
+              className={`text-xs font-semibold truncate px-0.5 py-0.5 rounded ${awayIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
             >
               {awayTeam?.tla || match.awayDisplayName}
             </span>
           )}
         </div>
 
-        {/* Venue - hidden on very narrow screens */}
-        {venue && (
-          <div className="hidden min-[360px]:block w-8 shrink-0 text-right">
-            <span
-              style={{ color: "var(--venue-color)" }}
-              className="text-[8px] font-medium"
-            >
-              {getVenueAbbreviation(venue.city)}
-            </span>
-          </div>
-        )}
+        {/* Venue - mobile hidden, desktop only */}
       </div>
 
       {/* Desktop Layout - Compact like profile page */}

@@ -390,7 +390,7 @@ export function GroupMatchRow({
         className="flex-1 flex items-center gap-2 hover:bg-white/5 transition-colors rounded px-1 -mx-1 cursor-pointer"
       >
         <div
-          className={`flex-1 flex items-center justify-end gap-1.5 px-1.5 py-0.5 rounded ${homeHighlight ? "bg-amber-500/80" : ""}`}
+          className={`flex-1 flex items-center justify-end gap-2 px-1.5 py-0.5 rounded ${homeHighlight ? "bg-amber-500/80" : ""}`}
         >
           <span
             className={
@@ -403,15 +403,15 @@ export function GroupMatchRow({
             <img
               src={match.homeTeam.crest}
               alt={match.homeTeam.name}
-              className="w-5 h-5 object-contain shrink-0"
+              className="w-6 h-6 object-contain shrink-0"
             />
           ) : (
-            <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
+            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
               TBD
             </div>
           )}
         </div>
-        <span className="w-16 text-center font-bold text-white">
+        <span className="w-16 text-center font-bold text-white text-base">
           {isLive && (
             <span className="text-[8px] text-red-400 font-bold live-pulse block leading-none mb-0.5">
               LIVE
@@ -420,16 +420,16 @@ export function GroupMatchRow({
           {prediction?.home_goals ?? "-"} - {prediction?.away_goals ?? "-"}
         </span>
         <div
-          className={`flex-1 flex items-center gap-1.5 px-1.5 py-0.5 rounded ${awayHighlight ? "bg-amber-500/80" : ""}`}
+          className={`flex-1 flex items-center gap-2 px-1.5 py-0.5 rounded ${awayHighlight ? "bg-amber-500/80" : ""}`}
         >
           {match.awayTeam.crest ? (
             <img
               src={match.awayTeam.crest}
               alt={match.awayTeam.name}
-              className="w-5 h-5 object-contain shrink-0"
+              className="w-6 h-6 object-contain shrink-0"
             />
           ) : (
-            <div className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
+            <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center text-[8px] font-bold text-white/60 shrink-0">
               TBD
             </div>
           )}

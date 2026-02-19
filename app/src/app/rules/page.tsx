@@ -161,7 +161,7 @@ const content = {
           },
           { name: "Final", mult: "6×", result: "12", goals: "4", max: "16" },
         ],
-        headers: ["Round", "Multiplier", "Result pts", "Goal pts", "Max pts"],
+        headers: ["Round", "Mult", "Result", "Goals", "Max"],
       },
       example: {
         title: "Example - Quarter-final (3× multiplier)",
@@ -354,13 +354,7 @@ const content = {
           },
           { name: "Final", mult: "6×", result: "12", goals: "4", max: "16" },
         ],
-        headers: [
-          "Ronda",
-          "Multiplicador",
-          "Pts resultado",
-          "Pts goles",
-          "Máx pts",
-        ],
+        headers: ["Ronda", "Mult", "Res", "Goles", "Máx"],
       },
       example: {
         title: "Ejemplo - Cuartos de final (multiplicador 3×)",
@@ -871,7 +865,7 @@ export default function RulesPage() {
                     {t.phase3.multipliers.headers.map((header, i) => (
                       <th
                         key={i}
-                        className="py-2 px-2 text-left text-white/60 font-medium text-xs"
+                        className="py-2 px-1.5 sm:px-2 text-left text-white/60 font-medium text-xs whitespace-nowrap"
                       >
                         {header}
                       </th>
@@ -884,17 +878,19 @@ export default function RulesPage() {
                       key={i}
                       className="border-b border-white/10 last:border-0"
                     >
-                      <td className="py-2 px-2 text-white font-medium">
+                      <td className="py-2 px-1.5 sm:px-2 text-white font-medium text-xs sm:text-sm">
                         {round.name}
                       </td>
-                      <td className="py-2 px-2 text-purple-400 font-bold">
+                      <td className="py-2 px-1.5 sm:px-2 text-purple-400 font-bold">
                         {round.mult}
                       </td>
-                      <td className="py-2 px-2 text-white/70">
+                      <td className="py-2 px-1.5 sm:px-2 text-white/70">
                         {round.result}
                       </td>
-                      <td className="py-2 px-2 text-white/70">{round.goals}</td>
-                      <td className="py-2 px-2 text-emerald-400 font-bold">
+                      <td className="py-2 px-1.5 sm:px-2 text-white/70">
+                        {round.goals}
+                      </td>
+                      <td className="py-2 px-1.5 sm:px-2 text-emerald-400 font-bold">
                         {round.max}
                       </td>
                     </tr>

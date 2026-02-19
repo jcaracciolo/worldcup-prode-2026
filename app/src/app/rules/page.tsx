@@ -509,7 +509,7 @@ export default function RulesPage() {
                     className="border-b border-white/10 last:border-0"
                   >
                     <td className="py-2 text-white/80 text-sm">{item.label}</td>
-                    <td className="py-2 text-right text-emerald-400 font-bold">
+                    <td className="py-2 text-right text-emerald-400 font-bold w-16 whitespace-nowrap">
                       {item.points}
                     </td>
                   </tr>
@@ -629,7 +629,7 @@ export default function RulesPage() {
                     className="border-b border-white/10 last:border-0"
                   >
                     <td className="py-2 text-white/80 text-sm">{item.label}</td>
-                    <td className="py-2 text-right text-blue-400 font-bold">
+                    <td className="py-2 text-right text-blue-400 font-bold w-16 whitespace-nowrap">
                       {item.points}
                     </td>
                   </tr>
@@ -813,7 +813,7 @@ export default function RulesPage() {
                     className="border-b border-white/10 last:border-0"
                   >
                     <td className="py-2 text-white/80 text-sm">{item.label}</td>
-                    <td className="py-2 text-right text-purple-400 font-bold">
+                    <td className="py-2 text-right text-purple-400 font-bold w-16 whitespace-nowrap">
                       {item.points}
                     </td>
                   </tr>
@@ -841,8 +841,26 @@ export default function RulesPage() {
                     className="border-b border-white/10 last:border-0"
                   >
                     <td className="py-2 text-white/80 text-sm">{item.label}</td>
-                    <td className="py-2 text-right text-purple-400 font-bold">
-                      {item.points}
+                    <td className="py-2 text-right text-purple-400 font-bold w-24">
+                      {item.points.match(/\((?:each|c\/u)\)/) ? (
+                        (() => {
+                          const match =
+                            item.points.match(/\s*\((each|c\/u)\)/)!;
+                          const main = item.points.slice(0, match.index);
+                          const suffix = `(${match[1]})`;
+                          return (
+                            <>
+                              <span className="whitespace-nowrap">{main}</span>
+                              <br />
+                              <span className="text-xs font-normal whitespace-nowrap">
+                                {suffix}
+                              </span>
+                            </>
+                          );
+                        })()
+                      ) : (
+                        <span className="whitespace-nowrap">{item.points}</span>
+                      )}
                     </td>
                   </tr>
                 ))}

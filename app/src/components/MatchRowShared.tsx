@@ -607,7 +607,9 @@ export function KnockoutMatchRow({
             />
           </div>
         </ContentWrapper>
-        {pointsTooltip && <div className="shrink-0">{pointsTooltip}</div>}
+        {pointsTooltip && (
+          <div className="shrink-0 w-10 text-right">{pointsTooltip}</div>
+        )}
       </div>
 
       {/* Desktop Layout */}

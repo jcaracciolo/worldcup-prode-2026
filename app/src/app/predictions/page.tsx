@@ -130,26 +130,22 @@ export default function PredictionsPage() {
 
         {/* Warning banner for knockout predictions deadline */}
         {daysUntilKnockoutLocks !== null && !knockoutLocked && (
-          <div className="bg-red-600/90 border border-red-500 text-white px-4 py-3 rounded-xl mb-6 flex items-center justify-between">
+          <div className="bg-red-800/70 border border-red-500/30 text-white px-3 py-2.5 rounded-xl mb-6">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">⚠️</span>
+              <span className="text-lg shrink-0">⚠️</span>
               <div>
-                <div className="font-bold">Knockout predictions lock soon!</div>
-                <div className="text-red-100 text-sm">
+                <div className="font-semibold text-sm">
+                  Knockout predictions lock soon!
+                </div>
+                <div className="text-red-200/70 text-xs">
                   {daysUntilKnockoutLocks === 0
-                    ? "Locking today!"
+                    ? "Locking today! You won't be able to complete them after."
                     : daysUntilKnockoutLocks === 1
-                      ? "Only 1 day left to finish your knockout predictions"
-                      : `Only ${daysUntilKnockoutLocks} days left to finish your knockout predictions`}
+                      ? "Only 1 day left — you won't be able to complete them after."
+                      : `${daysUntilKnockoutLocks} days left — you won't be able to complete them after. Start today!`}
                 </div>
               </div>
             </div>
-            <button
-              onClick={() => setActiveTab("knockout")}
-              className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-colors"
-            >
-              Go to Knockout →
-            </button>
           </div>
         )}
 
@@ -163,11 +159,12 @@ export default function PredictionsPage() {
           </Link>
         )}
 
-        {groupLocked && (
-          <div className="bg-amber-500/20 border border-amber-500/30 text-amber-300 px-4 py-3 rounded-xl mb-6">
-            Group stage predictions are locked
-          </div>
-        )}
+        {groupLocked &&
+          !(daysUntilKnockoutLocks !== null && !knockoutLocked) && (
+            <div className="bg-amber-500/20 border border-amber-500/30 text-amber-300 px-4 py-3 rounded-xl mb-6">
+              Group stage predictions are locked
+            </div>
+          )}
 
         {/* Stage Tabs */}
         <div className="flex gap-2 mb-6">

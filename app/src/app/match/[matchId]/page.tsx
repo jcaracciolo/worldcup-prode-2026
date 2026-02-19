@@ -140,7 +140,7 @@ export default function MatchDetailPage() {
                   </div>
 
                   {/* Score */}
-                  <div className="text-center min-w-[80px] sm:min-w-[120px]">
+                  <div className="text-center min-w-[60px] sm:min-w-[100px]">
                     {isFinished || isLive ? (
                       <div className="text-3xl sm:text-4xl font-bold text-white">
                         {match.score.fullTime.home} -{" "}

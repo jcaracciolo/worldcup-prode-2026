@@ -60,7 +60,8 @@ export default function UserPredictionsPage() {
   );
 
   // Get matches with user's predicted knockout teams baked in.
-  const { matches: predictedMatches, knockoutStages } = usePredictedMatches(userId);
+  const { matches: predictedMatches, knockoutStages } =
+    usePredictedMatches(userId);
 
   // Predictions keyed by FIFA match number (for knockout)
   const fifaPredictionMap = useMemo(
@@ -70,8 +71,6 @@ export default function UserPredictionsPage() {
       ),
     [predictions],
   );
-
-
 
   // Get user's score and position from centralized leaderboard context
   // (avoids re-computing scores that LeaderboardContext already calculated)
@@ -199,25 +198,25 @@ export default function UserPredictionsPage() {
             </div>
 
             {/* Point Breakdown */}
-            <div className="p-4 grid grid-cols-3 gap-4">
-              <div className="text-center p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                <div className="text-xs text-emerald-400 uppercase tracking-wider mb-1">
-                  Group Stage
+            <div className="p-4 grid grid-cols-3 gap-2">
+              <div className="text-center p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                <div className="text-[10px] text-emerald-400 uppercase tracking-wider mb-1">
+                  Group
                 </div>
                 <div className="text-2xl font-bold text-white">
                   {pointBreakdown.groupStagePoints}
                 </div>
               </div>
-              <div className="text-center p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                <div className="text-xs text-blue-400 uppercase tracking-wider mb-1">
-                  Group Bonus
+              <div className="text-center p-2 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                <div className="text-[10px] text-blue-400 uppercase tracking-wider mb-1">
+                  Bonus
                 </div>
                 <div className="text-2xl font-bold text-white">
                   {pointBreakdown.groupBonusPoints}
                 </div>
               </div>
-              <div className="text-center p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                <div className="text-xs text-amber-400 uppercase tracking-wider mb-1">
+              <div className="text-center p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                <div className="text-[10px] text-amber-400 uppercase tracking-wider mb-1">
                   Knockout
                 </div>
                 <div className="text-2xl font-bold text-white">
@@ -240,43 +239,36 @@ export default function UserPredictionsPage() {
                           href={`/user/${positionInfo.above.userId}`}
                           scroll={true}
                           onClick={(e) => e.stopPropagation()}
-                          className="flex items-center justify-between p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                          className="flex items-center gap-2 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
                         >
-                          <div className="flex items-center gap-2">
-                            <span className="text-white/50 text-sm">
-                              #{positionInfo.above.position}
-                            </span>
-                            <span className="text-white font-medium">
-                              {positionInfo.above.displayName}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-emerald-400 font-bold">
-                              {positionInfo.above.totalPoints} pts
-                            </span>
-                            <span className="text-xs text-red-400">
-                              ▲ {positionInfo.above.totalPoints - totalPoints}{" "}
-                              ahead
-                            </span>
-                          </div>
+                          <span className="text-white/50 text-xs shrink-0">
+                            #{positionInfo.above.position}
+                          </span>
+                          <span className="text-white font-medium text-sm truncate min-w-0 flex-1">
+                            {positionInfo.above.displayName}
+                          </span>
+                          <span className="text-[10px] text-red-400 shrink-0 whitespace-nowrap">
+                            ▲{positionInfo.above.totalPoints - totalPoints}
+                          </span>
+                          <span className="text-emerald-400 font-bold text-sm shrink-0">
+                            {positionInfo.above.totalPoints}
+                          </span>
                         </Link>
                       )}
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30">
-                        <div className="flex items-center gap-2">
-                          <span className="text-emerald-400 text-sm font-bold">
-                            #{positionInfo.position}
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30">
+                        <span className="text-emerald-400 text-xs font-bold shrink-0">
+                          #{positionInfo.position}
+                        </span>
+                        <span className="text-white font-bold text-sm truncate min-w-0 flex-1">
+                          {targetProfile?.display_name}
+                        </span>
+                        {isOwnPredictions && (
+                          <span className="text-[10px] text-emerald-400 shrink-0">
+                            You
                           </span>
-                          <span className="text-white font-bold">
-                            {targetProfile?.display_name}
-                          </span>
-                          {isOwnPredictions && (
-                            <span className="text-xs text-emerald-400">
-                              (You)
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-emerald-400 font-bold">
-                          {totalPoints} pts
+                        )}
+                        <span className="text-emerald-400 font-bold text-sm shrink-0">
+                          {totalPoints}
                         </span>
                       </div>
                       {positionInfo.below && (
@@ -284,25 +276,20 @@ export default function UserPredictionsPage() {
                           href={`/user/${positionInfo.below.userId}`}
                           scroll={true}
                           onClick={(e) => e.stopPropagation()}
-                          className="flex items-center justify-between p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                          className="flex items-center gap-2 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
                         >
-                          <div className="flex items-center gap-2">
-                            <span className="text-white/50 text-sm">
-                              #{positionInfo.below.position}
-                            </span>
-                            <span className="text-white font-medium">
-                              {positionInfo.below.displayName}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-amber-400 font-bold">
-                              {positionInfo.below.totalPoints} pts
-                            </span>
-                            <span className="text-xs text-emerald-400">
-                              ▼ {totalPoints - positionInfo.below.totalPoints}{" "}
-                              behind
-                            </span>
-                          </div>
+                          <span className="text-white/50 text-xs shrink-0">
+                            #{positionInfo.below.position}
+                          </span>
+                          <span className="text-white font-medium text-sm truncate min-w-0 flex-1">
+                            {positionInfo.below.displayName}
+                          </span>
+                          <span className="text-[10px] text-emerald-400 shrink-0 whitespace-nowrap">
+                            ▼{totalPoints - positionInfo.below.totalPoints}
+                          </span>
+                          <span className="text-amber-400 font-bold text-sm shrink-0">
+                            {positionInfo.below.totalPoints}
+                          </span>
                         </Link>
                       )}
                     </div>

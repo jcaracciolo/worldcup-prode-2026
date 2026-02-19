@@ -23,8 +23,8 @@ export default function HomePage() {
         {/* Knockout warning banner */}
         {showBanner && (
           <Link href="/predictions">
-            <div className="mb-4 sm:mb-6 bg-red-600/90 rounded-lg px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-red-600 transition-colors">
-              <div className="flex items-center gap-2">
+            <div className="mb-4 sm:mb-6 bg-red-800/70 rounded-lg px-3 py-2.5 cursor-pointer hover:bg-red-800/90 transition-colors border border-red-500/30 text-center">
+              <div className="flex items-center justify-center gap-3">
                 <span className="text-lg">⚠️</span>
                 <span className="text-white text-sm font-medium">
                   {daysLeft === 0
@@ -34,7 +34,9 @@ export default function HomePage() {
                       : `${daysLeft} days left for knockout predictions`}
                 </span>
               </div>
-              <span className="text-white/80 text-sm">Set predictions →</span>
+              <div className="text-red-200/60 text-[11px] mt-0.5">
+                You won&apos;t be able to complete them after. Start now →
+              </div>
             </div>
           </Link>
         )}

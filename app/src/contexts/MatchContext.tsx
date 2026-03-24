@@ -12,6 +12,7 @@ import React, {
 import { Match, FifaMatchId, CalculatedStanding } from "@/types/football";
 import { getMatchInfo, Venue } from "@/lib/tournament";
 import { getTeamDisplaySimple } from "@/lib/team-display";
+import { isMatchLive } from "@/lib/scoring";
 import {
   LiveBracketResolver,
   ResolvedTeams,
@@ -139,7 +140,7 @@ function determinePeriod(
  * Enhance a match with live info, FIFA number, venue, and display names
  */
 function enhanceMatch(match: Match, currentTime: Date): MatchWithLiveInfo {
-  const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
+  const isLive = isMatchLive(match);
   const elapsedMinutes = calculateElapsedMinutes(match, currentTime);
   const period = determinePeriod(match, elapsedMinutes);
 

@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/UserContext";
-import { useDatabaseService, useDatabase } from "@/contexts/DatabaseContext";
+import { useDatabase } from "@/contexts/DatabaseContext";
+import { useChangePassword, useInviteCodes } from "@/hooks/useAuth";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function SettingsPage() {
   const router = useRouter();
-  const db = useDatabaseService();
+  const { changePassword } = useChangePassword();
+  const { checkInviteCode } = useInviteCodes();
   const { userCompetitions, refreshCompetitions } = useDatabase();
   const { user: profile, loading: userLoading, updateProfile } = useUser();
 
@@ -77,7 +79,7 @@ export default function SettingsPage() {
       return;
     }
 
-    const { error } = await db.auth.updatePassword(newPassword);
+    const { error } = await changePassword(newPassword);
 
     if (error) {
       setMessage({ type: "error", text: error });
@@ -119,7 +121,7 @@ export default function SettingsPage() {
       }
 
       // Verify the invite code is valid
-      const { data: codeData } = await db.inviteCodes.checkInviteCode(code);
+      const { data: codeData } = await checkInviteCode(code);
       if (!codeData) {
         setMessage({
           type: "error",

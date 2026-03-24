@@ -2,6 +2,10 @@
 
 import { CalculatedStanding } from "@/types/football";
 import { getTeamLabel } from "@/lib/team-display";
+import {
+  canSwapUp as checkSwapUp,
+  canSwapDown as checkSwapDown,
+} from "@/lib/standings-rules";
 
 interface StandingsTableProps {
   standings: CalculatedStanding[];
@@ -16,18 +20,14 @@ export default function StandingsTable({
   disabled = false,
   thirdPlaceQualifies = false,
 }: StandingsTableProps) {
-  // Check if team can swap with the one above
   const canSwapUp = (index: number): boolean => {
     if (disabled || !onSwapPositions) return false;
-    if (index === 0) return false;
-    return standings[index].points === standings[index - 1].points;
+    return checkSwapUp(standings, index);
   };
 
-  // Check if team can swap with the one below
   const canSwapDown = (index: number): boolean => {
     if (disabled || !onSwapPositions) return false;
-    if (index >= standings.length - 1) return false;
-    return standings[index].points === standings[index + 1].points;
+    return checkSwapDown(standings, index);
   };
 
   const handleSwapUp = (index: number) => {

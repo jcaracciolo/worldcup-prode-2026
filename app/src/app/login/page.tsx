@@ -4,7 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { useDatabaseService } from "@/contexts/DatabaseContext";
+import { useSignIn } from "@/hooks/useAuth";
 
 function LoginForm() {
   const router = useRouter();
@@ -12,7 +12,7 @@ function LoginForm() {
   const redirect = searchParams.get("redirect") || "/";
   const codeParam = searchParams.get("code");
   const competitionParam = searchParams.get("competition");
-  const db = useDatabaseService();
+  const { signIn, onAuthStateChange } = useSignIn();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,7 +33,7 @@ function LoginForm() {
     setError("");
     setLoading(true);
 
-    const { error: authError } = await db.auth.signInWithPassword(
+    const { error: authError } = await signIn(
       email,
       password,
     );
@@ -48,7 +48,7 @@ function LoginForm() {
     // This ensures cookies are properly set and the server-side middleware
     // will see the authenticated session on the next request.
     await new Promise<void>((resolve) => {
-      const { unsubscribe } = db.auth.onAuthStateChange((event) => {
+      const { unsubscribe } = onAuthStateChange((event) => {
         if (event === "SIGNED_IN") {
           unsubscribe();
           resolve();

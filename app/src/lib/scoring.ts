@@ -66,7 +66,7 @@ export { getTeamLabel } from "./team-display";
 // =====================================================================
 
 /** Check if a match is currently live (in progress) */
-function isMatchLive(match: Match): boolean {
+export function isMatchLive(match: Match): boolean {
   return match.status === "IN_PLAY" || match.status === "PAUSED";
 }
 

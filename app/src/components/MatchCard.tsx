@@ -3,6 +3,7 @@
 import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { shortLabel } from "@/lib/team-display";
 import { formatGroupName, formatStageName } from "@/lib/format";
+import { getMatchHighlight } from "@/lib/match-highlight";
 import { format } from "date-fns";
 import Link from "next/link";
 
@@ -17,18 +18,8 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
   const isFinished = match.status === "FINISHED";
   const matchDate = new Date(match.utcDate);
 
-  // Determine winner for highlighting
-  const homeGoals = match.score.fullTime.home;
-  const awayGoals = match.score.fullTime.away;
-  const hasScore =
-    (isFinished || isLive) && homeGoals !== null && awayGoals !== null;
-  const homeWon = isFinished && hasScore && homeGoals > awayGoals;
-  const awayWon = isFinished && hasScore && awayGoals > homeGoals;
-  const isDraw = isFinished && hasScore && homeGoals === awayGoals;
-  const isGroupStage = match.stage === "GROUP_STAGE";
-  // Highlight both teams on group stage draws
-  const homeHighlight = homeWon || (isGroupStage && isDraw);
-  const awayHighlight = awayWon || (isGroupStage && isDraw);
+  const { homeWon, awayWon, homeHighlight, awayHighlight } =
+    getMatchHighlight(match);
 
   const getStatusDisplay = () => {
     if (isLive) {

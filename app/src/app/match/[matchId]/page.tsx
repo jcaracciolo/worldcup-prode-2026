@@ -6,6 +6,7 @@ import { useMatchPredictions } from "@/hooks/useMatchPredictions";
 import { MatchPredictionsPanel } from "@/components/MatchPredictionsPanel";
 import { getMatchInfo } from "@/lib/tournament";
 import { formatGroupName, formatStageName } from "@/lib/format";
+import { getMatchHighlight } from "@/lib/match-highlight";
 import { format } from "date-fns";
 import { asFifaMatchId } from "@/types/football";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -53,30 +54,9 @@ export default function MatchDetailPage() {
   const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
   const isFinished = match.status === "FINISHED";
   const matchDate = new Date(match.utcDate);
-  const isGroupStage = match.stage === "GROUP_STAGE";
 
-  // Determine winner
-  const homeGoals = match.score.fullTime.home;
-  const awayGoals = match.score.fullTime.away;
-  const homeWon =
-    isFinished &&
-    homeGoals !== null &&
-    awayGoals !== null &&
-    homeGoals > awayGoals;
-  const awayWon =
-    isFinished &&
-    homeGoals !== null &&
-    awayGoals !== null &&
-    awayGoals > homeGoals;
-  const isDraw =
-    isFinished &&
-    homeGoals !== null &&
-    awayGoals !== null &&
-    homeGoals === awayGoals;
-
-  // Highlight calculation for actual result
-  const homeHighlight = homeWon || (isDraw && isGroupStage);
-  const awayHighlight = awayWon || (isDraw && isGroupStage);
+  const { homeWon, awayWon, homeHighlight, awayHighlight } =
+    getMatchHighlight(match);
 
   return (
     <div className="min-h-screen flex flex-col">

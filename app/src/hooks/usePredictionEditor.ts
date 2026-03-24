@@ -8,6 +8,8 @@ import {
 } from "@/contexts/PredictionsContext";
 import { FifaMatchId, CalculatedStanding } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
+import { validatePredictions } from "@/lib/prediction-validation";
+import { randomFillPredictions } from "@/lib/random-predictions";
 
 // ── Modal / toast types ────────────────────────────────────────────
 export interface ToastState {
@@ -200,47 +202,11 @@ export function usePredictionEditor(): PredictionEditor {
   const handleSave = useCallback(() => {
     if (!profile) return;
 
-    const warnings: string[] = [];
-
-    // Count unfilled group predictions
-    if (!groupLocked) {
-      const groupMatches = matches.filter((m) => m.stage === "GROUP_STAGE");
-      const unfilledGroup = groupMatches.filter((m) => {
-        const pred = predictions.get(m.id);
-        return !pred || pred.home_goals === null || pred.away_goals === null;
-      });
-      if (unfilledGroup.length > 0) {
-        warnings.push(
-          `${unfilledGroup.length} of ${groupMatches.length} group matches are missing predictions`,
-        );
-      }
-    }
-
-    // Count unfilled knockout predictions and ties without winner
-    if (knockoutOpen && !knockoutLocked) {
-      const koMatches = matches.filter((m) => m.stage !== "GROUP_STAGE");
-      const unfilledKo = koMatches.filter((m) => {
-        const pred = predictions.get(m.id);
-        return !pred || pred.home_goals === null || pred.away_goals === null;
-      });
-      if (unfilledKo.length > 0) {
-        warnings.push(
-          `${unfilledKo.length} of ${koMatches.length} knockout matches are missing predictions`,
-        );
-      }
-
-      const tiesWithoutWinner = koMatches.filter((m) => {
-        const pred = predictions.get(m.id);
-        if (!pred || pred.home_goals === null || pred.away_goals === null)
-          return false;
-        return pred.home_goals === pred.away_goals && !pred.penalty_winner;
-      });
-      if (tiesWithoutWinner.length > 0) {
-        warnings.push(
-          `${tiesWithoutWinner.length} knockout match${tiesWithoutWinner.length > 1 ? "es have" : " has"} a tie without a penalty winner selected`,
-        );
-      }
-    }
+    const warnings = validatePredictions(matches, predictions, {
+      groupLocked,
+      knockoutOpen,
+      knockoutLocked,
+    });
 
     if (warnings.length > 0) {
       setConfirmModal({
@@ -309,50 +275,11 @@ export function usePredictionEditor(): PredictionEditor {
   }, [doReset]);
 
   const doRandomFill = useCallback(() => {
-    const newPredictions = new Map(predictions);
-
-    matches.forEach((match) => {
-      const fifaNumber = match.id;
-
-      const existing = newPredictions.get(fifaNumber);
-      if (
-        existing &&
-        existing.home_goals !== null &&
-        existing.away_goals !== null
-      ) {
-        return;
-      }
-
-      const isGroupStage = match.stage === "GROUP_STAGE";
-      if (isGroupStage && groupLocked) return;
-      if (!isGroupStage && (!knockoutOpen || knockoutLocked)) return;
-
-      const randomScore = () => {
-        const r = Math.random();
-        if (r < 0.4) return 0;
-        if (r < 0.7) return 1;
-        if (r < 0.85) return 2;
-        if (r < 0.95) return 3;
-        return 4;
-      };
-
-      const homeGoals = randomScore();
-      const awayGoals = randomScore();
-
-      let penaltyWinner: "HOME" | "AWAY" | null = null;
-      if (!isGroupStage && homeGoals === awayGoals) {
-        penaltyWinner = Math.random() < 0.5 ? "HOME" : "AWAY";
-      }
-
-      const updated: LocalPrediction = {
-        match_id: fifaNumber,
-        home_goals: homeGoals,
-        away_goals: awayGoals,
-        penalty_winner: penaltyWinner,
-      };
-      newPredictions.set(fifaNumber, updated);
+    const newPredictions = randomFillPredictions(matches, predictions, {
+      groupLocked,
+      knockoutOpen,
+      knockoutLocked,
     });
-
     setPredictions(newPredictions);
   }, [
     predictions,

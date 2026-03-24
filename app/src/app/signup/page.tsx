@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { useDatabaseService } from "@/contexts/DatabaseContext";
+import { useSignUp, useInviteCodes, useCompetitionLookup } from "@/hooks/useAuth";
 import type { Competition } from "@/types/database";
 
 function SignupForm() {
@@ -12,7 +12,9 @@ function SignupForm() {
   const searchParams = useSearchParams();
   const codeFromUrl = searchParams.get("code") || "";
   const competitionFromUrl = searchParams.get("competition") || "";
-  const db = useDatabaseService();
+  const { signUp } = useSignUp();
+  const { checkInviteCode } = useInviteCodes();
+  const { getCompetitionById } = useCompetitionLookup();
 
   const [inviteCode, setInviteCode] = useState(codeFromUrl);
   const [displayName, setDisplayName] = useState("");
@@ -32,13 +34,13 @@ function SignupForm() {
     const loadCompetition = async () => {
       if (!competitionFromUrl) return;
 
-      const result = await db.competitions.getById(competitionFromUrl);
+      const result = await getCompetitionById(competitionFromUrl);
       if (result.data) {
         setCompetition(result.data);
       }
     };
     loadCompetition();
-  }, [competitionFromUrl, db]);
+  }, [competitionFromUrl, getCompetitionById]);
 
   useEffect(() => {
     const checkCode = async () => {
@@ -47,13 +49,13 @@ function SignupForm() {
         return;
       }
 
-      // Use database service for invite code check
-      const { data } = await db.inviteCodes.checkInviteCode(inviteCode);
+      // Use hook for invite code check
+      const { data } = await checkInviteCode(inviteCode);
       setCodeValid(!!data);
     };
 
     checkCode();
-  }, [inviteCode, db]);
+  }, [inviteCode, checkInviteCode]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +69,7 @@ function SignupForm() {
     }
 
     // Sign up the user
-    const { data: authData, error: authError } = await db.auth.signUp(
+    const { data: authData, error: authError } = await signUp(
       email,
       password,
       { display_name: displayName },

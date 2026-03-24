@@ -10,25 +10,19 @@
 
 import { Match, Team, FifaMatchId, CalculatedStanding } from "@/types/football";
 import { r32Bracket, r16Bracket, qfBracket, sfBracket } from "./r32-bracket";
-import { getBracketLabel } from "./team-display";
 import {
   getThirdPlaceTeamForMatch,
   getQualifyingThirdPlaceTeams,
 } from "./third-place-ranking";
 import { calculateAllActualStandings } from "./standings";
+import {
+  isValidApiTeam,
+  buildResolvedTeams,
+  getWinningSide,
+} from "./bracket-utils";
+import type { ResolvedTeams } from "./bracket-utils";
 
-// =====================================================================
-// TYPES
-// =====================================================================
-
-export interface ResolvedTeams {
-  home: Team | null;
-  away: Team | null;
-  /** Ready-to-use display name for home team (e.g., "USA", "1A", "W73", "3rd") */
-  homeDisplayName: string;
-  /** Ready-to-use display name for away team */
-  awayDisplayName: string;
-}
+export type { ResolvedTeams } from "./bracket-utils";
 
 export interface LiveBracket {
   readonly kind: "live";
@@ -84,30 +78,7 @@ export class LiveBracketResolver {
     home: Team | null,
     away: Team | null,
   ): void {
-    const homeDisplayName = home?.tla ?? getBracketLabel(fifaNumber, "home");
-    const awayDisplayName = away?.tla ?? getBracketLabel(fifaNumber, "away");
-    this.resolved.set(fifaNumber, {
-      home,
-      away,
-      homeDisplayName,
-      awayDisplayName,
-    });
-  }
-
-  /**
-   * Check if a team from the API is a real team (not a bracket-label placeholder).
-   * Placeholder teams with negative IDs (EU1, IC2, etc.) ARE valid — they represent
-   * real teams in the simulation/tournament.
-   */
-  private isValidApiTeam(team: Team | null): boolean {
-    if (!team) return false;
-    if (!team.id || team.id === 0) return false;
-    if (!team.tla || team.tla.length === 0) return false;
-    // Bracket-label patterns like "1A", "28A", "TBD", "W73", "L101" are NOT real teams
-    if (/^\d+[A-Z]$/.test(team.tla)) return false;
-    if (/^[WL]\d+$/.test(team.tla)) return false;
-    if (team.tla === "TBD" || team.tla === "TBA") return false;
-    return true;
+    this.resolved.set(fifaNumber, buildResolvedTeams(fifaNumber, home, away));
   }
 
   /** Check if all matches in a group are finished (can trust standings) */
@@ -133,28 +104,15 @@ export class LiveBracketResolver {
     return standing?.team || null;
   }
 
-  /** Determine which side won a finished match */
-  private getWinningSide(match: Match): "home" | "away" | null {
-    if (match.status !== "FINISHED") return null;
-    const home = match.score.fullTime.home ?? 0;
-    const away = match.score.fullTime.away ?? 0;
-    if (home > away) return "home";
-    if (away > home) return "away";
-    // Tie — check winner field (penalties/extra time)
-    if (match.score.winner === "HOME_TEAM") return "home";
-    if (match.score.winner === "AWAY_TEAM") return "away";
-    return "home"; // fallback
-  }
-
   /** Get actual winner of a finished knockout match */
   private getWinnerByFifa(fifaNumber: FifaMatchId): Team | null {
     const match = this.matches.find((m) => m.id === fifaNumber);
     if (!match || match.status !== "FINISHED") return null;
-    const side = this.getWinningSide(match);
+    const side = getWinningSide(match);
     if (!side) return null;
     // Prefer API team, fall back to bracket-resolved team
     const apiTeam = side === "home" ? match.homeTeam : match.awayTeam;
-    if (this.isValidApiTeam(apiTeam)) return apiTeam;
+    if (isValidApiTeam(apiTeam)) return apiTeam;
     const resolved = this.resolved.get(fifaNumber);
     return resolved
       ? side === "home"
@@ -167,11 +125,11 @@ export class LiveBracketResolver {
   private getLoserByFifa(fifaNumber: FifaMatchId): Team | null {
     const match = this.matches.find((m) => m.id === fifaNumber);
     if (!match || match.status !== "FINISHED") return null;
-    const winningSide = this.getWinningSide(match);
+    const winningSide = getWinningSide(match);
     if (!winningSide) return null;
     const losingSide = winningSide === "home" ? "away" : "home";
     const apiTeam = losingSide === "home" ? match.homeTeam : match.awayTeam;
-    if (this.isValidApiTeam(apiTeam)) return apiTeam;
+    if (isValidApiTeam(apiTeam)) return apiTeam;
     const resolved = this.resolved.get(fifaNumber);
     return resolved
       ? losingSide === "home"
@@ -189,8 +147,8 @@ export class LiveBracketResolver {
     const r32Matches = this.matches.filter((m) => m.stage === "LAST_32");
     for (const match of r32Matches) {
       const fifaNumber = match.id;
-      const apiHomeValid = this.isValidApiTeam(match.homeTeam);
-      const apiAwayValid = this.isValidApiTeam(match.awayTeam);
+      const apiHomeValid = isValidApiTeam(match.homeTeam);
+      const apiAwayValid = isValidApiTeam(match.awayTeam);
 
       let homeTeam: Team | null = apiHomeValid ? match.homeTeam : null;
       let awayTeam: Team | null = apiAwayValid ? match.awayTeam : null;
@@ -232,8 +190,8 @@ export class LiveBracketResolver {
     const r16Matches = this.matches.filter((m) => m.stage === "LAST_16");
     for (const match of r16Matches) {
       const fifaNumber = match.id;
-      const apiHomeValid = this.isValidApiTeam(match.homeTeam);
-      const apiAwayValid = this.isValidApiTeam(match.awayTeam);
+      const apiHomeValid = isValidApiTeam(match.homeTeam);
+      const apiAwayValid = isValidApiTeam(match.awayTeam);
 
       let homeTeam: Team | null = apiHomeValid ? match.homeTeam : null;
       let awayTeam: Team | null = apiAwayValid ? match.awayTeam : null;
@@ -259,8 +217,8 @@ export class LiveBracketResolver {
     const qfMatches = this.matches.filter((m) => m.stage === "QUARTER_FINALS");
     for (const match of qfMatches) {
       const fifaNumber = match.id;
-      const apiHomeValid = this.isValidApiTeam(match.homeTeam);
-      const apiAwayValid = this.isValidApiTeam(match.awayTeam);
+      const apiHomeValid = isValidApiTeam(match.homeTeam);
+      const apiAwayValid = isValidApiTeam(match.awayTeam);
 
       let homeTeam: Team | null = apiHomeValid ? match.homeTeam : null;
       let awayTeam: Team | null = apiAwayValid ? match.awayTeam : null;
@@ -284,8 +242,8 @@ export class LiveBracketResolver {
     const sfMatches = this.matches.filter((m) => m.stage === "SEMI_FINALS");
     for (const match of sfMatches) {
       const fifaNumber = match.id;
-      const apiHomeValid = this.isValidApiTeam(match.homeTeam);
-      const apiAwayValid = this.isValidApiTeam(match.awayTeam);
+      const apiHomeValid = isValidApiTeam(match.homeTeam);
+      const apiAwayValid = isValidApiTeam(match.awayTeam);
 
       let homeTeam: Team | null = apiHomeValid ? match.homeTeam : null;
       let awayTeam: Team | null = apiAwayValid ? match.awayTeam : null;
@@ -309,8 +267,8 @@ export class LiveBracketResolver {
     const thirdPlaceMatch = this.matches.find((m) => m.stage === "THIRD_PLACE");
     if (!thirdPlaceMatch) return;
     const fifaNumber = thirdPlaceMatch.id;
-    const apiHomeValid = this.isValidApiTeam(thirdPlaceMatch.homeTeam);
-    const apiAwayValid = this.isValidApiTeam(thirdPlaceMatch.awayTeam);
+    const apiHomeValid = isValidApiTeam(thirdPlaceMatch.homeTeam);
+    const apiAwayValid = isValidApiTeam(thirdPlaceMatch.awayTeam);
     const homeTeam = apiHomeValid
       ? thirdPlaceMatch.homeTeam
       : this.getLoserByFifa(sfBracket[0].matchNumber);
@@ -325,8 +283,8 @@ export class LiveBracketResolver {
     const finalMatch = this.matches.find((m) => m.stage === "FINAL");
     if (!finalMatch) return;
     const fifaNumber = finalMatch.id;
-    const apiHomeValid = this.isValidApiTeam(finalMatch.homeTeam);
-    const apiAwayValid = this.isValidApiTeam(finalMatch.awayTeam);
+    const apiHomeValid = isValidApiTeam(finalMatch.homeTeam);
+    const apiAwayValid = isValidApiTeam(finalMatch.awayTeam);
     const homeTeam = apiHomeValid
       ? finalMatch.homeTeam
       : this.getWinnerByFifa(sfBracket[0].matchNumber);

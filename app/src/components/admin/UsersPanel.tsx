@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useDatabaseService } from "@/contexts/DatabaseContext";
 import { useUser } from "@/contexts/UserContext";
+import { useUserManagement } from "@/hooks/useAuth";
 import { Profile } from "@/types/database";
 import { format } from "date-fns";
 
@@ -13,7 +13,7 @@ interface UsersPanelProps {
 export default function UsersPanel({
   selectedCompetitionId,
 }: UsersPanelProps) {
-  const db = useDatabaseService();
+  const { getAllProfiles, makeAdmin } = useUserManagement();
   const { user: profile } = useUser();
 
   const [users, setUsers] = useState<Profile[]>([]);
@@ -28,7 +28,7 @@ export default function UsersPanel({
         return;
       }
       setUsersLoading(true);
-      const { data: usersData } = await db.profiles.getAllProfiles(
+      const { data: usersData } = await getAllProfiles(
         selectedCompetitionId,
       );
       setUsers(usersData || []);
@@ -36,12 +36,12 @@ export default function UsersPanel({
     };
 
     loadUsers();
-  }, [db, selectedCompetitionId, profile?.is_admin]);
+  }, [getAllProfiles, selectedCompetitionId, profile?.is_admin]);
 
   const handleMakeAdmin = async (userId: string) => {
     setTogglingAdmin(userId);
 
-    const result = await db.profiles.updateProfile(userId, { is_admin: true });
+    const result = await makeAdmin(userId);
 
     if (result.success) {
       setUsers(

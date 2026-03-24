@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { UserMatchPrediction } from "@/hooks/useMatchPredictions";
 import { MatchWithLiveInfo } from "@/contexts/MatchContext";
+import { getPredictionHighlight } from "@/lib/match-highlight";
 
 interface MatchPredictionsPanelProps {
   match: MatchWithLiveInfo;
@@ -25,26 +26,13 @@ export function MatchPredictionsPanel({
   const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
   const isFinished = match.status === "FINISHED";
 
-  const getPredictionHighlight = (pred: UserMatchPrediction) => {
-    const predHasScore = pred.homeGoals !== null && pred.awayGoals !== null;
-    if (!predHasScore) return { home: false, away: false };
-
-    const predHomeWins = pred.homeGoals! > pred.awayGoals!;
-    const predAwayWins = pred.awayGoals! > pred.homeGoals!;
-    const predIsDraw = pred.homeGoals === pred.awayGoals;
-    const isKnockout = !isGroupStage;
-
-    const homeHighlight =
-      predHomeWins ||
-      (predIsDraw && isGroupStage) ||
-      (predIsDraw && isKnockout && pred.penaltyWinner === "HOME");
-    const awayHighlight =
-      predAwayWins ||
-      (predIsDraw && isGroupStage) ||
-      (predIsDraw && isKnockout && pred.penaltyWinner === "AWAY");
-
-    return { home: homeHighlight, away: awayHighlight };
-  };
+  const computeHighlight = (pred: UserMatchPrediction) =>
+    getPredictionHighlight(
+      pred.homeGoals,
+      pred.awayGoals,
+      isGroupStage,
+      pred.penaltyWinner,
+    );
 
   return (
     <div className="lg:w-56 xl:w-64 bg-slate-900/70 rounded-xl p-3 backdrop-blur-sm border border-white/10">
@@ -73,7 +61,7 @@ export function MatchPredictionsPanel({
           }}
         >
           {predictions.map((pred) => {
-            const highlight = getPredictionHighlight(pred);
+            const highlight = computeHighlight(pred);
             const isCurrentUser = currentUserId === pred.userId;
 
             return (

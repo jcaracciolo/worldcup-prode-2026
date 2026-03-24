@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useDatabaseService, useDatabase } from "@/contexts/DatabaseContext";
+import { useDatabase } from "@/contexts/DatabaseContext";
 import { useMatches } from "@/contexts/MatchContext";
 import { useUser } from "@/contexts/UserContext";
+import { useSignOut } from "@/hooks/useAuth";
 
 export default function Header() {
   const router = useRouter();
-  const db = useDatabaseService();
+  const { signOut } = useSignOut();
   const { userCompetitions, currentCompetitionId, switchCompetition } =
     useDatabase();
   const { isSimulated } = useMatches();
@@ -26,7 +27,7 @@ export default function Header() {
   );
 
   const handleLogout = async () => {
-    await db.auth.signOut();
+    await signOut();
     setMenuOpen(false);
     router.refresh();
   };

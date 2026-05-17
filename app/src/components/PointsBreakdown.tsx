@@ -345,12 +345,20 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
             item.matchInfo && (() => {
               const isHomeWin = item.matchInfo!.homeGoals > item.matchInfo!.awayGoals;
               const isAwayWin = item.matchInfo!.awayGoals > item.matchInfo!.homeGoals;
-              const team =
-                item.type === "knockout_lose"
-                  ? (isHomeWin ? item.matchInfo!.awayTeam : item.matchInfo!.homeTeam)
-                  : item.type === "knockout_win"
-                    ? (isHomeWin ? item.matchInfo!.homeTeam : item.matchInfo!.awayTeam)
-                    : (isHomeWin ? item.matchInfo!.homeTeam : isAwayWin ? item.matchInfo!.awayTeam : item.matchInfo!.homeTeam);
+              const isDraw = !isHomeWin && !isAwayWin;
+              // For knockout_tie/knockout_win/knockout_lose, use item.team (already set per-team)
+              if (item.team?.crest) {
+                return (
+                  <img
+                    src={item.team.crest}
+                    alt={item.team.tla || ""}
+                    className="w-4 h-4 object-contain shrink-0"
+                  />
+                );
+              }
+              // For "result" type: show winner flag, skip for draws
+              if (isDraw) return null;
+              const team = isHomeWin ? item.matchInfo!.homeTeam : item.matchInfo!.awayTeam;
               return team?.crest ? (
                 <img
                   src={team.crest}

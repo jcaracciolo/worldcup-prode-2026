@@ -339,6 +339,11 @@ function createPlaceholderDb(): DatabaseService {
       getAllOverrides: notAvailable,
       saveOverrides: notAvailable,
     },
+    thirdPlaceOverrides: {
+      getUserThirdPlaceOverrides: notAvailable,
+      getAllThirdPlaceOverrides: notAvailable,
+      saveThirdPlaceOverrides: notAvailable,
+    },
     matchesCache: {
       getCachedMatches: notAvailable,
       getIndividualCachedMatches: notAvailable,

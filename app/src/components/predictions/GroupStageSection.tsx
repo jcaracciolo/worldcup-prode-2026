@@ -4,8 +4,10 @@ import { useTime } from "@/contexts/TimeContext";
 import { CalculatedStanding, FifaMatchId } from "@/types/football";
 import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { LocalPrediction } from "@/types/database";
+import { ThirdPlaceTeam } from "@/lib/third-place-ranking";
 import PredictionInput from "@/components/PredictionInput";
 import StandingsTable from "@/components/StandingsTable";
+import ThirdPlaceRankingTable from "@/components/ThirdPlaceRankingTable";
 
 interface GroupStageSectionProps {
   groups: Map<string, MatchWithLiveInfo[]>;
@@ -14,6 +16,8 @@ interface GroupStageSectionProps {
   thirdPlaceQualifying: Map<string, boolean>;
   /** Pre-computed standings per group (from usePredictedBracket or liveBracket) */
   groupStandings: Map<string, CalculatedStanding[]>;
+  /** Ranked third-place teams for the selection table */
+  rankedThirdPlaceTeams?: ThirdPlaceTeam[];
   onPredictionChange?: (
     fifaMatchId: FifaMatchId,
     homeGoals: number | null,
@@ -21,6 +25,7 @@ interface GroupStageSectionProps {
     penaltyWinner?: "HOME" | "AWAY" | null,
   ) => void;
   onSwapPositions?: (groupName: string, team1: number, team2: number) => void;
+  onSwapThirdPlacePositions?: (group1: string, group2: string) => void;
   /** Read-only mode: shows actual match scores using disabled PredictionInput */
   readOnly?: boolean;
 }
@@ -31,8 +36,10 @@ export default function GroupStageSection({
   groupLocked = false,
   thirdPlaceQualifying,
   groupStandings,
+  rankedThirdPlaceTeams,
   onPredictionChange,
   onSwapPositions,
+  onSwapThirdPlacePositions,
   readOnly = false,
 }: GroupStageSectionProps) {
   const { getCurrentTime } = useTime();
@@ -144,6 +151,39 @@ export default function GroupStageSection({
             );
           })}
       </div>
+
+      {/* Best 3rd Place Teams */}
+      {rankedThirdPlaceTeams && rankedThirdPlaceTeams.length > 0 && (
+        <div className="mt-6">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-7 h-7 bg-amber-500/20 rounded-lg flex items-center justify-center">
+              <span className="text-sm">🥉</span>
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white">
+                Best 3rd Place Teams
+              </h3>
+              <p className="text-white/50 text-xs">
+                Top 8 qualify for Round of 32
+                {!readOnly && !groupLocked && (
+                  <span className="text-white/30 text-[10px] ml-2">
+                    (↕ swap tied teams)
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+          <ThirdPlaceRankingTable
+            rankedTeams={rankedThirdPlaceTeams}
+            disabled={readOnly || groupLocked}
+            onSwapPositions={
+              readOnly || !onSwapThirdPlacePositions
+                ? undefined
+                : onSwapThirdPlacePositions
+            }
+          />
+        </div>
+      )}
     </section>
   );
 }

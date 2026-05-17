@@ -7,6 +7,7 @@
 // 5. Drawing of lots (random at tie)
 
 import { CalculatedStanding } from "@/types/football";
+import { LocalThirdPlaceOverride } from "@/types/database";
 import {
   lookupThirdPlaceAssignment,
   THIRD_PLACE_MATCH_ORDER,
@@ -114,6 +115,92 @@ export function getRankedThirdPlaceTeams(
   });
 
   return thirdPlaceTeams;
+}
+
+/**
+ * Get the full ranked list of third-place teams, applying manual overrides.
+ * Overrides let users reorder tied teams (same pts + GD + GF) to decide
+ * which qualify for R32.
+ */
+export function getRankedThirdPlaceTeamsWithOverrides(
+  groupStandings: Map<string, CalculatedStanding[]>,
+  overrides: LocalThirdPlaceOverride[],
+): ThirdPlaceTeam[] {
+  // Start with the natural ranking
+  const teams = getRankedThirdPlaceTeams(groupStandings);
+
+  if (overrides.length === 0) return teams;
+
+  // Apply overrides: move each overridden team to its specified rank
+  for (const override of overrides) {
+    const teamIndex = teams.findIndex((t) => t.group === override.group_name);
+    if (teamIndex === -1) continue;
+
+    const [team] = teams.splice(teamIndex, 1);
+    // rank is 1-based, insert at rank-1
+    const targetIndex = Math.max(0, Math.min(override.rank - 1, teams.length));
+    teams.splice(targetIndex, 0, team);
+  }
+
+  // Re-assign rank and qualification after overrides
+  teams.forEach((team, index) => {
+    team.rank = index + 1;
+    team.qualifies = index < 8;
+  });
+
+  return teams;
+}
+
+/**
+ * Get qualifying third-place teams with overrides applied.
+ * Returns Map<groupName, boolean> like getQualifyingThirdPlaceTeams.
+ */
+export function getQualifyingThirdPlaceTeamsWithOverrides(
+  groupStandings: Map<string, CalculatedStanding[]>,
+  overrides: LocalThirdPlaceOverride[],
+): Map<string, boolean> {
+  const teams = getRankedThirdPlaceTeamsWithOverrides(groupStandings, overrides);
+  const result = new Map<string, boolean>();
+  teams.forEach((team) => {
+    result.set(team.group, team.qualifies);
+  });
+  return result;
+}
+
+/**
+ * Check if a third-place team at the given index can be swapped up.
+ * Only teams with identical points, goal difference, AND goals scored can swap
+ * (all statistical tiebreakers exhausted — the remaining is "drawing of lots").
+ */
+export function canSwapThirdPlaceUp(
+  teams: ThirdPlaceTeam[],
+  index: number,
+): boolean {
+  if (index <= 0 || index >= teams.length) return false;
+  const a = teams[index];
+  const b = teams[index - 1];
+  return (
+    a.points === b.points &&
+    a.goalDifference === b.goalDifference &&
+    a.goalsFor === b.goalsFor
+  );
+}
+
+/**
+ * Check if a third-place team at the given index can be swapped down.
+ */
+export function canSwapThirdPlaceDown(
+  teams: ThirdPlaceTeam[],
+  index: number,
+): boolean {
+  if (index < 0 || index >= teams.length - 1) return false;
+  const a = teams[index];
+  const b = teams[index + 1];
+  return (
+    a.points === b.points &&
+    a.goalDifference === b.goalDifference &&
+    a.goalsFor === b.goalsFor
+  );
 }
 
 /**

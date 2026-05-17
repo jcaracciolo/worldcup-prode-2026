@@ -11,10 +11,11 @@ import React, {
 } from "react";
 import { useDatabase } from "@/contexts/DatabaseContext";
 import { useMatches, MatchWithLiveInfo } from "@/contexts/MatchContext";
-import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
+import { LocalPrediction, LocalGroupStandingsOverride, LocalThirdPlaceOverride } from "@/types/database";
 import { FifaMatchId, CalculatedStanding } from "@/types/football";
 import { LCE, lceLoading, lceContent, lceError } from "@/types/lce";
 import { PredictionBracketResolver } from "@/lib/prediction-bracket-resolver";
+import { ThirdPlaceTeam } from "@/lib/third-place-ranking";
 import { getTeamDisplaySimple } from "@/lib/team-display";
 
 // =====================================================================
@@ -25,6 +26,7 @@ import { getTeamDisplaySimple } from "@/lib/team-display";
 interface UserPredictionCache {
   predictions: Map<FifaMatchId, LocalPrediction>;
   overrides: LocalGroupStandingsOverride[];
+  thirdPlaceOverrides: LocalThirdPlaceOverride[];
   loading: boolean;
   error: string | null;
   /** Whether local edits exist that haven't been saved to DB */
@@ -43,6 +45,11 @@ interface PredictionsContextValue {
     userId: string,
     overrides: LocalGroupStandingsOverride[],
   ) => void;
+  /** Update third-place overrides in the shared cache (marks dirty) */
+  updateThirdPlaceOverrides: (
+    userId: string,
+    overrides: LocalThirdPlaceOverride[],
+  ) => void;
   /** Bulk-set predictions in the shared cache (marks dirty) */
   setPredictions: (
     userId: string,
@@ -59,6 +66,7 @@ interface PredictionsContextValue {
       {
         predictions: LocalPrediction[];
         overrides: LocalGroupStandingsOverride[];
+        thirdPlaceOverrides: LocalThirdPlaceOverride[];
       }
     >
   >;
@@ -77,6 +85,7 @@ const PredictionsContext = createContext<PredictionsContextValue | null>(null);
 const EMPTY_CACHE: UserPredictionCache = {
   predictions: new Map(),
   overrides: [],
+  thirdPlaceOverrides: [],
   loading: true,
   error: null,
   dirty: false,
@@ -88,6 +97,7 @@ type AllPredictionsMap = Map<
   {
     predictions: LocalPrediction[];
     overrides: LocalGroupStandingsOverride[];
+    thirdPlaceOverrides: LocalThirdPlaceOverride[];
   }
 >;
 
@@ -127,8 +137,9 @@ export function PredictionsProvider({
       Promise.all([
         db.predictions.getUserPredictions(userId),
         db.overrides.getUserOverrides(userId),
+        db.thirdPlaceOverrides.getUserThirdPlaceOverrides(userId),
       ])
-        .then(([predictionsResult, overridesResult]) => {
+        .then(([predictionsResult, overridesResult, thirdPlaceResult]) => {
           const predictions = new Map<FifaMatchId, LocalPrediction>();
           (predictionsResult.data || []).forEach((p) =>
             predictions.set(p.match_id as FifaMatchId, {
@@ -143,6 +154,10 @@ export function PredictionsProvider({
             team_id: o.team_id,
             position: o.position,
           }));
+          const thirdPlaceOverrides = (thirdPlaceResult.data || []).map((o) => ({
+            group_name: o.group_name,
+            rank: o.rank,
+          }));
 
           // Only update cache if not dirty (local edits take priority)
           const current = cacheRef.current.get(userId);
@@ -150,6 +165,7 @@ export function PredictionsProvider({
             cacheRef.current.set(userId, {
               predictions,
               overrides,
+              thirdPlaceOverrides,
               loading: false,
               error: null,
               dirty: false,
@@ -168,6 +184,7 @@ export function PredictionsProvider({
           cacheRef.current.set(userId, {
             predictions: current?.predictions ?? new Map(),
             overrides: current?.overrides ?? [],
+            thirdPlaceOverrides: current?.thirdPlaceOverrides ?? [],
             loading: false,
             error: err.message,
             dirty: current?.dirty ?? false,
@@ -249,6 +266,22 @@ export function PredictionsProvider({
     [bumpVersion],
   );
 
+  // Update third-place overrides in the cache
+  const updateThirdPlaceOverrides = useCallback(
+    (userId: string, overrides: LocalThirdPlaceOverride[]) => {
+      const current = cacheRef.current.get(userId);
+      if (!current) return;
+
+      cacheRef.current.set(userId, {
+        ...current,
+        thirdPlaceOverrides: [...overrides],
+        dirty: true,
+      });
+      bumpVersion();
+    },
+    [bumpVersion],
+  );
+
   // Save predictions to DB
   const savePredictions = useCallback(
     async (userId: string) => {
@@ -285,6 +318,20 @@ export function PredictionsProvider({
         }
       }
 
+      if (current.thirdPlaceOverrides.length > 0) {
+        const tpResult = await db.thirdPlaceOverrides.saveThirdPlaceOverrides(
+          userId,
+          current.thirdPlaceOverrides.map((o) => ({
+            group_name: o.group_name,
+            rank: o.rank,
+          })),
+        );
+
+        if (!tpResult.success) {
+          return { success: false, error: tpResult.error ?? undefined };
+        }
+      }
+
       // Clear dirty flag on success
       cacheRef.current.set(userId, {
         ...current,
@@ -300,9 +347,10 @@ export function PredictionsProvider({
   // Get all users' predictions (for leaderboard)
   // Also populates individual user cache for faster profile page loads
   const getAllPredictions = useCallback(async () => {
-    const [predictionsResult, overridesResult] = await Promise.all([
+    const [predictionsResult, overridesResult, thirdPlaceResult] = await Promise.all([
       db.predictions.getAllPredictions(),
       db.overrides.getAllOverrides(),
+      db.thirdPlaceOverrides.getAllThirdPlaceOverrides(),
     ]);
 
     const byUser = new Map<
@@ -310,12 +358,13 @@ export function PredictionsProvider({
       {
         predictions: LocalPrediction[];
         overrides: LocalGroupStandingsOverride[];
+        thirdPlaceOverrides: LocalThirdPlaceOverride[];
       }
     >();
 
     (predictionsResult.data || []).forEach((p) => {
       if (!byUser.has(p.user_id)) {
-        byUser.set(p.user_id, { predictions: [], overrides: [] });
+        byUser.set(p.user_id, { predictions: [], overrides: [], thirdPlaceOverrides: [] });
       }
       byUser.get(p.user_id)!.predictions.push({
         match_id: p.match_id,
@@ -327,12 +376,22 @@ export function PredictionsProvider({
 
     (overridesResult.data || []).forEach((o) => {
       if (!byUser.has(o.user_id)) {
-        byUser.set(o.user_id, { predictions: [], overrides: [] });
+        byUser.set(o.user_id, { predictions: [], overrides: [], thirdPlaceOverrides: [] });
       }
       byUser.get(o.user_id)!.overrides.push({
         group_name: o.group_name,
         team_id: o.team_id,
         position: o.position,
+      });
+    });
+
+    (thirdPlaceResult.data || []).forEach((o) => {
+      if (!byUser.has(o.user_id)) {
+        byUser.set(o.user_id, { predictions: [], overrides: [], thirdPlaceOverrides: [] });
+      }
+      byUser.get(o.user_id)!.thirdPlaceOverrides.push({
+        group_name: o.group_name,
+        rank: o.rank,
       });
     });
 
@@ -348,6 +407,7 @@ export function PredictionsProvider({
         cacheRef.current.set(usrId, {
           predictions: predictionsMap,
           overrides: userData.overrides,
+          thirdPlaceOverrides: userData.thirdPlaceOverrides,
           loading: false,
           error: null,
           dirty: false,
@@ -371,6 +431,7 @@ export function PredictionsProvider({
       ensureFetched,
       updatePrediction,
       updateOverrides,
+      updateThirdPlaceOverrides,
       setPredictions: setPredictionsInCache,
       savePredictions,
       getAllPredictions,
@@ -382,6 +443,7 @@ export function PredictionsProvider({
       ensureFetched,
       updatePrediction,
       updateOverrides,
+      updateThirdPlaceOverrides,
       setPredictionsInCache,
       savePredictions,
       getAllPredictions,
@@ -451,6 +513,13 @@ export function useUserPredictions(userId: string | null) {
     [userId, ctx],
   );
 
+  const updateThirdPlaceOverrides = useCallback(
+    (overrides: LocalThirdPlaceOverride[]) => {
+      if (userId) ctx.updateThirdPlaceOverrides(userId, overrides);
+    },
+    [userId, ctx],
+  );
+
   const setPredictions = useCallback(
     (predictions: Map<FifaMatchId, LocalPrediction>) => {
       if (userId) ctx.setPredictions(userId, predictions);
@@ -466,11 +535,13 @@ export function useUserPredictions(userId: string | null) {
   return {
     predictions: cached.predictions,
     overrides: cached.overrides,
+    thirdPlaceOverrides: cached.thirdPlaceOverrides,
     loading: cached.loading,
     error: cached.error,
     dirty: cached.dirty,
     updatePrediction,
     updateOverrides,
+    updateThirdPlaceOverrides,
     setPredictions,
     savePredictions: save,
   };
@@ -518,6 +589,7 @@ const EMPTY_BRACKET: PredictedBracket = {
   teams: new Map(),
   groupStandings: new Map(),
   thirdPlaceQualifying: new Map(),
+  rankedThirdPlaceTeams: [],
 };
 
 /**
@@ -543,6 +615,7 @@ export function usePredictedBracket(userId: string | null): PredictedBracket {
   const cached = userId ? ctx.getCachedPredictions(userId) : null;
   const predictions = cached?.predictions ?? null;
   const overrides = cached?.overrides ?? null;
+  const thirdPlaceOverrides = cached?.thirdPlaceOverrides ?? null;
 
   // Trigger fetch if not cached
   useEffect(() => {
@@ -558,8 +631,9 @@ export function usePredictedBracket(userId: string | null): PredictedBracket {
       matches: rawProcessedMatches,
       predictions,
       groupOverrides: overrides ?? undefined,
+      thirdPlaceOverrides: thirdPlaceOverrides ?? undefined,
     }).resolve();
-  }, [predictions, overrides, rawProcessedMatches, liveBracket]);
+  }, [predictions, overrides, thirdPlaceOverrides, rawProcessedMatches, liveBracket]);
 }
 
 // =====================================================================
@@ -574,6 +648,8 @@ export interface PredictedMatchesResult {
   predictedGroupStandings: Map<string, CalculatedStanding[]>;
   /** Which 3rd-place teams qualify based on predicted group standings */
   predictedThirdPlaceQualifying: Map<string, boolean>;
+  /** Full ranked list of third-place teams (for the selection table) */
+  rankedThirdPlaceTeams: ThirdPlaceTeam[];
   /** Knockout matches (with predicted teams baked in) bucketed by stage */
   knockoutStages: Map<string, MatchWithLiveInfo[]>;
 }
@@ -642,6 +718,7 @@ export function usePredictedMatches(
       matches,
       predictedGroupStandings: bracket.groupStandings,
       predictedThirdPlaceQualifying: bracket.thirdPlaceQualifying,
+      rankedThirdPlaceTeams: bracket.rankedThirdPlaceTeams,
       knockoutStages,
     }),
     [matches, bracket, knockoutStages],

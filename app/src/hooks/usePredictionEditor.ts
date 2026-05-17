@@ -8,6 +8,7 @@ import {
 } from "@/contexts/PredictionsContext";
 import { FifaMatchId, CalculatedStanding } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
+import { ThirdPlaceTeam } from "@/lib/third-place-ranking";
 import { validatePredictions } from "@/lib/prediction-validation";
 import { randomFillPredictions } from "@/lib/random-predictions";
 
@@ -43,6 +44,7 @@ export interface PredictionEditor {
   predictionsLoading: boolean;
   predictedGroupStandings: Map<string, CalculatedStanding[]>;
   predictedThirdPlaceQualifying: Map<string, boolean>;
+  rankedThirdPlaceTeams: ThirdPlaceTeam[];
   knockoutStages: Map<string, MatchWithLiveInfo[]>;
 
   // Lock status
@@ -63,6 +65,7 @@ export interface PredictionEditor {
     teamId1: number,
     teamId2: number,
   ) => void;
+  handleSwapThirdPlacePositions: (group1: string, group2: string) => void;
   handleSave: () => void;
   handleResetPredictions: () => void;
   handleRandomFill: () => void;
@@ -94,9 +97,11 @@ export function usePredictionEditor(): PredictionEditor {
   const {
     predictions,
     overrides,
+    thirdPlaceOverrides,
     loading: predictionsLoading,
     updatePrediction,
     updateOverrides,
+    updateThirdPlaceOverrides,
     setPredictions,
     savePredictions,
   } = useUserPredictions(userId);
@@ -113,6 +118,7 @@ export function usePredictionEditor(): PredictionEditor {
   const {
     predictedGroupStandings,
     predictedThirdPlaceQualifying,
+    rankedThirdPlaceTeams,
     knockoutStages,
   } = usePredictedMatches(userId);
 
@@ -182,6 +188,26 @@ export function usePredictionEditor(): PredictionEditor {
       updateOverrides(newOverrides);
     },
     [predictedGroupStandings, overrides, updateOverrides],
+  );
+
+  const handleSwapThirdPlacePositions = useCallback(
+    (group1: string, group2: string) => {
+      const team1 = rankedThirdPlaceTeams.find((t) => t.group === group1);
+      const team2 = rankedThirdPlaceTeams.find((t) => t.group === group2);
+      if (!team1 || !team2) return;
+
+      // Remove existing overrides for both groups
+      const newOverrides = thirdPlaceOverrides.filter(
+        (o) => o.group_name !== group1 && o.group_name !== group2,
+      );
+
+      // Swap their ranks
+      newOverrides.push({ group_name: group1, rank: team2.rank });
+      newOverrides.push({ group_name: group2, rank: team1.rank });
+
+      updateThirdPlaceOverrides(newOverrides);
+    },
+    [rankedThirdPlaceTeams, thirdPlaceOverrides, updateThirdPlaceOverrides],
   );
 
   const doSave = useCallback(async () => {
@@ -316,6 +342,7 @@ export function usePredictionEditor(): PredictionEditor {
     predictionsLoading,
     predictedGroupStandings,
     predictedThirdPlaceQualifying,
+    rankedThirdPlaceTeams,
     knockoutStages,
     groupLocked,
     knockoutOpen,
@@ -323,6 +350,7 @@ export function usePredictionEditor(): PredictionEditor {
     daysUntilKnockoutLocks,
     handlePredictionChange,
     handleSwapPositions,
+    handleSwapThirdPlacePositions,
     handleSave,
     handleResetPredictions,
     handleRandomFill,

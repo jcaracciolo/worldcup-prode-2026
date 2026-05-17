@@ -33,6 +33,7 @@ export default function PredictionsPage() {
     predictionsLoading,
     predictedGroupStandings,
     predictedThirdPlaceQualifying,
+    rankedThirdPlaceTeams,
     knockoutStages,
     // Lock status
     groupLocked,
@@ -42,6 +43,7 @@ export default function PredictionsPage() {
     // Editing
     handlePredictionChange,
     handleSwapPositions,
+    handleSwapThirdPlacePositions,
     handleSave,
     handleResetPredictions,
     handleRandomFill,
@@ -198,8 +200,10 @@ export default function PredictionsPage() {
             groupLocked={groupLocked}
             thirdPlaceQualifying={predictedThirdPlaceQualifying}
             groupStandings={predictedGroupStandings}
+            rankedThirdPlaceTeams={rankedThirdPlaceTeams}
             onPredictionChange={handlePredictionChange}
             onSwapPositions={handleSwapPositions}
+            onSwapThirdPlacePositions={handleSwapThirdPlacePositions}
           />
         )}
 

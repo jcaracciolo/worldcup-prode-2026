@@ -182,6 +182,35 @@ export interface Database {
           updated_at?: string;
         };
       };
+      third_place_overrides: {
+        Row: {
+          id: string;
+          user_id: string;
+          competition_id: string;
+          group_name: string;
+          rank: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          competition_id: string;
+          group_name: string;
+          rank: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          competition_id?: string;
+          group_name?: string;
+          rank?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       matches_cache: {
         Row: {
           match_id: number;
@@ -239,6 +268,8 @@ export type TypedPrediction = Omit<Prediction, "match_id"> & {
 };
 export type GroupStandingsOverride =
   Database["public"]["Tables"]["group_standings_overrides"]["Row"];
+export type ThirdPlaceOverride =
+  Database["public"]["Tables"]["third_place_overrides"]["Row"];
 export type MatchCache = Database["public"]["Tables"]["matches_cache"]["Row"];
 export type TournamentSettings =
   Database["public"]["Tables"]["tournament_settings"]["Row"];
@@ -250,5 +281,9 @@ export type LocalPrediction = Omit<
 >;
 export type LocalGroupStandingsOverride = Omit<
   GroupStandingsOverride,
+  "id" | "user_id" | "competition_id" | "created_at" | "updated_at"
+>;
+export type LocalThirdPlaceOverride = Omit<
+  ThirdPlaceOverride,
   "id" | "user_id" | "competition_id" | "created_at" | "updated_at"
 >;

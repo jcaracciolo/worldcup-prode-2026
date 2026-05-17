@@ -9,11 +9,15 @@
 //   2. null → display name falls back to bracket label (W73, L101, etc.)
 
 import { Match, Team, FifaMatchId, CalculatedStanding } from "@/types/football";
-import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
+import { LocalPrediction, LocalGroupStandingsOverride, LocalThirdPlaceOverride } from "@/types/database";
 import { ResolvedTeams, LiveBracket } from "./live-bracket-resolver";
 import { r16Bracket, qfBracket, sfBracket } from "./r32-bracket";
 import { getBracketLabel } from "./team-display";
-import { getQualifyingThirdPlaceTeams } from "./third-place-ranking";
+import {
+  ThirdPlaceTeam,
+  getQualifyingThirdPlaceTeamsWithOverrides,
+  getRankedThirdPlaceTeamsWithOverrides,
+} from "./third-place-ranking";
 import {
   calculateAllGroupStandings,
   calculateStandingsFromPredictions,
@@ -32,6 +36,8 @@ export interface PredictedBracket {
   groupStandings: Map<string, CalculatedStanding[]>;
   /** Which 3rd-place teams qualify based on predicted standings */
   thirdPlaceQualifying: Map<string, boolean>;
+  /** Full ranked list of third-place teams (for the selection table UI) */
+  rankedThirdPlaceTeams: ThirdPlaceTeam[];
 }
 
 export interface PredictionBracketParams {
@@ -43,6 +49,8 @@ export interface PredictionBracketParams {
   predictions: Map<FifaMatchId, LocalPrediction>;
   /** Optional group standings overrides for tiebreaker resolution */
   groupOverrides?: LocalGroupStandingsOverride[];
+  /** Optional third-place overrides for manual ranking */
+  thirdPlaceOverrides?: LocalThirdPlaceOverride[];
 }
 
 // =====================================================================
@@ -54,6 +62,7 @@ export class PredictionBracketResolver {
   private matches: Match[];
   private predictions: Map<FifaMatchId, LocalPrediction>;
   private groupOverrides: LocalGroupStandingsOverride[];
+  private thirdPlaceOverrides: LocalThirdPlaceOverride[];
   private resolved: Map<FifaMatchId, ResolvedTeams>;
 
   constructor(params: PredictionBracketParams) {
@@ -61,13 +70,21 @@ export class PredictionBracketResolver {
     this.matches = params.matches;
     this.predictions = params.predictions;
     this.groupOverrides = params.groupOverrides || [];
+    this.thirdPlaceOverrides = params.thirdPlaceOverrides || [];
     this.resolved = new Map();
   }
 
   resolve(): PredictedBracket {
     // Compute predicted group standings from user's group predictions
     const groupStandings = this.computePredictedStandings();
-    const thirdPlaceQualifying = getQualifyingThirdPlaceTeams(groupStandings);
+    const thirdPlaceQualifying = getQualifyingThirdPlaceTeamsWithOverrides(
+      groupStandings,
+      this.thirdPlaceOverrides,
+    );
+    const rankedThirdPlaceTeams = getRankedThirdPlaceTeamsWithOverrides(
+      groupStandings,
+      this.thirdPlaceOverrides,
+    );
 
     // R32 teams come from the live bracket (actual matchups)
     this.resolveR32();
@@ -84,6 +101,7 @@ export class PredictionBracketResolver {
       teams: new Map(this.resolved),
       groupStandings,
       thirdPlaceQualifying,
+      rankedThirdPlaceTeams,
     };
   }
 

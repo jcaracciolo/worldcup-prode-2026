@@ -12,6 +12,7 @@ import {
 } from "@/contexts/PredictionsContext";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import StandingsTable from "@/components/StandingsTable";
+import ThirdPlaceRankingTable from "@/components/ThirdPlaceRankingTable";
 import LockedCard from "@/components/LockedCard";
 import { useMemo, useState } from "react";
 
@@ -36,6 +37,7 @@ export default function UserGroupSection({
   const predictedBracket = usePredictedBracket(userId);
   const predictedGroupStandings = predictedBracket.groupStandings;
   const thirdPlaceQualifying = predictedBracket.thirdPlaceQualifying;
+  const rankedThirdPlaceTeams = predictedBracket.rankedThirdPlaceTeams;
 
   // Get centralized breakdown from leaderboard context
   const positionInfo = useUserPosition(userId);
@@ -117,6 +119,29 @@ export default function UserGroupSection({
             );
           })}
       </div>
+
+      {/* Best 3rd Place Teams (read-only) */}
+      {rankedThirdPlaceTeams.length > 0 && (
+        <div className="mt-6">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-7 h-7 bg-amber-500/20 rounded-lg flex items-center justify-center">
+              <span className="text-sm">🥉</span>
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-white">
+                Best 3rd Place Teams
+              </h3>
+              <p className="text-white/50 text-xs">
+                Top 8 qualify for Round of 32
+              </p>
+            </div>
+          </div>
+          <ThirdPlaceRankingTable
+            rankedTeams={rankedThirdPlaceTeams}
+            disabled={true}
+          />
+        </div>
+      )}
     </section>
   );
 }

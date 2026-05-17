@@ -12,6 +12,7 @@ import {
   InviteCode,
   Prediction,
   GroupStandingsOverride,
+  ThirdPlaceOverride,
   MatchCache,
   TournamentSettings,
 } from "@/types/database";
@@ -185,6 +186,29 @@ export interface OverrideService {
 }
 
 // =====================================================================
+// THIRD PLACE OVERRIDE OPERATIONS
+// =====================================================================
+
+export interface ThirdPlaceOverrideService {
+  /** Get third-place overrides for a specific user */
+  getUserThirdPlaceOverrides(
+    userId: string,
+  ): Promise<ServiceResult<ThirdPlaceOverride[]>>;
+
+  /** Get all third-place overrides (for leaderboard) */
+  getAllThirdPlaceOverrides(): Promise<ServiceResult<ThirdPlaceOverride[]>>;
+
+  /** Save/upsert third-place overrides for a user */
+  saveThirdPlaceOverrides(
+    userId: string,
+    overrides: Array<{
+      group_name: string;
+      rank: number;
+    }>,
+  ): Promise<ServiceVoidResult>;
+}
+
+// =====================================================================
 // MATCHES CACHE OPERATIONS
 // =====================================================================
 
@@ -306,6 +330,9 @@ export interface DatabaseService {
 
   // Override operations
   overrides: OverrideService;
+
+  // Third-place override operations
+  thirdPlaceOverrides: ThirdPlaceOverrideService;
 
   // Matches cache operations (typically server-side only)
   matchesCache: MatchesCacheService;

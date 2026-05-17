@@ -19,6 +19,7 @@ import {
   InviteCodeService,
   PredictionService,
   OverrideService,
+  ThirdPlaceOverrideService,
   MatchesCacheService,
   TournamentSettingsService,
   ServiceResult,
@@ -32,6 +33,7 @@ import {
   InviteCode,
   Prediction,
   GroupStandingsOverride,
+  ThirdPlaceOverride,
   MatchCache,
   TournamentSettings,
 } from "@/types/database";
@@ -785,6 +787,109 @@ export function createOverrideService(
 }
 
 // =====================================================================
+// THIRD PLACE OVERRIDE SERVICE IMPLEMENTATION
+// =====================================================================
+
+export function createThirdPlaceOverrideService(
+  supabase: SupabaseClient,
+  competitionId: string | null,
+): ThirdPlaceOverrideService {
+  return {
+    async getUserThirdPlaceOverrides(
+      userId: string,
+    ): Promise<ServiceResult<ThirdPlaceOverride[]>> {
+      if (!competitionId) {
+        return { data: [], error: null };
+      }
+      try {
+        const { data, error } = await supabase
+          .from("third_place_overrides")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("competition_id", competitionId);
+
+        if (error) throw error;
+        return { data: data || [], error: null };
+      } catch (error) {
+        console.error(
+          `[DB] Failed to get third-place overrides for user ${userId}:`,
+          error,
+        );
+        return {
+          data: null,
+          error: error instanceof Error ? error.message : "Unknown error",
+        };
+      }
+    },
+
+    async getAllThirdPlaceOverrides(): Promise<
+      ServiceResult<ThirdPlaceOverride[]>
+    > {
+      if (!competitionId) {
+        return { data: [], error: null };
+      }
+      try {
+        const result = await fetchAllRows<ThirdPlaceOverride>(
+          supabase.from("third_place_overrides"),
+          "*",
+          { competition_id: competitionId },
+        );
+
+        if (result.error) throw new Error(result.error);
+        return { data: result.data, error: null };
+      } catch (error) {
+        console.error("[DB] Failed to get all third-place overrides:", error);
+        return {
+          data: null,
+          error: error instanceof Error ? error.message : "Unknown error",
+        };
+      }
+    },
+
+    async saveThirdPlaceOverrides(
+      userId: string,
+      overrides: Array<{
+        group_name: string;
+        rank: number;
+      }>,
+    ): Promise<ServiceVoidResult> {
+      if (!competitionId) {
+        return { success: false, error: "No competition selected" };
+      }
+      try {
+        if (overrides.length === 0) {
+          return { success: true, error: null };
+        }
+
+        const { error } = await supabase
+          .from("third_place_overrides")
+          .upsert(
+            overrides.map((o) => ({
+              user_id: userId,
+              competition_id: competitionId,
+              group_name: o.group_name,
+              rank: o.rank,
+            })),
+            { onConflict: "user_id,competition_id,group_name" },
+          );
+
+        if (error) throw error;
+        return { success: true, error: null };
+      } catch (error) {
+        console.error(
+          `[DB] Failed to save third-place overrides for user ${userId}:`,
+          error,
+        );
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+        };
+      }
+    },
+  };
+}
+
+// =====================================================================
 // MATCHES CACHE SERVICE IMPLEMENTATION
 // =====================================================================
 
@@ -1196,6 +1301,7 @@ export function createDatabaseServiceFromClient(
     inviteCodes: createInviteCodeService(supabase, competitionId),
     predictions: createPredictionService(supabase, competitionId),
     overrides: createOverrideService(supabase, competitionId),
+    thirdPlaceOverrides: createThirdPlaceOverrideService(supabase, competitionId),
     matchesCache: createMatchesCacheService(supabase),
     tournamentSettings: createTournamentSettingsService(
       supabase,

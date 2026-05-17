@@ -54,9 +54,9 @@ export default function UserPredictionsPage() {
   const { groupStageLocked, knockoutStageOpen, knockoutStageLocked } =
     stageLockStatus;
 
-  // Tab state - default to knockout if it's open
+  // Tab state - default to group if group stage is still playing, knockout if group stage is done
   const [activeTab, setActiveTab] = useState<"group" | "knockout">(() =>
-    knockoutStageOpen ? "knockout" : "group",
+    groupStageLocked ? "knockout" : "group",
   );
 
   // Get matches with user's predicted knockout teams baked in.

@@ -56,7 +56,7 @@ export default function PredictionsPage() {
 
   const scrollToFirstLiveMatch = useScrollToLiveMatch();
 
-  // Tab state - default to knockout if it's open
+  // Tab state - default to knockout if it's open (show what's editable)
   const [activeTab, setActiveTab] = useState<"group" | "knockout">(() =>
     knockoutOpen ? "knockout" : "group",
   );

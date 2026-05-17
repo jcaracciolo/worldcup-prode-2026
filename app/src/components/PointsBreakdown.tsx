@@ -85,8 +85,8 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
     const pointsColorClass = isLive ? "text-red-400" : "text-emerald-400";
     // Container styling for live items
     const containerClass = isLive
-      ? "px-4 py-2.5 flex items-center hover:bg-red-500/10 transition-colors border-b border-white/5 last:border-0 bg-red-500/5 border-l-2 border-l-red-500"
-      : "px-4 py-2.5 flex items-center hover:bg-white/5 transition-colors border-b border-white/5 last:border-0";
+      ? "px-4 py-1.5 flex items-center hover:bg-red-500/10 transition-colors border-b border-white/5 last:border-0 bg-red-500/5 border-l-2 border-l-red-500"
+      : "px-4 py-1.5 flex items-center hover:bg-white/5 transition-colors border-b border-white/5 last:border-0";
 
     // Get team display name with fallback to match ID label
     const getTeamDisplay = (
@@ -113,9 +113,9 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
               {isLive && "🔴 "}+{item.points}
             </span>
           </div>
-          <div className="w-px h-6 bg-white/10 mx-3" />
+          <div className="w-px h-6 bg-white/10 mx-1" />
           {/* Reason */}
-          <div className="flex-1 min-w-0 flex items-center gap-2">
+          <div className="w-44 shrink-0 flex items-center gap-2">
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 border ${getTypeBgColor(item.type)}`}
             >
@@ -123,7 +123,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
             </span>
             <p className="text-xs text-white/60 truncate">{item.description}</p>
           </div>
-          <div className="w-px h-6 bg-white/10 mx-3" />
+          <div className="w-px h-6 bg-white/10 mx-1" />
           {/* Team */}
           <div className="flex items-center gap-2 w-24 shrink-0">
             {item.team?.crest ? (
@@ -159,9 +159,9 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
               {isLive && "🔴 "}+{item.points}
             </span>
           </div>
-          <div className="w-px h-6 bg-white/10 mx-3" />
+          <div className="w-px h-6 bg-white/10 mx-1" />
           {/* Reason */}
-          <div className="flex-1 min-w-0 flex items-center gap-2">
+          <div className="w-44 shrink-0 flex items-center gap-2">
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 border ${getTypeBgColor(item.type)}`}
             >
@@ -222,7 +222,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
       loserOpacity: boolean,
     ) => (
       <div
-        className={`flex items-center gap-1 px-1.5 py-0.5 rounded shrink-0 w-16 ${position === "home" ? "justify-end" : "justify-start"} ${highlight ? "bg-amber-500/80" : ""}`}
+        className={`flex items-center gap-0.5 px-1 py-0.5 rounded shrink-0 w-14 ${position === "home" ? "justify-end" : "justify-start"} ${highlight ? "bg-amber-500/80" : ""}`}
       >
         {position === "home" && (
           <>
@@ -280,7 +280,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
           </span>
         </div>
 
-        <div className="w-px h-6 bg-white/10 mx-3" />
+        <div className="w-px h-6 bg-white/10 mx-1" />
 
         {/* Reason */}
         <div className="w-44 shrink-0 flex items-center gap-2">
@@ -310,17 +310,16 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
               </>
             )}
           <p className="text-[11px] text-white/60 truncate">
-            {item.description}
+            {item.type === "goals_home" || item.type === "goals_away"
+              ? "Correct goals"
+              : item.description}
           </p>
         </div>
 
-        <div className="w-px h-6 bg-white/10 mx-3" />
+        <div className="w-px h-6 bg-white/10 mx-1" />
 
         {/* Prediction */}
-        <div className="flex items-center gap-1 shrink-0 w-[240px]">
-          <span className="text-[10px] text-white/40 w-[70px] shrink-0">
-            Prediction:
-          </span>
+        <div className="flex items-center gap-1 shrink-0 w-[160px]">
           {renderTeam(
             predHomeTeam as {
               tla?: string;
@@ -348,15 +347,10 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
           )}
         </div>
 
-        <div className="w-px h-6 bg-white/10 mx-3" />
+        <div className="w-px h-6 bg-white/10 mx-1" />
 
         {/* Result */}
-        <div className="flex items-center gap-1 shrink-0 w-[200px]">
-          <span
-            className={`text-[10px] w-[50px] shrink-0 ${isLive ? "text-red-400" : "text-white/40"}`}
-          >
-            {isLive ? "Live:" : "Result:"}
-          </span>
+        <div className="flex items-center gap-1 shrink-0 w-[160px]">
           {renderTeam(
             homeTeam,
             homeTla,
@@ -364,7 +358,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
             actualHomeHighlight,
             actualAwayWon,
           )}
-          <span className="text-xs font-bold text-white px-1 w-8 text-center shrink-0">
+          <span className={`text-xs font-bold px-1 w-8 text-center shrink-0 ${isLive ? "text-red-400" : "text-white"}`}>
             {actualHome}-{actualAway}
           </span>
           {renderTeam(
@@ -384,11 +378,12 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
     emoji: string,
     items: PointBreakdown[],
     sectionPoints: number,
+    showColumnHeaders: boolean = false,
   ) => {
     if (items.length === 0) return null;
     return (
       <div className="mb-4 last:mb-0">
-        <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-white/5 to-transparent border-l-4 border-emerald-500/50">
+        <div className="flex items-center gap-4 px-4 py-2.5 bg-gradient-to-r from-white/5 to-transparent border-l-4 border-emerald-500/50 min-w-fit">
           <span className="text-sm font-semibold text-white/80">
             {emoji} {title}
           </span>
@@ -396,6 +391,25 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
             {sectionPoints} pts
           </span>
         </div>
+        {showColumnHeaders && (
+          <div className="px-4 py-1.5 flex items-center border-b border-white/5 bg-white/[0.02] min-w-fit">
+            <div className="w-14 shrink-0 text-center">
+              <span className="text-[10px] text-white/30 uppercase tracking-wider">Pts</span>
+            </div>
+            <div className="w-px h-4 bg-transparent mx-1" />
+            <div className="w-44 shrink-0">
+              <span className="text-[10px] text-white/30 uppercase tracking-wider">Category</span>
+            </div>
+            <div className="w-px h-4 bg-transparent mx-1" />
+            <div className="w-[160px] shrink-0">
+              <span className="text-[10px] text-white/30 uppercase tracking-wider">Prediction</span>
+            </div>
+            <div className="w-px h-4 bg-transparent mx-1" />
+            <div className="w-[160px] shrink-0">
+              <span className="text-[10px] text-white/30 uppercase tracking-wider">Result</span>
+            </div>
+          </div>
+        )}
         <div>{items.map((item, index) => renderItem(item, index))}</div>
       </div>
     );
@@ -425,7 +439,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
       </div>
 
       {/* Content */}
-      <div className="max-h-[500px] overflow-y-auto">
+      <div className="max-h-[500px] overflow-auto">
         {breakdown.length === 0 ? (
           <div className="p-8 text-center">
             <div className="text-5xl mb-4 opacity-50">⏳</div>
@@ -441,6 +455,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
               "⚽",
               groupMatchPoints,
               groupMatchPts,
+              true,
             )}
             {renderSection(
               "Group Standings Bonus",
@@ -448,7 +463,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
               groupBonusPoints,
               groupBonusPts,
             )}
-            {renderSection("Knockout Stage", "⚔️", knockoutPoints, knockoutPts)}
+            {renderSection("Knockout Stage", "⚔️", knockoutPoints, knockoutPts, true)}
           </div>
         )}
       </div>

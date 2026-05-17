@@ -62,22 +62,26 @@ const content = {
           title: "Analysis",
           items: [
             {
-              team: "🇲🇽 Mexico",
+              team: "Mexico",
+              flag: "mx",
               result: "Advanced but wrong position (predicted 1st, got 2nd)",
               points: "+1 pt",
             },
             {
-              team: "🇺🇸 USA",
+              team: "USA",
+              flag: "us",
               result: "Advanced but wrong position (predicted 2nd, got 1st)",
               points: "+1 pt",
             },
             {
-              team: "🇨🇦 Canada",
+              team: "Canada",
+              flag: "ca",
               result: "Advanced + Correct position (3rd)*",
               points: "+2 pts",
             },
             {
-              team: "🇯🇲 Jamaica",
+              team: "Jamaica",
+              flag: "jm",
               result: "Did not advance (no points)",
               points: "+0 pts",
             },
@@ -261,24 +265,28 @@ const content = {
           title: "Análisis",
           items: [
             {
-              team: "🇲🇽 México",
+              team: "México",
+              flag: "mx",
               result:
                 "Avanzó pero posición incorrecta (predijo 1ro, quedó 2do)",
               points: "+1 pt",
             },
             {
-              team: "🇺🇸 EE.UU.",
+              team: "EE.UU.",
+              flag: "us",
               result:
                 "Avanzó pero posición incorrecta (predijo 2do, quedó 1ro)",
               points: "+1 pt",
             },
             {
-              team: "🇨🇦 Canadá",
+              team: "Canadá",
+              flag: "ca",
               result: "Avanzó + Posición correcta (3ro)*",
               points: "+2 pts",
             },
             {
-              team: "🇯🇲 Jamaica",
+              team: "Jamaica",
+              flag: "jm",
               result: "No avanzó (sin puntos)",
               points: "+0 pts",
             },
@@ -413,7 +421,7 @@ export default function RulesPage() {
             onClick={() => setLang(lang === "en" ? "es" : "en")}
             className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all self-start sm:self-auto"
           >
-            <span className="text-lg">{lang === "en" ? "🇪🇸" : "🇺🇸"}</span>
+            <img src={lang === "en" ? "https://flagcdn.com/w40/es.png" : "https://flagcdn.com/w40/us.png"} alt="" className="w-5 h-4 object-contain" />
             <span className="text-white font-medium">{t.languageToggle}</span>
           </button>
         </div>
@@ -536,7 +544,7 @@ export default function RulesPage() {
                 </div>
                 <div className="flex items-center justify-center gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">🇦🇷</span>
+                    <img src="https://flagcdn.com/w40/ar.png" alt="ARG" className="w-6 h-4 object-contain" />
                     <span className="text-white font-semibold">ARG</span>
                   </div>
                   <div className="bg-white/10 px-3 py-1 rounded font-bold text-white">
@@ -544,7 +552,7 @@ export default function RulesPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-white font-semibold">NGA</span>
-                    <span className="text-xl">🇳🇬</span>
+                    <img src="https://flagcdn.com/w40/ng.png" alt="NGA" className="w-6 h-4 object-contain" />
                   </div>
                 </div>
               </div>
@@ -556,7 +564,7 @@ export default function RulesPage() {
                 </div>
                 <div className="flex items-center justify-center gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">🇦🇷</span>
+                    <img src="https://flagcdn.com/w40/ar.png" alt="ARG" className="w-6 h-4 object-contain" />
                     <span className="text-white font-semibold">ARG</span>
                   </div>
                   <div className="bg-emerald-500/20 px-3 py-1 rounded font-bold text-emerald-300">
@@ -564,7 +572,7 @@ export default function RulesPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-white font-semibold">NGA</span>
-                    <span className="text-xl">🇳🇬</span>
+                    <img src="https://flagcdn.com/w40/ng.png" alt="NGA" className="w-6 h-4 object-contain" />
                   </div>
                 </div>
               </div>
@@ -659,28 +667,28 @@ export default function RulesPage() {
                     <span className="w-6 text-white/50">
                       {t.phase2.example.positions[0]}
                     </span>
-                    <span>🇲🇽</span>
+                    <img src="https://flagcdn.com/w40/mx.png" alt="MEX" className="w-5 h-4 object-contain" />
                     <span className="text-white">Mexico</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="w-6 text-white/50">
                       {t.phase2.example.positions[1]}
                     </span>
-                    <span>🇺🇸</span>
+                    <img src="https://flagcdn.com/w40/us.png" alt="USA" className="w-5 h-4 object-contain" />
                     <span className="text-white">USA</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="w-6 text-white/50">
                       {t.phase2.example.positions[2]}
                     </span>
-                    <span>🇨🇦</span>
+                    <img src="https://flagcdn.com/w40/ca.png" alt="CAN" className="w-5 h-4 object-contain" />
                     <span className="text-white">Canada</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="w-6 text-white/50">
                       {t.phase2.example.positions[3]}
                     </span>
-                    <span>🇯🇲</span>
+                    <img src="https://flagcdn.com/w40/jm.png" alt="JAM" className="w-5 h-4 object-contain" />
                     <span className="text-white">Jamaica</span>
                   </div>
                 </div>
@@ -696,7 +704,7 @@ export default function RulesPage() {
                     <span className="w-6 text-blue-400">
                       {t.phase2.example.positions[0]}
                     </span>
-                    <span>🇺🇸</span>
+                    <img src="https://flagcdn.com/w40/us.png" alt="USA" className="w-5 h-4 object-contain" />
                     <span className="text-white font-semibold">USA</span>
                     <span className="text-xs bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded ml-auto">
                       ↑
@@ -706,7 +714,7 @@ export default function RulesPage() {
                     <span className="w-6 text-blue-400">
                       {t.phase2.example.positions[1]}
                     </span>
-                    <span>🇲🇽</span>
+                    <img src="https://flagcdn.com/w40/mx.png" alt="MEX" className="w-5 h-4 object-contain" />
                     <span className="text-white font-semibold">Mexico</span>
                     <span className="text-xs bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded ml-auto">
                       ↓
@@ -716,7 +724,7 @@ export default function RulesPage() {
                     <span className="w-6 text-blue-400">
                       {t.phase2.example.positions[2]}
                     </span>
-                    <span>🇨🇦</span>
+                    <img src="https://flagcdn.com/w40/ca.png" alt="CAN" className="w-5 h-4 object-contain" />
                     <span className="text-white font-semibold">Canada</span>
                     <span className="text-xs bg-emerald-500/30 text-emerald-300 px-1.5 py-0.5 rounded ml-auto">
                       ✓
@@ -726,7 +734,7 @@ export default function RulesPage() {
                     <span className="w-6 text-white/30">
                       {t.phase2.example.positions[3]}
                     </span>
-                    <span>🇯🇲</span>
+                    <img src="https://flagcdn.com/w40/jm.png" alt="JAM" className="w-5 h-4 object-contain" />
                     <span className="text-white/50">Jamaica</span>
                   </div>
                 </div>
@@ -748,6 +756,7 @@ export default function RulesPage() {
                   }`}
                 >
                   <div className="flex items-center gap-2">
+                    <img src={`https://flagcdn.com/w40/${item.flag}.png`} alt={item.team} className="w-5 h-4 object-contain" />
                     <span className="text-sm">{item.team}</span>
                     <span
                       className={`text-xs ${item.points.includes("+0") ? "text-red-300/70" : "text-blue-300/70"}`}
@@ -933,7 +942,7 @@ export default function RulesPage() {
                 </div>
                 <div className="flex items-center justify-center gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">🇩🇪</span>
+                    <img src="https://flagcdn.com/w40/de.png" alt="GER" className="w-6 h-4 object-contain" />
                     <span className="text-white font-semibold">GER</span>
                   </div>
                   <div className="bg-white/10 px-3 py-1 rounded font-bold text-white">
@@ -941,7 +950,7 @@ export default function RulesPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-white font-semibold">BRA</span>
-                    <span className="text-xl">🇧🇷</span>
+                    <img src="https://flagcdn.com/w40/br.png" alt="BRA" className="w-6 h-4 object-contain" />
                   </div>
                 </div>
               </div>
@@ -953,7 +962,7 @@ export default function RulesPage() {
                 </div>
                 <div className="flex items-center justify-center gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">🇩🇪</span>
+                    <img src="https://flagcdn.com/w40/de.png" alt="GER" className="w-6 h-4 object-contain" />
                     <span className="text-white font-semibold">GER</span>
                   </div>
                   <div className="bg-purple-500/20 px-3 py-1 rounded font-bold text-purple-300">
@@ -961,7 +970,7 @@ export default function RulesPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-white font-semibold">BRA</span>
-                    <span className="text-xl">🇧🇷</span>
+                    <img src="https://flagcdn.com/w40/br.png" alt="BRA" className="w-6 h-4 object-contain" />
                   </div>
                 </div>
               </div>

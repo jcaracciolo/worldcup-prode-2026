@@ -62,9 +62,28 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
         b.type === "goals_away") &&
       b.matchInfo?.stage === "GROUP_STAGE",
   );
-  const groupBonusPoints = breakdown.filter(
+  const groupBonusPointsRaw = breakdown.filter(
     (b) => b.type === "group_advance" || b.type === "group_position",
   );
+  // Merge advance+position for the same team into a single row
+  const groupBonusPoints: PointBreakdown[] = [];
+  const advanceItems = groupBonusPointsRaw.filter((b) => b.type === "group_advance");
+  const positionItems = groupBonusPointsRaw.filter((b) => b.type === "group_position");
+  for (const adv of advanceItems) {
+    const pos = positionItems.find(
+      (p) => p.team?.tla === adv.team?.tla && p.predictedPosition === adv.predictedPosition,
+    );
+    if (pos) {
+      // Merge: show as +2 with "Position" label (correct position implies advance)
+      groupBonusPoints.push({
+        ...adv,
+        points: adv.points + pos.points,
+        type: "group_position",
+      });
+    } else {
+      groupBonusPoints.push(adv);
+    }
+  }
   const knockoutPoints = breakdown.filter(
     (b) =>
       (b.type === "result" ||
@@ -115,9 +134,9 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
               {isLive && "🔴 "}+{item.points}
             </span>
           </div>
-          <div className="w-px h-6 bg-white/10 mx-1" />
+
           {/* Category + Team */}
-          <div className="w-44 shrink-0 flex items-center gap-2">
+          <div className="flex-1 min-w-0 flex items-center gap-2">
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 border ${getTypeBgColor(item.type)}`}
             >
@@ -138,16 +157,16 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
               {teamTla}
             </span>
           </div>
-          <div className="w-px h-6 bg-white/10 mx-1" />
+
           {/* Predicted Position */}
-          <div className="w-[160px] shrink-0 text-center">
+          <div className="w-12 shrink-0 text-center">
             <span className="text-xs text-white/70">
               {posLabel(item.predictedPosition)}
             </span>
           </div>
-          <div className="w-px h-6 bg-white/10 mx-1" />
+
           {/* Actual Position */}
-          <div className="w-[160px] shrink-0 text-center">
+          <div className="w-12 shrink-0 text-center">
             <span className="text-xs text-white/70">
               {posLabel(item.actualPosition)}
             </span>
@@ -300,6 +319,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
           >
             {getTypeLabel(item.type)}
           </span>
+          {/* Flag for goals rows */}
           {(item.type === "goals_home" || item.type === "goals_away") &&
             item.matchInfo && (
               <>
@@ -320,6 +340,25 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
                 ) : null}
               </>
             )}
+          {/* Flag for result/win/loss rows — show winner or relevant team */}
+          {(item.type === "result" || item.type === "knockout_win" || item.type === "knockout_lose" || item.type === "knockout_tie") &&
+            item.matchInfo && (() => {
+              const isHomeWin = item.matchInfo!.homeGoals > item.matchInfo!.awayGoals;
+              const isAwayWin = item.matchInfo!.awayGoals > item.matchInfo!.homeGoals;
+              const team =
+                item.type === "knockout_lose"
+                  ? (isHomeWin ? item.matchInfo!.awayTeam : item.matchInfo!.homeTeam)
+                  : item.type === "knockout_win"
+                    ? (isHomeWin ? item.matchInfo!.homeTeam : item.matchInfo!.awayTeam)
+                    : (isHomeWin ? item.matchInfo!.homeTeam : isAwayWin ? item.matchInfo!.awayTeam : item.matchInfo!.homeTeam);
+              return team?.crest ? (
+                <img
+                  src={team.crest}
+                  alt={team.tla || ""}
+                  className="w-4 h-4 object-contain shrink-0"
+                />
+              ) : null;
+            })()}
           <p className="text-[11px] text-white/60 truncate">
             {item.type === "goals_home" || item.type === "goals_away"
               ? "Correct goals"
@@ -389,7 +428,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
     emoji: string,
     items: PointBreakdown[],
     sectionPoints: number,
-    showColumnHeaders: boolean = false,
+    headerType: "match" | "bonus" | false = false,
   ) => {
     if (items.length === 0) return null;
     return (
@@ -402,7 +441,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
             {sectionPoints} pts
           </span>
         </div>
-        {showColumnHeaders && (
+        {headerType === "match" && (
           <div className="px-4 py-1.5 flex items-center border-b border-white/5 bg-white/[0.02] min-w-fit">
             <div className="w-14 shrink-0 text-center">
               <span className="text-[10px] text-white/30 uppercase tracking-wider">Pts</span>
@@ -418,6 +457,22 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
             <div className="w-px h-4 bg-transparent mx-1" />
             <div className="w-[160px] shrink-0">
               <span className="text-[10px] text-white/30 uppercase tracking-wider">Result</span>
+            </div>
+          </div>
+        )}
+        {headerType === "bonus" && (
+          <div className="px-4 py-1.5 flex items-center border-b border-white/5 bg-white/[0.02] min-w-fit">
+            <div className="w-14 shrink-0 text-center">
+              <span className="text-[10px] text-white/30 uppercase tracking-wider">Pts</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[10px] text-white/30 uppercase tracking-wider">Team</span>
+            </div>
+            <div className="w-12 shrink-0 text-center">
+              <span className="text-[10px] text-white/30 uppercase tracking-wider">Pred</span>
+            </div>
+            <div className="w-12 shrink-0 text-center">
+              <span className="text-[10px] text-white/30 uppercase tracking-wider">Actual</span>
             </div>
           </div>
         )}
@@ -466,16 +521,16 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
               "⚽",
               groupMatchPoints,
               groupMatchPts,
-              true,
+              "match",
             )}
             {renderSection(
               "Group Standings Bonus",
               "📈",
               groupBonusPoints,
               groupBonusPts,
-              true,
+              "bonus",
             )}
-            {renderSection("Knockout Stage", "⚔️", knockoutPoints, knockoutPts, true)}
+            {renderSection("Knockout Stage", "⚔️", knockoutPoints, knockoutPts, "match")}
           </div>
         )}
       </div>

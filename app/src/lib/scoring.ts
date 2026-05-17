@@ -265,7 +265,7 @@ export function calculateGroupStagePoints(
   // 2 points for correct result
   if (predictedResult === actualResult) {
     const resultText =
-      actualResult === "draw" ? "Group Stage tie" : "Group Stage win";
+      actualResult === "draw" ? "Group tie" : "Group win";
     points.push({
       matchId: match.id,
       description: resultText,
@@ -366,12 +366,12 @@ export function calculateKnockoutPoints(
 
   const multiplier = ROUND_MULTIPLIERS[match.stage] || 1;
 
-  // Get human-readable stage name
+  // Get short stage name for display
   const stageName = match.stage
-    .replace("LAST_32", "Round of 32")
-    .replace("LAST_16", "Round of 16")
-    .replace("QUARTER_FINALS", "Quarter-Final")
-    .replace("SEMI_FINALS", "Semi-Final")
+    .replace("LAST_32", "R32")
+    .replace("LAST_16", "R16")
+    .replace("QUARTER_FINALS", "QF")
+    .replace("SEMI_FINALS", "Semi")
     .replace("THIRD_PLACE", "3rd Place")
     .replace("FINAL", "Final");
 

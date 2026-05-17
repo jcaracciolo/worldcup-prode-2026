@@ -186,7 +186,7 @@ describe("canSwapThirdPlaceUp / canSwapThirdPlaceDown", () => {
     };
   }
 
-  it("allows swap when pts + GD + GF are all equal", () => {
+  it("allows swap when points are equal", () => {
     const teams: ThirdPlaceTeam[] = [
       makeTeam("A", 4, 1, 3, 1),
       makeTeam("B", 4, 1, 3, 2),
@@ -199,29 +199,19 @@ describe("canSwapThirdPlaceUp / canSwapThirdPlaceDown", () => {
     expect(canSwapThirdPlaceDown(teams, 1)).toBe(true);
   });
 
+  it("allows swap when points match but GD/GF differ", () => {
+    const teams: ThirdPlaceTeam[] = [
+      makeTeam("A", 4, 3, 5, 1),
+      makeTeam("B", 4, 1, 3, 2),
+    ];
+
+    expect(canSwapThirdPlaceUp(teams, 1)).toBe(true);
+    expect(canSwapThirdPlaceDown(teams, 0)).toBe(true);
+  });
+
   it("disallows swap when points differ", () => {
     const teams: ThirdPlaceTeam[] = [
       makeTeam("A", 6, 1, 3, 1),
-      makeTeam("B", 4, 1, 3, 2),
-    ];
-
-    expect(canSwapThirdPlaceUp(teams, 1)).toBe(false);
-    expect(canSwapThirdPlaceDown(teams, 0)).toBe(false);
-  });
-
-  it("disallows swap when GD differs", () => {
-    const teams: ThirdPlaceTeam[] = [
-      makeTeam("A", 4, 2, 3, 1),
-      makeTeam("B", 4, 1, 3, 2),
-    ];
-
-    expect(canSwapThirdPlaceUp(teams, 1)).toBe(false);
-    expect(canSwapThirdPlaceDown(teams, 0)).toBe(false);
-  });
-
-  it("disallows swap when GF differs", () => {
-    const teams: ThirdPlaceTeam[] = [
-      makeTeam("A", 4, 1, 4, 1),
       makeTeam("B", 4, 1, 3, 2),
     ];
 

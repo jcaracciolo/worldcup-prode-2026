@@ -169,38 +169,26 @@ export function getQualifyingThirdPlaceTeamsWithOverrides(
 
 /**
  * Check if a third-place team at the given index can be swapped up.
- * Only teams with identical points, goal difference, AND goals scored can swap
- * (all statistical tiebreakers exhausted — the remaining is "drawing of lots").
+ * Teams with the same points can be swapped (manual tiebreaker override).
  */
 export function canSwapThirdPlaceUp(
   teams: ThirdPlaceTeam[],
   index: number,
 ): boolean {
   if (index <= 0 || index >= teams.length) return false;
-  const a = teams[index];
-  const b = teams[index - 1];
-  return (
-    a.points === b.points &&
-    a.goalDifference === b.goalDifference &&
-    a.goalsFor === b.goalsFor
-  );
+  return teams[index].points === teams[index - 1].points;
 }
 
 /**
  * Check if a third-place team at the given index can be swapped down.
+ * Teams with the same points can be swapped (manual tiebreaker override).
  */
 export function canSwapThirdPlaceDown(
   teams: ThirdPlaceTeam[],
   index: number,
 ): boolean {
   if (index < 0 || index >= teams.length - 1) return false;
-  const a = teams[index];
-  const b = teams[index + 1];
-  return (
-    a.points === b.points &&
-    a.goalDifference === b.goalDifference &&
-    a.goalsFor === b.goalsFor
-  );
+  return teams[index].points === teams[index + 1].points;
 }
 
 /**

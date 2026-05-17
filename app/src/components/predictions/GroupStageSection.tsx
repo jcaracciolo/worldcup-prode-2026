@@ -154,7 +154,7 @@ export default function GroupStageSection({
 
       {/* Best 3rd Place Teams */}
       {rankedThirdPlaceTeams && rankedThirdPlaceTeams.length > 0 && (
-        <div className="mt-6">
+        <div className="mt-6 glass-card p-3">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-7 h-7 bg-amber-500/20 rounded-lg flex items-center justify-center">
               <span className="text-sm">🥉</span>

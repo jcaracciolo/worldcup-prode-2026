@@ -46,8 +46,9 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
       case "goals_away":
         return "bg-blue-500/30 text-blue-300 border-blue-500/40";
       case "group_advance":
-      case "group_position":
         return "bg-purple-500/30 text-purple-300 border-purple-500/40";
+      case "group_position":
+        return "bg-amber-500/30 text-amber-300 border-amber-500/40";
       default:
         return "bg-white/10 text-white/60 border-white/20";
     }
@@ -98,14 +99,15 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
       return getTeamDisplaySimple(team, fifaId, position);
     };
 
-    // For group bonus types (advance/position), show team with emoji
+    // For group bonus types (advance/position), show team with predicted/actual positions
     if (isGroupBonusType && item.team) {
       const teamTla = getTeamLabel(item.team);
+      const posLabel = (pos: number | undefined) =>
+        pos === 1 ? "1st" : pos === 2 ? "2nd" : pos === 3 ? "3rd" : pos === 4 ? "4th" : "-";
       return (
-        <Link
+        <div
           key={index}
-          href={`/match/${item.matchId}`}
-          className={`${containerClass} cursor-pointer`}
+          className={containerClass}
         >
           {/* Score */}
           <div className="w-14 shrink-0 text-center">
@@ -114,34 +116,43 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
             </span>
           </div>
           <div className="w-px h-6 bg-white/10 mx-1" />
-          {/* Reason */}
+          {/* Category + Team */}
           <div className="w-44 shrink-0 flex items-center gap-2">
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 border ${getTypeBgColor(item.type)}`}
             >
               {getTypeLabel(item.type)}
             </span>
-            <p className="text-xs text-white/60 truncate">{item.description}</p>
-          </div>
-          <div className="w-px h-6 bg-white/10 mx-1" />
-          {/* Team */}
-          <div className="flex items-center gap-2 w-24 shrink-0">
             {item.team?.crest ? (
               <img
                 src={item.team.crest}
                 alt={teamTla || "TBD"}
-                className="w-5 h-5 object-contain"
+                className="w-4 h-4 object-contain shrink-0"
               />
             ) : (
-              <div className="w-5 h-5 bg-white/10 rounded flex items-center justify-center text-[8px] text-white/50">
+              <div className="w-4 h-4 bg-white/10 rounded flex items-center justify-center text-[8px] text-white/50 shrink-0">
                 TBD
               </div>
             )}
-            <span className="font-semibold text-white text-sm">
-              {teamTla || getTeamDisplay(item.team, item.matchId, "home")}
+            <span className="font-semibold text-white text-sm truncate">
+              {teamTla}
             </span>
           </div>
-        </Link>
+          <div className="w-px h-6 bg-white/10 mx-1" />
+          {/* Predicted Position */}
+          <div className="w-[160px] shrink-0 text-center">
+            <span className="text-xs text-white/70">
+              {posLabel(item.predictedPosition)}
+            </span>
+          </div>
+          <div className="w-px h-6 bg-white/10 mx-1" />
+          {/* Actual Position */}
+          <div className="w-[160px] shrink-0 text-center">
+            <span className="text-xs text-white/70">
+              {posLabel(item.actualPosition)}
+            </span>
+          </div>
+        </div>
       );
     }
 
@@ -462,6 +473,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
               "📈",
               groupBonusPoints,
               groupBonusPts,
+              true,
             )}
             {renderSection("Knockout Stage", "⚔️", knockoutPoints, knockoutPts, true)}
           </div>

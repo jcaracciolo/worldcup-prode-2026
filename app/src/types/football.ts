@@ -170,6 +170,9 @@ export interface PointBreakdown {
     homeTeam: { tla: string; crest: string | null; shortName?: string } | null;
     awayTeam: { tla: string; crest: string | null; shortName?: string } | null;
   };
+  // Optional position info for group bonus items
+  predictedPosition?: number;
+  actualPosition?: number;
 }
 
 export interface UserScore {

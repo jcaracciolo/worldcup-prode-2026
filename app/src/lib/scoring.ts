@@ -739,6 +739,8 @@ export function calculateGroupStandingsBonusPoints(
           : predictedPosition === 2
             ? "2nd"
             : "3rd";
+      const actualPosition =
+        actualStandings.findIndex((s) => s.team.id === predicted.team.id) + 1;
       points.push({
         matchId: 0,
         description: `Predicted ${positionText} to advance from Group ${groupLetter}`,
@@ -749,11 +751,11 @@ export function calculateGroupStandingsBonusPoints(
           crest: predicted.team.crest || "",
           name: predicted.team.name || "Qualifier",
         },
+        predictedPosition,
+        actualPosition,
       });
 
       // 1 additional point if position is correct
-      const actualPosition =
-        actualStandings.findIndex((s) => s.team.id === predicted.team.id) + 1;
       if (predictedPosition === actualPosition) {
         points.push({
           matchId: 0,
@@ -765,6 +767,8 @@ export function calculateGroupStandingsBonusPoints(
             crest: predicted.team.crest || "",
             name: predicted.team.name || "Qualifier",
           },
+          predictedPosition,
+          actualPosition,
         });
       }
     }

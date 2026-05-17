@@ -74,6 +74,7 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
       const userData = predictionsMap.get(profile.id);
       const predictions = userData?.predictions || [];
       const groupOverrides = userData?.overrides || [];
+      const thirdPlaceOverrides = userData?.thirdPlaceOverrides || [];
 
       const matchesWithFifa = matches.map((m) => ({
         ...m,
@@ -85,6 +86,7 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
         predictions,
         groupOverrides,
         liveBracket,
+        thirdPlaceOverrides,
       );
 
       let groupStagePoints = 0;

@@ -4,7 +4,7 @@ import {
   CalculatedStanding,
   FifaMatchId,
 } from "@/types/football";
-import { LocalPrediction, LocalGroupStandingsOverride } from "@/types/database";
+import { LocalPrediction, LocalGroupStandingsOverride, LocalThirdPlaceOverride } from "@/types/database";
 import {
   getMatchResult,
   getPredictionResult,
@@ -778,6 +778,7 @@ export function calculateTotalPoints(
   predictions: LocalPrediction[], // Keyed by FIFA match number (match_id)
   groupOverrides: LocalGroupStandingsOverride[],
   liveBracket: LiveBracket,
+  thirdPlaceOverrides: LocalThirdPlaceOverride[] = [],
 ): { totalPoints: number; livePoints: number; breakdown: PointBreakdown[] } {
   // Predictions are keyed by FIFA match number
   const predictionMap = new Map<FifaMatchId, LocalPrediction>(
@@ -807,6 +808,7 @@ export function calculateTotalPoints(
     matches,
     predictions: predictionMap,
     groupOverrides,
+    thirdPlaceOverrides,
   }).resolve();
 
   const userPredictedTeams = predictedBracket.teams;

@@ -169,26 +169,48 @@ export function getQualifyingThirdPlaceTeamsWithOverrides(
 
 /**
  * Check if a third-place team at the given index can be swapped up.
- * Teams with the same points can be swapped (manual tiebreaker override).
+ * Only swappable if same points AND the tied group straddles the
+ * qualification cutoff (some qualify, some don't).
  */
 export function canSwapThirdPlaceUp(
   teams: ThirdPlaceTeam[],
   index: number,
 ): boolean {
   if (index <= 0 || index >= teams.length) return false;
-  return teams[index].points === teams[index - 1].points;
+  if (teams[index].points !== teams[index - 1].points) return false;
+  return tiedGroupStraddlesCutoff(teams, index);
 }
 
 /**
  * Check if a third-place team at the given index can be swapped down.
- * Teams with the same points can be swapped (manual tiebreaker override).
+ * Only swappable if same points AND the tied group straddles the
+ * qualification cutoff (some qualify, some don't).
  */
 export function canSwapThirdPlaceDown(
   teams: ThirdPlaceTeam[],
   index: number,
 ): boolean {
   if (index < 0 || index >= teams.length - 1) return false;
-  return teams[index].points === teams[index + 1].points;
+  if (teams[index].points !== teams[index + 1].points) return false;
+  return tiedGroupStraddlesCutoff(teams, index);
+}
+
+/**
+ * Check if the group of teams tied on points with the team at `index`
+ * straddles the qualification cutoff (rank 8/9 boundary).
+ */
+function tiedGroupStraddlesCutoff(
+  teams: ThirdPlaceTeam[],
+  index: number,
+): boolean {
+  const pts = teams[index].points;
+  // Find the range of teams with the same points
+  let start = index;
+  while (start > 0 && teams[start - 1].points === pts) start--;
+  let end = index;
+  while (end < teams.length - 1 && teams[end + 1].points === pts) end++;
+  // Check if the tied range includes both qualifying (index < 8) and non-qualifying (index >= 8)
+  return start < 8 && end >= 8;
 }
 
 /**

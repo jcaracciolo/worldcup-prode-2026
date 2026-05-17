@@ -186,27 +186,74 @@ describe("canSwapThirdPlaceUp / canSwapThirdPlaceDown", () => {
     };
   }
 
-  it("allows swap when points are equal", () => {
+  it("allows swap when tied group straddles the qualification cutoff", () => {
+    // 12 teams: ranks 1-12, teams at ranks 7-9 all have 4 pts (straddle cutoff at 8)
     const teams: ThirdPlaceTeam[] = [
-      makeTeam("A", 4, 1, 3, 1),
-      makeTeam("B", 4, 1, 3, 2),
-      makeTeam("C", 4, 1, 3, 3),
+      makeTeam("A", 9, 5, 8, 1),
+      makeTeam("B", 8, 4, 7, 2),
+      makeTeam("C", 7, 3, 6, 3),
+      makeTeam("D", 6, 2, 5, 4),
+      makeTeam("E", 5, 1, 4, 5),
+      makeTeam("F", 5, 0, 3, 6),
+      makeTeam("G", 4, 1, 3, 7),  // tied, qualifies
+      makeTeam("H", 4, 0, 2, 8),  // tied, qualifies (last)
+      makeTeam("I", 4, -1, 1, 9), // tied, does NOT qualify
+      makeTeam("J", 2, -2, 1, 10),
+      makeTeam("K", 1, -3, 0, 11),
+      makeTeam("L", 0, -5, 0, 12),
     ];
 
-    expect(canSwapThirdPlaceUp(teams, 1)).toBe(true);
-    expect(canSwapThirdPlaceDown(teams, 0)).toBe(true);
-    expect(canSwapThirdPlaceUp(teams, 2)).toBe(true);
-    expect(canSwapThirdPlaceDown(teams, 1)).toBe(true);
+    // G(7) ↔ H(8): both in tied group that straddles cutoff → swappable
+    expect(canSwapThirdPlaceDown(teams, 6)).toBe(true);
+    expect(canSwapThirdPlaceUp(teams, 7)).toBe(true);
+    // H(8) ↔ I(9): straddles cutoff → swappable
+    expect(canSwapThirdPlaceDown(teams, 7)).toBe(true);
+    expect(canSwapThirdPlaceUp(teams, 8)).toBe(true);
+    // G(7) can swap up? F has 5 pts, different → no
+    expect(canSwapThirdPlaceUp(teams, 6)).toBe(false);
+    // I(9) can swap down? J has 2 pts, different → no
+    expect(canSwapThirdPlaceDown(teams, 8)).toBe(false);
   });
 
-  it("allows swap when points match but GD/GF differ", () => {
+  it("disallows swap when tied group is entirely qualifying", () => {
     const teams: ThirdPlaceTeam[] = [
-      makeTeam("A", 4, 3, 5, 1),
-      makeTeam("B", 4, 1, 3, 2),
+      makeTeam("A", 4, 2, 5, 1),
+      makeTeam("B", 4, 1, 3, 2), // both qualify, tied group doesn't straddle cutoff
+      makeTeam("C", 3, 0, 2, 3),
+      makeTeam("D", 2, -1, 1, 4),
+      makeTeam("E", 2, -1, 1, 5),
+      makeTeam("F", 1, -2, 0, 6),
+      makeTeam("G", 1, -2, 0, 7),
+      makeTeam("H", 1, -3, 0, 8),
+      makeTeam("I", 0, -4, 0, 9),
+      makeTeam("J", 0, -4, 0, 10),
+      makeTeam("K", 0, -5, 0, 11),
+      makeTeam("L", 0, -5, 0, 12),
     ];
 
-    expect(canSwapThirdPlaceUp(teams, 1)).toBe(true);
-    expect(canSwapThirdPlaceDown(teams, 0)).toBe(true);
+    // A and B tied at 4 pts, both qualify → no swap
+    expect(canSwapThirdPlaceDown(teams, 0)).toBe(false);
+    expect(canSwapThirdPlaceUp(teams, 1)).toBe(false);
+  });
+
+  it("disallows swap when tied group is entirely non-qualifying", () => {
+    const teams: ThirdPlaceTeam[] = [
+      makeTeam("A", 9, 5, 8, 1),
+      makeTeam("B", 8, 4, 7, 2),
+      makeTeam("C", 7, 3, 6, 3),
+      makeTeam("D", 6, 2, 5, 4),
+      makeTeam("E", 5, 1, 4, 5),
+      makeTeam("F", 4, 0, 3, 6),
+      makeTeam("G", 3, -1, 2, 7),
+      makeTeam("H", 2, -2, 1, 8),
+      makeTeam("I", 1, -3, 1, 9),  // tied at 1
+      makeTeam("J", 1, -3, 0, 10), // tied at 1 — both non-qualifying
+      makeTeam("K", 0, -4, 0, 11),
+      makeTeam("L", 0, -5, 0, 12),
+    ];
+
+    expect(canSwapThirdPlaceDown(teams, 8)).toBe(false);
+    expect(canSwapThirdPlaceUp(teams, 9)).toBe(false);
   });
 
   it("disallows swap when points differ", () => {

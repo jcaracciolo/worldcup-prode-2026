@@ -99,7 +99,7 @@ const content = {
       },
       r32: {
         title: "Round of 32",
-        description: "Works like group stage:",
+        description: "Position-based scoring (2 pts per correct goal):",
         scoring: [
           { label: "Correct result (win/draw/loss)", points: "2 pts" },
           { label: "Exact goals for home team", points: "2 pts" },
@@ -300,7 +300,7 @@ const content = {
       },
       r32: {
         title: "Ronda de 32",
-        description: "Funciona como la fase de grupos:",
+        description: "Puntuación por posición (2 pts por gol correcto):",
         scoring: [
           {
             label: "Resultado correcto (victoria/empate/derrota)",

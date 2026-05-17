@@ -53,13 +53,13 @@ Users get a second chance to predict all knockout matches once group stage is co
 
 **Per match scoring:**
 
-**Round of 32 (works like group stage):**
+**Round of 32 (position-based, like group stage but with 2pts per goal):**
 | Prediction | Points |
 | ------------------------------ | ------ |
 | Correct result (win/draw/loss) | 2 |
-| Exact goals for Team A | 1 |
-| Exact goals for Team B | 1 |
-| **Max per match** | **4** |
+| Exact goals for Team A | 2 |
+| Exact goals for Team B | 2 |
+| **Max per match** | **6** |
 
 **Round of 16 and beyond (split winner/loser scoring):**
 | Prediction | Points |

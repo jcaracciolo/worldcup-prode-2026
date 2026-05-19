@@ -51,6 +51,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const profileCacheRef = useRef<Map<string, Profile>>(new Map());
   const allProfilesCacheRef = useRef<Profile[] | null>(null);
 
+  // Clear caches when competition changes (db is recreated)
+  useEffect(() => {
+    profileCacheRef.current.clear();
+    allProfilesCacheRef.current = null;
+  }, [db]);
+
   // Fetch current user on mount and auth changes.
   // Depends on authService (stable) — NOT on db — so competition switches
   // don't trigger a re-fetch / loading flash.

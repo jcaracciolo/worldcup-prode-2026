@@ -121,6 +121,14 @@ export function PredictionsProvider({
     setCacheVersion((v) => v + 1);
   }, []);
 
+  // Clear all caches when competition changes (db is recreated)
+  useEffect(() => {
+    cacheRef.current.clear();
+    fetchingRef.current.clear();
+    allPredictionsCacheRef.current = null;
+    bumpVersion();
+  }, [db, bumpVersion]);
+
   // Fetch predictions from DB and populate cache
   const fetchUserPredictions = useCallback(
     (userId: string) => {

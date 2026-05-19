@@ -6,12 +6,12 @@ import {
   useEffect,
   useState,
   useCallback,
-  useRef,
   ReactNode,
 } from "react";
 import { useDatabase } from "@/contexts/DatabaseContext";
 import { Profile } from "@/types/database";
 import { LCE, lceLoading, lceContent, lceError } from "@/types/lce";
+import { useCachedData } from "@/hooks/useCachedData";
 
 // =====================================================================
 // TYPES
@@ -47,15 +47,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Shared caches so hooks can skip loading on repeat visits
-  const profileCacheRef = useRef<Map<string, Profile>>(new Map());
-  const allProfilesCacheRef = useRef<Profile[] | null>(null);
-
-  // Clear caches when competition changes (db is recreated)
-  useEffect(() => {
-    profileCacheRef.current.clear();
-    allProfilesCacheRef.current = null;
-  }, [db]);
+  // Centralized cache — auto-clears on competition switch (db change)
+  const profileCache = useCachedData<string, Profile, Profile[]>(db);
 
   // Fetch current user on mount and auth changes.
   // Depends on authService (stable) — NOT on db — so competition switches
@@ -101,31 +94,30 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const getAllProfiles = useCallback(async () => {
     const { data } = await db.profiles.getAllProfiles();
     const profiles = data || [];
-    allProfilesCacheRef.current = profiles;
-    // Also populate individual cache
+    profileCache.bulk.set(profiles);
     for (const p of profiles) {
-      profileCacheRef.current.set(p.id, p);
+      profileCache.set(p.id, p);
     }
     return profiles;
-  }, [db]);
+  }, [db, profileCache]);
 
   const getCachedAllProfiles = useCallback(
-    () => allProfilesCacheRef.current,
-    [],
+    () => profileCache.bulk.get(),
+    [profileCache],
   );
 
   const getProfile = useCallback(
     async (userId: string) => {
       const { data } = await db.profiles.getProfile(userId);
-      if (data) profileCacheRef.current.set(userId, data);
+      if (data) profileCache.set(userId, data);
       return data;
     },
-    [db],
+    [db, profileCache],
   );
 
   const getCachedProfile = useCallback(
-    (userId: string) => profileCacheRef.current.get(userId) ?? null,
-    [],
+    (userId: string) => profileCache.get(userId) ?? null,
+    [profileCache],
   );
 
   return (

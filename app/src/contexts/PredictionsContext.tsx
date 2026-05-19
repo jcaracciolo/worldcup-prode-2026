@@ -6,7 +6,6 @@ import React, {
   useState,
   useCallback,
   useEffect,
-  useRef,
   useMemo,
 } from "react";
 import { useDatabase } from "@/contexts/DatabaseContext";
@@ -17,6 +16,7 @@ import { LCE, lceLoading, lceContent, lceError } from "@/types/lce";
 import { PredictionBracketResolver } from "@/lib/prediction-bracket-resolver";
 import { ThirdPlaceTeam } from "@/lib/third-place-ranking";
 import { getTeamDisplaySimple } from "@/lib/team-display";
+import { useCachedData } from "@/hooks/useCachedData";
 
 // =====================================================================
 // TYPES
@@ -108,38 +108,29 @@ export function PredictionsProvider({
 }) {
   const { db } = useDatabase();
 
-  // Shared cache: userId → predictions/overrides/loading/dirty
-  const cacheRef = useRef(new Map<string, UserPredictionCache>());
-  // Version counter to trigger re-renders when cache mutates
-  const [cacheVersion, setCacheVersion] = useState(0);
-  // Track in-flight fetches to avoid duplicate requests
-  const fetchingRef = useRef(new Set<string>());
-  // Cache for getAllPredictions result
-  const allPredictionsCacheRef = useRef<AllPredictionsMap | null>(null);
-
-  const bumpVersion = useCallback(() => {
-    setCacheVersion((v) => v + 1);
-  }, []);
-
-  // Clear all caches when competition changes (db is recreated)
-  useEffect(() => {
-    cacheRef.current.clear();
-    fetchingRef.current.clear();
-    allPredictionsCacheRef.current = null;
-    bumpVersion();
-  }, [db, bumpVersion]);
+  // Centralized cache — auto-clears on competition switch (db change)
+  const cache = useCachedData<string, UserPredictionCache, AllPredictionsMap>(db);
+  const cacheGet = cache.get;
+  const cacheHas = cache.has;
+  const cacheSet = cache.set;
+  const cacheBulkGet = cache.bulk.get;
+  const cacheBulkSet = cache.bulk.set;
+  const cacheFetchingStart = cache.fetching.start;
+  const cacheFetchingDone = cache.fetching.done;
+  const cacheIsCurrentGeneration = cache.isCurrentGeneration;
+  const cacheGeneration = cache.generation;
+  const cacheVersion = cache.version;
 
   // Fetch predictions from DB and populate cache
   const fetchUserPredictions = useCallback(
     (userId: string) => {
-      if (fetchingRef.current.has(userId)) return; // Already fetching
-      fetchingRef.current.add(userId);
+      if (!cacheFetchingStart(userId)) return; // Already fetching
+      const gen = cacheGeneration;
 
       // Set loading state
-      const existing = cacheRef.current.get(userId);
+      const existing = cacheGet(userId);
       if (!existing) {
-        cacheRef.current.set(userId, { ...EMPTY_CACHE });
-        bumpVersion();
+        cacheSet(userId, { ...EMPTY_CACHE });
       }
 
       Promise.all([
@@ -167,10 +158,12 @@ export function PredictionsProvider({
             rank: o.rank,
           }));
 
+          if (!cacheIsCurrentGeneration(gen)) return;
+
           // Only update cache if not dirty (local edits take priority)
-          const current = cacheRef.current.get(userId);
+          const current = cacheGet(userId);
           if (!current?.dirty) {
-            cacheRef.current.set(userId, {
+            cacheSet(userId, {
               predictions,
               overrides,
               thirdPlaceOverrides,
@@ -180,16 +173,15 @@ export function PredictionsProvider({
             });
           } else {
             // Still mark loading as done
-            cacheRef.current.set(userId, {
+            cacheSet(userId, {
               ...current,
               loading: false,
             });
           }
-          bumpVersion();
         })
         .catch((err) => {
-          const current = cacheRef.current.get(userId);
-          cacheRef.current.set(userId, {
+          const current = cacheGet(userId);
+          cacheSet(userId, {
             predictions: current?.predictions ?? new Map(),
             overrides: current?.overrides ?? [],
             thirdPlaceOverrides: current?.thirdPlaceOverrides ?? [],
@@ -197,103 +189,106 @@ export function PredictionsProvider({
             error: err.message,
             dirty: current?.dirty ?? false,
           });
-          bumpVersion();
         })
         .finally(() => {
-          fetchingRef.current.delete(userId);
+          cacheFetchingDone(userId);
         });
     },
-    [db, bumpVersion],
+    [
+      db,
+      cacheFetchingStart,
+      cacheGeneration,
+      cacheGet,
+      cacheSet,
+      cacheIsCurrentGeneration,
+      cacheFetchingDone,
+    ],
   );
 
   // Get cached predictions (read-only, no side effects)
   const getCachedPredictions = useCallback(
     (userId: string): UserPredictionCache | null => {
-      return cacheRef.current.get(userId) || null;
+      return cacheGet(userId) || null;
     },
-    [],
+    [cacheGet],
   );
 
   // Ensure fetch is triggered for a user (safe to call in useEffect)
   const ensureFetched = useCallback(
     (userId: string) => {
-      if (!cacheRef.current.has(userId)) {
+      if (!cacheHas(userId)) {
         fetchUserPredictions(userId);
       }
     },
-    [fetchUserPredictions],
+    [cacheHas, fetchUserPredictions],
   );
 
   // Update a single prediction in the cache
   const updatePrediction = useCallback(
     (userId: string, prediction: LocalPrediction) => {
-      const current = cacheRef.current.get(userId);
+      const current = cacheGet(userId);
       if (!current) return;
 
       const next = new Map(current.predictions);
       next.set(prediction.match_id as FifaMatchId, prediction);
-      cacheRef.current.set(userId, {
+      cacheSet(userId, {
         ...current,
         predictions: next,
         dirty: true,
       });
-      bumpVersion();
     },
-    [bumpVersion],
+    [cacheGet, cacheSet],
   );
 
   // Bulk-set predictions in the cache
   const setPredictionsInCache = useCallback(
     (userId: string, predictions: Map<FifaMatchId, LocalPrediction>) => {
-      const current = cacheRef.current.get(userId);
+      const current = cacheGet(userId);
       if (!current) return;
 
-      cacheRef.current.set(userId, {
+      cacheSet(userId, {
         ...current,
         predictions: new Map(predictions),
         dirty: true,
       });
-      bumpVersion();
     },
-    [bumpVersion],
+    [cacheGet, cacheSet],
   );
 
   // Update overrides in the cache
   const updateOverrides = useCallback(
     (userId: string, overrides: LocalGroupStandingsOverride[]) => {
-      const current = cacheRef.current.get(userId);
+      const current = cacheGet(userId);
       if (!current) return;
 
-      cacheRef.current.set(userId, {
+      cacheSet(userId, {
         ...current,
         overrides: [...overrides],
         dirty: true,
       });
-      bumpVersion();
     },
-    [bumpVersion],
+    [cacheGet, cacheSet],
   );
 
   // Update third-place overrides in the cache
   const updateThirdPlaceOverrides = useCallback(
     (userId: string, overrides: LocalThirdPlaceOverride[]) => {
-      const current = cacheRef.current.get(userId);
+      const current = cacheGet(userId);
       if (!current) return;
 
-      cacheRef.current.set(userId, {
+      cacheSet(userId, {
         ...current,
         thirdPlaceOverrides: [...overrides],
         dirty: true,
       });
-      bumpVersion();
     },
-    [bumpVersion],
+    [cacheGet, cacheSet],
   );
 
   // Save predictions to DB
   const savePredictions = useCallback(
     async (userId: string) => {
-      const current = cacheRef.current.get(userId);
+      const current = cacheGet(userId);
       if (!current) return { success: false, error: "No predictions to save" };
 
       const predArray = Array.from(current.predictions.values());
@@ -341,15 +336,14 @@ export function PredictionsProvider({
       }
 
       // Clear dirty flag on success
-      cacheRef.current.set(userId, {
+      cacheSet(userId, {
         ...current,
         dirty: false,
       });
-      bumpVersion();
 
       return { success: true };
     },
-    [db, bumpVersion],
+    [db, cacheGet, cacheSet],
   );
 
   // Get all users' predictions (for leaderboard)
@@ -406,13 +400,13 @@ export function PredictionsProvider({
     // Populate individual user cache for each user (if not dirty)
     // This ensures profile pages load instantly after viewing leaderboard
     byUser.forEach((userData, usrId) => {
-      const current = cacheRef.current.get(usrId);
+      const current = cacheGet(usrId);
       // Don't overwrite dirty cache entries (local edits)
       if (!current?.dirty) {
         const predictionsMap = new Map<FifaMatchId, LocalPrediction>(
           userData.predictions.map((p) => [p.match_id as FifaMatchId, p]),
         );
-        cacheRef.current.set(usrId, {
+        cacheSet(usrId, {
           predictions: predictionsMap,
           overrides: userData.overrides,
           thirdPlaceOverrides: userData.thirdPlaceOverrides,
@@ -422,16 +416,12 @@ export function PredictionsProvider({
         });
       }
     });
-    allPredictionsCacheRef.current = byUser;
-    bumpVersion();
+    cacheBulkSet(byUser);
 
     return byUser;
-  }, [db, bumpVersion]);
+  }, [db, cacheGet, cacheSet, cacheBulkSet]);
 
-  const getCachedAllPredictions = useCallback(
-    () => allPredictionsCacheRef.current,
-    [],
-  );
+  const getCachedAllPredictions = useCallback(() => cacheBulkGet(), [cacheBulkGet]);
 
   const value = useMemo(
     (): PredictionsContextValue => ({

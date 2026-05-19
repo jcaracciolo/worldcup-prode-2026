@@ -11,19 +11,17 @@ import { LocalPrediction } from "@/types/database";
 
 /**
  * Generate a random score using a realistic distribution:
- *   40% chance of 0 goals
- *   30% chance of 1 goal
- *   15% chance of 2 goals
- *   10% chance of 3 goals
- *    5% chance of 4 goals
+ *   20% chance of 0 goals
+ *   35% chance of 1 goal
+ *   30% chance of 2 goals
+ *   15% chance of 3 goals
  */
 export function randomScore(): number {
   const r = Math.random();
-  if (r < 0.4) return 0;
-  if (r < 0.7) return 1;
+  if (r < 0.2) return 0;
+  if (r < 0.55) return 1;
   if (r < 0.85) return 2;
-  if (r < 0.95) return 3;
-  return 4;
+  return 3;
 }
 
 /**

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
+import { GROUP_STAGE_END } from "@/lib/time";
 import { useUser, useProfile } from "@/contexts/UserContext";
 import {
   useUserPredictions,
@@ -55,8 +56,9 @@ export default function UserPredictionsPage() {
     stageLockStatus;
 
   // Tab state - default to group if group stage is still playing, knockout if group stage is done
+  const { getCurrentTime } = useTime();
   const [activeTab, setActiveTab] = useState<"group" | "knockout">(() =>
-    groupStageLocked ? "knockout" : "group",
+    getCurrentTime() >= GROUP_STAGE_END ? "knockout" : "group",
   );
 
   // Get matches with user's predicted knockout teams baked in.

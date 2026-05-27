@@ -9,7 +9,7 @@
  * from in-flight fetches that started before an invalidation.
  */
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 
 export interface CachedDataResult<K, V, Bulk = unknown> {
   // Keyed cache operations
@@ -134,22 +134,30 @@ export function useCachedData<K extends string | number, V, Bulk = unknown>(
     [],
   );
 
-  return {
-    get,
-    has,
-    set,
-    update,
-    deleteKey,
-    clear,
-    bulk: { get: bulkGet, set: bulkSet, clear: bulkClear },
-    fetching: {
-      has: fetchingHas,
-      start: fetchingStart,
-      done: fetchingDone,
-      clear: fetchingClear,
-    },
-    version,
-    generation: generationRef.current,
-    isCurrentGeneration,
-  };
+  // Memoize the result object so consumers get a stable reference.
+  // Callbacks are all stable (empty or [bump] deps), so this object
+  // only changes when version changes. Consumers should depend on
+  // individual callbacks (cache.get, cache.set) rather than the whole object.
+  return useMemo(
+    (): CachedDataResult<K, V, Bulk> => ({
+      get,
+      has,
+      set,
+      update,
+      deleteKey,
+      clear,
+      bulk: { get: bulkGet, set: bulkSet, clear: bulkClear },
+      fetching: {
+        has: fetchingHas,
+        start: fetchingStart,
+        done: fetchingDone,
+        clear: fetchingClear,
+      },
+      version,
+      generation: generationRef.current,
+      isCurrentGeneration,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [version],
+  );
 }

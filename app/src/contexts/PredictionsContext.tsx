@@ -108,8 +108,9 @@ export function PredictionsProvider({
 }) {
   const { db } = useDatabase();
 
-  // Centralized cache — auto-clears on competition switch (db change)
-  const cache = useCachedData<string, UserPredictionCache, AllPredictionsMap>(db);
+  // Centralized cache — predictions are global (not per-competition),
+  // so use a stable dependency that never triggers invalidation
+  const cache = useCachedData<string, UserPredictionCache, AllPredictionsMap>(true);
   const cacheGet = cache.get;
   const cacheHas = cache.has;
   const cacheSet = cache.set;
@@ -561,8 +562,9 @@ export function useAllPredictions(): LCE<AllPredictionsMap> {
   });
 
   useEffect(() => {
+    // Only show loading if we have no data at all (first load)
     const cached = getCachedAllPredictions();
-    if (!cached) setState(lceLoading());
+    if (!cached && !state.content) setState(lceLoading());
 
     getAllPredictions()
       .then((predictions) => {
@@ -571,7 +573,8 @@ export function useAllPredictions(): LCE<AllPredictionsMap> {
       .catch((err) => {
         setState(lceError(err.message));
       });
-  }, [getAllPredictions, getCachedAllPredictions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getAllPredictions]);
 
   return state;
 }

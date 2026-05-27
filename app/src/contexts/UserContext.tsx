@@ -49,6 +49,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   // Centralized cache — auto-clears on competition switch (db change)
   const profileCache = useCachedData<string, Profile, Profile[]>(db);
+  // Destructure stable callbacks for use in dependency arrays
+  const cacheSet = profileCache.set;
+  const cacheGet = profileCache.get;
+  const cacheBulkSet = profileCache.bulk.set;
+  const cacheBulkGet = profileCache.bulk.get;
 
   // Fetch current user on mount and auth changes.
   // Depends on authService (stable) — NOT on db — so competition switches
@@ -94,30 +99,30 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const getAllProfiles = useCallback(async () => {
     const { data } = await db.profiles.getAllProfiles();
     const profiles = data || [];
-    profileCache.bulk.set(profiles);
+    cacheBulkSet(profiles);
     for (const p of profiles) {
-      profileCache.set(p.id, p);
+      cacheSet(p.id, p);
     }
     return profiles;
-  }, [db, profileCache]);
+  }, [db, cacheBulkSet, cacheSet]);
 
   const getCachedAllProfiles = useCallback(
-    () => profileCache.bulk.get(),
-    [profileCache],
+    () => cacheBulkGet(),
+    [cacheBulkGet],
   );
 
   const getProfile = useCallback(
     async (userId: string) => {
       const { data } = await db.profiles.getProfile(userId);
-      if (data) profileCache.set(userId, data);
+      if (data) cacheSet(userId, data);
       return data;
     },
-    [db, profileCache],
+    [db, cacheSet],
   );
 
   const getCachedProfile = useCallback(
-    (userId: string) => profileCache.get(userId) ?? null,
-    [profileCache],
+    (userId: string) => cacheGet(userId) ?? null,
+    [cacheGet],
   );
 
   return (
@@ -199,8 +204,9 @@ export function useAllProfiles(): LCE<Profile[]> {
   });
 
   useEffect(() => {
+    // Only show loading if we have no data at all (first load)
     const cached = getCachedAllProfiles();
-    if (!cached) setState(lceLoading());
+    if (!cached && !state.content) setState(lceLoading());
 
     getAllProfiles()
       .then((profiles) => {
@@ -209,7 +215,8 @@ export function useAllProfiles(): LCE<Profile[]> {
       .catch((err) => {
         setState(lceError(err.message));
       });
-  }, [getAllProfiles, getCachedAllProfiles]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getAllProfiles]);
 
   return state;
 }

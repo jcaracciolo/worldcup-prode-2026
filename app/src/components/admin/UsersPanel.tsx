@@ -6,7 +6,6 @@ import { useUserManagement } from "@/hooks/useAuth";
 import { useMatches } from "@/contexts/MatchContext";
 import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { Profile } from "@/types/database";
-import { FifaMatchId } from "@/types/football";
 import { format } from "date-fns";
 
 interface UsersPanelProps {
@@ -43,8 +42,8 @@ export default function UsersPanel({
     if (!predictionsMap) return new Map<string, { group: number; knockout: number }>();
 
     const status = new Map<string, { group: number; knockout: number }>();
-    const groupMatchIds = new Set<FifaMatchId>(
-      matches.filter((m) => m.stage === "GROUP_STAGE").map((m) => m.id),
+    const groupMatchIds = new Set<number>(
+      matches.filter((m) => m.stage === "GROUP_STAGE").map((m) => m.id as number),
     );
 
     predictionsMap.forEach((userData, userId) => {
@@ -52,7 +51,7 @@ export default function UsersPanel({
       let knockoutComplete = 0;
       for (const p of userData.predictions) {
         if (p.home_goals !== null && p.away_goals !== null) {
-          if (groupMatchIds.has(p.match_id as FifaMatchId)) groupComplete++;
+          if (groupMatchIds.has(p.match_id)) groupComplete++;
           else knockoutComplete++;
         }
       }

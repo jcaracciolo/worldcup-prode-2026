@@ -59,11 +59,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // Depends on authService (stable) — NOT on db — so competition switches
   // don't trigger a re-fetch / loading flash.
   useEffect(() => {
+    let hasData = false;
     const fetchUser = async () => {
-      setLoading(true);
+      // Only show loading if we have no data yet (stale-while-revalidate)
+      if (!hasData) setLoading(true);
       try {
         const { data: profile } = await authService.getUserProfile();
         setUser(profile);
+        hasData = !!profile;
       } catch {
         setUser(null);
       } finally {

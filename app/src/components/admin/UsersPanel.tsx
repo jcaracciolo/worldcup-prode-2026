@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useUser } from "@/contexts/UserContext";
 import { useUserManagement } from "@/hooks/useAuth";
+import { useMatches } from "@/contexts/MatchContext";
+import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { Profile } from "@/types/database";
+import { FifaMatchId } from "@/types/football";
 import { format } from "date-fns";
 
 interface UsersPanelProps {
@@ -19,6 +22,45 @@ export default function UsersPanel({
   const [users, setUsers] = useState<Profile[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [togglingAdmin, setTogglingAdmin] = useState<string | null>(null);
+
+  const { matches } = useMatches();
+  const allPredictions = useAllPredictions();
+
+  // Count group stage and knockout matches
+  const { groupMatchCount, knockoutMatchCount } = useMemo(() => {
+    let group = 0;
+    let knockout = 0;
+    for (const m of matches) {
+      if (m.stage === "GROUP_STAGE") group++;
+      else knockout++;
+    }
+    return { groupMatchCount: group, knockoutMatchCount: knockout };
+  }, [matches]);
+
+  // Calculate prediction completeness per user
+  const predictionStatus = useMemo(() => {
+    const predictionsMap = allPredictions.content;
+    if (!predictionsMap) return new Map<string, { group: number; knockout: number }>();
+
+    const status = new Map<string, { group: number; knockout: number }>();
+    const groupMatchIds = new Set<FifaMatchId>(
+      matches.filter((m) => m.stage === "GROUP_STAGE").map((m) => m.id),
+    );
+
+    predictionsMap.forEach((userData, userId) => {
+      let groupComplete = 0;
+      let knockoutComplete = 0;
+      for (const p of userData.predictions) {
+        if (p.home_goals !== null && p.away_goals !== null) {
+          if (groupMatchIds.has(p.match_id as FifaMatchId)) groupComplete++;
+          else knockoutComplete++;
+        }
+      }
+      status.set(userId, { group: groupComplete, knockout: knockoutComplete });
+    });
+
+    return status;
+  }, [allPredictions.content, matches]);
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -66,6 +108,8 @@ export default function UsersPanel({
               <th className="text-left py-2 px-4 text-white/60">Name</th>
               <th className="text-left py-2 px-4 text-white/60">Email</th>
               <th className="text-left py-2 px-4 text-white/60">Joined</th>
+              <th className="text-center py-2 px-4 text-white/60">Group</th>
+              <th className="text-center py-2 px-4 text-white/60">Knockout</th>
               <th className="text-left py-2 px-4 text-white/60">Admin</th>
               <th className="text-left py-2 px-4 text-white/60">Actions</th>
             </tr>
@@ -73,13 +117,13 @@ export default function UsersPanel({
           <tbody>
             {usersLoading ? (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-white/50">
+                <td colSpan={7} className="py-8 text-center text-white/50">
                   Loading users...
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-white/50">
+                <td colSpan={7} className="py-8 text-center text-white/50">
                   No users found
                 </td>
               </tr>
@@ -102,6 +146,32 @@ export default function UsersPanel({
                   <td className="py-2 px-4 text-white/70">{user.email}</td>
                   <td className="py-2 px-4 text-white/70">
                     {format(new Date(user.created_at), "MMM d, yyyy")}
+                  </td>
+                  <td className="py-2 px-4 text-center">
+                    {(() => {
+                      const s = predictionStatus.get(user.id);
+                      const done = s?.group ?? 0;
+                      const isComplete = done === groupMatchCount && groupMatchCount > 0;
+                      return (
+                        <span className={`text-xs font-medium ${isComplete ? "text-emerald-400" : "text-white/50"}`}>
+                          {done}/{groupMatchCount}
+                          {isComplete && " ✓"}
+                        </span>
+                      );
+                    })()}
+                  </td>
+                  <td className="py-2 px-4 text-center">
+                    {(() => {
+                      const s = predictionStatus.get(user.id);
+                      const done = s?.knockout ?? 0;
+                      const isComplete = done === knockoutMatchCount && knockoutMatchCount > 0;
+                      return (
+                        <span className={`text-xs font-medium ${isComplete ? "text-emerald-400" : "text-white/50"}`}>
+                          {done}/{knockoutMatchCount}
+                          {isComplete && " ✓"}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="py-2 px-4">
                     {user.is_admin ? (

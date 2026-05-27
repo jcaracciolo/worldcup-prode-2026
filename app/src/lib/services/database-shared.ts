@@ -642,17 +642,37 @@ export function createPredictionService(
             penalty_winner: p.penalty_winner,
           }));
 
-        if (predictionsArray.length === 0) {
-          return { success: true, error: null };
+        // Delete predictions that were removed (not in the current set)
+        const keepMatchIds = predictionsArray.map((p) => p.match_id);
+        if (keepMatchIds.length > 0) {
+          const { error: deleteError } = await supabase
+            .from("predictions")
+            .delete()
+            .eq("user_id", userId)
+            .not("match_id", "in", `(${keepMatchIds.join(",")})`);
+
+          if (deleteError) throw deleteError;
+        } else {
+          // No predictions left — delete all for this user
+          const { error: deleteError } = await supabase
+            .from("predictions")
+            .delete()
+            .eq("user_id", userId);
+
+          if (deleteError) throw deleteError;
         }
 
-        const { error } = await supabase
-          .from("predictions")
-          .upsert(predictionsArray, {
-            onConflict: "user_id,match_id",
-          });
+        // Upsert remaining predictions
+        if (predictionsArray.length > 0) {
+          const { error } = await supabase
+            .from("predictions")
+            .upsert(predictionsArray, {
+              onConflict: "user_id,match_id",
+            });
 
-        if (error) throw error;
+          if (error) throw error;
+        }
+
         return { success: true, error: null };
       } catch (error) {
         console.error(

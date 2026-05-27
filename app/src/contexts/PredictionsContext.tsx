@@ -116,6 +116,7 @@ export function PredictionsProvider({
   const cacheSet = cache.set;
   const cacheBulkGet = cache.bulk.get;
   const cacheBulkSet = cache.bulk.set;
+  const cacheBulkClear = cache.bulk.clear;
   const cacheFetchingStart = cache.fetching.start;
   const cacheFetchingDone = cache.fetching.done;
   const cacheIsCurrentGeneration = cache.isCurrentGeneration;
@@ -342,9 +343,12 @@ export function PredictionsProvider({
         dirty: false,
       });
 
+      // Invalidate bulk predictions cache so leaderboard/admin refetches
+      cacheBulkClear();
+
       return { success: true };
     },
-    [db, cacheGet, cacheSet],
+    [db, cacheGet, cacheSet, cacheBulkClear],
   );
 
   // Get all users' predictions (for leaderboard)

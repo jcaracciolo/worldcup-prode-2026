@@ -98,7 +98,7 @@ function makeFinishedKnockoutMatch(
 }
 
 function pred(homeGoals: number, awayGoals: number, matchId = 1): LocalPrediction {
-  return { match_id: matchId, home_goals: homeGoals, away_goals: awayGoals, penalty_winner: null };
+  return { match_id: matchId as FifaMatchId, home_goals: homeGoals, away_goals: awayGoals, penalty_winner: null };
 }
 
 // =====================================================================
@@ -188,7 +188,7 @@ describe("calculateGroupStagePoints", () => {
   it("null goals in prediction = 0pts", () => {
     const match = makeFinishedGroupMatch(1, 2, 1);
     const points = calculateGroupStagePoints(match, {
-      match_id: 1,
+      match_id: 1 as FifaMatchId,
       home_goals: null,
       away_goals: null,
       penalty_winner: null,

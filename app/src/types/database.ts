@@ -267,7 +267,7 @@ export type TournamentSettings =
 
 // Local types for editing - omit DB-managed fields
 export type LocalPrediction = Omit<
-  Prediction,
+  TypedPrediction,
   "id" | "user_id" | "created_at" | "updated_at"
 >;
 export type LocalGroupStandingsOverride = Omit<

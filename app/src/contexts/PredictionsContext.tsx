@@ -143,7 +143,7 @@ export function PredictionsProvider({
           const predictions = new Map<FifaMatchId, LocalPrediction>();
           (predictionsResult.data || []).forEach((p) =>
             predictions.set(p.match_id as FifaMatchId, {
-              match_id: p.match_id,
+              match_id: p.match_id as FifaMatchId,
               home_goals: p.home_goals,
               away_goals: p.away_goals,
               penalty_winner: p.penalty_winner,
@@ -370,7 +370,7 @@ export function PredictionsProvider({
         byUser.set(p.user_id, { predictions: [], overrides: [], thirdPlaceOverrides: [] });
       }
       byUser.get(p.user_id)!.predictions.push({
-        match_id: p.match_id,
+        match_id: p.match_id as FifaMatchId,
         home_goals: p.home_goals,
         away_goals: p.away_goals,
         penalty_winner: p.penalty_winner,

@@ -42,8 +42,8 @@ export default function UsersPanel({
     if (!predictionsMap) return new Map<string, { group: number; knockout: number }>();
 
     const status = new Map<string, { group: number; knockout: number }>();
-    const groupMatchIds = new Set<number>(
-      matches.filter((m) => m.stage === "GROUP_STAGE").map((m) => m.id as number),
+    const groupMatchIds = new Set(
+      matches.filter((m) => m.stage === "GROUP_STAGE").map((m) => m.id),
     );
 
     predictionsMap.forEach((userData, userId) => {

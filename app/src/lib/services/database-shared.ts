@@ -49,7 +49,7 @@ import {
 async function fetchAllRows<T>(
   queryBuilder: ReturnType<SupabaseClient["from"]>,
   selectColumns: string,
-  filters: Record<string, string>,
+  filters: Record<string, string> = {},
   pageSize = 1000,
 ): Promise<{ data: T[]; error: string | null }> {
   const allData: T[] = [];
@@ -579,21 +579,16 @@ export function createInviteCodeService(
 
 export function createPredictionService(
   supabase: SupabaseClient,
-  competitionId: string | null,
 ): PredictionService {
   return {
     async getUserPredictions(
       userId: string,
     ): Promise<ServiceResult<Prediction[]>> {
-      if (!competitionId) {
-        return { data: [], error: null };
-      }
       try {
         const { data, error } = await supabase
           .from("predictions")
           .select("*")
-          .eq("user_id", userId)
-          .eq("competition_id", competitionId);
+          .eq("user_id", userId);
 
         if (error) throw error;
         return { data: data || [], error: null };
@@ -610,15 +605,10 @@ export function createPredictionService(
     },
 
     async getAllPredictions(): Promise<ServiceResult<Prediction[]>> {
-      if (!competitionId) {
-        return { data: [], error: null };
-      }
       try {
-        // Use paginated fetch to avoid Supabase's default 1000-row limit
         const result = await fetchAllRows<Prediction>(
           supabase.from("predictions"),
           "*",
-          { competition_id: competitionId },
         );
 
         if (result.error) throw new Error(result.error);
@@ -641,15 +631,11 @@ export function createPredictionService(
         penalty_winner: "HOME" | "AWAY" | null;
       }>,
     ): Promise<ServiceVoidResult> {
-      if (!competitionId) {
-        return { success: false, error: "No competition selected" };
-      }
       try {
         const predictionsArray = predictions
           .filter((p) => p.home_goals !== null || p.away_goals !== null)
           .map((p) => ({
             user_id: userId,
-            competition_id: competitionId,
             match_id: p.match_id,
             home_goals: p.home_goals,
             away_goals: p.away_goals,
@@ -663,7 +649,7 @@ export function createPredictionService(
         const { error } = await supabase
           .from("predictions")
           .upsert(predictionsArray, {
-            onConflict: "user_id,competition_id,match_id",
+            onConflict: "user_id,match_id",
           });
 
         if (error) throw error;
@@ -688,21 +674,16 @@ export function createPredictionService(
 
 export function createOverrideService(
   supabase: SupabaseClient,
-  competitionId: string | null,
 ): OverrideService {
   return {
     async getUserOverrides(
       userId: string,
     ): Promise<ServiceResult<GroupStandingsOverride[]>> {
-      if (!competitionId) {
-        return { data: [], error: null };
-      }
       try {
         const { data, error } = await supabase
           .from("group_standings_overrides")
           .select("*")
-          .eq("user_id", userId)
-          .eq("competition_id", competitionId);
+          .eq("user_id", userId);
 
         if (error) throw error;
         return { data: data || [], error: null };
@@ -719,15 +700,10 @@ export function createOverrideService(
     },
 
     async getAllOverrides(): Promise<ServiceResult<GroupStandingsOverride[]>> {
-      if (!competitionId) {
-        return { data: [], error: null };
-      }
       try {
-        // Use paginated fetch to avoid Supabase's default 1000-row limit
         const result = await fetchAllRows<GroupStandingsOverride>(
           supabase.from("group_standings_overrides"),
           "*",
-          { competition_id: competitionId },
         );
 
         if (result.error) throw new Error(result.error);
@@ -749,9 +725,6 @@ export function createOverrideService(
         position: number;
       }>,
     ): Promise<ServiceVoidResult> {
-      if (!competitionId) {
-        return { success: false, error: "No competition selected" };
-      }
       try {
         if (overrides.length === 0) {
           return { success: true, error: null };
@@ -762,12 +735,11 @@ export function createOverrideService(
           .upsert(
             overrides.map((o) => ({
               user_id: userId,
-              competition_id: competitionId,
               group_name: o.group_name,
               team_id: o.team_id,
               position: o.position,
             })),
-            { onConflict: "user_id,competition_id,group_name,team_id" },
+            { onConflict: "user_id,group_name,team_id" },
           );
 
         if (error) throw error;
@@ -792,21 +764,16 @@ export function createOverrideService(
 
 export function createThirdPlaceOverrideService(
   supabase: SupabaseClient,
-  competitionId: string | null,
 ): ThirdPlaceOverrideService {
   return {
     async getUserThirdPlaceOverrides(
       userId: string,
     ): Promise<ServiceResult<ThirdPlaceOverride[]>> {
-      if (!competitionId) {
-        return { data: [], error: null };
-      }
       try {
         const { data, error } = await supabase
           .from("third_place_overrides")
           .select("*")
-          .eq("user_id", userId)
-          .eq("competition_id", competitionId);
+          .eq("user_id", userId);
 
         if (error) throw error;
         return { data: data || [], error: null };
@@ -825,14 +792,10 @@ export function createThirdPlaceOverrideService(
     async getAllThirdPlaceOverrides(): Promise<
       ServiceResult<ThirdPlaceOverride[]>
     > {
-      if (!competitionId) {
-        return { data: [], error: null };
-      }
       try {
         const result = await fetchAllRows<ThirdPlaceOverride>(
           supabase.from("third_place_overrides"),
           "*",
-          { competition_id: competitionId },
         );
 
         if (result.error) throw new Error(result.error);
@@ -853,9 +816,6 @@ export function createThirdPlaceOverrideService(
         rank: number;
       }>,
     ): Promise<ServiceVoidResult> {
-      if (!competitionId) {
-        return { success: false, error: "No competition selected" };
-      }
       try {
         if (overrides.length === 0) {
           return { success: true, error: null };
@@ -866,11 +826,10 @@ export function createThirdPlaceOverrideService(
           .upsert(
             overrides.map((o) => ({
               user_id: userId,
-              competition_id: competitionId,
               group_name: o.group_name,
               rank: o.rank,
             })),
-            { onConflict: "user_id,competition_id,group_name" },
+            { onConflict: "user_id,group_name" },
           );
 
         if (error) throw error;
@@ -1299,9 +1258,9 @@ export function createDatabaseServiceFromClient(
     competitions: createCompetitionService(supabase),
     competitionMembers: createCompetitionMemberService(supabase),
     inviteCodes: createInviteCodeService(supabase, competitionId),
-    predictions: createPredictionService(supabase, competitionId),
-    overrides: createOverrideService(supabase, competitionId),
-    thirdPlaceOverrides: createThirdPlaceOverrideService(supabase, competitionId),
+    predictions: createPredictionService(supabase),
+    overrides: createOverrideService(supabase),
+    thirdPlaceOverrides: createThirdPlaceOverrideService(supabase),
     matchesCache: createMatchesCacheService(supabase),
     tournamentSettings: createTournamentSettingsService(
       supabase,

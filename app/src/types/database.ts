@@ -119,7 +119,6 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          competition_id: string;
           match_id: number;
           home_goals: number | null;
           away_goals: number | null;
@@ -130,7 +129,6 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
-          competition_id: string;
           match_id: number;
           home_goals?: number | null;
           away_goals?: number | null;
@@ -141,7 +139,6 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
-          competition_id?: string;
           match_id?: number;
           home_goals?: number | null;
           away_goals?: number | null;
@@ -154,7 +151,6 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          competition_id: string;
           group_name: string;
           team_id: number;
           position: number;
@@ -164,7 +160,6 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
-          competition_id: string;
           group_name: string;
           team_id: number;
           position: number;
@@ -174,7 +169,6 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
-          competition_id?: string;
           group_name?: string;
           team_id?: number;
           position?: number;
@@ -186,7 +180,6 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          competition_id: string;
           group_name: string;
           rank: number;
           created_at: string;
@@ -195,7 +188,6 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
-          competition_id: string;
           group_name: string;
           rank: number;
           created_at?: string;
@@ -204,7 +196,6 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
-          competition_id?: string;
           group_name?: string;
           rank?: number;
           created_at?: string;
@@ -277,13 +268,13 @@ export type TournamentSettings =
 // Local types for editing - omit DB-managed fields
 export type LocalPrediction = Omit<
   Prediction,
-  "id" | "user_id" | "competition_id" | "created_at" | "updated_at"
+  "id" | "user_id" | "created_at" | "updated_at"
 >;
 export type LocalGroupStandingsOverride = Omit<
   GroupStandingsOverride,
-  "id" | "user_id" | "competition_id" | "created_at" | "updated_at"
+  "id" | "user_id" | "created_at" | "updated_at"
 >;
 export type LocalThirdPlaceOverride = Omit<
   ThirdPlaceOverride,
-  "id" | "user_id" | "competition_id" | "created_at" | "updated_at"
+  "id" | "user_id" | "created_at" | "updated_at"
 >;

@@ -57,6 +57,7 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
       return profileList.map((p) => ({
         userId: p.id,
         displayName: p.display_name,
+        country: p.country ?? null,
         totalPoints: 0,
         livePoints: 0,
         groupStagePoints: 0,
@@ -109,6 +110,7 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
       return {
         userId: profile.id,
         displayName: profile.display_name,
+        country: profile.country ?? null,
         totalPoints,
         livePoints,
         groupStagePoints,

@@ -3,6 +3,7 @@ import { useMatches, useMatch } from "@/contexts/MatchContext";
 import { useUser, useAllProfiles } from "@/contexts/UserContext";
 import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { useMatchPointsForAllUsers } from "@/contexts/LeaderboardContext";
+import { useTime } from "@/contexts/TimeContext";
 import { getMaxPossiblePoints } from "@/lib/scoring";
 import { Profile } from "@/types/database";
 import { FifaMatchId } from "@/types/football";
@@ -10,6 +11,7 @@ import { FifaMatchId } from "@/types/football";
 export interface UserMatchPrediction {
   userId: string;
   displayName: string;
+  country: string | null;
   homeGoals: number | null;
   awayGoals: number | null;
   penaltyWinner: "HOME" | "AWAY" | null;
@@ -28,12 +30,22 @@ export function useMatchPredictions(fifaId: FifaMatchId) {
   const { loading: matchesLoading } = useMatches();
   const match = useMatch(fifaId);
   const { matchPoints } = useMatchPointsForAllUsers(fifaId);
+  const { stageLockStatus } = useTime();
 
   const loading = profiles.loading || allPredictions.loading;
 
   const predictions = useMemo(() => {
     if (!match || !match.id) return [];
     if (!profiles.content || !allPredictions.content) return [];
+
+    // Determine if other users' predictions should be visible
+    // Group predictions: visible after group stage locks
+    // Knockout predictions: visible after knockout stage locks
+    const isGroupMatch = match.stage === "GROUP_STAGE";
+    const othersVisible = isGroupMatch
+      ? stageLockStatus.groupStageLocked
+      : stageLockStatus.knockoutStageLocked;
+    const isAdmin = profile?.is_admin === true;
 
     const profilesList = profiles.content;
     const allPredictionsMap = allPredictions.content;
@@ -49,6 +61,9 @@ export function useMatchPredictions(fifaId: FifaMatchId) {
     const userPredictions: UserMatchPrediction[] = [];
 
     profilesList.forEach((profileData: Profile) => {
+      // Before stage locks, only show current user's own prediction (admins see all)
+      if (!othersVisible && !isAdmin && profileData.id !== profile?.id) return;
+
       const userData = allPredictionsMap.get(profileData.id);
       if (!userData) return;
 
@@ -63,6 +78,7 @@ export function useMatchPredictions(fifaId: FifaMatchId) {
       userPredictions.push({
         userId: profileData.id,
         displayName: profileData.display_name,
+        country: profileData.country ?? null,
         homeGoals: pred.home_goals,
         awayGoals: pred.away_goals,
         penaltyWinner: pred.penalty_winner,
@@ -87,6 +103,9 @@ export function useMatchPredictions(fifaId: FifaMatchId) {
     allPredictions.content,
     matchPoints,
     profile?.id,
+    profile?.is_admin,
+    stageLockStatus.groupStageLocked,
+    stageLockStatus.knockoutStageLocked,
   ]);
 
   return {

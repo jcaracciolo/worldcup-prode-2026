@@ -7,6 +7,7 @@ import { useDatabase } from "@/contexts/DatabaseContext";
 import { useMatches } from "@/contexts/MatchContext";
 import { useUser } from "@/contexts/UserContext";
 import { useSignOut } from "@/hooks/useAuth";
+import UserName from "@/components/UserName";
 
 export default function Header() {
   const router = useRouter();
@@ -160,7 +161,7 @@ export default function Header() {
                     {user.display_name.charAt(0).toUpperCase()}
                   </div>
                   <span className="text-sm text-emerald-100 font-medium">
-                    {user.display_name}
+                    <UserName name={user.display_name} country={user.country} />
                   </span>
                 </Link>
                 <button
@@ -291,7 +292,7 @@ export default function Header() {
                     {user.display_name.charAt(0).toUpperCase()}
                   </div>
                   <span className="text-sm text-emerald-100 font-medium">
-                    {user.display_name}
+                    <UserName name={user.display_name} country={user.country} />
                   </span>
                 </Link>
                 <button

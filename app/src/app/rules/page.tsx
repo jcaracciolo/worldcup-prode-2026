@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useAllProfiles } from "@/contexts/UserContext";
+
+const ENTRY_FEE = 10;
+const PRIZE_SPLITS = [60, 30, 10] as const;
 
 type Language = "en" | "es";
 
@@ -14,6 +18,10 @@ const content = {
     first: "1st Place",
     second: "2nd Place",
     third: "3rd Place",
+    participants: "Competition participants",
+    prizePool: "Prize pool",
+    entryFee: "Entry fee",
+    perPerson: "per person",
     phases: {
       title: "Scoring Phases",
       description:
@@ -212,6 +220,10 @@ const content = {
     first: "1er Lugar",
     second: "2do Lugar",
     third: "3er Lugar",
+    participants: "Participantes de la competencia",
+    prizePool: "Pozo de premios",
+    entryFee: "Entrada",
+    perPerson: "por persona",
     phases: {
       title: "Fases de Puntuación",
       description: "Los puntos se ganan en tres fases a lo largo del torneo",
@@ -405,6 +417,12 @@ const content = {
 export default function RulesPage() {
   const [lang, setLang] = useState<Language>("en");
   const t = content[lang];
+  const profiles = useAllProfiles();
+  const participantCount = profiles.content?.length ?? 0;
+  const totalPool = participantCount * ENTRY_FEE;
+  const prizes = PRIZE_SPLITS.map((pct) =>
+    Math.floor((totalPool * pct) / 100),
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -443,11 +461,16 @@ export default function RulesPage() {
               <div className="mt-4">
                 <span className="text-3xl sm:text-4xl">🥇</span>
                 <div className="mt-2 text-yellow-400 font-bold text-2xl sm:text-3xl">
-                  50%
+                  60%
                 </div>
                 <div className="text-white/70 text-xs sm:text-sm mt-1">
                   {t.first}
                 </div>
+                {totalPool > 0 && (
+                  <div className="text-yellow-300/80 font-bold text-lg sm:text-xl mt-1">
+                    ${prizes[0]}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -459,11 +482,16 @@ export default function RulesPage() {
               <div className="mt-4">
                 <span className="text-3xl sm:text-4xl">🥈</span>
                 <div className="mt-2 text-gray-300 font-bold text-2xl sm:text-3xl">
-                  35%
+                  30%
                 </div>
                 <div className="text-white/70 text-xs sm:text-sm mt-1">
                   {t.second}
                 </div>
+                {totalPool > 0 && (
+                  <div className="text-gray-300/80 font-bold text-lg sm:text-xl mt-1">
+                    ${prizes[1]}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -475,12 +503,33 @@ export default function RulesPage() {
               <div className="mt-4">
                 <span className="text-3xl sm:text-4xl">🥉</span>
                 <div className="mt-2 text-orange-400 font-bold text-2xl sm:text-3xl">
-                  15%
+                  10%
                 </div>
                 <div className="text-white/70 text-xs sm:text-sm mt-1">
                   {t.third}
                 </div>
+                {totalPool > 0 && (
+                  <div className="text-orange-300/80 font-bold text-lg sm:text-xl mt-1">
+                    ${prizes[2]}
+                  </div>
+                )}
               </div>
+            </div>
+          </div>
+
+          {/* Participants & Pool Info */}
+          <div className="mt-6 flex flex-col sm:flex-row items-stretch gap-4 text-sm">
+            <div className="flex-1 flex items-center justify-center gap-2 bg-white/5 px-4 py-2 rounded-lg">
+              <span className="text-white/60">👥 {t.participants}:</span>
+              <span className="text-white font-bold text-lg">{participantCount}</span>
+            </div>
+            <div className="flex-1 flex items-center justify-center gap-2 bg-white/5 px-4 py-2 rounded-lg">
+              <span className="text-white/60">💰 {t.entryFee}:</span>
+              <span className="text-white font-bold text-lg">${ENTRY_FEE} {t.perPerson}</span>
+            </div>
+            <div className="flex-1 flex items-center justify-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 rounded-lg">
+              <span className="text-emerald-400/80">🏆 {t.prizePool}:</span>
+              <span className="text-emerald-400 font-bold text-lg">${totalPool}</span>
             </div>
           </div>
         </section>

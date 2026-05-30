@@ -18,6 +18,7 @@ import PointsBreakdown from "@/components/PointsBreakdown";
 import LockedCard from "@/components/LockedCard";
 import { KnockoutStageSection } from "@/components/predictions";
 import UserGroupSection from "@/components/UserGroupSection";
+import UserName from "@/components/UserName";
 import Link from "next/link";
 
 export default function UserPredictionsPage() {
@@ -123,7 +124,7 @@ export default function UserPredictionsPage() {
         {/* Header with name */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white">
-            {targetProfile?.display_name}&apos;s Predictions
+            <UserName name={targetProfile?.display_name ?? ""} country={targetProfile?.country} />&apos;s Predictions
           </h1>
           {isOwnPredictions && (
             <p className="text-white/50 text-sm mt-1">This is you!</p>
@@ -247,7 +248,7 @@ export default function UserPredictionsPage() {
                             #{positionInfo.above.position}
                           </span>
                           <span className="text-white font-medium text-sm truncate min-w-0 flex-1">
-                            {positionInfo.above.displayName}
+                            <UserName name={positionInfo.above.displayName} country={positionInfo.above.country} />
                           </span>
                           <span className="text-[10px] text-red-400 shrink-0 whitespace-nowrap">
                             ▲{positionInfo.above.totalPoints - totalPoints}
@@ -262,7 +263,7 @@ export default function UserPredictionsPage() {
                           #{positionInfo.position}
                         </span>
                         <span className="text-white font-bold text-sm truncate min-w-0 flex-1">
-                          {targetProfile?.display_name}
+                          <UserName name={targetProfile?.display_name ?? ""} country={targetProfile?.country} />
                         </span>
                         {isOwnPredictions && (
                           <span className="text-[10px] text-emerald-400 shrink-0">
@@ -284,7 +285,7 @@ export default function UserPredictionsPage() {
                             #{positionInfo.below.position}
                           </span>
                           <span className="text-white font-medium text-sm truncate min-w-0 flex-1">
-                            {positionInfo.below.displayName}
+                            <UserName name={positionInfo.below.displayName} country={positionInfo.below.country} />
                           </span>
                           <span className="text-[10px] text-emerald-400 shrink-0 whitespace-nowrap">
                             ▼{totalPoints - positionInfo.below.totalPoints}

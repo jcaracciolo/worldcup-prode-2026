@@ -6,6 +6,7 @@ import { useUser } from "@/contexts/UserContext";
 import { useDatabase } from "@/contexts/DatabaseContext";
 import { useChangePassword, useInviteCodes } from "@/hooks/useAuth";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import COUNTRIES from "@/lib/countries";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function SettingsPage() {
   const { user: profile, loading: userLoading, updateProfile } = useUser();
 
   const [displayName, setDisplayName] = useState("");
+  const [country, setCountry] = useState<string | null>(null);
   const [_currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -34,6 +36,7 @@ export default function SettingsPage() {
       // Use queueMicrotask to avoid sync setState warning
       queueMicrotask(() => {
         setDisplayName(profile.display_name || "");
+        setCountry(profile.country ?? null);
       });
     }
   }, [profile, userLoading, router]);
@@ -45,7 +48,7 @@ export default function SettingsPage() {
 
     if (!profile) return;
 
-    const result = await updateProfile({ display_name: displayName });
+    const result = await updateProfile({ display_name: displayName, country });
 
     if (result.success) {
       setMessage({ type: "success", text: "Profile updated!" });
@@ -228,6 +231,38 @@ export default function SettingsPage() {
                   className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-white/70 mb-2">
+                  Nationality
+                </label>
+                <div className="relative">
+                  <select
+                    value={country ?? ""}
+                    onChange={(e) => setCountry(e.target.value || null)}
+                    className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none cursor-pointer"
+                  >
+                    <option value="" className="bg-slate-800 text-white">
+                      — Not set —
+                    </option>
+                    {COUNTRIES.map((c) => (
+                      <option key={c.code} value={c.code} className="bg-slate-800 text-white">
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  {country && (
+                    <img
+                      src={`https://flagcdn.com/w20/${country}.png`}
+                      alt=""
+                      className="absolute right-10 top-1/2 -translate-y-1/2 w-5 h-4 object-contain pointer-events-none"
+                    />
+                  )}
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/40">
+                    ▼
+                  </div>
+                </div>
               </div>
 
               <button

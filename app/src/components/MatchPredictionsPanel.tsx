@@ -4,6 +4,7 @@ import Link from "next/link";
 import { UserMatchPrediction } from "@/hooks/useMatchPredictions";
 import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { getPredictionHighlight } from "@/lib/match-highlight";
+import UserName from "@/components/UserName";
 
 interface MatchPredictionsPanelProps {
   match: MatchWithLiveInfo;
@@ -73,7 +74,7 @@ export function MatchPredictionsPanel({
                 <span
                   className={`truncate flex-1 ${isCurrentUser ? "text-sky-200 font-medium" : "text-white/90"}`}
                 >
-                  {pred.displayName}
+                  <UserName name={pred.displayName} country={pred.country} />
                 </span>
                 <div className="flex items-center gap-1 shrink-0">
                   <span

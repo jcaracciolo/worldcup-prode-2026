@@ -7,6 +7,7 @@ import { useMatches } from "@/contexts/MatchContext";
 import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { Profile } from "@/types/database";
 import { format } from "date-fns";
+import UserName from "@/components/UserName";
 
 interface UsersPanelProps {
   selectedCompetitionId: string | null;
@@ -135,7 +136,7 @@ export default function UsersPanel({
                   }`}
                 >
                   <td className="py-2 px-4 font-medium text-white">
-                    {user.display_name}
+                    <UserName name={user.display_name} country={user.country} />
                     {user.id === profile?.id && (
                       <span className="ml-2 text-xs text-emerald-400">
                         (you)

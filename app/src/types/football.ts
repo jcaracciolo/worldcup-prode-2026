@@ -178,6 +178,7 @@ export interface PointBreakdown {
 export interface UserScore {
   userId: string;
   displayName: string;
+  country: string | null;
   totalPoints: number;
   livePoints: number;
   groupStagePoints: number;

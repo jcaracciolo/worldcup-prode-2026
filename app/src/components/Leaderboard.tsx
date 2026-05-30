@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useLeaderboard } from "@/contexts/LeaderboardContext";
 import { useUser } from "@/contexts/UserContext";
+import UserName from "@/components/UserName";
 
 export default function Leaderboard() {
   const { scores } = useLeaderboard();
@@ -84,7 +85,7 @@ export default function Leaderboard() {
                     <span
                       className={`font-semibold text-sm sm:text-base truncate ${isCurrentUser ? "text-emerald-400" : "text-white"}`}
                     >
-                      {score.displayName}
+                      <UserName name={score.displayName} country={score.country} />
                     </span>
                     {isCurrentUser && (
                       <span className="px-1.5 sm:px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] sm:text-xs rounded-full font-medium shrink-0">

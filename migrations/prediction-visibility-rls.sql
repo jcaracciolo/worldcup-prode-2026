@@ -27,6 +27,12 @@ CREATE POLICY "Predictions visible after stage locks" ON predictions
       (match_id > 72 AND now() >= '2026-06-28T21:00:00Z'::timestamptz)
     )
   );
+-- Admins can always see all predictions (needed for user management panel)
+CREATE POLICY "Admins can view all predictions" ON predictions
+  FOR SELECT USING (
+    auth.uid() IN (SELECT id FROM profiles WHERE is_admin = true)
+  );
+
 -- Note: "Users can view own predictions" (auth.uid() = user_id) still exists,
 -- so users always see their own predictions. RLS OR's permissive policies.
 
@@ -43,6 +49,11 @@ CREATE POLICY "Overrides visible after group locks" ON group_standings_overrides
     auth.uid() IS NOT NULL
     AND now() >= '2026-06-11T18:00:00Z'::timestamptz
   );
+-- Admins can always see all overrides
+CREATE POLICY "Admins can view all overrides" ON group_standings_overrides
+  FOR SELECT USING (
+    auth.uid() IN (SELECT id FROM profiles WHERE is_admin = true)
+  );
 -- Note: "Users can view own overrides" still exists for own-data access.
 
 -- =====================================================================
@@ -55,4 +66,9 @@ CREATE POLICY "Third place overrides visible after group locks" ON third_place_o
   FOR SELECT USING (
     auth.uid() IS NOT NULL
     AND now() >= '2026-06-11T18:00:00Z'::timestamptz
+  );
+-- Admins can always see all third place overrides
+CREATE POLICY "Admins can view all third place overrides" ON third_place_overrides
+  FOR SELECT USING (
+    auth.uid() IN (SELECT id FROM profiles WHERE is_admin = true)
   );

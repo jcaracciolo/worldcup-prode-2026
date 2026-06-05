@@ -14,6 +14,9 @@ import {
   MobileDateColumn,
   TeamCrest,
 } from "@/components/match-row";
+import MobileScoreDisplay, {
+  ActiveField,
+} from "@/components/MobileScoreDisplay";
 
 interface PredictionInputProps {
   match: MatchWithLiveInfo;
@@ -26,7 +29,11 @@ interface PredictionInputProps {
   ) => void;
   disabled?: boolean;
   showWinnerSelect?: boolean;
-  fifaMatchNumber: FifaMatchId; // FIFA match number (1-104) - REQUIRED
+  fifaMatchNumber: FifaMatchId;
+  /** Mobile quick-entry: currently active field */
+  activeField?: ActiveField | null;
+  /** Mobile quick-entry: called when a score field is tapped */
+  onFieldTap?: (field: ActiveField) => void;
 }
 
 export default function PredictionInput({
@@ -36,6 +43,8 @@ export default function PredictionInput({
   disabled = false,
   showWinnerSelect = false,
   fifaMatchNumber,
+  activeField,
+  onFieldTap,
 }: PredictionInputProps) {
   const homeTeam = match.homeTeam;
   const awayTeam = match.awayTeam;
@@ -158,30 +167,41 @@ export default function PredictionInput({
           <TeamCrest team={homeTeam} size="sm" />
         </div>
 
-        {/* Score Inputs */}
-        <div className="flex items-center gap-0.5 shrink-0">
-          <input
-            type="number"
-            min="0"
-            max="20"
-            value={homeGoals ?? ""}
-            onChange={(e) => handleHomeChange(e.target.value)}
+        {/* Score Inputs - mobile: tappable display if onFieldTap available */}
+        {onFieldTap ? (
+          <MobileScoreDisplay
+            homeGoals={homeGoals}
+            awayGoals={awayGoals}
+            matchId={fifaMatchNumber}
             disabled={disabled}
-            className="w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
-            placeholder="-"
+            activeField={activeField ?? null}
+            onTap={onFieldTap}
           />
-          <span className="text-white/50 font-bold text-xs">-</span>
-          <input
-            type="number"
-            min="0"
-            max="20"
-            value={awayGoals ?? ""}
-            onChange={(e) => handleAwayChange(e.target.value)}
-            disabled={disabled}
-            className="w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
-            placeholder="-"
-          />
-        </div>
+        ) : (
+          <div className="flex items-center gap-0.5 shrink-0">
+            <input
+              type="number"
+              min="0"
+              max="20"
+              value={homeGoals ?? ""}
+              onChange={(e) => handleHomeChange(e.target.value)}
+              disabled={disabled}
+              className="w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
+              placeholder="-"
+            />
+            <span className="text-white/50 font-bold text-xs">-</span>
+            <input
+              type="number"
+              min="0"
+              max="20"
+              value={awayGoals ?? ""}
+              onChange={(e) => handleAwayChange(e.target.value)}
+              disabled={disabled}
+              className="w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
+              placeholder="-"
+            />
+          </div>
+        )}
 
         {/* Away Team */}
         <div className="flex-1 min-w-0 flex items-center gap-1.5">

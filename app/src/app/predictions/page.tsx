@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { GlobalLiveIndicator } from "@/components/MatchStatus";
@@ -14,6 +14,9 @@ import {
 import { useScrollToLiveMatch } from "@/hooks/useScrollToLiveMatch";
 import { usePredictionEditor } from "@/hooks/usePredictionEditor";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import MobileGoalPad from "@/components/MobileGoalPad";
+import { ActiveField } from "@/components/MobileScoreDisplay";
+import { FifaMatchId } from "@/types/football";
 
 export default function PredictionsPage() {
   const router = useRouter();
@@ -62,6 +65,108 @@ export default function PredictionsPage() {
   const [activeTab, setActiveTab] = useState<"group" | "knockout">(() =>
     knockoutOpen ? "knockout" : "group",
   );
+
+  // ── Mobile quick-entry state ─────────────────────────────────────
+  const [activeField, setActiveField] = useState<ActiveField | null>(null);
+
+  // Build ordered field list for auto-advance (home→away)
+  const orderedFields = useMemo(() => {
+    const fields: ActiveField[] = [];
+    // Group stage matches in group order, then by date
+    if (activeTab === "group") {
+      Array.from(groups.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .forEach(([, groupMatches]) => {
+          const sorted = [...groupMatches].sort(
+            (a, b) =>
+              new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
+          );
+          sorted.forEach((m) => {
+            fields.push({ matchId: m.id, side: "home" });
+            fields.push({ matchId: m.id, side: "away" });
+          });
+        });
+    } else {
+      // Knockout matches by stage order, then by date
+      const KNOCKOUT_ORDER = [
+        "LAST_32",
+        "LAST_16",
+        "QUARTER_FINALS",
+        "SEMI_FINALS",
+        "THIRD_PLACE",
+        "FINAL",
+      ];
+      KNOCKOUT_ORDER.forEach((stage) => {
+        const stageMatches = knockoutStages.get(stage) || [];
+        const sorted = [...stageMatches].sort(
+          (a, b) =>
+            new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
+        );
+        sorted.forEach((m) => {
+          fields.push({ matchId: m.id, side: "home" });
+          fields.push({ matchId: m.id, side: "away" });
+        });
+      });
+    }
+    return fields;
+  }, [activeTab, groups, knockoutStages]);
+
+  // Get match info for the active field (team names)
+  const activeMatch = useMemo(() => {
+    if (!activeField) return null;
+    return matches.find((m) => m.id === activeField.matchId) ?? null;
+  }, [activeField, matches]);
+
+  const handleFieldTap = useCallback((field: ActiveField) => {
+    setActiveField(field);
+  }, []);
+
+  const handleGoalSelect = useCallback(
+    (value: number) => {
+      if (!activeField) return;
+      const pred = predictions.get(activeField.matchId);
+      const existingHome = pred?.home_goals ?? null;
+      const existingAway = pred?.away_goals ?? null;
+
+      if (activeField.side === "home") {
+        handlePredictionChange(
+          activeField.matchId,
+          value,
+          existingAway,
+        );
+      } else {
+        handlePredictionChange(
+          activeField.matchId,
+          existingHome,
+          value,
+        );
+      }
+
+      // Auto-advance: home → away, away → stay (no next match jump)
+      if (activeField.side === "home") {
+        setActiveField({ matchId: activeField.matchId, side: "away" });
+      }
+      // After away, keep pad open on same field — user scrolls to next
+    },
+    [activeField, predictions, handlePredictionChange],
+  );
+
+  const handleGoalClear = useCallback(() => {
+    if (!activeField) return;
+    const pred = predictions.get(activeField.matchId);
+    const existingHome = pred?.home_goals ?? null;
+    const existingAway = pred?.away_goals ?? null;
+
+    if (activeField.side === "home") {
+      handlePredictionChange(activeField.matchId, null, existingAway);
+    } else {
+      handlePredictionChange(activeField.matchId, existingHome, null);
+    }
+  }, [activeField, predictions, handlePredictionChange]);
+
+  const handlePadClose = useCallback(() => {
+    setActiveField(null);
+  }, []);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -204,6 +309,8 @@ export default function PredictionsPage() {
             onPredictionChange={handlePredictionChange}
             onSwapPositions={handleSwapPositions}
             onSwapThirdPlacePositions={handleSwapThirdPlacePositions}
+            activeField={activeField}
+            onFieldTap={handleFieldTap}
           />
         )}
 
@@ -215,6 +322,8 @@ export default function PredictionsPage() {
               predictions={predictions}
               knockoutLocked={knockoutLocked}
               onPredictionChange={handlePredictionChange}
+              activeField={activeField}
+              onFieldTap={handleFieldTap}
             />
           ) : (
             <LockedCard message="Knockout predictions will be available after group stage locks" />
@@ -246,6 +355,27 @@ export default function PredictionsPage() {
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Mobile goal pad */}
+      {activeField && activeMatch && (
+        <MobileGoalPad
+          activeField={activeField}
+          homeTeamName={
+            activeMatch.homeTeam?.tla || activeMatch.homeDisplayName
+          }
+          awayTeamName={
+            activeMatch.awayTeam?.tla || activeMatch.awayDisplayName
+          }
+          currentValue={
+            activeField.side === "home"
+              ? (predictions.get(activeField.matchId)?.home_goals ?? null)
+              : (predictions.get(activeField.matchId)?.away_goals ?? null)
+          }
+          onSelect={handleGoalSelect}
+          onClear={handleGoalClear}
+          onClose={handlePadClose}
         />
       )}
     </div>

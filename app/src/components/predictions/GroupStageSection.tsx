@@ -8,6 +8,7 @@ import { ThirdPlaceTeam } from "@/lib/third-place-ranking";
 import PredictionInput from "@/components/PredictionInput";
 import StandingsTable from "@/components/StandingsTable";
 import ThirdPlaceRankingTable from "@/components/ThirdPlaceRankingTable";
+import { ActiveField } from "@/components/MobileScoreDisplay";
 
 interface GroupStageSectionProps {
   groups: Map<string, MatchWithLiveInfo[]>;
@@ -28,6 +29,10 @@ interface GroupStageSectionProps {
   onSwapThirdPlacePositions?: (group1: string, group2: string) => void;
   /** Read-only mode: shows actual match scores using disabled PredictionInput */
   readOnly?: boolean;
+  /** Mobile quick-entry: currently active field */
+  activeField?: ActiveField | null;
+  /** Mobile quick-entry: called when a score field is tapped */
+  onFieldTap?: (field: ActiveField) => void;
 }
 
 export default function GroupStageSection({
@@ -41,6 +46,8 @@ export default function GroupStageSection({
   onSwapPositions,
   onSwapThirdPlacePositions,
   readOnly = false,
+  activeField,
+  onFieldTap,
 }: GroupStageSectionProps) {
   const { getCurrentTime } = useTime();
 
@@ -114,6 +121,8 @@ export default function GroupStageSection({
                             onChange={onPredictionChange!}
                             disabled={groupLocked || matchHasStarted}
                             fifaMatchNumber={fifaNumber}
+                            activeField={activeField}
+                            onFieldTap={onFieldTap}
                           />
                         );
                       })}

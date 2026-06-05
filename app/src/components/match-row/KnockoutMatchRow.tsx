@@ -7,6 +7,9 @@ import { LocalPrediction } from "@/types/database";
 import { ReactNode } from "react";
 import { TeamCrest } from "./TeamCrest";
 import { DateColumn, TimeVenueColumn, MobileDateColumn } from "./DateColumns";
+import MobileScoreDisplay, {
+  ActiveField,
+} from "@/components/MobileScoreDisplay";
 
 // ── Content wrappers ────────────────────────────────────────────────
 
@@ -185,6 +188,9 @@ function KnockoutScoreSection({
   disabled,
   onHomeChange,
   onAwayChange,
+  matchId,
+  activeField,
+  onFieldTap,
 }: {
   mobile?: boolean;
   isEdit: boolean;
@@ -195,8 +201,26 @@ function KnockoutScoreSection({
   disabled: boolean;
   onHomeChange: (value: string) => void;
   onAwayChange: (value: string) => void;
+  matchId?: FifaMatchId;
+  activeField?: ActiveField | null;
+  onFieldTap?: (field: ActiveField) => void;
 }) {
   if (isEdit) {
+    // Mobile quick-entry: use tappable display
+    if (mobile && onFieldTap && matchId !== undefined) {
+      return (
+        <div className="flex flex-col items-center mx-1 shrink-0">
+          <MobileScoreDisplay
+            homeGoals={homeGoals}
+            awayGoals={awayGoals}
+            matchId={matchId}
+            disabled={disabled}
+            activeField={activeField ?? null}
+            onTap={onFieldTap}
+          />
+        </div>
+      );
+    }
     const inputClass = mobile
       ? "w-7 h-6 text-center text-xs font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
       : "w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-400 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20 transition-all";
@@ -263,9 +287,7 @@ interface KnockoutMatchRowProps {
   prediction?: LocalPrediction;
   fifaMatchNumber: FifaMatchId;
   mode: KnockoutMatchRowMode;
-  // Override scores (e.g., show actual match results instead of predictions)
   scores?: { home: number | null; away: number | null };
-  // Edit mode props
   onChange?: (
     fifaMatchId: FifaMatchId,
     homeGoals: number | null,
@@ -274,8 +296,11 @@ interface KnockoutMatchRowProps {
   ) => void;
   disabled?: boolean;
   showWinnerSelect?: boolean;
-  // Readonly mode props
   pointsTooltip?: ReactNode;
+  /** Mobile quick-entry: currently active field */
+  activeField?: ActiveField | null;
+  /** Mobile quick-entry: called when a score field is tapped */
+  onFieldTap?: (field: ActiveField) => void;
 }
 
 export function KnockoutMatchRow({
@@ -288,6 +313,8 @@ export function KnockoutMatchRow({
   disabled = false,
   showWinnerSelect = false,
   pointsTooltip,
+  activeField,
+  onFieldTap,
 }: KnockoutMatchRowProps) {
   const homeTeam = match.homeTeam;
   const awayTeam = match.awayTeam;
@@ -380,6 +407,9 @@ export function KnockoutMatchRow({
             disabled={disabled}
             onHomeChange={handleHomeChange}
             onAwayChange={handleAwayChange}
+            matchId={fifaMatchNumber}
+            activeField={activeField}
+            onFieldTap={onFieldTap}
           />
           <div className="flex-1 min-w-0 flex items-center">
             <KnockoutMobileTeamButton

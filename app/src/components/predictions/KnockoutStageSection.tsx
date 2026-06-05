@@ -7,6 +7,7 @@ import { LocalPrediction } from "@/types/database";
 import { formatStageName } from "@/lib/format";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import { KnockoutMatchRow } from "@/components/match-row";
+import { ActiveField } from "@/components/MobileScoreDisplay";
 
 type ViewMode = "edit" | "fixtures" | "predictions";
 
@@ -31,6 +32,10 @@ interface KnockoutStageSectionProps {
   mode?: ViewMode;
   /** @deprecated Use mode="fixtures" instead */
   readOnly?: boolean;
+  /** Mobile quick-entry: currently active field */
+  activeField?: ActiveField | null;
+  /** Mobile quick-entry: called when a score field is tapped */
+  onFieldTap?: (field: ActiveField) => void;
 }
 
 const KNOCKOUT_STAGE_ORDER = [
@@ -50,6 +55,8 @@ export default function KnockoutStageSection({
   onPredictionChange,
   mode,
   readOnly = false,
+  activeField,
+  onFieldTap,
 }: KnockoutStageSectionProps) {
   const { getCurrentTime } = useTime();
 
@@ -144,6 +151,8 @@ export default function KnockoutStageSection({
                       onChange={onPredictionChange}
                       disabled={knockoutLocked || matchHasStarted}
                       showWinnerSelect={true}
+                      activeField={activeField}
+                      onFieldTap={onFieldTap}
                     />
                   );
                 })}

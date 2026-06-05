@@ -20,6 +20,7 @@ import {
   buildFinishedR32Matches,
   buildHomePredictions,
   makeKnockoutMatch,
+  scenarioNoGroupsStarted,
   EXPECTED_THIRD_PLACE_ASSIGNMENTS,
   // Teams for assertion
   TEAM_A1,
@@ -572,6 +573,36 @@ describe("LiveBracketResolver — Partial groups (Group I in progress)", () => {
     const r77 = liveBracket.teams.get(fid(77))!;
     expect(r77.home).toBeNull();
     expect(r77.homeDisplayName).toBe("1I");
+  });
+});
+
+// =====================================================================
+// NO GROUPS STARTED — third-place teams must NOT resolve
+// =====================================================================
+
+describe("LiveBracketResolver — No groups started (all TIMED)", () => {
+  it("does not resolve any third-place R32 slots when no groups are finished", () => {
+    const { matches } = scenarioNoGroupsStarted();
+    const liveBracket = resolveLive(matches);
+
+    // Third-place R32 matches: 74, 77, 79, 80, 81, 82, 85, 87
+    const thirdPlaceMatchIds = [74, 77, 79, 80, 81, 82, 85, 87];
+    for (const matchId of thirdPlaceMatchIds) {
+      const r = liveBracket.teams.get(fid(matchId))!;
+      expect(r.away, `Match ${matchId} third-place away should be null`).toBeNull();
+    }
+  });
+
+  it("does not resolve any group winner/runner-up slots when no groups are finished", () => {
+    const { matches } = scenarioNoGroupsStarted();
+    const liveBracket = resolveLive(matches);
+
+    // All R32 matches should have null teams
+    for (let i = 73; i <= 88; i++) {
+      const r = liveBracket.teams.get(fid(i))!;
+      expect(r.home, `Match ${i} home should be null`).toBeNull();
+      expect(r.away, `Match ${i} away should be null`).toBeNull();
+    }
   });
 });
 

@@ -142,13 +142,28 @@ export default function PredictionsPage() {
         );
       }
 
-      // Auto-advance: home → away, away → stay (no next match jump)
+      // Auto-advance: home → away → next match home
       if (activeField.side === "home") {
         setActiveField({ matchId: activeField.matchId, side: "away" });
+      } else {
+        // After away, advance to next match's home
+        const currentIdx = orderedFields.findIndex(
+          (f) => f.matchId === activeField.matchId && f.side === "away",
+        );
+        if (currentIdx >= 0 && currentIdx + 1 < orderedFields.length) {
+          const nextField = orderedFields[currentIdx + 1];
+          setActiveField(nextField);
+          // Scroll the next match into view
+          setTimeout(() => {
+            const el = document.querySelector(
+              `[data-match-id="${nextField.matchId}"]`,
+            );
+            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 50);
+        }
       }
-      // After away, keep pad open on same field — user scrolls to next
     },
-    [activeField, predictions, handlePredictionChange],
+    [activeField, predictions, handlePredictionChange, orderedFields],
   );
 
   const handleGoalClear = useCallback(() => {

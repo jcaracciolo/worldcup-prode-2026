@@ -374,6 +374,7 @@ export function KnockoutMatchRow({
 
   return (
     <div
+      data-match-id={fifaMatchNumber}
       className={`py-1.5 px-2 rounded-lg transition-colors overflow-visible relative ${bgClass} ${borderClass}`}
     >
       {/* Mobile Layout */}

@@ -114,6 +114,7 @@ export default function PredictionInput({
 
   return (
     <div
+      data-match-id={fifaMatchNumber}
       className={`py-1.5 px-2 rounded-lg transition-colors ${
         disabled
           ? "bg-slate-900/60 opacity-70"

@@ -94,6 +94,16 @@ export class LiveBracketResolver {
     );
   }
 
+  /** Check if ALL groups are complete (needed for third-place resolution) */
+  private areAllGroupsComplete(): boolean {
+    const groupNames = [...new Set(
+      this.matches
+        .filter((m) => m.stage === "GROUP_STAGE" && m.group)
+        .map((m) => m.group!),
+    )];
+    return groupNames.every((g) => this.isGroupComplete(g));
+  }
+
   /** Get team from standings if the group is complete */
   private getTeamFromStandings(group: string, position: number): Team | null {
     if (!this.isGroupComplete(group)) return null;
@@ -170,8 +180,12 @@ export class LiveBracketResolver {
               bracketSlot.awayPosition.position,
             );
           }
-          // Third-place slots (awayPosition is null) — resolve dynamically
-          if (!awayTeam && bracketSlot.awayPosition === null) {
+          // Third-place slots (awayPosition is null) — resolve only when all groups are done
+          if (
+            !awayTeam &&
+            bracketSlot.awayPosition === null &&
+            this.areAllGroupsComplete()
+          ) {
             const thirdPlaceResult = getThirdPlaceTeamForMatch(
               fifaNumber,
               this.groupStandings,

@@ -638,6 +638,23 @@ export function scenarioPartialGroups() {
 }
 
 /**
+ * Scenario: No groups have started — all group matches are TIMED.
+ * Tests that R32 teams (including third-place slots) are NOT resolved.
+ */
+export function scenarioNoGroupsStarted() {
+  const matches = buildAllMatches();
+  for (const m of matches) {
+    if (m.stage === "GROUP_STAGE") {
+      m.status = "TIMED";
+      m.score.winner = null;
+      m.score.fullTime = { home: null, away: null };
+      m.score.halfTime = { home: null, away: null };
+    }
+  }
+  return { matches };
+}
+
+/**
  * Scenario: All R32 matches finished (home wins), R16+ not started.
  * Tests R16 resolution from actual R32 results.
  */

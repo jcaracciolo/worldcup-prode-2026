@@ -132,6 +132,7 @@ export class PredictionBracketResolver {
       );
 
       // Apply manual position overrides for this group
+      // Only apply if the swapped teams still have equal points
       const overridesForGroup = this.groupOverrides.filter(
         (o) => o.group_name === groupName,
       );
@@ -140,7 +141,14 @@ export class PredictionBracketResolver {
           const teamIndex = standings.findIndex(
             (s) => s.team.id === override.team_id,
           );
-          if (teamIndex !== -1) {
+          const targetIndex = override.position - 1;
+          if (
+            teamIndex !== -1 &&
+            targetIndex >= 0 &&
+            targetIndex < standings.length &&
+            teamIndex !== targetIndex &&
+            standings[teamIndex].points === standings[targetIndex].points
+          ) {
             const [team] = standings.splice(teamIndex, 1);
             standings.splice(override.position - 1, 0, team);
           }

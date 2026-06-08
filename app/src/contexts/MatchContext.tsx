@@ -189,10 +189,10 @@ function enhanceMatch(match: Match, currentTime: Date): MatchWithLiveInfo {
  */
 function hasMatchesToday(matches: Match[]): boolean {
   const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
+  const todayStr = today.toLocaleDateString("en-CA");
 
   return matches.some((m) => {
-    const matchDate = m.utcDate.split("T")[0];
+    const matchDate = new Date(m.utcDate).toLocaleDateString("en-CA");
     return matchDate === todayStr;
   });
 }

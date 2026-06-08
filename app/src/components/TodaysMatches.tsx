@@ -29,43 +29,45 @@ export default function TodaysMatches({
 
   const scrollToFirstLiveMatch = useScrollToLiveMatch();
 
-  // Get today's date in ISO format
-  const today = getCurrentTime();
-  const todayStr = today.toISOString().split("T")[0];
+  // Helper: get local date string (YYYY-MM-DD) from a UTC date string
+  const toLocalDateStr = (utcDate: string) =>
+    new Date(utcDate).toLocaleDateString("en-CA"); // en-CA gives YYYY-MM-DD
 
-  // Get today's matches
+  // Get today's date in local YYYY-MM-DD format
+  const today = getCurrentTime();
+  const todayStr = today.toLocaleDateString("en-CA");
+
+  // Get today's matches (comparing in local time)
   const todaysMatches = useMemo(() => {
     const filtered = matches.filter(
-      (m) => m.utcDate.split("T")[0] === todayStr,
+      (m) => toLocalDateStr(m.utcDate) === todayStr,
     );
     return [...filtered].sort(
       (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
     );
   }, [matches, todayStr]);
 
-  // Find the next match day after today
+  // Find the next match day after today (in local time)
   const nextMatchDay = useMemo(() => {
     if (!showNextMatchDay) return null;
 
-    // Get all unique dates after today
     const futureDates = new Set<string>();
     matches.forEach((m) => {
-      const matchDate = m.utcDate.split("T")[0];
-      if (matchDate > todayStr) {
-        futureDates.add(matchDate);
+      const matchLocalDate = toLocalDateStr(m.utcDate);
+      if (matchLocalDate > todayStr) {
+        futureDates.add(matchLocalDate);
       }
     });
 
-    // Sort dates and get the first one
     const sortedDates = Array.from(futureDates).sort();
     return sortedDates[0] || null;
   }, [matches, todayStr, showNextMatchDay]);
 
-  // Get matches for the next match day
+  // Get matches for the next match day (in local time)
   const nextDayMatches = useMemo(() => {
     if (!nextMatchDay) return [];
     const filtered = matches.filter(
-      (m) => m.utcDate.split("T")[0] === nextMatchDay,
+      (m) => toLocalDateStr(m.utcDate) === nextMatchDay,
     );
     return [...filtered].sort(
       (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
@@ -78,7 +80,7 @@ export default function TodaysMatches({
     const allFinished = matches.every((m) => m.status === "FINISHED");
     if (allFinished) return "after";
     const firstMatchDate = matches
-      .map((m) => m.utcDate.split("T")[0])
+      .map((m) => toLocalDateStr(m.utcDate))
       .sort()[0];
     if (firstMatchDate && todayStr < firstMatchDate) return "before";
     return "during";

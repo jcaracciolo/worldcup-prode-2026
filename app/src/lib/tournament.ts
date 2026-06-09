@@ -98,7 +98,7 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 2,
     stage: "GROUP_STAGE",
-    date: "2026-06-11",
+    date: "2026-06-12",
     time: "02:00",
     venue: { stadium: "Estadio Akron", city: "Guadalajara", country: "MEX" },
   },
@@ -112,14 +112,14 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 4,
     stage: "GROUP_STAGE",
-    date: "2026-06-12",
+    date: "2026-06-13",
     time: "01:00",
     venue: { stadium: "SoFi Stadium", city: "Los Angeles", country: "USA" },
   },
   {
     fifaNumber: 5,
     stage: "GROUP_STAGE",
-    date: "2026-06-13",
+    date: "2026-06-14",
     time: "04:00",
     venue: { stadium: "BC Place", city: "Vancouver", country: "CAN" },
   },
@@ -140,7 +140,7 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 8,
     stage: "GROUP_STAGE",
-    date: "2026-06-13",
+    date: "2026-06-14",
     time: "01:00",
     venue: { stadium: "Gillette Stadium", city: "Boston", country: "USA" },
   },
@@ -172,7 +172,7 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 12,
     stage: "GROUP_STAGE",
-    date: "2026-06-14",
+    date: "2026-06-15",
     time: "02:00",
     venue: { stadium: "Estadio BBVA", city: "Monterrey", country: "MEX" },
   },
@@ -205,7 +205,7 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 16,
     stage: "GROUP_STAGE",
-    date: "2026-06-15",
+    date: "2026-06-16",
     time: "01:00",
     venue: { stadium: "SoFi Stadium", city: "Los Angeles", country: "USA" },
   },
@@ -226,7 +226,7 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 19,
     stage: "GROUP_STAGE",
-    date: "2026-06-16",
+    date: "2026-06-17",
     time: "01:00",
     venue: {
       stadium: "Arrowhead Stadium",
@@ -237,7 +237,7 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 20,
     stage: "GROUP_STAGE",
-    date: "2026-06-16",
+    date: "2026-06-17",
     time: "04:00",
     venue: { stadium: "Levi's Stadium", city: "San Francisco", country: "USA" },
   },
@@ -266,7 +266,7 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 24,
     stage: "GROUP_STAGE",
-    date: "2026-06-17",
+    date: "2026-06-18",
     time: "02:00",
     venue: { stadium: "Estadio Azteca", city: "Mexico City", country: "MEX" },
   },
@@ -299,14 +299,14 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 28,
     stage: "GROUP_STAGE",
-    date: "2026-06-18",
+    date: "2026-06-19",
     time: "01:00",
     venue: { stadium: "Estadio Akron", city: "Guadalajara", country: "MEX" },
   },
   {
     fifaNumber: 29,
     stage: "GROUP_STAGE",
-    date: "2026-06-19",
+    date: "2026-06-20",
     time: "03:00",
     venue: { stadium: "Levi's Stadium", city: "San Francisco", country: "USA" },
   },
@@ -327,7 +327,7 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 32,
     stage: "GROUP_STAGE",
-    date: "2026-06-19",
+    date: "2026-06-20",
     time: "00:30",
     venue: {
       stadium: "Lincoln Financial Field",
@@ -339,7 +339,7 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 33,
     stage: "GROUP_STAGE",
-    date: "2026-06-20",
+    date: "2026-06-21",
     time: "04:00",
     venue: { stadium: "Estadio BBVA", city: "Monterrey", country: "MEX" },
   },
@@ -360,7 +360,7 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 36,
     stage: "GROUP_STAGE",
-    date: "2026-06-20",
+    date: "2026-06-21",
     time: "00:00",
     venue: {
       stadium: "Arrowhead Stadium",
@@ -397,7 +397,7 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 40,
     stage: "GROUP_STAGE",
-    date: "2026-06-21",
+    date: "2026-06-22",
     time: "01:00",
     venue: { stadium: "BC Place", city: "Vancouver", country: "CAN" },
   },
@@ -423,14 +423,14 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 43,
     stage: "GROUP_STAGE",
-    date: "2026-06-22",
+    date: "2026-06-23",
     time: "00:00",
     venue: { stadium: "MetLife Stadium", city: "New York", country: "USA" },
   },
   {
     fifaNumber: 44,
     stage: "GROUP_STAGE",
-    date: "2026-06-22",
+    date: "2026-06-23",
     time: "03:00",
     venue: { stadium: "Levi's Stadium", city: "San Francisco", country: "USA" },
   },
@@ -459,7 +459,7 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 48,
     stage: "GROUP_STAGE",
-    date: "2026-06-23",
+    date: "2026-06-24",
     time: "02:00",
     venue: { stadium: "Estadio Akron", city: "Guadalajara", country: "MEX" },
   },
@@ -499,14 +499,14 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 53,
     stage: "GROUP_STAGE",
-    date: "2026-06-24",
+    date: "2026-06-25",
     time: "01:00",
     venue: { stadium: "Estadio Azteca", city: "Mexico City", country: "MEX" },
   },
   {
     fifaNumber: 54,
     stage: "GROUP_STAGE",
-    date: "2026-06-24",
+    date: "2026-06-25",
     time: "01:00",
     venue: { stadium: "Estadio BBVA", city: "Monterrey", country: "MEX" },
   },
@@ -549,14 +549,14 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 59,
     stage: "GROUP_STAGE",
-    date: "2026-06-25",
+    date: "2026-06-26",
     time: "02:00",
     venue: { stadium: "SoFi Stadium", city: "Los Angeles", country: "USA" },
   },
   {
     fifaNumber: 60,
     stage: "GROUP_STAGE",
-    date: "2026-06-25",
+    date: "2026-06-26",
     time: "02:00",
     venue: { stadium: "Levi's Stadium", city: "San Francisco", country: "USA" },
   },
@@ -577,14 +577,14 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 63,
     stage: "GROUP_STAGE",
-    date: "2026-06-26",
+    date: "2026-06-27",
     time: "00:00",
     venue: { stadium: "Estadio Akron", city: "Guadalajara", country: "MEX" },
   },
   {
     fifaNumber: 64,
     stage: "GROUP_STAGE",
-    date: "2026-06-26",
+    date: "2026-06-27",
     time: "00:00",
     venue: { stadium: "NRG Stadium", city: "Houston", country: "USA" },
   },
@@ -641,14 +641,14 @@ export const GROUP_STAGE_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 71,
     stage: "GROUP_STAGE",
-    date: "2026-06-27",
+    date: "2026-06-28",
     time: "02:00",
     venue: { stadium: "AT&T Stadium", city: "Dallas", country: "USA" },
   },
   {
     fifaNumber: 72,
     stage: "GROUP_STAGE",
-    date: "2026-06-27",
+    date: "2026-06-28",
     time: "02:00",
     venue: {
       stadium: "Arrowhead Stadium",
@@ -689,7 +689,7 @@ export const KNOCKOUT_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 76,
     stage: "LAST_32",
-    date: "2026-06-29",
+    date: "2026-06-30",
     time: "01:00",
     venue: { stadium: "Estadio BBVA", city: "Monterrey", country: "MEX" },
   },
@@ -710,7 +710,7 @@ export const KNOCKOUT_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 79,
     stage: "LAST_32",
-    date: "2026-06-30",
+    date: "2026-07-01",
     time: "01:00",
     venue: { stadium: "Estadio Azteca", city: "Mexico City", country: "MEX" },
   },
@@ -735,7 +735,7 @@ export const KNOCKOUT_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 82,
     stage: "LAST_32",
-    date: "2026-07-01",
+    date: "2026-07-02",
     time: "00:00",
     venue: { stadium: "Levi's Stadium", city: "San Francisco", country: "USA" },
   },
@@ -756,7 +756,7 @@ export const KNOCKOUT_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 85,
     stage: "LAST_32",
-    date: "2026-07-02",
+    date: "2026-07-03",
     time: "03:00",
     venue: { stadium: "BC Place", city: "Vancouver", country: "CAN" },
   },
@@ -777,7 +777,7 @@ export const KNOCKOUT_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 88,
     stage: "LAST_32",
-    date: "2026-07-03",
+    date: "2026-07-04",
     time: "01:30",
     venue: {
       stadium: "Arrowhead Stadium",
@@ -815,7 +815,7 @@ export const KNOCKOUT_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 92,
     stage: "LAST_16",
-    date: "2026-07-05",
+    date: "2026-07-06",
     time: "00:00",
     venue: { stadium: "Estadio Azteca", city: "Mexico City", country: "MEX" },
   },
@@ -829,7 +829,7 @@ export const KNOCKOUT_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 94,
     stage: "LAST_16",
-    date: "2026-07-06",
+    date: "2026-07-07",
     time: "00:00",
     venue: { stadium: "Lumen Field", city: "Seattle", country: "USA" },
   },
@@ -877,7 +877,7 @@ export const KNOCKOUT_SCHEDULE: MatchInfo[] = [
   {
     fifaNumber: 100,
     stage: "QUARTER_FINALS",
-    date: "2026-07-11",
+    date: "2026-07-12",
     time: "01:00",
     venue: {
       stadium: "Arrowhead Stadium",

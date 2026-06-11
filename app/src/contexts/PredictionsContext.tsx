@@ -362,7 +362,8 @@ export function PredictionsProvider({
       return allPredictionsPromiseRef.current;
     }
 
-    // If we already have cached data, return it immediately
+    // Safe to return cached data — bulkGet rejects stale entries
+    // from a different competition synchronously
     const cached = cacheBulkGet();
     if (cached) return cached;
 
@@ -445,7 +446,7 @@ export function PredictionsProvider({
     } finally {
       allPredictionsPromiseRef.current = null;
     }
-  }, [db, cacheGet, cacheSet, cacheBulkSet, cacheBulkGet]);
+  }, [db, cacheGet, cacheSet, cacheBulkGet, cacheBulkSet]);
 
   const getCachedAllPredictions = useCallback(() => cacheBulkGet(), [cacheBulkGet]);
 

@@ -109,7 +109,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       return allProfilesPromiseRef.current;
     }
 
-    // If we already have cached data, return it immediately
+    // Safe to return cached data — bulkGet rejects stale entries
+    // from a different competition synchronously
     const cached = cacheBulkGet();
     if (cached) return cached;
 
@@ -129,7 +130,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } finally {
       allProfilesPromiseRef.current = null;
     }
-  }, [db, cacheBulkSet, cacheBulkGet, cacheSet]);
+  }, [db, cacheBulkGet, cacheBulkSet, cacheSet]);
 
   const getCachedAllProfiles = useCallback(
     () => cacheBulkGet(),

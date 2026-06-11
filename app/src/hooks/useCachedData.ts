@@ -50,9 +50,11 @@ export function useCachedData<K extends string | number, V, Bulk = unknown>(
   invalidateOn: unknown,
 ): CachedDataResult<K, V, Bulk> {
   const cacheRef = useRef(new Map<K, V>());
-  const bulkRef = useRef<Bulk | null>(null);
+  const bulkRef = useRef<{ key: unknown; data: Bulk } | null>(null);
   const fetchingRef = useRef(new Set<K>());
   const generationRef = useRef(0);
+  const invalidateOnRef = useRef(invalidateOn);
+  invalidateOnRef.current = invalidateOn;
   const [version, setVersion] = useState(0);
 
   const bump = useCallback(() => setVersion((v) => v + 1), []);
@@ -101,11 +103,18 @@ export function useCachedData<K extends string | number, V, Bulk = unknown>(
     bump();
   }, [bump]);
 
-  // --- Bulk cache ---
-  const bulkGet = useCallback(() => bulkRef.current, []);
+  // --- Bulk cache (tagged with invalidateOn key for synchronous staleness check) ---
+  const bulkGet = useCallback(() => {
+    const entry = bulkRef.current;
+    if (!entry) return null;
+    // Synchronous staleness guard: only return if data was stored
+    // under the current invalidateOn value (e.g., same competition)
+    if (entry.key !== invalidateOnRef.current) return null;
+    return entry.data;
+  }, []);
   const bulkSet = useCallback(
     (value: Bulk) => {
-      bulkRef.current = value;
+      bulkRef.current = { key: invalidateOnRef.current, data: value };
       bump();
     },
     [bump],

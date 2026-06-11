@@ -412,7 +412,7 @@ export function GroupMatchRow({
     >
       <Link
         href={`/match/${match.id}`}
-        prefetch={false}
+       
         className="flex-1 flex items-center gap-2 hover:bg-white/5 transition-colors rounded px-1 -mx-1 cursor-pointer"
       >
         <div

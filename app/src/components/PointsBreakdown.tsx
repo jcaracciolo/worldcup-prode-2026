@@ -181,7 +181,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
         <Link
           key={index}
           href={`/match/${item.matchId}`}
-          prefetch={false}
+         
           className={`${containerClass} cursor-pointer`}
         >
           {/* Score */}
@@ -302,7 +302,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
       <Link
         key={index}
         href={`/match/${item.matchId}`}
-        prefetch={false}
+       
         className={`${containerClass} cursor-pointer`}
       >
         {/* Score */}

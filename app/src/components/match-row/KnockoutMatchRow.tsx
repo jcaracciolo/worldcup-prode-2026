@@ -23,7 +23,7 @@ function KnockoutContentLink({
   matchId: number;
 }) {
   return (
-    <Link href={`/match/${matchId}`} prefetch={false} className={className}>
+    <Link href={`/match/${matchId}`} className={className}>
       {children}
     </Link>
   );

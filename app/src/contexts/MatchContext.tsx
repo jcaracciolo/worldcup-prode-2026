@@ -95,11 +95,25 @@ function calculateElapsedMinutes(
   }
 
   const kickOff = new Date(match.utcDate);
-  const elapsedMs = currentTime.getTime() - kickOff.getTime();
-  const elapsedMinutes = Math.floor(elapsedMs / 60000);
+  const elapsedRealMs = currentTime.getTime() - kickOff.getTime();
+  const elapsedRealMin = elapsedRealMs / 60000;
+
+  // Estimate match minutes accounting for halftime break (~15 min)
+  // First half: 0-45 real min → 0'-45' match time
+  // Halftime: 45-60 real min → 45' (paused)
+  // Second half: 60+ real min → 45' + (realMin - 60)
+  const HALF_TIME_BREAK = 15;
+  let matchMinutes: number;
+  if (elapsedRealMin <= 45) {
+    matchMinutes = elapsedRealMin;
+  } else if (elapsedRealMin <= 45 + HALF_TIME_BREAK) {
+    matchMinutes = 45; // halftime
+  } else {
+    matchMinutes = elapsedRealMin - HALF_TIME_BREAK;
+  }
 
   // Clamp to reasonable values (0-120 for extra time)
-  return Math.max(0, Math.min(elapsedMinutes, 120));
+  return Math.max(0, Math.min(Math.floor(matchMinutes), 120));
 }
 
 /**
@@ -110,11 +124,7 @@ function determinePeriod(
   elapsedMinutes: number | null,
 ): MatchWithLiveInfo["period"] {
   if (match.status === "PAUSED") {
-    // If paused around halftime
-    if (elapsedMinutes && elapsedMinutes >= 45 && elapsedMinutes < 60) {
-      return "HALF_TIME";
-    }
-    return "HALF_TIME"; // Assume pause = half time
+    return "HALF_TIME";
   }
 
   if (match.status !== "IN_PLAY") {
@@ -123,11 +133,9 @@ function determinePeriod(
 
   if (!elapsedMinutes) return "FIRST_HALF";
 
-  if (elapsedMinutes < 45) {
+  if (elapsedMinutes <= 45) {
     return "FIRST_HALF";
-  } else if (elapsedMinutes < 60) {
-    return "HALF_TIME";
-  } else if (elapsedMinutes < 90) {
+  } else if (elapsedMinutes <= 90) {
     return "SECOND_HALF";
   } else if (elapsedMinutes < 120) {
     return "EXTRA_TIME";

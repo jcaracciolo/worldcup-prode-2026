@@ -1,9 +1,13 @@
 import {
   Match,
-  MatchesResponse,
   StandingsResponse,
   TeamsResponse,
 } from "@/types/football";
+import {
+  initializeProviders,
+  getMatchesFromComposite,
+  fetchBaseMatch,
+} from "@/lib/providers";
 
 const API_BASE_URL = "https://api.football-data.org/v4";
 const COMPETITION_CODE = "WC";
@@ -13,7 +17,7 @@ async function fetchFromAPI<T>(endpoint: string): Promise<T> {
     headers: {
       "X-Auth-Token": process.env.FOOTBALL_DATA_API_TOKEN!,
     },
-    next: { revalidate: 60 }, // Cache for 60 seconds
+    next: { revalidate: 60 },
   });
 
   if (!response.ok) {
@@ -25,20 +29,17 @@ async function fetchFromAPI<T>(endpoint: string): Promise<T> {
   return response.json();
 }
 
+/**
+ * Fetch all matches using the composite provider.
+ * Base schedule from football-data.org + live overlay from API-FOOTBALL when matches are live.
+ */
 export async function getMatches(): Promise<Match[]> {
-  const data = await fetchFromAPI<MatchesResponse>(
-    `/competitions/${COMPETITION_CODE}/matches`,
-  );
-  return data.matches;
+  initializeProviders();
+  return getMatchesFromComposite();
 }
 
 export async function getMatch(matchId: number): Promise<Match | null> {
-  try {
-    const data = await fetchFromAPI<Match>(`/matches/${matchId}`);
-    return data;
-  } catch {
-    return null;
-  }
+  return fetchBaseMatch(matchId);
 }
 
 export async function getStandings(): Promise<StandingsResponse> {

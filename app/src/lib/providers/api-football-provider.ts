@@ -32,29 +32,25 @@ interface ApiFootballResponse {
  * Live data provider using API-FOOTBALL (api-sports.io).
  * Free tier: 100 requests/day, 10 requests/minute.
  *
- * Strategy: fetch today's fixtures (includes live + recently finished).
- * This covers both in-play scores AND final results that football-data.org
- * may not have updated yet.
- *
- * Note: Free plan blocks league/season filters for 2026, but date= works.
+ * Supports multiple instances with different API keys to increase quota.
  */
 export class ApiFootballProvider implements LiveDataProvider {
-  readonly name = "api-football";
-  readonly priority = 10;
+  readonly name: string;
+  readonly priority: number;
+  private readonly apiKey: string;
+
+  constructor(apiKey: string, instanceId: number = 1) {
+    this.apiKey = apiKey;
+    this.name = instanceId === 1 ? "api-football" : `api-football-${instanceId}`;
+    this.priority = 10 + instanceId - 1; // 10, 11, 12, ...
+  }
 
   async fetchLiveMatches(): Promise<LiveMatchData[]> {
-    const apiKey = process.env.API_FOOTBALL_KEY;
-    if (!apiKey) {
-      throw new ProviderError(this.name, "API_FOOTBALL_KEY not set");
-    }
-
-    // Fetch today's fixtures — includes live AND finished matches.
-    // This is better than live=all which drops matches once they end.
     const today = new Date().toISOString().slice(0, 10);
     const url = `${API_BASE}/fixtures?date=${today}`;
 
     const response = await fetch(url, {
-      headers: { "x-apisports-key": apiKey },
+      headers: { "x-apisports-key": this.apiKey },
       cache: "no-store",
     });
 

@@ -28,16 +28,28 @@ export function initializeProviders(): void {
   if (initialized) return;
   initialized = true;
 
-  // API-FOOTBALL: 100 requests/day on free tier
-  if (process.env.API_FOOTBALL_KEY) {
-    providerRegistry.register(new ApiFootballProvider(), 100);
-    console.log("[providers] Registered: api-football (priority 10, limit 100/day)");
-  } else {
-    console.warn("[providers] API_FOOTBALL_KEY not set — api-football provider disabled");
-  }
+  // Register all API-FOOTBALL keys (API_FOOTBALL_KEY, API_FOOTBALL_KEY_2, etc.)
+  // Each gets 100 req/day, auto-failover when one is exhausted.
+  const keys = getApiFootballKeys();
+  keys.forEach((key, i) => {
+    const provider = new ApiFootballProvider(key, i + 1);
+    providerRegistry.register(provider, 100);
+    console.log(`[providers] Registered: ${provider.name} (priority ${provider.priority}, limit 100/day)`);
+  });
 
-  // Add more providers here:
-  // if (process.env.ISPORTS_API_KEY) {
-  //   providerRegistry.register(new ISportsProvider(), 200);
-  // }
+  if (keys.length === 0) {
+    console.warn("[providers] No API_FOOTBALL_KEY set — live data disabled");
+  }
+}
+
+function getApiFootballKeys(): string[] {
+  const keys: string[] = [];
+  // API_FOOTBALL_KEY, API_FOOTBALL_KEY_2, API_FOOTBALL_KEY_3, ...
+  const first = process.env.API_FOOTBALL_KEY;
+  if (first) keys.push(first);
+  for (let i = 2; i <= 10; i++) {
+    const key = process.env[`API_FOOTBALL_KEY_${i}`];
+    if (key) keys.push(key);
+  }
+  return keys;
 }

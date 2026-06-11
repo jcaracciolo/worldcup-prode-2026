@@ -58,7 +58,7 @@ export default function MatchCard({ match, showDate = false }: MatchCardProps) {
   };
 
   return (
-    <Link href={`/match/${match.id}`}>
+    <Link href={`/match/${match.id}`} prefetch={false}>
       <div
         id={isLive ? `live-match-${match.id}` : undefined}
         className={`match-card glass-card-light p-3 sm:p-5 cursor-pointer group hover:ring-2 hover:ring-emerald-500/30 transition-all border-2 ${isLive ? "border-red-500 live-match" : "border-white/20"}`}

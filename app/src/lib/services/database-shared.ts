@@ -1089,13 +1089,26 @@ export function createTournamentSettingsService(
 // =====================================================================
 
 export function createAuthService(supabase: SupabaseClient): AuthService {
+  // Dedup concurrent auth.getUser() calls — share a single in-flight promise
+  let getUserPromise: Promise<{ data: { user: import("@supabase/supabase-js").User | null }; error: import("@supabase/supabase-js").AuthError | null }> | null = null;
+
+  async function getSupabaseUser() {
+    if (getUserPromise) return getUserPromise;
+    getUserPromise = supabase.auth.getUser();
+    try {
+      return await getUserPromise;
+    } finally {
+      getUserPromise = null;
+    }
+  }
+
   return {
     async getUser(): Promise<ServiceResult<AuthUser>> {
       try {
         const {
           data: { user },
           error,
-        } = await supabase.auth.getUser();
+        } = await getSupabaseUser();
         if (error) throw error;
         if (!user) return { data: null, error: null };
         return {
@@ -1125,7 +1138,7 @@ export function createAuthService(supabase: SupabaseClient): AuthService {
         const {
           data: { user },
           error: authError,
-        } = await supabase.auth.getUser();
+        } = await getSupabaseUser();
         if (authError) throw authError;
         if (!user) return { data: null, error: null };
 

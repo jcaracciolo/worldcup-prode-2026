@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
   ReactNode,
 } from "react";
 import { useDatabase } from "@/contexts/DatabaseContext";
@@ -99,15 +100,36 @@ export function UserProvider({ children }: { children: ReactNode }) {
     [user, db],
   );
 
+  // In-flight dedup for getAllProfiles
+  const allProfilesPromiseRef = useRef<Promise<Profile[]> | null>(null);
+
   const getAllProfiles = useCallback(async () => {
-    const { data } = await db.profiles.getAllProfiles();
-    const profiles = data || [];
-    cacheBulkSet(profiles);
-    for (const p of profiles) {
-      cacheSet(p.id, p);
+    // Return existing in-flight promise if one is already running
+    if (allProfilesPromiseRef.current) {
+      return allProfilesPromiseRef.current;
     }
-    return profiles;
-  }, [db, cacheBulkSet, cacheSet]);
+
+    // If we already have cached data, return it immediately
+    const cached = cacheBulkGet();
+    if (cached) return cached;
+
+    const promise = (async () => {
+      const { data } = await db.profiles.getAllProfiles();
+      const profiles = data || [];
+      cacheBulkSet(profiles);
+      for (const p of profiles) {
+        cacheSet(p.id, p);
+      }
+      return profiles;
+    })();
+
+    allProfilesPromiseRef.current = promise;
+    try {
+      return await promise;
+    } finally {
+      allProfilesPromiseRef.current = null;
+    }
+  }, [db, cacheBulkSet, cacheBulkGet, cacheSet]);
 
   const getCachedAllProfiles = useCallback(
     () => cacheBulkGet(),

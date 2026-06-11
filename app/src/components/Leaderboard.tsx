@@ -67,6 +67,7 @@ export default function Leaderboard() {
               <Link
                 key={score.userId}
                 href={`/user/${score.userId}`}
+                prefetch={false}
                 className={`flex items-center px-3 sm:px-6 py-3 sm:py-4 hover:bg-white/5 transition-all ${
                   isCurrentUser ? "bg-emerald-500/10" : ""
                 }`}

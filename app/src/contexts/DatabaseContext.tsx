@@ -77,6 +77,13 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
     return createAuthService(supabaseClient);
   }, [supabaseClient]);
 
+  // Stable database service for loading competitions — NOT scoped to any competition.
+  // This breaks the circular dependency: loadUserCompetitions → setCompetitionId → db recreated → effect re-runs
+  const stableDb = useMemo(() => {
+    if (!supabaseClient) return null;
+    return createDatabaseServiceFromClient(supabaseClient, null);
+  }, [supabaseClient]);
+
   // Competition-scoped database service.
   // Recreated when competition changes, but auth operations should use
   // authService above instead of db.auth.
@@ -88,15 +95,23 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
     );
   }, [supabaseClient, currentCompetitionId]);
 
-  // Load user's competitions after auth
+  // Load user's competitions after auth (with in-flight dedup)
+  const competitionsPromiseRef = React.useRef<Promise<void> | null>(null);
+
   const loadUserCompetitions = useCallback(
     async (userId: string) => {
-      if (!db || !authService) return;
+      if (!stableDb || !authService) return;
 
+      // Dedup: if already loading, return the existing promise
+      if (competitionsPromiseRef.current) {
+        return competitionsPromiseRef.current;
+      }
+
+      const promise = (async () => {
       setCompetitionLoading(true);
       try {
         const { data: competitions, error } =
-          await db.competitionMembers.getUserCompetitions(userId);
+          await stableDb.competitionMembers.getUserCompetitions(userId);
 
         if (error) {
           console.error("[DB] Failed to load user competitions:", error);
@@ -133,14 +148,22 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
       } finally {
         setCompetitionLoading(false);
       }
+      })();
+
+      competitionsPromiseRef.current = promise;
+      try {
+        await promise;
+      } finally {
+        competitionsPromiseRef.current = null;
+      }
     },
-    [db, authService],
+    [stableDb, authService],
   );
 
   // Listen for auth changes to load competitions.
-  // Uses authService (stable) so this effect doesn't re-run on competition switch.
+  // Uses authService + stableDb (both stable) so this effect doesn't re-run on competition switch.
   useEffect(() => {
-    if (!authService || !db) return;
+    if (!authService || !stableDb) return;
 
     // Check for existing user on mount
     const checkUser = async () => {
@@ -159,7 +182,7 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
           if (savedId) {
             setCurrentCompetitionId(savedId);
           } else {
-            const { data: competitions } = await db.competitions.getAll();
+            const { data: competitions } = await stableDb.competitions.getAll();
             if (competitions && competitions.length > 0) {
               setCurrentCompetitionId(competitions[0].id);
             }
@@ -187,7 +210,7 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
     return () => {
       unsubscribe();
     };
-  }, [authService, db, loadUserCompetitions]);
+  }, [authService, stableDb, loadUserCompetitions]);
 
   // Switch competition
   const switchCompetition = useCallback(

@@ -41,7 +41,7 @@ interface PredictionInputProps {
 }
 
 function MatchContentLink({ children, className, matchId }: { children: ReactNode; className: string; matchId: number }) {
-  return <Link href={`/match/${matchId}`} className={className}>{children}</Link>;
+  return <Link href={`/match/${matchId}`} prefetch={false} className={className}>{children}</Link>;
 }
 
 function MatchContentDiv({ children, className }: { children: ReactNode; className: string; matchId?: number }) {

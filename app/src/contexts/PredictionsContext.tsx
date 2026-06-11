@@ -353,7 +353,20 @@ export function PredictionsProvider({
 
   // Get all users' predictions (for leaderboard)
   // Also populates individual user cache for faster profile page loads
+  // Uses in-flight dedup so concurrent callers share a single fetch.
+  const allPredictionsPromiseRef = React.useRef<Promise<AllPredictionsMap> | null>(null);
+
   const getAllPredictions = useCallback(async () => {
+    // Return existing in-flight promise if one is already running
+    if (allPredictionsPromiseRef.current) {
+      return allPredictionsPromiseRef.current;
+    }
+
+    // If we already have cached data, return it immediately
+    const cached = cacheBulkGet();
+    if (cached) return cached;
+
+    const promise = (async () => {
     const [predictionsResult, overridesResult, thirdPlaceResult] = await Promise.all([
       db.predictions.getAllPredictions(),
       db.overrides.getAllOverrides(),
@@ -424,7 +437,15 @@ export function PredictionsProvider({
     cacheBulkSet(byUser);
 
     return byUser;
-  }, [db, cacheGet, cacheSet, cacheBulkSet]);
+    })();
+
+    allPredictionsPromiseRef.current = promise;
+    try {
+      return await promise;
+    } finally {
+      allPredictionsPromiseRef.current = null;
+    }
+  }, [db, cacheGet, cacheSet, cacheBulkSet, cacheBulkGet]);
 
   const getCachedAllPredictions = useCallback(() => cacheBulkGet(), [cacheBulkGet]);
 

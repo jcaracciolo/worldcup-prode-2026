@@ -340,15 +340,11 @@ export function MatchProvider({
     }
   }, [fetchMatches, initialMatches]);
 
-  // Track if initial fetch is done to avoid double-fetching
-  const initialFetchDone = useRef(false);
-  useEffect(() => {
-    if (!initialMatches) {
-      initialFetchDone.current = false;
-    } else {
-      initialFetchDone.current = true;
-    }
-  }, [initialMatches]);
+  // Use ref for rawMatches so the polling effect can check hasMatchesToday
+  // without rawMatches being in the dependency array (which causes infinite loops
+  // since every fetch creates a new array reference).
+  const rawMatchesRef = useRef(rawMatches);
+  rawMatchesRef.current = rawMatches;
 
   // Tick-based updates - controlled by TimeContext
   // In real mode: fetches every 60 seconds (when there are live/today matches)
@@ -363,13 +359,13 @@ export function MatchProvider({
     }
 
     // Only fetch in real mode when there's a reason to
-    const shouldFetch = hasLiveMatches || hasMatchesToday(rawMatches);
+    const shouldFetch = hasLiveMatches || hasMatchesToday(rawMatchesRef.current);
     if (!shouldFetch) {
       return;
     }
 
     fetchMatches();
-  }, [tick, isSimulated, hasLiveMatches, rawMatches, fetchMatches]);
+  }, [tick, isSimulated, hasLiveMatches, fetchMatches]);
 
   const value: MatchContextValue = {
     matches,

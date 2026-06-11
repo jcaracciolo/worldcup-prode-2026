@@ -9,7 +9,7 @@ import {
   getMatchResult,
   getPredictionResult,
   isGroupStageMatch,
-} from "./football-api";
+} from "./match-utils";
 import { LiveBracket } from "./live-bracket-resolver";
 import { PredictionBracketResolver } from "./prediction-bracket-resolver";
 import { getTeamLabel } from "./team-display";

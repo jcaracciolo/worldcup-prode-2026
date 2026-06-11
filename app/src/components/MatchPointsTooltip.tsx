@@ -6,7 +6,7 @@ import {
   getMaxPossiblePoints,
   ROUND_MULTIPLIERS,
 } from "@/lib/scoring";
-import { isGroupStageMatch } from "@/lib/football-api";
+import { isGroupStageMatch } from "@/lib/match-utils";
 import { useMatch } from "@/contexts/MatchContext";
 import { useLeaderboard } from "@/contexts/LeaderboardContext";
 import { useState, useMemo } from "react";

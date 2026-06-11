@@ -132,13 +132,18 @@ export function getRankedThirdPlaceTeamsWithOverrides(
   if (overrides.length === 0) return teams;
 
   // Apply overrides: move each overridden team to its specified rank
+  // Only apply if the team and the target position team have equal points
   for (const override of overrides) {
     const teamIndex = teams.findIndex((t) => t.group === override.group_name);
     if (teamIndex === -1) continue;
 
+    const targetIndex = Math.max(0, Math.min(override.rank - 1, teams.length - 1));
+    if (teamIndex === targetIndex) continue;
+
+    // Only apply override if points match (stale overrides are silently ignored)
+    if (teams[teamIndex].points !== teams[targetIndex].points) continue;
+
     const [team] = teams.splice(teamIndex, 1);
-    // rank is 1-based, insert at rank-1
-    const targetIndex = Math.max(0, Math.min(override.rank - 1, teams.length));
     teams.splice(targetIndex, 0, team);
   }
 

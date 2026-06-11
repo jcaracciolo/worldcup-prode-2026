@@ -10,6 +10,7 @@ import SimulationPanel from "@/components/admin/SimulationPanel";
 import CompetitionPicker from "@/components/admin/CompetitionPicker";
 import InviteCodesPanel from "@/components/admin/InviteCodesPanel";
 import UsersPanel from "@/components/admin/UsersPanel";
+import SummaryPanel from "@/components/admin/SummaryPanel";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -72,6 +73,8 @@ export default function AdminPage() {
         <h1 className="text-2xl font-bold mb-6 text-white">Admin Panel</h1>
 
         <SimulationPanel />
+
+        <SummaryPanel />
 
         <CompetitionPicker
           competitions={competitions}

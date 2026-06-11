@@ -3,11 +3,6 @@ import { API_FOOTBALL_STATUS_MAP, ProviderRateLimitError, ProviderError } from "
 
 const API_BASE = "https://v3.football.api-sports.io";
 
-// Note: We use `live=all` instead of filtering by league/season because
-// API-FOOTBALL's free plan restricts season access (2022-2024 only) but
-// allows fetching all currently live fixtures. The composite provider
-// matches results to WC fixtures by team name.
-
 // API-FOOTBALL response types (subset of what we need)
 interface ApiFootballFixture {
   fixture: {
@@ -35,7 +30,13 @@ interface ApiFootballResponse {
 
 /**
  * Live data provider using API-FOOTBALL (api-sports.io).
- * Free tier: 100 requests/day. Fetches only live World Cup fixtures.
+ * Free tier: 100 requests/day, 10 requests/minute.
+ *
+ * Strategy: fetch today's fixtures (includes live + recently finished).
+ * This covers both in-play scores AND final results that football-data.org
+ * may not have updated yet.
+ *
+ * Note: Free plan blocks league/season filters for 2026, but date= works.
  */
 export class ApiFootballProvider implements LiveDataProvider {
   readonly name = "api-football";
@@ -47,9 +48,10 @@ export class ApiFootballProvider implements LiveDataProvider {
       throw new ProviderError(this.name, "API_FOOTBALL_KEY not set");
     }
 
-    // Use live=all to get all currently live fixtures globally.
-    // Free plan can't filter by league/season for 2026, but live=all works.
-    const url = `${API_BASE}/fixtures?live=all`;
+    // Fetch today's fixtures — includes live AND finished matches.
+    // This is better than live=all which drops matches once they end.
+    const today = new Date().toISOString().slice(0, 10);
+    const url = `${API_BASE}/fixtures?date=${today}`;
 
     const response = await fetch(url, {
       headers: { "x-apisports-key": apiKey },
@@ -72,9 +74,8 @@ export class ApiFootballProvider implements LiveDataProvider {
 
     if (data.errors && Object.keys(data.errors).length > 0) {
       const errorMsg = Object.values(data.errors).join(", ");
-      // Check for rate limit error in the response body
       if (errorMsg.toLowerCase().includes("rate limit")) {
-        throw new ProviderRateLimitError(this.name, 900);
+        throw new ProviderRateLimitError(this.name, 60);
       }
       throw new ProviderError(this.name, errorMsg);
     }

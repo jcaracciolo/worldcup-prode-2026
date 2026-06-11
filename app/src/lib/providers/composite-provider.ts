@@ -11,6 +11,46 @@ import { fetchBaseMatches } from "./football-data-provider";
 const LIVE_WINDOW_BEFORE_MS = 15 * 60 * 1000; // 15 min before kickoff
 const LIVE_WINDOW_AFTER_MS = 3 * 60 * 60 * 1000; // 3h after kickoff (covers ET/pens)
 
+// =====================================================================
+// LIVE STATE CACHE
+// =====================================================================
+
+/**
+ * In-memory cache of the last known live state per match.
+ * Key: "homeTeamNormalized|awayTeamNormalized|YYYY-MM-DD"
+ * This survives across requests in the same server process.
+ *
+ * When a live provider returns data for a match, we cache it here.
+ * When the match leaves the live feed (e.g., just finished), we still
+ * have the last known state to return instead of falling back to the
+ * base provider's stale TIMED status.
+ *
+ * Entries expire after LIVE_WINDOW_AFTER_MS from kickoff.
+ */
+const liveStateCache = new Map<string, { data: LiveMatchData; cachedAt: number }>();
+
+function liveStateCacheKey(homeTeam: string, awayTeam: string, utcDate: string): string {
+  return `${normalizeTeamName(homeTeam)}|${normalizeTeamName(awayTeam)}|${utcDate.slice(0, 10)}`;
+}
+
+function cacheLiveState(liveMatch: LiveMatchData): void {
+  const key = liveStateCacheKey(liveMatch.homeTeamName, liveMatch.awayTeamName, liveMatch.utcDate);
+  liveStateCache.set(key, { data: liveMatch, cachedAt: Date.now() });
+}
+
+function getCachedLiveState(homeTeam: string, awayTeam: string, utcDate: string): LiveMatchData | null {
+  const key = liveStateCacheKey(homeTeam, awayTeam, utcDate);
+  const entry = liveStateCache.get(key);
+  if (!entry) return null;
+
+  // Expire entries older than 4 hours
+  if (Date.now() - entry.cachedAt > 4 * 60 * 60 * 1000) {
+    liveStateCache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
 /**
  * Check if any match is in its live window based on scheduled kickoff times.
  * This determines whether we bother calling live providers at all.
@@ -154,30 +194,53 @@ export async function getMatchesFromComposite(): Promise<Match[]> {
     return baseMatches;
   }
 
+  // Identify matches in the live window (candidates for overlay)
+  const candidateMatches = getMatchesInLiveWindow(baseMatches);
+  const candidateIds = new Set(candidateMatches.map((m) => m.id));
+
   // Step 3: Try live providers in priority order
   const liveData = await fetchFromLiveProviders();
 
   if (!liveData || liveData.length === 0) {
-    // No live data available from any provider — return base as-is
-    return baseMatches;
+    // No live data from providers — check live state cache for recently live matches
+    return baseMatches.map((match) => {
+      if (!candidateIds.has(match.id)) return match;
+      const cached = getCachedLiveState(match.homeTeam.name, match.awayTeam.name, match.utcDate);
+      if (cached) {
+        console.log(
+          `[composite] Using cached live state for ${match.homeTeam.name} vs ${match.awayTeam.name}: ${cached.status}`,
+        );
+        return mergeMatchWithLiveData(match, cached);
+      }
+      return match;
+    });
   }
 
   // Step 4: Merge live data onto base matches in the live window
-  const candidateMatches = getMatchesInLiveWindow(baseMatches);
-  const candidateIds = new Set(candidateMatches.map((m) => m.id));
-
   return baseMatches.map((match) => {
     if (!candidateIds.has(match.id)) return match;
 
     const liveMatch = findLiveMatch(match, liveData);
-    if (!liveMatch) return match;
+    if (liveMatch) {
+      // Cache this live state for post-match fallback
+      cacheLiveState(liveMatch);
+      const merged = mergeMatchWithLiveData(match, liveMatch);
+      console.log(
+        `[composite] Live overlay for ${match.homeTeam.name} vs ${match.awayTeam.name}: ` +
+          `${match.status} → ${merged.status}, score: ${merged.score.fullTime.home}-${merged.score.fullTime.away}`,
+      );
+      return merged;
+    }
 
-    const merged = mergeMatchWithLiveData(match, liveMatch);
-    console.log(
-      `[composite] Live overlay for ${match.homeTeam.name} vs ${match.awayTeam.name}: ` +
-        `${match.status} → ${merged.status}, score: ${merged.score.fullTime.home}-${merged.score.fullTime.away}`,
-    );
-    return merged;
+    // No fresh live data for this match — check cache (match may have just ended)
+    const cached = getCachedLiveState(match.homeTeam.name, match.awayTeam.name, match.utcDate);
+    if (cached) {
+      console.log(
+        `[composite] Using cached live state for ${match.homeTeam.name} vs ${match.awayTeam.name}: ${cached.status}`,
+      );
+      return mergeMatchWithLiveData(match, cached);
+    }
+    return match;
   });
 }
 

@@ -1,15 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { GlobalLiveIndicator } from "@/components/MatchStatus";
 import {
   GroupStageSection,
   KnockoutStageSection,
+  ByDateSection,
 } from "@/components/predictions";
 import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
 import { useScrollToLiveMatch } from "@/hooks/useScrollToLiveMatch";
 import LoadingSpinner from "@/components/LoadingSpinner";
+
+type FixtureView = "group" | "date";
 
 export default function FixturesPage() {
   // Use centralized match context
@@ -29,6 +32,9 @@ export default function FixturesPage() {
   // Get stage lock status to determine section order
   const { stageLockStatus } = useTime();
   const showKnockoutFirst = stageLockStatus.knockoutStageLocked;
+
+  // View mode
+  const [view, setView] = useState<FixtureView>("group");
 
   // Standings and third-place qualifying come from the live bracket
   const thirdPlaceQualifying = liveBracket.thirdPlaceQualifying;
@@ -93,8 +99,33 @@ export default function FixturesPage() {
           </div>
         </div>
 
-        {/* Show Group Stage first during group stage, Knockout first during knockouts */}
-        {showKnockoutFirst ? (
+        {/* View Toggle */}
+        <div className="flex gap-1 mb-6 p-1 glass-card w-fit rounded-xl">
+          <button
+            onClick={() => setView("group")}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              view === "group"
+                ? "bg-emerald-500/30 text-emerald-300"
+                : "text-white/50 hover:text-white/80 hover:bg-white/5"
+            }`}
+          >
+            By Group
+          </button>
+          <button
+            onClick={() => setView("date")}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              view === "date"
+                ? "bg-blue-500/30 text-blue-300"
+                : "text-white/50 hover:text-white/80 hover:bg-white/5"
+            }`}
+          >
+            By Date
+          </button>
+        </div>
+
+        {view === "date" ? (
+          <ByDateSection matches={matches} />
+        ) : showKnockoutFirst ? (
           <>
             {/* Knockout Stage */}
             {knockoutStages.size > 0 && (

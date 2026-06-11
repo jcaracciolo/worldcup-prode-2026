@@ -107,6 +107,7 @@ export default function GroupStageSection({
                               onChange={() => {}}
                               disabled={true}
                               fifaMatchNumber={fifaNumber}
+                              linkToMatch={true}
                             />
                           );
                         }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FifaMatchId } from "@/types/football";
 import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { LocalPrediction } from "@/types/database";
@@ -17,6 +18,7 @@ import {
 import MobileScoreDisplay, {
   ActiveField,
 } from "@/components/MobileScoreDisplay";
+import { ReactNode } from "react";
 
 interface PredictionInputProps {
   match: MatchWithLiveInfo;
@@ -34,6 +36,16 @@ interface PredictionInputProps {
   activeField?: ActiveField | null;
   /** Mobile quick-entry: called when a score field is tapped */
   onFieldTap?: (field: ActiveField) => void;
+  /** When true, wraps the match row in a Link to /match/{id} */
+  linkToMatch?: boolean;
+}
+
+function MatchContentLink({ children, className, matchId }: { children: ReactNode; className: string; matchId: number }) {
+  return <Link href={`/match/${matchId}`} className={className}>{children}</Link>;
+}
+
+function MatchContentDiv({ children, className }: { children: ReactNode; className: string; matchId?: number }) {
+  return <div className={className}>{children}</div>;
 }
 
 export default function PredictionInput({
@@ -45,6 +57,7 @@ export default function PredictionInput({
   fifaMatchNumber,
   activeField,
   onFieldTap,
+  linkToMatch = false,
 }: PredictionInputProps) {
   const homeTeam = match.homeTeam;
   const awayTeam = match.awayTeam;
@@ -112,10 +125,12 @@ export default function PredictionInput({
 
   const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
 
+  const ContentWrapper = linkToMatch ? MatchContentLink : MatchContentDiv;
+
   return (
-    <div
-      data-match-id={fifaMatchNumber}
-      className={`py-1.5 px-2 rounded-lg transition-colors ${
+    <ContentWrapper
+      matchId={match.id}
+      className={`block py-1.5 px-2 rounded-lg transition-colors ${
         disabled
           ? "bg-slate-900/60 opacity-70"
           : "bg-slate-800/60 hover:bg-slate-800/80"
@@ -125,10 +140,10 @@ export default function PredictionInput({
           : isLive
             ? "border border-red-500/60"
             : "border border-white/10"
-      }`}
+      } ${linkToMatch ? "cursor-pointer" : ""}`}
     >
       {/* Mobile Layout - Single row */}
-      <div className="lg:hidden flex items-center gap-1">
+      <div data-match-id={fifaMatchNumber} className="lg:hidden flex items-center gap-1">
         {/* Date+Time+Match# */}
         {isLive ? (
           <div className="w-10 shrink-0 flex items-center justify-center">
@@ -143,93 +158,96 @@ export default function PredictionInput({
           />
         )}
 
-        {/* Home Team */}
-        <div className="flex-1 min-w-0 flex items-center justify-end gap-1.5">
-          {needsWinnerSelect ? (
-            <button
-              type="button"
-              onClick={() => homeTeam?.id && handleWinnerChange(homeTeam.id)}
-              disabled={disabled || !homeTeam?.id}
-              className={`text-xs font-semibold truncate px-0.5 py-0.5 rounded transition-all ${
-                homeIsWinner
-                  ? "bg-amber-500/80 text-slate-900"
-                  : "text-white hover:bg-white/10"
-              } disabled:opacity-50`}
-            >
-              {homeTeam?.tla || match.homeDisplayName}
-            </button>
-          ) : (
-            <span
-              className={`text-xs font-semibold truncate px-0.5 py-0.5 rounded ${homeIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
-            >
-              {homeTeam?.tla || match.homeDisplayName}
-            </span>
-          )}
-          <TeamCrest team={homeTeam} size="sm" />
-        </div>
-
-        {/* Score Inputs - mobile: tappable display if onFieldTap available */}
-        {onFieldTap ? (
-          <MobileScoreDisplay
-            homeGoals={homeGoals}
-            awayGoals={awayGoals}
-            matchId={fifaMatchNumber}
-            disabled={disabled}
-            activeField={activeField ?? null}
-            onTap={onFieldTap}
-          />
-        ) : (
-          <div className="flex items-center gap-0.5 shrink-0">
-            <input
-              type="number"
-              min="0"
-              max="20"
-              value={homeGoals ?? ""}
-              onChange={(e) => handleHomeChange(e.target.value)}
-              disabled={disabled}
-              className="w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
-              placeholder="-"
-            />
-            <span className="text-white/50 font-bold text-xs">-</span>
-            <input
-              type="number"
-              min="0"
-              max="20"
-              value={awayGoals ?? ""}
-              onChange={(e) => handleAwayChange(e.target.value)}
-              disabled={disabled}
-              className="w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
-              placeholder="-"
-            />
+        {/* Home Team + Score + Away Team */}
+        <div
+          className="flex-1 flex items-center gap-1 min-w-0"
+        >
+          {/* Home Team */}
+          <div className="flex-1 min-w-0 flex items-center justify-end gap-1.5">
+            {needsWinnerSelect ? (
+              <button
+                type="button"
+                onClick={() => homeTeam?.id && handleWinnerChange(homeTeam.id)}
+                disabled={disabled || !homeTeam?.id}
+                className={`text-xs font-semibold truncate px-0.5 py-0.5 rounded transition-all ${
+                  homeIsWinner
+                    ? "bg-amber-500/80 text-slate-900"
+                    : "text-white hover:bg-white/10"
+                } disabled:opacity-50`}
+              >
+                {homeTeam?.tla || match.homeDisplayName}
+              </button>
+            ) : (
+              <span
+                className={`text-xs font-semibold truncate px-0.5 py-0.5 rounded ${homeIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
+              >
+                {homeTeam?.tla || match.homeDisplayName}
+              </span>
+            )}
+            <TeamCrest team={homeTeam} size="sm" />
           </div>
-        )}
 
-        {/* Away Team */}
-        <div className="flex-1 min-w-0 flex items-center gap-1.5">
-          <TeamCrest team={awayTeam} size="sm" />
-          {needsWinnerSelect ? (
-            <button
-              type="button"
-              onClick={() => awayTeam?.id && handleWinnerChange(awayTeam.id)}
-              disabled={disabled || !awayTeam?.id}
-              className={`text-xs font-semibold truncate px-0.5 py-0.5 rounded transition-all ${
-                awayIsWinner
-                  ? "bg-amber-500/80 text-slate-900"
-                  : "text-white hover:bg-white/10"
-              } disabled:opacity-50`}
-            >
-              {awayTeam?.tla || match.awayDisplayName}
-            </button>
+          {/* Score Inputs - mobile: tappable display if onFieldTap available */}
+          {onFieldTap ? (
+            <MobileScoreDisplay
+              homeGoals={homeGoals}
+              awayGoals={awayGoals}
+              matchId={fifaMatchNumber}
+              disabled={disabled}
+              activeField={activeField ?? null}
+              onTap={onFieldTap}
+            />
           ) : (
-            <span
-              className={`text-xs font-semibold truncate px-0.5 py-0.5 rounded ${awayIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
-            >
-              {awayTeam?.tla || match.awayDisplayName}
-            </span>
+            <div className="flex items-center gap-0.5 shrink-0">
+              <input
+                type="number"
+                min="0"
+                max="20"
+                value={homeGoals ?? ""}
+                onChange={(e) => handleHomeChange(e.target.value)}
+                disabled={disabled}
+                className="w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
+                placeholder="-"
+              />
+              <span className="text-white/50 font-bold text-xs">-</span>
+              <input
+                type="number"
+                min="0"
+                max="20"
+                value={awayGoals ?? ""}
+                onChange={(e) => handleAwayChange(e.target.value)}
+                disabled={disabled}
+                className="w-8 h-7 text-center text-sm font-bold bg-white/90 border border-white rounded text-slate-800 placeholder-slate-400 focus:ring-1 focus:ring-emerald-500 disabled:bg-white/30 disabled:text-white/50 disabled:border-white/20"
+                placeholder="-"
+              />
+            </div>
           )}
-        </div>
 
-        {/* Venue - mobile hidden, desktop only */}
+          {/* Away Team */}
+          <div className="flex-1 min-w-0 flex items-center gap-1.5">
+            <TeamCrest team={awayTeam} size="sm" />
+            {needsWinnerSelect ? (
+              <button
+                type="button"
+                onClick={() => awayTeam?.id && handleWinnerChange(awayTeam.id)}
+                disabled={disabled || !awayTeam?.id}
+                className={`text-xs font-semibold truncate px-0.5 py-0.5 rounded transition-all ${
+                  awayIsWinner
+                    ? "bg-amber-500/80 text-slate-900"
+                    : "text-white hover:bg-white/10"
+                } disabled:opacity-50`}
+              >
+                {awayTeam?.tla || match.awayDisplayName}
+              </button>
+            ) : (
+              <span
+                className={`text-xs font-semibold truncate px-0.5 py-0.5 rounded ${awayIsWinner ? "bg-amber-500/80 text-slate-900" : "text-white"}`}
+              >
+                {awayTeam?.tla || match.awayDisplayName}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Desktop Layout - Compact like profile page */}
@@ -249,7 +267,9 @@ export default function PredictionInput({
         />
 
         {/* Match section */}
-        <div className="flex-1 flex items-center justify-center">
+        <div
+          className="flex-1 flex items-center justify-center"
+        >
           {/* Home Team */}
           <div className="flex items-center justify-end gap-1.5 flex-1 min-w-0">
             {needsWinnerSelect ? (
@@ -355,6 +375,6 @@ export default function PredictionInput({
           </div>
         </div>
       </div>
-    </div>
+    </ContentWrapper>
   );
 }

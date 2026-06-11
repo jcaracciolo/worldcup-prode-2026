@@ -28,10 +28,25 @@ export async function GET() {
       const cachedData = cacheData.data as unknown as { matches: Match[] };
       matches = cachedData.matches || [];
     } else {
-      // Fetch fresh data from API
+      // Fetch fresh data from API (composite: base + live overlay)
       matches = await getMatches();
 
-      // Update cache using database service
+      // Persist any matches with live scores individually in DB.
+      // This ensures scores survive server restarts and deploys, even when
+      // football-data.org free tier withholds score data.
+      const liveMatches = matches.filter(
+        (m) =>
+          (m.status === "IN_PLAY" ||
+            m.status === "PAUSED" ||
+            m.status === "FINISHED") &&
+          m.score.fullTime.home !== null &&
+          m.score.fullTime.away !== null,
+      );
+      for (const match of liveMatches) {
+        await db.matchesCache.updateIndividualMatchCache(match.id, match);
+      }
+
+      // Update bulk cache
       await db.matchesCache.updateMatchesCache(matches);
     }
 

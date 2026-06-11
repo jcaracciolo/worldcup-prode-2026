@@ -2,8 +2,11 @@ import type { LiveDataProvider, LiveMatchData } from "./types";
 import { API_FOOTBALL_STATUS_MAP, ProviderRateLimitError, ProviderError } from "./types";
 
 const API_BASE = "https://v3.football.api-sports.io";
-const WORLD_CUP_LEAGUE_ID = 1;
-const WORLD_CUP_SEASON = 2026;
+
+// Note: We use `live=all` instead of filtering by league/season because
+// API-FOOTBALL's free plan restricts season access (2022-2024 only) but
+// allows fetching all currently live fixtures. The composite provider
+// matches results to WC fixtures by team name.
 
 // API-FOOTBALL response types (subset of what we need)
 interface ApiFootballFixture {
@@ -44,8 +47,9 @@ export class ApiFootballProvider implements LiveDataProvider {
       throw new ProviderError(this.name, "API_FOOTBALL_KEY not set");
     }
 
-    // Use live=all to only get currently live fixtures (saves quota vs fetching all)
-    const url = `${API_BASE}/fixtures?league=${WORLD_CUP_LEAGUE_ID}&season=${WORLD_CUP_SEASON}&live=all`;
+    // Use live=all to get all currently live fixtures globally.
+    // Free plan can't filter by league/season for 2026, but live=all works.
+    const url = `${API_BASE}/fixtures?live=all`;
 
     const response = await fetch(url, {
       headers: { "x-apisports-key": apiKey },

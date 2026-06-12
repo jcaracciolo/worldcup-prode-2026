@@ -9,6 +9,24 @@ import { useTime } from "@/contexts/TimeContext";
 import { FifaMatchId } from "@/types/football";
 import { calculateMatchPoints } from "@/lib/scoring";
 
+/**
+ * Convert ISO 3166-1 alpha-2 country code to flag emoji.
+ * e.g. "ar" → "🇦🇷", "mx" → "🇲🇽"
+ */
+function countryToFlagEmoji(country: string | null | undefined): string {
+  if (!country || country.length !== 2) return "";
+  const codePoints = [...country.toUpperCase()].map(
+    (c) => 0x1f1e6 + c.charCodeAt(0) - 65,
+  );
+  return String.fromCodePoint(...codePoints);
+}
+
+/** Format a user's name with flag emoji prefix */
+function nameWithFlag(name: string, country: string | null | undefined): string {
+  const flag = countryToFlagEmoji(country);
+  return flag ? `${flag} ${name}` : name;
+}
+
 export default function SummaryPanel() {
   const { matches } = useMatches();
   const allPredictions = useAllPredictions();
@@ -62,7 +80,7 @@ export default function SummaryPanel() {
       lines.push(`🏟️ #${match.id} ${homeTla} vs ${awayTla} (${time})`);
 
       // Collect all predictions for this match, grouped by score
-      const grouped = new Map<string, string[]>();
+      const grouped = new Map<string, { name: string; country: string | null }[]>();
 
       predictionsMap.forEach((userData, userId) => {
         const profile = profileMap.get(userId);
@@ -76,7 +94,7 @@ export default function SummaryPanel() {
 
         const key = `${pred.home_goals}-${pred.away_goals}`;
         if (!grouped.has(key)) grouped.set(key, []);
-        grouped.get(key)!.push(profile.name);
+        grouped.get(key)!.push({ name: profile.name, country: profile.country });
       });
 
       // Group by outcome: home wins, ties, away wins
@@ -94,7 +112,7 @@ export default function SummaryPanel() {
       });
 
       // Within each group, sort by winner goals desc, then loser goals desc
-      const byGoals = (a: [string, string[]], b: [string, string[]]) => {
+      const byGoals = (a: [string, { name: string; country: string | null }[]], b: [string, { name: string; country: string | null }[]]) => {
         const [ah, aa] = a[0].split("-").map(Number);
         const [bh, ba] = b[0].split("-").map(Number);
         const aWinner = Math.max(ah, aa), aLoser = Math.min(ah, aa);
@@ -111,10 +129,10 @@ export default function SummaryPanel() {
       if (sorted.length === 0) {
         lines.push("  Sin predicciones");
       } else {
-        for (const [score, names] of sorted) {
+        for (const [score, users] of sorted) {
           lines.push(`  ${score}`);
-          for (const name of names.sort()) {
-            lines.push(`    • ${name}`);
+          for (const u of users.sort((a, b) => a.name.localeCompare(b.name))) {
+            lines.push(`    • ${nameWithFlag(u.name, u.country)}`);
           }
         }
       }
@@ -124,7 +142,7 @@ export default function SummaryPanel() {
     return lines.join("\n");
   }, [allPredictions.content, todaysMatches, profileMap, todayStr]);
 
-  // Build points text: calculate per-user points earned today
+  // Build points text: standings + day points + position changes
   const buildPointsText = useCallback(() => {
     const predictionsMap = allPredictions.content;
     if (!predictionsMap || todaysMatches.length === 0) return "";
@@ -138,12 +156,12 @@ export default function SummaryPanel() {
       return `📊 Puntos del día — ${todayStr}\n\nNo hay partidos finalizados aún.`;
     }
 
-    // Calculate points per user for today's matches only
-    const userPoints: { name: string; points: number }[] = [];
+    // Calculate today's points per user
+    const dayPointsByUser = new Map<string, number>();
 
     predictionsMap.forEach((userData, userId) => {
       const profile = profileMap.get(userId);
-      if (!profile) return; // skip users not in this competition
+      if (!profile) return;
 
       let dayTotal = 0;
       for (const match of scorableMatches) {
@@ -154,17 +172,41 @@ export default function SummaryPanel() {
         dayTotal += result.total;
       }
 
-      userPoints.push({
-        name: profile.name,
-        points: dayTotal,
-      });
+      dayPointsByUser.set(userId, dayTotal);
     });
 
-    // Sort by points descending, then by name
-    userPoints.sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
+    // Build standings with day points and position change
+    // "Yesterday's position" = position if we subtract today's points
+    const standingsWithDay = scores.map((s) => {
+      const dayPts = dayPointsByUser.get(s.userId) ?? 0;
+      return {
+        userId: s.userId,
+        name: s.displayName,
+        country: s.country,
+        position: s.position,
+        totalPoints: s.totalPoints,
+        dayPoints: dayPts,
+        // Points without today → used to compute yesterday's rank
+        pointsBeforeToday: s.totalPoints - dayPts,
+      };
+    });
+
+    // Compute yesterday's positions by sorting on pointsBeforeToday
+    const yesterdayOrder = [...standingsWithDay].sort(
+      (a, b) => b.pointsBeforeToday - a.pointsBeforeToday || a.name.localeCompare(b.name),
+    );
+    // Assign positions with tie handling
+    const yesterdayPositions = new Map<string, number>();
+    let pos = 1;
+    for (let i = 0; i < yesterdayOrder.length; i++) {
+      if (i > 0 && yesterdayOrder[i].pointsBeforeToday < yesterdayOrder[i - 1].pointsBeforeToday) {
+        pos = i + 1;
+      }
+      yesterdayPositions.set(yesterdayOrder[i].userId, pos);
+    }
 
     const lines: string[] = [];
-    lines.push(`📊 Puntos del día — ${todayStr}`);
+    lines.push(`📊 Tabla de posiciones — ${todayStr}`);
 
     // List which matches are included
     const matchLabels = scorableMatches.map((m) => {
@@ -177,13 +219,29 @@ export default function SummaryPanel() {
     lines.push(matchLabels.join(" | "));
     lines.push("");
 
-    for (const { name, points } of userPoints) {
-      const sign = points > 0 ? "+" : "";
-      lines.push(`${name}: ${sign}${points} pts`);
+    // Sort by current position
+    const sorted = [...standingsWithDay].sort(
+      (a, b) => a.position - b.position || a.name.localeCompare(b.name),
+    );
+
+    for (const entry of sorted) {
+      const yesterdayPos = yesterdayPositions.get(entry.userId) ?? entry.position;
+      const posChange = yesterdayPos - entry.position; // positive = moved up
+
+      let changeStr = "";
+      if (posChange > 0) changeStr = ` (↑${posChange})`;
+      else if (posChange < 0) changeStr = ` (↓${Math.abs(posChange)})`;
+
+      const daySign = entry.dayPoints > 0 ? "+" : "";
+      const flag = nameWithFlag(entry.name, entry.country);
+
+      lines.push(
+        `${entry.position}. ${flag} — ${entry.totalPoints} pts (${daySign}${entry.dayPoints} hoy)${changeStr}`,
+      );
     }
 
     return lines.join("\n");
-  }, [allPredictions.content, todaysMatches, profileMap, todayStr]);
+  }, [allPredictions.content, todaysMatches, profileMap, todayStr, scores]);
 
   const handleCopyPredictions = async () => {
     const text = buildPredictionsText();

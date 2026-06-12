@@ -16,9 +16,9 @@ const POST_MATCH_WINDOW_MS = 3 * 60 * 60 * 1000; // 3h after kickoff
  * Determine if a match's data from football-data.org looks stale.
  *
  * Stale means the base provider's data doesn't match reality:
- * - TIMED/SCHEDULED but kickoff was 15+ min ago → should be live
+ * - TIMED/SCHEDULED but kickoff was 3+ min ago → should be live
  * - FINISHED but scores are null → status updated, goals withheld
- * - IN_PLAY/PAUSED → technically not stale, but free tier never shows these
+ * - IN_PLAY/PAUSED → always stale: free tier may show status but not update goals
  */
 function isMatchDataStale(match: Match): boolean {
   const now = Date.now();
@@ -28,6 +28,11 @@ function isMatchDataStale(match: Match): boolean {
     now <= kickoff + POST_MATCH_WINDOW_MS;
 
   if (!inTimeWindow) return false;
+
+  // IN_PLAY or PAUSED: always overlay with live provider for real-time scores
+  if (match.status === "IN_PLAY" || match.status === "PAUSED") {
+    return true;
+  }
 
   // Should be live but still shows as not started (3+ min past kickoff)
   if (

@@ -50,14 +50,35 @@ fi
 
 # Step 3: Create deployment zip
 echo -e "${YELLOW}[3/5] Creating deployment package...${NC}"
-cd .next/standalone
-rm -f ../../deploy.zip ../../../deploy.zip
-zip -rq ../../../deploy.zip . -x "*.DS_Store"
-cd ../../..
-echo -e "${GREEN}✓ Created deploy.zip ($(ls -lh deploy.zip | awk '{print $5}'))${NC}"
+rm -f deploy.zip
+
+# Use PowerShell Compress-Archive (works on Windows without zip command)
+STANDALONE_PATH="$(cd .next/standalone && pwd -W 2>/dev/null || pwd)"
+DEPLOY_ZIP_PATH="$(cd .. && pwd -W 2>/dev/null || pwd)/deploy.zip"
+powershell.exe -NoProfile -Command "
+    \$src = '${STANDALONE_PATH//\//\\}'
+    \$dst = '${DEPLOY_ZIP_PATH//\//\\}'
+    if (Test-Path \$dst) { Remove-Item \$dst }
+    Compress-Archive -Path \"\$src\\*\" -DestinationPath \$dst -Force
+"
+cd ..
+
+if [ -f "deploy.zip" ]; then
+    SIZE=$(powershell.exe -NoProfile -Command "(Get-Item '${DEPLOY_ZIP_PATH//\//\\}').Length / 1MB" | tr -d '\r')
+    echo -e "${GREEN}✓ Created deploy.zip (${SIZE} MB)${NC}"
+else
+    echo -e "${RED}✗ Failed to create deploy.zip${NC}"
+    exit 1
+fi
 
 # Verify server.js is at root of zip
-if unzip -l deploy.zip | grep -q "^.*server\.js$"; then
+if powershell.exe -NoProfile -Command "
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    \$zip = [System.IO.Compression.ZipFile]::OpenRead('${DEPLOY_ZIP_PATH//\//\\}')
+    \$found = \$zip.Entries | Where-Object { \$_.Name -eq 'server.js' -and \$_.FullName -eq 'server.js' }
+    \$zip.Dispose()
+    if (\$found) { exit 0 } else { exit 1 }
+"; then
     echo -e "${GREEN}✓ server.js found at zip root${NC}"
 else
     echo -e "${RED}✗ server.js not at zip root - deployment will fail${NC}"
@@ -69,13 +90,13 @@ echo -e "${YELLOW}[4/5] Deploying to Azure App Service...${NC}"
 az webapp deploy \
     --resource-group "$RESOURCE_GROUP" \
     --name "$APP_NAME" \
-    --src-path deploy.zip \
+    --src-path "$DEPLOY_ZIP_PATH" \
     --type zip \
-    --async true
+    --async false
 
-# Step 5: Wait and verify
-echo -e "${YELLOW}[5/5] Waiting for deployment to complete...${NC}"
-sleep 30
+# Step 5: Verify deployment
+echo -e "${YELLOW}[5/5] Verifying deployment...${NC}"
+sleep 5
 
 # Check if site is responding
 echo -e "${YELLOW}Checking site status...${NC}"

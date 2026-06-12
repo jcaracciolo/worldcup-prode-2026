@@ -208,11 +208,11 @@ export default function TodaysPredictions() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 divide-y-2 sm:divide-y-0 divide-white/15">
           {matchPredictions.map(({ match, groups }) => (
-            <div key={match.id} className="px-4 sm:px-6 py-3 sm:py-4 sm:border-b-2 sm:border-white/15 sm:odd:border-r-2">
+            <div key={match.id} className="px-4 sm:px-6 pb-3 sm:pb-4 sm:border-b-2 sm:border-white/15 sm:odd:border-r-2">
               {/* Match header */}
               <Link
                 href={`/match/${match.id}`}
-                className="flex items-center justify-center gap-2 sm:gap-3 mb-3 hover:opacity-80 transition-opacity"
+                className="flex items-center justify-center gap-2 sm:gap-3 mb-3 hover:opacity-80 transition-opacity bg-gradient-to-r from-purple-500/20 to-violet-500/20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2"
               >
                 {/* Home team */}
                 <div className="flex items-center gap-1.5">

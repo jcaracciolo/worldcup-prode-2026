@@ -151,13 +151,9 @@ export function createProfileService(
           return { data: profiles, error: null };
         }
 
-        // Fall back to all profiles if no competition selected
-        const { data, error } = await supabase.from("profiles").select("*");
-
-        if (error) {
-          throw new Error(error.message || "Failed to query profiles");
-        }
-        return { data: data || [], error: null };
+        // No competition selected — return empty list to avoid leaking
+        // all users before the competition filter is resolved
+        return { data: [], error: null };
       } catch (error) {
         console.error("[DB] Failed to get all profiles:", error);
         return {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import TodaysMatches from "@/components/TodaysMatches";
+import TodaysPredictions from "@/components/TodaysPredictions";
 import Leaderboard from "@/components/Leaderboard";
 import { useUser } from "@/contexts/UserContext";
 import { useTime } from "@/contexts/TimeContext";
@@ -59,6 +60,10 @@ export default function HomePage() {
             </div>
 
             <TodaysMatches />
+
+            <div className="mt-6 sm:mt-8">
+              <TodaysPredictions />
+            </div>
           </div>
 
           {/* Leaderboard Section */}

@@ -153,7 +153,7 @@ export default function SummaryPanel() {
     );
 
     if (scorableMatches.length === 0) {
-      return `📊 Puntos del día — ${todayStr}\n\nNo hay partidos finalizados aún.`;
+      // No scored matches today — still show standings with +0
     }
 
     // Calculate today's points per user
@@ -208,15 +208,17 @@ export default function SummaryPanel() {
     const lines: string[] = [];
     lines.push(`📊 Tabla de posiciones — ${todayStr}`);
 
-    // List which matches are included
-    const matchLabels = scorableMatches.map((m) => {
-      const home = m.homeTeam?.tla || "???";
-      const away = m.awayTeam?.tla || "???";
-      const homeGoals = m.score.fullTime.home ?? "?";
-      const awayGoals = m.score.fullTime.away ?? "?";
-      return `${home} ${homeGoals}-${awayGoals} ${away}`;
-    });
-    lines.push(matchLabels.join(" | "));
+    // List which matches are included (if any)
+    if (scorableMatches.length > 0) {
+      const matchLabels = scorableMatches.map((m) => {
+        const home = m.homeTeam?.tla || "???";
+        const away = m.awayTeam?.tla || "???";
+        const homeGoals = m.score.fullTime.home ?? "?";
+        const awayGoals = m.score.fullTime.away ?? "?";
+        return `${home} ${homeGoals}-${awayGoals} ${away}`;
+      });
+      lines.push(matchLabels.join(" | "));
+    }
     lines.push("");
 
     // Sort by current position
@@ -236,7 +238,7 @@ export default function SummaryPanel() {
       const flag = nameWithFlag(entry.name, entry.country);
 
       lines.push(
-        `${entry.position}. ${flag} — ${entry.totalPoints} pts (${daySign}${entry.dayPoints} hoy)${changeStr}`,
+        `${entry.position}. ${flag} — ${entry.totalPoints} pts (${daySign}${entry.dayPoints})${changeStr}`,
       );
     }
 
@@ -307,7 +309,7 @@ export default function SummaryPanel() {
 
           <button
             onClick={handleCopyPoints}
-            disabled={!allPredictions.content || (finishedCount === 0 && liveCount === 0)}
+            disabled={!allPredictions.content}
             className="px-4 py-2 rounded-lg text-sm font-medium transition
               bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30
               disabled:opacity-50 disabled:cursor-not-allowed"

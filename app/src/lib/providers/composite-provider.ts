@@ -133,8 +133,12 @@ function normalizeTeamName(name: string): string {
     "turkiye": "turkey",
     "czech republic": "czechia",
     "cabo verde": "cape verde",
+    "cape verde islands": "cape verde",
     "congo dr": "dr congo",
+    "democratic republic of the congo": "dr congo",
     "saudi arabia": "ksa",
+    "bosnia and herzegovina": "bosnia",
+    "bosniaherzegovina": "bosnia",
   };
 
   let normalized = name

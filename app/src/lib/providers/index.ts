@@ -9,6 +9,7 @@
 
 import { providerRegistry } from "./provider-registry";
 import { ApiFootballProvider } from "./api-football-provider";
+import { WorldCup26Provider } from "./worldcup26-provider";
 
 export { getMatchesFromComposite, getPollingIntervalMs } from "./composite-provider";
 export { fetchBaseMatch } from "./football-data-provider";
@@ -28,6 +29,12 @@ export function initializeProviders(): void {
   if (initialized) return;
   initialized = true;
 
+  // WorldCup26.ir — free, no auth, tried first (priority 5)
+  // Conservative limit to avoid abuse; no official cap published
+  const wc26 = new WorldCup26Provider();
+  providerRegistry.register(wc26, 500);
+  console.log(`[providers] Registered: ${wc26.name} (priority ${wc26.priority}, limit 500/day)`);
+
   // Register all API-FOOTBALL keys (API_FOOTBALL_KEY, API_FOOTBALL_KEY_2, etc.)
   // Each gets 100 req/day, auto-failover when one is exhausted.
   const keys = getApiFootballKeys();
@@ -38,7 +45,7 @@ export function initializeProviders(): void {
   });
 
   if (keys.length === 0) {
-    console.warn("[providers] No API_FOOTBALL_KEY set — live data disabled");
+    console.warn("[providers] No API_FOOTBALL_KEY set — live data available via worldcup26 only");
   }
 }
 

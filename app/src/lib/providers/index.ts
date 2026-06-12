@@ -10,7 +10,7 @@
 import { providerRegistry } from "./provider-registry";
 import { ApiFootballProvider } from "./api-football-provider";
 
-export { getMatchesFromComposite } from "./composite-provider";
+export { getMatchesFromComposite, getPollingIntervalMs } from "./composite-provider";
 export { fetchBaseMatch } from "./football-data-provider";
 export { providerRegistry } from "./provider-registry";
 export type { LiveDataProvider, ProviderHealth, LiveMatchData } from "./types";

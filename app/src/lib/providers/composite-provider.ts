@@ -5,67 +5,112 @@ import { providerRegistry } from "./provider-registry";
 import { fetchBaseMatches } from "./football-data-provider";
 
 // =====================================================================
-// STALENESS DETECTION
+// LIVE WINDOW DETECTION
 // =====================================================================
 
-const KICKOFF_BUFFER_MS = 15 * 60 * 1000; // 15 min before kickoff
-const KICKOFF_STALE_MS = 3 * 60 * 1000; // 3 min after kickoff → should be live
-const POST_MATCH_WINDOW_MS = 3 * 60 * 60 * 1000; // 3h after kickoff
+const MATCH_DURATION_MS = 2 * 60 * 60 * 1000; // 2h estimated match duration
+const PRE_MATCH_BUFFER_MS = 3 * 60 * 1000; // Start checking 3 min before kickoff
+const POST_MATCH_BUFFER_MS = 30 * 60 * 1000; // Keep checking 30 min after estimated end
 
 /**
- * Determine if a match's data from football-data.org looks stale.
- *
- * Stale means the base provider's data doesn't match reality:
- * - TIMED/SCHEDULED but kickoff was 3+ min ago → should be live
- * - FINISHED but scores are null → status updated, goals withheld
- * - IN_PLAY/PAUSED → always stale: free tier may show status but not update goals
+ * Check if a match is in its live window.
+ * Does NOT check football-data.org status — we never trust it for live data.
+ * Pure time-based: kickoff-3min → kickoff+2.5h
  */
-function isMatchDataStale(match: Match): boolean {
+function isInLiveWindow(match: Match): boolean {
   const now = Date.now();
   const kickoff = new Date(match.utcDate).getTime();
-  const inTimeWindow =
-    now >= kickoff - KICKOFF_BUFFER_MS &&
-    now <= kickoff + POST_MATCH_WINDOW_MS;
-
-  if (!inTimeWindow) return false;
-
-  // IN_PLAY or PAUSED: always overlay with live provider for real-time scores
-  if (match.status === "IN_PLAY" || match.status === "PAUSED") {
-    return true;
-  }
-
-  // Should be live but still shows as not started (3+ min past kickoff)
-  if (
-    (match.status === "TIMED" || match.status === "SCHEDULED") &&
-    now >= kickoff + KICKOFF_STALE_MS
-  ) {
-    return true;
-  }
-
-  // Finished but no scores (free tier withholds goals)
-  if (
-    match.status === "FINISHED" &&
-    match.score.fullTime.home === null
-  ) {
-    return true;
-  }
-
-  return false;
+  const windowStart = kickoff - PRE_MATCH_BUFFER_MS;
+  const windowEnd = kickoff + MATCH_DURATION_MS + POST_MATCH_BUFFER_MS;
+  return now >= windowStart && now <= windowEnd;
 }
 
 /**
- * Check if any match in the list has stale data.
- * Only when this is true do we call live providers (saves API quota).
+ * Check if a match is upcoming today (not yet in live window but will be).
  */
-function hasStaleMatches(matches: Match[]): boolean {
-  return matches.some(isMatchDataStale);
+function isUpcomingToday(match: Match): boolean {
+  const now = Date.now();
+  const kickoff = new Date(match.utcDate).getTime();
+  const windowStart = kickoff - PRE_MATCH_BUFFER_MS;
+  // Today = within next 12 hours
+  return kickoff > now && now < windowStart && kickoff - now < 12 * 60 * 60 * 1000;
+}
+
+// =====================================================================
+// DYNAMIC POLLING INTERVAL
+// =====================================================================
+
+/** Timestamp of last live provider call */
+let lastLiveCallTimestamp = 0;
+/** Last calculated polling interval in ms */
+let lastCalculatedIntervalMs = 60_000;
+
+const MIN_POLL_INTERVAL_MS = 60_000; // Never poll faster than 60s
+const MAX_POLL_INTERVAL_MS = 10 * 60_000; // Never slower than 10 min
+
+/**
+ * Calculate the optimal polling interval based on remaining budget and live time.
+ *
+ * Formula: interval = remainingLiveMinutes × 60s / remainingBudget
+ * More providers → more budget → shorter interval (auto-scales).
+ */
+export function calculatePollingInterval(matches: Match[]): number {
+  const remaining = providerRegistry.getTotalRemainingBudget();
+  if (remaining <= 0) return MAX_POLL_INTERVAL_MS;
+
+  const liveMatches = matches.filter(isInLiveWindow);
+  const upcomingMatches = matches.filter(isUpcomingToday);
+
+  if (liveMatches.length === 0 && upcomingMatches.length === 0) {
+    return MAX_POLL_INTERVAL_MS;
+  }
+
+  // Estimate remaining live minutes today
+  const now = Date.now();
+  let totalLiveMinutesRemaining = 0;
+
+  for (const match of liveMatches) {
+    const kickoff = new Date(match.utcDate).getTime();
+    const matchEnd = kickoff + MATCH_DURATION_MS + POST_MATCH_BUFFER_MS;
+    const remainingMs = Math.max(0, matchEnd - now);
+    totalLiveMinutesRemaining += remainingMs / 60_000;
+  }
+
+  for (const match of upcomingMatches) {
+    // Each upcoming match contributes its full duration
+    totalLiveMinutesRemaining += (MATCH_DURATION_MS + POST_MATCH_BUFFER_MS) / 60_000;
+  }
+
+  if (totalLiveMinutesRemaining <= 0) return MAX_POLL_INTERVAL_MS;
+
+  // interval = (remaining live seconds) / remaining budget
+  const intervalSec = (totalLiveMinutesRemaining * 60) / remaining;
+  const intervalMs = Math.round(intervalSec * 1000);
+
+  const clamped = Math.max(MIN_POLL_INTERVAL_MS, Math.min(MAX_POLL_INTERVAL_MS, intervalMs));
+
+  console.log(
+    `[composite] Poll interval: ${Math.round(clamped / 1000)}s ` +
+      `(budget: ${remaining}, live+upcoming: ${liveMatches.length}+${upcomingMatches.length}, ` +
+      `live min remaining: ${Math.round(totalLiveMinutesRemaining)})`,
+  );
+
+  lastCalculatedIntervalMs = clamped;
+  return clamped;
 }
 
 /**
- * Get matches that need a live data overlay.
+ * Check if enough time has elapsed since the last live provider call.
  */
-function getStaleMatches(matches: Match[]): Match[] {
-  return matches.filter(isMatchDataStale);
+function shouldPollLiveNow(matches: Match[]): boolean {
+  const intervalMs = calculatePollingInterval(matches);
+  const elapsed = Date.now() - lastLiveCallTimestamp;
+  return elapsed >= intervalMs;
+}
+
+/** Get the last calculated polling interval (for API response) */
+export function getPollingIntervalMs(): number {
+  return lastCalculatedIntervalMs;
 }
 
 // =====================================================================
@@ -74,10 +119,8 @@ function getStaleMatches(matches: Match[]): Match[] {
 
 /**
  * Normalize team name for cross-provider matching.
- * Handles common differences: "Korea Republic" vs "South Korea", accents, etc.
  */
 function normalizeTeamName(name: string): string {
-  // Common aliases used across different APIs
   const ALIASES: Record<string, string> = {
     "korea republic": "south korea",
     "korea, republic of": "south korea",
@@ -97,8 +140,8 @@ function normalizeTeamName(name: string): string {
   let normalized = name
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // strip accents
-    .replace(/[^a-z0-9\s]/g, "") // remove punctuation
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, "")
     .trim();
 
   return ALIASES[normalized] || normalized;
@@ -110,7 +153,6 @@ function normalizeTeamName(name: string): string {
 
 /**
  * Find the best matching live data for a base match.
- * Matches by normalized team names on the same calendar day (UTC).
  */
 function findLiveMatch(
   baseMatch: Match,
@@ -118,7 +160,7 @@ function findLiveMatch(
 ): LiveMatchData | null {
   const baseHome = normalizeTeamName(baseMatch.homeTeam.name);
   const baseAway = normalizeTeamName(baseMatch.awayTeam.name);
-  const baseDate = baseMatch.utcDate.slice(0, 10); // "YYYY-MM-DD"
+  const baseDate = baseMatch.utcDate.slice(0, 10);
 
   return (
     liveData.find((live) => {
@@ -134,8 +176,7 @@ function findLiveMatch(
 }
 
 /**
- * Merge live data onto a base match. Only overlays status and score —
- * everything else (id, stage, group, venue, referees, teams) comes from base.
+ * Merge live data onto a base match. Only overlays status and score.
  */
 function mergeMatchWithLiveData(base: Match, live: LiveMatchData): Match {
   return {
@@ -165,42 +206,55 @@ function mergeMatchWithLiveData(base: Match, live: LiveMatchData): Match {
 
 /**
  * Fetch matches using the composite strategy:
- * 1. Always fetch base schedule from football-data.org
- * 2. Check if any match data looks stale (should be live but isn't, or finished without scores)
- * 3. Only if stale: query live providers in priority order, merge results
+ * 1. Fetch base schedule from football-data.org (never for live scores)
+ * 2. If any matches are in their live window, query live providers
+ * 3. Only poll live providers if the dynamic interval has elapsed
+ * 4. Merge live data onto base schedule
  *
- * When football-data.org has complete data, live providers are never called.
- * Returns the same Match[] shape — zero changes needed downstream.
+ * Returns Match[] + the recommended polling interval for the client.
  */
 export async function getMatchesFromComposite(): Promise<Match[]> {
-  // Step 1: Always get base schedule
+  // Step 1: Get base schedule (teams, venues, dates — never trust scores)
   const baseMatches = await fetchBaseMatches();
 
-  // Step 2: Check if football-data.org data is stale
-  if (!hasStaleMatches(baseMatches)) {
+  // Step 2: Find matches in live windows
+  const liveWindowMatches = baseMatches.filter(isInLiveWindow);
+
+  if (liveWindowMatches.length === 0) {
+    // No matches in live window — schedule-only, no live calls
+    calculatePollingInterval(baseMatches); // Update interval for API response
     return baseMatches;
   }
 
-  // Identify stale matches (candidates for overlay)
-  const staleMatchList = getStaleMatches(baseMatches);
-  const staleIds = new Set(staleMatchList.map((m) => m.id));
+  // Step 3: Check if we should poll live providers now
+  if (!shouldPollLiveNow(baseMatches)) {
+    console.log(
+      `[composite] Throttled — ${Math.round((Date.now() - lastLiveCallTimestamp) / 1000)}s since last call, ` +
+        `interval is ${Math.round(lastCalculatedIntervalMs / 1000)}s`,
+    );
+    // Return base matches — the caller (football-api.ts) will merge with
+    // individually cached live scores from previous successful calls
+    return baseMatches;
+  }
 
   console.log(
-    `[composite] ${staleMatchList.length} stale match(es): ${staleMatchList.map(
-      (m) => `${m.homeTeam.name} vs ${m.awayTeam.name} (${m.status}, score: ${m.score.fullTime.home ?? "null"})`,
+    `[composite] ${liveWindowMatches.length} match(es) in live window: ${liveWindowMatches.map(
+      (m) => `${m.homeTeam.name} vs ${m.awayTeam.name}`,
     ).join(", ")}`,
   );
 
-  // Step 3: Try live providers in priority order
+  // Step 4: Fetch from live providers (round-robin)
   const liveData = await fetchFromLiveProviders();
+  lastLiveCallTimestamp = Date.now();
 
   if (!liveData || liveData.length === 0) {
     return baseMatches;
   }
 
-  // Step 4: Merge live data onto stale base matches
+  // Step 5: Merge live data onto ALL matches in live windows
+  const liveWindowIds = new Set(liveWindowMatches.map((m) => m.id));
   return baseMatches.map((match) => {
-    if (!staleIds.has(match.id)) return match;
+    if (!liveWindowIds.has(match.id)) return match;
 
     const liveMatch = findLiveMatch(match, liveData);
     if (!liveMatch) return match;
@@ -215,18 +269,22 @@ export async function getMatchesFromComposite(): Promise<Match[]> {
 }
 
 /**
- * Try each available live provider in priority order.
- * Returns on first success. Handles rate-limits and errors with failover.
+ * Try live providers using round-robin to distribute load evenly.
+ * Falls back to next provider on rate-limit or error.
  */
 async function fetchFromLiveProviders(): Promise<LiveMatchData[] | null> {
   const available = providerRegistry.getAvailable();
 
   if (available.length === 0) {
-    console.warn("[composite] No live providers available");
+    console.warn("[composite] No live providers available (all exhausted or rate-limited)");
     return null;
   }
 
-  for (const provider of available) {
+  // Try each available provider, starting from round-robin position
+  for (let i = 0; i < available.length; i++) {
+    const provider = providerRegistry.getNextAvailable();
+    if (!provider) break;
+
     try {
       console.log(`[composite] Trying live provider: ${provider.name}`);
       const data = await provider.fetchLiveMatches();

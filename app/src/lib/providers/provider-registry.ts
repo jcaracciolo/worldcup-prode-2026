@@ -36,19 +36,20 @@ function getOrCreateState(name: string): ProviderState {
 
 /**
  * Registry for live data providers.
- * Manages provider ordering, health tracking, and availability checks.
+ * Manages provider ordering, health tracking, budget calculations,
+ * and round-robin selection for distributing load across providers.
  */
 class ProviderRegistry {
   private providers = new Map<string, { provider: LiveDataProvider; dailyLimit: number }>();
+  private roundRobinIndex = 0;
 
   /**
    * Register a live data provider.
    * @param provider The provider implementation
-   * @param dailyLimit Max requests per day for this provider (for health tracking)
+   * @param dailyLimit Max requests per day for this provider
    */
   register(provider: LiveDataProvider, dailyLimit: number): void {
     this.providers.set(provider.name, { provider, dailyLimit });
-    // Ensure state exists
     getOrCreateState(provider.name);
   }
 
@@ -86,6 +87,42 @@ class ProviderRegistry {
       }
       return true;
     });
+  }
+
+  /**
+   * Get the next available provider using round-robin rotation.
+   * Distributes load evenly across providers instead of always hitting the first one.
+   */
+  getNextAvailable(): LiveDataProvider | null {
+    const available = this.getAvailable();
+    if (available.length === 0) return null;
+
+    const index = this.roundRobinIndex % available.length;
+    this.roundRobinIndex++;
+    return available[index];
+  }
+
+  /** Total daily request budget across all registered providers */
+  getTotalDailyBudget(): number {
+    let total = 0;
+    for (const entry of this.providers.values()) {
+      total += entry.dailyLimit;
+    }
+    return total;
+  }
+
+  /** Remaining requests today across all providers */
+  getTotalRemainingBudget(): number {
+    let remaining = 0;
+    const now = new Date();
+    for (const [name, entry] of this.providers.entries()) {
+      const state = getOrCreateState(name);
+      // Skip rate-limited providers (temporarily unavailable)
+      if (state.rateLimitedUntil && now < state.rateLimitedUntil) continue;
+      const left = Math.max(0, entry.dailyLimit - state.requestsToday);
+      remaining += left;
+    }
+    return remaining;
   }
 
   /** Record a successful request for a provider */

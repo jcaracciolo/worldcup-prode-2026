@@ -311,6 +311,9 @@ export function MatchProvider({
     return map;
   }, [matches]);
 
+  // Server-recommended polling interval (dynamic based on live provider budget)
+  const pollIntervalRef = useRef(60_000);
+
   // Fetch matches from API
   const fetchMatches = useCallback(async () => {
     try {
@@ -320,6 +323,10 @@ export function MatchProvider({
       setRawMatches(data.matches || []);
       setLastUpdated(new Date());
       setError(null);
+      // Update polling interval from server recommendation
+      if (data.pollIntervalMs && typeof data.pollIntervalMs === "number") {
+        pollIntervalRef.current = data.pollIntervalMs;
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
       console.error("[MatchProvider] Fetch error:", err);
@@ -346,26 +353,47 @@ export function MatchProvider({
   const rawMatchesRef = useRef(rawMatches);
   rawMatchesRef.current = rawMatches;
 
-  // Tick-based updates - controlled by TimeContext
-  // In real mode: fetches every 60 seconds (when there are live/today matches)
-  // In simulation mode: doesn't fetch (simulation generates data), but tick still triggers re-renders
+  // Dynamic polling — uses server-recommended interval from pollIntervalMs.
+  // The server calculates this based on remaining live provider budget ÷ remaining
+  // live match minutes. More providers = shorter interval (auto-scales).
   useEffect(() => {
-    // Skip the first tick (initial fetch already handled)
-    if (tick === 0) return;
+    // In simulation mode, we don't fetch — simulation generates data
+    if (isSimulated) return;
 
-    // In simulation mode, we don't need to fetch - simulation generates matches
-    if (isSimulated) {
-      return;
-    }
+    // Self-scheduling timer: fetches, then schedules next fetch at server-recommended interval
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
 
-    // Only fetch in real mode when there's a reason to
-    const shouldFetch = hasLiveMatches || hasMatchesToday(rawMatchesRef.current);
-    if (!shouldFetch) {
-      return;
-    }
+    const scheduleNext = () => {
+      if (cancelled) return;
 
-    fetchMatches();
-  }, [tick, isSimulated, hasLiveMatches, fetchMatches]);
+      const shouldFetch = hasLiveMatches || hasMatchesToday(rawMatchesRef.current);
+      const interval = shouldFetch ? pollIntervalRef.current : 60_000;
+
+      timeoutId = setTimeout(async () => {
+        if (cancelled) return;
+        if (hasLiveMatches || hasMatchesToday(rawMatchesRef.current)) {
+          await fetchMatches();
+        }
+        scheduleNext();
+      }, interval);
+    };
+
+    scheduleNext();
+
+    return () => {
+      cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [isSimulated, hasLiveMatches, fetchMatches]);
+
+  // Tick-based re-renders (for time display updates, not fetching)
+  // The tick from TimeContext still triggers re-renders for elapsed minutes, etc.
+  // but fetching is handled by the dynamic timer above.
+  useEffect(() => {
+    // This effect just exists so that `tick` changes cause a re-render,
+    // which updates computed values like elapsedMinutes.
+  }, [tick]);
 
   const value: MatchContextValue = {
     matches,

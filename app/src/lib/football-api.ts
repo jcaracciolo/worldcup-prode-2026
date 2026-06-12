@@ -7,6 +7,7 @@ import {
 import {
   initializeProviders,
   getMatchesFromComposite,
+  getPollingIntervalMs,
   fetchBaseMatch,
 } from "@/lib/providers";
 import { buildApiToFifaMapping } from "@/lib/api-client";
@@ -53,20 +54,26 @@ function convertToFifaIds(matches: Match[]): Match[] {
 // PUBLIC API
 // =====================================================================
 
+/** Result from getMatches — includes polling hint for the client */
+export interface MatchesResult {
+  matches: Match[];
+  pollIntervalMs: number;
+}
+
 /**
  * Fetch all matches — the single entry point for match data.
  *
  * Handles everything internally:
  * 1. DB cache (1-min TTL)
- * 2. Composite provider (base schedule + live overlay)
+ * 2. Composite provider (base schedule + live overlay with dynamic throttle)
  * 3. Persist live scores to DB (survives deploys)
  * 4. Merge individually cached match results
  * 5. API ID → FIFA ID conversion
  * 6. TBD team resolution
  *
- * Returns Match[] with FIFA IDs, ready for the client.
+ * Returns matches with FIFA IDs + recommended polling interval for client.
  */
-export async function getMatches(): Promise<Match[]> {
+export async function getMatches(): Promise<MatchesResult> {
   initializeProviders();
   const db = await createServerDatabaseService();
 
@@ -83,7 +90,8 @@ export async function getMatches(): Promise<Match[]> {
     const cachedData = cacheData.data as unknown as { matches: Match[] };
     matches = cachedData.matches || [];
   } else {
-    // Step 2: Fetch from composite provider (base + live overlay)
+    // Step 2: Fetch from composite provider (base schedule + live overlay)
+    // The composite provider handles dynamic throttling internally
     matches = await getMatchesFromComposite();
 
     // Step 3: Persist live scores individually (survives restarts/deploys)
@@ -119,7 +127,10 @@ export async function getMatches(): Promise<Match[]> {
   // Step 6: Resolve TBD teams
   fifaMatches = resolveAllTbdTeams(fifaMatches);
 
-  return fifaMatches;
+  return {
+    matches: fifaMatches,
+    pollIntervalMs: getPollingIntervalMs(),
+  };
 }
 
 export async function getMatch(matchId: number): Promise<Match | null> {
@@ -137,7 +148,7 @@ export async function getTeams(): Promise<TeamsResponse> {
 }
 
 export async function getTodaysMatches(): Promise<Match[]> {
-  const matches = await getMatches();
+  const { matches } = await getMatches();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);

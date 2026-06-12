@@ -9,6 +9,7 @@ import { fetchBaseMatches } from "./football-data-provider";
 // =====================================================================
 
 const KICKOFF_BUFFER_MS = 15 * 60 * 1000; // 15 min before kickoff
+const KICKOFF_STALE_MS = 3 * 60 * 1000; // 3 min after kickoff → should be live
 const POST_MATCH_WINDOW_MS = 3 * 60 * 60 * 1000; // 3h after kickoff
 
 /**
@@ -28,10 +29,10 @@ function isMatchDataStale(match: Match): boolean {
 
   if (!inTimeWindow) return false;
 
-  // Should be live but still shows as not started
+  // Should be live but still shows as not started (3+ min past kickoff)
   if (
     (match.status === "TIMED" || match.status === "SCHEDULED") &&
-    now >= kickoff + KICKOFF_BUFFER_MS
+    now >= kickoff + KICKOFF_STALE_MS
   ) {
     return true;
   }

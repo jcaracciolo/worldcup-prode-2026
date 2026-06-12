@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { format } from "date-fns";
 import { useMatches } from "@/contexts/MatchContext";
+import { useDatabase } from "@/contexts/DatabaseContext";
 import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { useAllProfiles } from "@/contexts/UserContext";
 import { useUser } from "@/contexts/UserContext";
@@ -110,6 +111,7 @@ function groupPredictions(
 }
 
 export default function TodaysPredictions() {
+  const { competitionLoading, currentCompetitionId } = useDatabase();
   const { matches } = useMatches();
   const allPredictions = useAllPredictions();
   const profiles = useAllProfiles();
@@ -173,6 +175,7 @@ export default function TodaysPredictions() {
   ]);
 
   if (todaysMatches.length === 0) return null;
+  if (competitionLoading || !currentCompetitionId) return null;
 
   const hasPredictions = matchPredictions.some((mp) => mp.groups.length > 0);
   if (!allPredictions.content && !profiles.content) return null;

@@ -8,6 +8,7 @@ import {
   ReactNode,
 } from "react";
 import { useTime } from "@/contexts/TimeContext";
+import { useDatabase } from "@/contexts/DatabaseContext";
 import { useMatches } from "@/contexts/MatchContext";
 import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { useAllProfiles } from "@/contexts/UserContext";
@@ -34,11 +35,17 @@ const LeaderboardContext = createContext<LeaderboardContextValue | null>(null);
 export function LeaderboardProvider({ children }: { children: ReactNode }) {
   const { stageLockStatus } = useTime();
   const { matches, liveBracket } = useMatches();
+  const { competitionLoading, currentCompetitionId } = useDatabase();
   const profiles = useAllProfiles();
   const allPredictions = useAllPredictions();
 
-  // Derive loading from LCE hooks
-  const loading = profiles.loading || allPredictions.loading;
+  // Derive loading from LCE hooks — also wait for competition to be resolved
+  // to avoid briefly showing all users before the competition filter kicks in
+  const loading =
+    competitionLoading ||
+    !currentCompetitionId ||
+    profiles.loading ||
+    allPredictions.loading;
 
   // Calculate scores using useMemo - recalculates when dependencies change
   const scores = useMemo(() => {

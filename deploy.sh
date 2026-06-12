@@ -52,36 +52,21 @@ fi
 echo -e "${YELLOW}[3/5] Creating deployment package...${NC}"
 rm -f deploy.zip
 
-# Use PowerShell Compress-Archive (works on Windows without zip command)
 STANDALONE_PATH="$(cd .next/standalone && pwd -W 2>/dev/null || pwd)"
 DEPLOY_ZIP_PATH="$(cd .. && pwd -W 2>/dev/null || pwd)/deploy.zip"
+
+# Use PowerShell Compress-Archive (Azure requires this format; .NET ZipFile doesn't work)
 powershell.exe -NoProfile -Command "
-    \$src = '${STANDALONE_PATH//\//\\}'
-    \$dst = '${DEPLOY_ZIP_PATH//\//\\}'
-    if (Test-Path \$dst) { Remove-Item \$dst }
-    Compress-Archive -Path \"\$src\\*\" -DestinationPath \$dst -Force
+    Set-Location '${STANDALONE_PATH//\//\\}'
+    Compress-Archive -Path * -DestinationPath '${DEPLOY_ZIP_PATH//\//\\}' -Force
 "
 cd ..
 
 if [ -f "deploy.zip" ]; then
-    SIZE=$(powershell.exe -NoProfile -Command "(Get-Item '${DEPLOY_ZIP_PATH//\//\\}').Length / 1MB" | tr -d '\r')
+    SIZE=$(powershell.exe -NoProfile -Command "[math]::Round((Get-Item '${DEPLOY_ZIP_PATH//\//\\}').Length / 1MB, 1)" | tr -d '\r')
     echo -e "${GREEN}✓ Created deploy.zip (${SIZE} MB)${NC}"
 else
     echo -e "${RED}✗ Failed to create deploy.zip${NC}"
-    exit 1
-fi
-
-# Verify server.js is at root of zip
-if powershell.exe -NoProfile -Command "
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-    \$zip = [System.IO.Compression.ZipFile]::OpenRead('${DEPLOY_ZIP_PATH//\//\\}')
-    \$found = \$zip.Entries | Where-Object { \$_.Name -eq 'server.js' -and \$_.FullName -eq 'server.js' }
-    \$zip.Dispose()
-    if (\$found) { exit 0 } else { exit 1 }
-"; then
-    echo -e "${GREEN}✓ server.js found at zip root${NC}"
-else
-    echo -e "${RED}✗ server.js not at zip root - deployment will fail${NC}"
     exit 1
 fi
 

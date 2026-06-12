@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
@@ -47,32 +47,43 @@ export default function TodaysMatches({
     );
   }, [matches, todayStr]);
 
-  // Find the next match day after today (in local time)
-  const nextMatchDay = useMemo(() => {
-    if (!showNextMatchDay) return null;
+  // All future match days sorted chronologically
+  const futureDates = useMemo(() => {
+    if (!showNextMatchDay) return [];
 
-    const futureDates = new Set<string>();
+    const dates = new Set<string>();
     matches.forEach((m) => {
       const matchLocalDate = toLocalDateStr(m.utcDate);
       if (matchLocalDate > todayStr) {
-        futureDates.add(matchLocalDate);
+        dates.add(matchLocalDate);
       }
     });
 
-    const sortedDates = Array.from(futureDates).sort();
-    return sortedDates[0] || null;
+    return Array.from(dates).sort();
   }, [matches, todayStr, showNextMatchDay]);
 
-  // Get matches for the next match day (in local time)
+  // Index into futureDates for navigation
+  const [futureDateIndex, setFutureDateIndex] = useState(0);
+
+  // Reset to first future date when day changes
+  useEffect(() => {
+    setFutureDateIndex(0);
+  }, [todayStr]);
+
+  // Clamp index if futureDates shrinks
+  const clampedIndex = Math.min(futureDateIndex, Math.max(futureDates.length - 1, 0));
+  const selectedDate = futureDates[clampedIndex] || null;
+
+  // Get matches for the selected future date
   const nextDayMatches = useMemo(() => {
-    if (!nextMatchDay) return [];
+    if (!selectedDate) return [];
     const filtered = matches.filter(
-      (m) => toLocalDateStr(m.utcDate) === nextMatchDay,
+      (m) => toLocalDateStr(m.utcDate) === selectedDate,
     );
     return [...filtered].sort(
       (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
     );
-  }, [matches, nextMatchDay]);
+  }, [matches, selectedDate]);
 
   // Determine tournament phase for empty-state message
   const tournamentPhase = useMemo(() => {
@@ -127,8 +138,8 @@ export default function TodaysMatches({
           <div className="text-6xl mb-4">⚽</div>
           <p className="text-xl text-white/80 font-medium">No matches today</p>
           <p className="text-white/50 mt-2">
-            {nextMatchDay
-              ? `Next matches on ${formatNextMatchDay(nextMatchDay)}`
+            {selectedDate
+              ? `Next matches on ${formatNextMatchDay(selectedDate)}`
               : tournamentPhase === "after"
                 ? "The World Cup has ended. See you next time!"
                 : tournamentPhase === "during"
@@ -144,20 +155,38 @@ export default function TodaysMatches({
         </div>
       )}
 
-      {/* Next match day section */}
-      {showNextMatchDay && nextMatchDay && nextDayMatches.length > 0 && (
+      {/* Next / upcoming match day section */}
+      {showNextMatchDay && selectedDate && nextDayMatches.length > 0 && (
         <div>
           <div className="flex items-center gap-3 mb-4 mt-8">
             <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
               <span className="text-lg">📆</span>
             </div>
-            <div>
+            <div className="flex-1">
               <h3 className="text-lg font-semibold text-white">
-                Next Match Day
+                {clampedIndex === 0 ? "Next Match Day" : "Upcoming Matches"}
               </h3>
               <p className="text-white/50 text-sm">
-                {formatNextMatchDay(nextMatchDay)}
+                {formatNextMatchDay(selectedDate)}
               </p>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setFutureDateIndex((i) => Math.max(0, i - 1))}
+                disabled={clampedIndex === 0}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/70 hover:text-white bg-white/5 hover:bg-white/10 transition-colors disabled:text-white/20 disabled:bg-white/[0.02] disabled:hover:bg-white/[0.02]"
+                aria-label="Previous match day"
+              >
+                ‹
+              </button>
+              <button
+                onClick={() => setFutureDateIndex((i) => Math.min(futureDates.length - 1, i + 1))}
+                disabled={clampedIndex >= futureDates.length - 1}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/70 hover:text-white bg-white/5 hover:bg-white/10 transition-colors disabled:text-white/20 disabled:bg-white/[0.02] disabled:hover:bg-white/[0.02]"
+                aria-label="Next match day"
+              >
+                ›
+              </button>
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">

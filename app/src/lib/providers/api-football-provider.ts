@@ -77,7 +77,10 @@ export class ApiFootballProvider implements LiveDataProvider {
       const errorMsg = Object.values(data.errors).join(", ");
       const lower = errorMsg.toLowerCase();
       // Daily quota exhausted — mark provider unavailable until next UTC day
-      // instead of hammering it for the rest of the day.
+      // instead of hammering it for the rest of the day. The body message is
+      // the only reliable signal: api-football's rate-limit headers are
+      // unreliable on the free plan (they report stale "remaining" values
+      // that contradict this error).
       if (lower.includes("request limit") || lower.includes("reached the request")) {
         throw new ProviderQuotaExhaustedError(this.name);
       }

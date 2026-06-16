@@ -40,17 +40,51 @@ function getOrCreateState(name: string): ProviderState {
  * and round-robin selection for distributing load across providers.
  */
 class ProviderRegistry {
-  private providers = new Map<string, { provider: LiveDataProvider; dailyLimit: number }>();
+  private providers = new Map<
+    string,
+    { provider: LiveDataProvider; dailyLimit: number; resetHourUtc: number }
+  >();
   private roundRobinIndex = 0;
 
   /**
    * Register a live data provider.
    * @param provider The provider implementation
    * @param dailyLimit Max requests per day for this provider
+   * @param resetHourUtc Hour (UTC, 0-23) at which the provider's daily quota
+   *   resets. api-football resets at 00:00 UTC. Used to compute exactly when
+   *   an exhausted provider becomes available again.
    */
-  register(provider: LiveDataProvider, dailyLimit: number): void {
-    this.providers.set(provider.name, { provider, dailyLimit });
+  register(
+    provider: LiveDataProvider,
+    dailyLimit: number,
+    resetHourUtc = 0,
+  ): void {
+    this.providers.set(provider.name, { provider, dailyLimit, resetHourUtc });
     getOrCreateState(provider.name);
+  }
+
+  /**
+   * Compute the next time a provider's daily quota resets, based on our
+   * understanding of its reset hour (UTC). Always returns a time in the future.
+   */
+  private nextResetTime(resetHourUtc: number): Date {
+    const now = new Date();
+    const next = new Date(
+      Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        resetHourUtc,
+        0,
+        0,
+        0,
+      ),
+    );
+    // If today's reset hour has already passed, roll to tomorrow.
+    if (next <= now) {
+      next.setUTCDate(next.getUTCDate() + 1);
+    }
+    return next;
   }
 
   /** Remove a provider by name */
@@ -142,9 +176,10 @@ class ProviderRegistry {
   }
 
   /**
-   * Mark a provider as quota-exhausted for the rest of the UTC day.
+   * Mark a provider as quota-exhausted until its next daily reset.
    * Sets the request counter to the daily limit and blocks it until the
-   * next midnight-UTC reset, so we stop wasting calls on a dead provider.
+   * provider's known reset time (e.g. 00:00 UTC for api-football), so we stop
+   * wasting calls on a dead provider but resume the moment quota returns.
    */
   recordQuotaExhausted(name: string): void {
     const entry = this.providers.get(name);
@@ -152,24 +187,12 @@ class ProviderRegistry {
     if (entry) {
       state.requestsToday = entry.dailyLimit;
     }
-    // Block until next UTC midnight
-    const now = new Date();
-    const nextUtcMidnight = new Date(
-      Date.UTC(
-        now.getUTCFullYear(),
-        now.getUTCMonth(),
-        now.getUTCDate() + 1,
-        0,
-        0,
-        0,
-        0,
-      ),
-    );
-    state.rateLimitedUntil = nextUtcMidnight;
-    state.lastError = `Quota exhausted until ${nextUtcMidnight.toISOString()}`;
+    const resetTime = this.nextResetTime(entry?.resetHourUtc ?? 0);
+    state.rateLimitedUntil = resetTime;
+    state.lastError = `Quota exhausted until ${resetTime.toISOString()}`;
   }
 
-  /** Record a general error */
+  /** Record a general error (network failure or non-quota error response) */
   recordError(name: string, error: string): void {
     const state = getOrCreateState(name);
     state.lastError = error;

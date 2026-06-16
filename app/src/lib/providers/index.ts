@@ -30,18 +30,20 @@ export function initializeProviders(): void {
   initialized = true;
 
   // WorldCup26.ir — free, no auth, tried first (priority 5)
-  // Conservative limit to avoid abuse; no official cap published
+  // Conservative limit to avoid abuse; no official cap published.
+  // Resets at 00:00 UTC (3rd arg) to match our daily-counter boundary.
   const wc26 = new WorldCup26Provider();
-  providerRegistry.register(wc26, 500);
-  console.log(`[providers] Registered: ${wc26.name} (priority ${wc26.priority}, limit 500/day)`);
+  providerRegistry.register(wc26, 500, 0);
+  console.log(`[providers] Registered: ${wc26.name} (priority ${wc26.priority}, limit 500/day, reset 00:00 UTC)`);
 
   // Register all API-FOOTBALL keys (API_FOOTBALL_KEY, API_FOOTBALL_KEY_2, etc.)
   // Each gets 100 req/day, auto-failover when one is exhausted.
+  // api-football's free-tier daily quota resets at 00:00 UTC.
   const keys = getApiFootballKeys();
   keys.forEach((key, i) => {
     const provider = new ApiFootballProvider(key, i + 1);
-    providerRegistry.register(provider, 100);
-    console.log(`[providers] Registered: ${provider.name} (priority ${provider.priority}, limit 100/day)`);
+    providerRegistry.register(provider, 100, 0);
+    console.log(`[providers] Registered: ${provider.name} (priority ${provider.priority}, limit 100/day, reset 00:00 UTC)`);
   });
 
   if (keys.length === 0) {

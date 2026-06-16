@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { MatchWithLiveInfo } from "@/contexts/MatchContext";
+import { MatchWithLiveInfo, getMatchDay } from "@/contexts/MatchContext";
 import { LocalPrediction } from "@/types/database";
 import PredictionInput from "@/components/PredictionInput";
 import { KnockoutMatchRow } from "@/components/match-row";
@@ -25,7 +25,7 @@ export default function ByDateSection({ matches }: ByDateSectionProps) {
     const grouped = new Map<string, MatchWithLiveInfo[]>();
 
     for (const match of matches) {
-      const localDate = new Date(match.utcDate).toLocaleDateString("en-CA");
+      const localDate = getMatchDay(new Date(match.utcDate));
       if (!grouped.has(localDate)) grouped.set(localDate, []);
       grouped.get(localDate)!.push(match);
     }

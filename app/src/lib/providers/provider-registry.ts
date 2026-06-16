@@ -141,6 +141,34 @@ class ProviderRegistry {
     state.lastError = `Rate limited until ${state.rateLimitedUntil.toISOString()}`;
   }
 
+  /**
+   * Mark a provider as quota-exhausted for the rest of the UTC day.
+   * Sets the request counter to the daily limit and blocks it until the
+   * next midnight-UTC reset, so we stop wasting calls on a dead provider.
+   */
+  recordQuotaExhausted(name: string): void {
+    const entry = this.providers.get(name);
+    const state = getOrCreateState(name);
+    if (entry) {
+      state.requestsToday = entry.dailyLimit;
+    }
+    // Block until next UTC midnight
+    const now = new Date();
+    const nextUtcMidnight = new Date(
+      Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate() + 1,
+        0,
+        0,
+        0,
+        0,
+      ),
+    );
+    state.rateLimitedUntil = nextUtcMidnight;
+    state.lastError = `Quota exhausted until ${nextUtcMidnight.toISOString()}`;
+  }
+
   /** Record a general error */
   recordError(name: string, error: string): void {
     const state = getOrCreateState(name);

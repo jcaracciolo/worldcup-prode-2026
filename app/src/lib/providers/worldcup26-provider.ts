@@ -30,34 +30,64 @@ export class WorldCup26Provider implements LiveDataProvider {
   readonly priority = 5; // Higher priority than API-FOOTBALL (tried first)
 
   async fetchLiveMatches(): Promise<LiveMatchData[]> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10_000);
+    // worldcup26.ir is free but flaky (SSL drops, slow responses).
+    // Retry transient failures here so we exhaust this free provider's
+    // chances before falling through to the limited API-FOOTBALL quota.
+    const MAX_ATTEMPTS = 3;
+    const PER_ATTEMPT_TIMEOUT_MS = 6_000;
 
-    try {
-      const response = await fetch(`${API_BASE}/get/games`, {
-        cache: "no-store",
-        signal: controller.signal,
-      });
+    let lastError: unknown = null;
 
-      if (!response.ok) {
-        throw new ProviderError(
-          this.name,
-          `HTTP ${response.status}: ${response.statusText}`,
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      const controller = new AbortController();
+      const timeout = setTimeout(
+        () => controller.abort(),
+        PER_ATTEMPT_TIMEOUT_MS,
+      );
+
+      try {
+        const response = await fetch(`${API_BASE}/get/games`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new ProviderError(
+            this.name,
+            `HTTP ${response.status}: ${response.statusText}`,
+          );
+        }
+
+        const data: WC26Response = await response.json();
+
+        if (!data.games || !Array.isArray(data.games)) {
+          throw new ProviderError(this.name, "Invalid response format");
+        }
+
+        return data.games
+          .filter((g) => g.home_team_name_en && g.away_team_name_en)
+          .map((game) => this.mapGame(game));
+      } catch (error) {
+        lastError = error;
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(
+          `[worldcup26] attempt ${attempt}/${MAX_ATTEMPTS} failed: ${message}`,
         );
+        // Small backoff before retrying (skip after the last attempt)
+        if (attempt < MAX_ATTEMPTS) {
+          await new Promise((r) => setTimeout(r, 500 * attempt));
+        }
+      } finally {
+        clearTimeout(timeout);
       }
-
-      const data: WC26Response = await response.json();
-
-      if (!data.games || !Array.isArray(data.games)) {
-        throw new ProviderError(this.name, "Invalid response format");
-      }
-
-      return data.games
-        .filter((g) => g.home_team_name_en && g.away_team_name_en)
-        .map((game) => this.mapGame(game));
-    } finally {
-      clearTimeout(timeout);
     }
+
+    const message =
+      lastError instanceof Error ? lastError.message : String(lastError);
+    throw new ProviderError(
+      this.name,
+      `all ${MAX_ATTEMPTS} attempts failed: ${message}`,
+    );
   }
 
   private mapGame(game: WC26Game): LiveMatchData {

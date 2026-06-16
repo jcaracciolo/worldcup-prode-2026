@@ -1,5 +1,10 @@
 import type { LiveDataProvider, LiveMatchData } from "./types";
-import { API_FOOTBALL_STATUS_MAP, ProviderRateLimitError, ProviderError } from "./types";
+import {
+  API_FOOTBALL_STATUS_MAP,
+  ProviderRateLimitError,
+  ProviderQuotaExhaustedError,
+  ProviderError,
+} from "./types";
 
 const API_BASE = "https://v3.football.api-sports.io";
 
@@ -70,7 +75,13 @@ export class ApiFootballProvider implements LiveDataProvider {
 
     if (data.errors && Object.keys(data.errors).length > 0) {
       const errorMsg = Object.values(data.errors).join(", ");
-      if (errorMsg.toLowerCase().includes("rate limit")) {
+      const lower = errorMsg.toLowerCase();
+      // Daily quota exhausted — mark provider unavailable until next UTC day
+      // instead of hammering it for the rest of the day.
+      if (lower.includes("request limit") || lower.includes("reached the request")) {
+        throw new ProviderQuotaExhaustedError(this.name);
+      }
+      if (lower.includes("rate limit")) {
         throw new ProviderRateLimitError(this.name, 60);
       }
       throw new ProviderError(this.name, errorMsg);

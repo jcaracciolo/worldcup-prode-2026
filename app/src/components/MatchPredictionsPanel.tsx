@@ -45,7 +45,7 @@ export function MatchPredictionsPanel({
         )}
       </div>
 
-      {loading ? (
+      {loading && predictions.length === 0 ? (
         <div className="text-xs text-white/50 text-center py-2">
           <span className="text-lg animate-bounce-spin inline-block">⚽</span>
         </div>

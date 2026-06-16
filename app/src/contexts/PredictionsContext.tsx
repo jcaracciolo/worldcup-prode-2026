@@ -3,7 +3,6 @@
 import React, {
   createContext,
   useContext,
-  useState,
   useCallback,
   useEffect,
   useMemo,
@@ -12,11 +11,12 @@ import { useDatabase } from "@/contexts/DatabaseContext";
 import { useMatches, MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { LocalPrediction, LocalGroupStandingsOverride, LocalThirdPlaceOverride } from "@/types/database";
 import { FifaMatchId, CalculatedStanding } from "@/types/football";
-import { LCE, lceLoading, lceContent, lceError } from "@/types/lce";
+import { LCE } from "@/types/lce";
 import { PredictionBracketResolver } from "@/lib/prediction-bracket-resolver";
 import { ThirdPlaceTeam } from "@/lib/third-place-ranking";
 import { getTeamDisplaySimple } from "@/lib/team-display";
 import { useCachedData } from "@/hooks/useCachedData";
+import { useRevalidatingResource } from "@/hooks/useRevalidatingResource";
 
 // =====================================================================
 // TYPES
@@ -580,29 +580,11 @@ export function useUserPredictions(userId: string | null) {
 export function useAllPredictions(): LCE<AllPredictionsMap> {
   const { getAllPredictions, getCachedAllPredictions } =
     usePredictionsContext();
-
-  // Initialize from cache — skip loading if we already have data
-  const [state, setState] = useState<LCE<AllPredictionsMap>>(() => {
-    const cached = getCachedAllPredictions();
-    return cached ? lceContent(cached) : lceLoading();
-  });
-
-  useEffect(() => {
-    // Only show loading if we have no data at all (first load)
-    const cached = getCachedAllPredictions();
-    if (!cached && !state.content) setState(lceLoading());
-
-    getAllPredictions()
-      .then((predictions) => {
-        setState(lceContent(predictions));
-      })
-      .catch((err) => {
-        setState(lceError(err.message));
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getAllPredictions]);
-
-  return state;
+  return useRevalidatingResource<AllPredictionsMap>(
+    getAllPredictions,
+    getCachedAllPredictions,
+    [getAllPredictions],
+  );
 }
 
 // =====================================================================

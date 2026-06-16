@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { useMatches } from "@/contexts/MatchContext";
+import { useMatches, getMatchDay } from "@/contexts/MatchContext";
 import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { useAllProfiles } from "@/contexts/UserContext";
 import { useLeaderboard } from "@/contexts/LeaderboardContext";
@@ -28,7 +28,7 @@ function nameWithFlag(name: string, country: string | null | undefined): string 
 }
 
 export default function SummaryPanel() {
-  const { matches } = useMatches();
+  const { todaysMatches } = useMatches();
   const allPredictions = useAllPredictions();
   const profiles = useAllProfiles();
   const { scores } = useLeaderboard();
@@ -37,20 +37,7 @@ export default function SummaryPanel() {
   const [copiedPredictions, setCopiedPredictions] = useState(false);
   const [copiedPoints, setCopiedPoints] = useState(false);
 
-  const todayStr = getCurrentTime().toLocaleDateString("en-CA");
-
-  const todaysMatches = useMemo(
-    () =>
-      matches
-        .filter(
-          (m) => new Date(m.utcDate).toLocaleDateString("en-CA") === todayStr,
-        )
-        .sort(
-          (a, b) =>
-            new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
-        ),
-    [matches, todayStr],
-  );
+  const todayStr = getMatchDay(getCurrentTime());
 
   const profileMap = useMemo(() => {
     const map = new Map<string, { name: string; country: string | null }>();

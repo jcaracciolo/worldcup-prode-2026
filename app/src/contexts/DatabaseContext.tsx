@@ -97,6 +97,9 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
 
   // Load user's competitions after auth (with in-flight dedup)
   const competitionsPromiseRef = React.useRef<Promise<void> | null>(null);
+  // Track whether competitions have been loaded for the current user
+  // (used by TOKEN_REFRESHED handler to avoid redundant loads)
+  const hasLoadedCompetitionsRef = React.useRef(false);
 
   const loadUserCompetitions = useCallback(
     async (userId: string) => {
@@ -108,7 +111,11 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
       }
 
       const promise = (async () => {
-      setCompetitionLoading(true);
+      // Only show loading on first load — don't flash the UI when revalidating
+      // after auth events that won't change the competition
+      if (!hasLoadedCompetitionsRef.current) {
+        setCompetitionLoading(true);
+      }
       try {
         const { data: competitions, error } =
           await stableDb.competitionMembers.getUserCompetitions(userId);
@@ -128,6 +135,7 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
             : null;
 
         if (competitions && competitions.length > 0) {
+          hasLoadedCompetitionsRef.current = true;
           // Check if saved competition is still valid
           const savedIsValid =
             savedCompetitionId &&
@@ -200,7 +208,15 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
     const { unsubscribe } = authService.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
         loadUserCompetitions(session.user.id);
+      } else if (event === "TOKEN_REFRESHED" && session?.user) {
+        // Cross-tab sign-in: the other tab signed in and this tab receives
+        // TOKEN_REFRESHED instead of SIGNED_IN. Load competitions if we
+        // haven't already (i.e. user was previously unauthenticated).
+        if (!hasLoadedCompetitionsRef.current) {
+          loadUserCompetitions(session.user.id);
+        }
       } else if (event === "SIGNED_OUT") {
+        hasLoadedCompetitionsRef.current = false;
         setUserCompetitions([]);
         setCurrentCompetitionId(null);
         setCompetitionLoading(false);

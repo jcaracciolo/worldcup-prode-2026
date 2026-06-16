@@ -27,6 +27,16 @@ export type { ResolvedTeams, LiveBracket } from "@/lib/live-bracket-resolver";
 // TYPES
 // =====================================================================
 
+/**
+ * Returns the "match day" date string (YYYY-MM-DD) for a given date.
+ * Matches before 6am local are grouped with the previous calendar day,
+ * since late-night kickoffs (midnight, 1am, etc.) belong to the prior match day.
+ */
+export function getMatchDay(date: Date): string {
+  const shifted = new Date(date.getTime() - 6 * 60 * 60 * 1000);
+  return shifted.toLocaleDateString("en-CA");
+}
+
 export interface MatchWithLiveInfo extends Match {
   isLive: boolean;
   elapsedMinutes: number | null;
@@ -52,6 +62,8 @@ export interface MatchWithLiveInfo extends Match {
 interface MatchContextValue {
   /** All matches with live info attached */
   matches: MatchWithLiveInfo[];
+  /** Matches scheduled for today (user's local date), sorted by kick-off time */
+  todaysMatches: MatchWithLiveInfo[];
   /** Whether any match is currently live */
   hasLiveMatches: boolean;
   /** List of currently live matches */
@@ -192,19 +204,6 @@ function enhanceMatch(match: Match, currentTime: Date): MatchWithLiveInfo {
   };
 }
 
-/**
- * Check if today has scheduled matches (worth polling)
- */
-function hasMatchesToday(matches: Match[]): boolean {
-  const today = new Date();
-  const todayStr = today.toLocaleDateString("en-CA");
-
-  return matches.some((m) => {
-    const matchDate = new Date(m.utcDate).toLocaleDateString("en-CA");
-    return matchDate === todayStr;
-  });
-}
-
 // =====================================================================
 // PROVIDER COMPONENT
 // =====================================================================
@@ -289,6 +288,16 @@ export function MatchProvider({
   // Get only live matches
   const liveMatches = useMemo(() => matches.filter((m) => m.isLive), [matches]);
 
+  // Today's "match day" — matches before 6am local are grouped with previous day
+  const todayStr = getMatchDay(currentTime);
+
+  // Matches scheduled for today's match day, sorted by kick-off time
+  const todaysMatches = useMemo(() => {
+    return matches
+      .filter((m) => getMatchDay(new Date(m.utcDate)) === todayStr)
+      .sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime());
+  }, [matches, todayStr]);
+
   // Group stage matches bucketed by group name
   const groups = useMemo(() => {
     const map = new Map<string, MatchWithLiveInfo[]>();
@@ -340,6 +349,33 @@ export function MatchProvider({
     await fetchMatches();
   }, [fetchMatches]);
 
+  // Refresh immediately when the tab/app returns to the foreground.
+  // Mobile browsers suspend background timers (and lock screens pause the page
+  // entirely), so the polling timer stops while the app is backgrounded.
+  // Without this, a returning user would wait up to a full poll interval (60s)
+  // before seeing live score updates. A short throttle dedupes the
+  // visibilitychange + focus pair and rapid foreground/background toggles.
+  const lastForegroundFetchRef = useRef(0);
+  useEffect(() => {
+    if (isSimulated) return;
+
+    const onForeground = () => {
+      if (document.visibilityState !== "visible") return;
+      if (!(hasLiveMatches || hasMatchesTodayRef.current)) return;
+      const now = Date.now();
+      if (now - lastForegroundFetchRef.current < 5_000) return;
+      lastForegroundFetchRef.current = now;
+      fetchMatches();
+    };
+
+    document.addEventListener("visibilitychange", onForeground);
+    window.addEventListener("focus", onForeground);
+    return () => {
+      document.removeEventListener("visibilitychange", onForeground);
+      window.removeEventListener("focus", onForeground);
+    };
+  }, [isSimulated, hasLiveMatches, fetchMatches]);
+
   // Initial fetch
   useEffect(() => {
     if (!initialMatches) {
@@ -347,11 +383,9 @@ export function MatchProvider({
     }
   }, [fetchMatches, initialMatches]);
 
-  // Use ref for rawMatches so the polling effect can check hasMatchesToday
-  // without rawMatches being in the dependency array (which causes infinite loops
-  // since every fetch creates a new array reference).
-  const rawMatchesRef = useRef(rawMatches);
-  rawMatchesRef.current = rawMatches;
+  // Ref so the polling effect can check without a dependency loop
+  const hasMatchesTodayRef = useRef(todaysMatches.length > 0);
+  hasMatchesTodayRef.current = todaysMatches.length > 0;
 
   // Dynamic polling — uses server-recommended interval from pollIntervalMs.
   // The server calculates this based on remaining live provider budget ÷ remaining
@@ -367,12 +401,12 @@ export function MatchProvider({
     const scheduleNext = () => {
       if (cancelled) return;
 
-      const shouldFetch = hasLiveMatches || hasMatchesToday(rawMatchesRef.current);
+      const shouldFetch = hasLiveMatches || hasMatchesTodayRef.current;
       const interval = shouldFetch ? pollIntervalRef.current : 60_000;
 
       timeoutId = setTimeout(async () => {
         if (cancelled) return;
-        if (hasLiveMatches || hasMatchesToday(rawMatchesRef.current)) {
+        if (hasLiveMatches || hasMatchesTodayRef.current) {
           await fetchMatches();
         }
         scheduleNext();
@@ -397,6 +431,7 @@ export function MatchProvider({
 
   const value: MatchContextValue = {
     matches,
+    todaysMatches,
     hasLiveMatches,
     liveMatches,
     loading,

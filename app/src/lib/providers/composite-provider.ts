@@ -1,6 +1,6 @@
 import type { Match } from "@/types/football";
 import type { LiveMatchData } from "./types";
-import { ProviderRateLimitError } from "./types";
+import { ProviderRateLimitError, ProviderQuotaExhaustedError } from "./types";
 import { providerRegistry } from "./provider-registry";
 import { fetchBaseMatches } from "./football-data-provider";
 
@@ -241,6 +241,12 @@ export async function getMatchesFromComposite(): Promise<Match[]> {
     return baseMatches;
   }
 
+  // Reserve the poll slot BEFORE awaiting the (potentially slow) provider
+  // calls. Otherwise two concurrent requests both pass the throttle check
+  // above and double-fire live calls, wasting quota. Setting the timestamp
+  // now makes any concurrent request fall into the throttle branch.
+  lastLiveCallTimestamp = Date.now();
+
   console.log(
     `[composite] ${liveWindowMatches.length} match(es) in live window: ${liveWindowMatches.map(
       (m) => `${m.homeTeam.name} vs ${m.awayTeam.name}`,
@@ -249,7 +255,16 @@ export async function getMatchesFromComposite(): Promise<Match[]> {
 
   // Step 4: Fetch from live providers (round-robin)
   const liveData = await fetchFromLiveProviders();
+  // Refresh the timestamp to the completion time so the next interval is
+  // measured from when the call actually finished.
   lastLiveCallTimestamp = Date.now();
+  console.log(
+    `[LIVE-HIT] ${new Date().toISOString()} | ` +
+      `${liveWindowMatches.length} in window | ` +
+      `interval: ${Math.round(lastCalculatedIntervalMs / 1000)}s | ` +
+      `budget remaining: ${providerRegistry.getTotalRemainingBudget()} | ` +
+      `results: ${liveData?.length ?? 0}`,
+  );
 
   if (!liveData || liveData.length === 0) {
     return baseMatches;
@@ -284,11 +299,10 @@ async function fetchFromLiveProviders(): Promise<LiveMatchData[] | null> {
     return null;
   }
 
-  // Try each available provider, starting from round-robin position
-  for (let i = 0; i < available.length; i++) {
-    const provider = providerRegistry.getNextAvailable();
-    if (!provider) break;
-
+  // Try providers in priority order (highest priority first).
+  // Only falls back to the next provider when the current one fails.
+  // This preserves budget on paid/limited providers.
+  for (const provider of available) {
     try {
       console.log(`[composite] Trying live provider: ${provider.name}`);
       const data = await provider.fetchLiveMatches();
@@ -298,7 +312,12 @@ async function fetchFromLiveProviders(): Promise<LiveMatchData[] | null> {
       );
       return data;
     } catch (error) {
-      if (error instanceof ProviderRateLimitError) {
+      if (error instanceof ProviderQuotaExhaustedError) {
+        providerRegistry.recordQuotaExhausted(provider.name);
+        console.warn(
+          `[composite] ${provider.name} quota exhausted — disabled until next UTC day, trying next...`,
+        );
+      } else if (error instanceof ProviderRateLimitError) {
         providerRegistry.recordRateLimit(
           provider.name,
           error.retryAfterSeconds,

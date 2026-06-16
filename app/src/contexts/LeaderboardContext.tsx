@@ -34,14 +34,31 @@ const LeaderboardContext = createContext<LeaderboardContextValue | null>(null);
 
 export function LeaderboardProvider({ children }: { children: ReactNode }) {
   const { stageLockStatus } = useTime();
-  const { matches, liveBracket } = useMatches();
+  const { matches, liveBracket, loading: matchesLoading } = useMatches();
   const { competitionLoading, currentCompetitionId } = useDatabase();
   const profiles = useAllProfiles();
   const allPredictions = useAllPredictions();
 
-  // Derive loading from LCE hooks — also wait for competition to be resolved
-  // to avoid briefly showing all users before the competition filter kicks in
+  // A score is only meaningful when computed from a COMPLETE input set —
+  // profiles, predictions AND match results. Match results arrive on their
+  // own schedule (separate fetch). Computing before they land would
+  // undercount finished games and briefly show a wrong total (e.g. 17 then
+  // jump to 21). We therefore require matches to have loaded before producing
+  // any scores. This is safe against the "blank on reload" bug because all
+  // three inputs persist once loaded — they only ever move forward, never
+  // regress — so this gate only suppresses output during the very first load
+  // when there is no prior data to preserve anyway.
+  const inputsReady =
+    !matchesLoading &&
+    matches.length > 0 &&
+    !!profiles.content &&
+    !!allPredictions.content;
+
+  // Loading is informational only — exposed for consumers that want a
+  // spinner. It is true until the first complete score can be produced, so a
+  // consumer can show a loader instead of a misleading "no data" empty state.
   const loading =
+    !inputsReady ||
     competitionLoading ||
     !currentCompetitionId ||
     profiles.loading ||
@@ -49,7 +66,7 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
 
   // Calculate scores using useMemo - recalculates when dependencies change
   const scores = useMemo(() => {
-    if (loading) return [];
+    if (!inputsReady) return [];
 
     const profileList = profiles.content || [];
     const predictionsMap = allPredictions.content || new Map();
@@ -144,7 +161,7 @@ export function LeaderboardProvider({ children }: { children: ReactNode }) {
 
     return calculatedScores;
   }, [
-    loading,
+    inputsReady,
     matches,
     stageLockStatus.groupStageLocked,
     stageLockStatus.knockoutStageLocked,
@@ -192,7 +209,7 @@ export function useUserPosition(userId: string | null) {
   const { scores, loading, getUserScore } = useLeaderboard();
 
   return useMemo(() => {
-    if (!userId || loading || !scores.length) {
+    if (!userId || !scores.length) {
       return {
         position: null,
         total: scores.length,
@@ -235,10 +252,10 @@ export function useUserPosition(userId: string | null) {
  * Returns points calculated centrally (with proper knockout team matching).
  */
 export function useMatchPointsForAllUsers(matchId: number) {
-  const { scores, loading } = useLeaderboard();
+  const { scores } = useLeaderboard();
 
   return useMemo(() => {
-    if (loading) {
+    if (!scores.length) {
       return { loading: true, matchPoints: [] };
     }
 
@@ -263,5 +280,5 @@ export function useMatchPointsForAllUsers(matchId: number) {
       ); // Include users even with 0 points
 
     return { loading: false, matchPoints };
-  }, [matchId, scores, loading]);
+  }, [matchId, scores]);
 }

@@ -110,14 +110,22 @@ export async function getMatches(): Promise<MatchesResult> {
   }
 
   // Step 4: Merge individually cached match results (live scores + admin overrides)
+  // Only apply cached data when it has a more advanced status than the base data.
+  // This prevents stale IN_PLAY cache from overriding a FINISHED status.
   const { data: individualCaches } = await db.matchesCache.getIndividualCachedMatches();
   if (individualCaches && individualCaches.length > 0) {
     const cachedMatchMap = new Map(
-      individualCaches.map((c) => [c.match_id, c.data]),
+      individualCaches.map((c) => [c.match_id, c.data as unknown as Match]),
     );
     matches = matches.map((match) => {
       const cached = cachedMatchMap.get(match.id);
-      return cached ? (cached as unknown as Match) : match;
+      if (!cached) return match;
+
+      // If base already says FINISHED, prefer base (it has final data)
+      if (match.status === "FINISHED") return match;
+
+      // If cached is more advanced (has scores the base doesn't), use it
+      return cached;
     });
   }
 

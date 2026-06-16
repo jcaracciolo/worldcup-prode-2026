@@ -12,7 +12,7 @@ function LoginForm() {
   const redirect = searchParams.get("redirect") || "/";
   const codeParam = searchParams.get("code");
   const competitionParam = searchParams.get("competition");
-  const { signIn, onAuthStateChange } = useSignIn();
+  const { signIn } = useSignIn();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,23 +44,9 @@ function LoginForm() {
       return;
     }
 
-    // Wait for the auth state change event to fire before navigating.
-    // This ensures cookies are properly set and the server-side middleware
-    // will see the authenticated session on the next request.
-    await new Promise<void>((resolve) => {
-      const { unsubscribe } = onAuthStateChange((event) => {
-        if (event === "SIGNED_IN") {
-          unsubscribe();
-          resolve();
-        }
-      });
-      // Safety timeout - don't hang forever if the event doesn't fire
-      setTimeout(() => {
-        unsubscribe();
-        resolve();
-      }, 3000);
-    });
-
+    // signIn() already set the session and cookies — navigate immediately.
+    // The DatabaseContext/UserContext auth listeners will pick up the
+    // SIGNED_IN event independently; no need to wait for it here.
     router.push(redirect);
     router.refresh();
   };

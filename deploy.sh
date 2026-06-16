@@ -55,8 +55,9 @@ rm -f deploy.zip
 STANDALONE_PATH="$(cd .next/standalone && pwd -W 2>/dev/null || pwd)"
 DEPLOY_ZIP_PATH="$(cd .. && pwd -W 2>/dev/null || pwd)/deploy.zip"
 
-# Use PowerShell Compress-Archive (Azure requires this format; .NET ZipFile doesn't work)
-powershell.exe -NoProfile -Command "
+# Use PowerShell to create zip (-ExecutionPolicy Bypass needed when invoked from git bash)
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "
+    Import-Module Microsoft.PowerShell.Archive
     Set-Location '${STANDALONE_PATH//\//\\}'
     Compress-Archive -Path * -DestinationPath '${DEPLOY_ZIP_PATH//\//\\}' -Force
 "

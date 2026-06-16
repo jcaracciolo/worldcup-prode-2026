@@ -2,16 +2,16 @@
 
 import { useMemo } from "react";
 import { format } from "date-fns";
-import { useMatches } from "@/contexts/MatchContext";
+import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { useDatabase } from "@/contexts/DatabaseContext";
 import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { useAllProfiles } from "@/contexts/UserContext";
 import { useUser } from "@/contexts/UserContext";
 import { useTime } from "@/contexts/TimeContext";
 import { FifaMatchId } from "@/types/football";
-import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import UserName from "@/components/UserName";
 import Link from "next/link";
+import { useMatchDayNav } from "@/hooks/useMatchDayNav";
 
 interface GroupedPrediction {
   score: string;
@@ -112,29 +112,15 @@ function groupPredictions(
 
 export default function TodaysPredictions() {
   const { competitionLoading, currentCompetitionId } = useDatabase();
-  const { matches } = useMatches();
   const allPredictions = useAllPredictions();
   const profiles = useAllProfiles();
   const { user: profile } = useUser();
-  const { getCurrentTime, stageLockStatus } = useTime();
+  const { stageLockStatus } = useTime();
+  const { selectedDay, dayMatches, isToday, canPrev, canNext, prev, next, goToday } =
+    useMatchDayNav();
 
   const currentUserId = profile?.id ?? null;
   const isAdmin = profile?.is_admin === true;
-
-  const todayStr = getCurrentTime().toLocaleDateString("en-CA");
-
-  const todaysMatches = useMemo(
-    () =>
-      matches
-        .filter(
-          (m) => new Date(m.utcDate).toLocaleDateString("en-CA") === todayStr,
-        )
-        .sort(
-          (a, b) =>
-            new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime(),
-        ),
-    [matches, todayStr],
-  );
 
   const profileMap = useMemo(() => {
     const map = new Map<string, { name: string; country: string | null }>();
@@ -145,9 +131,9 @@ export default function TodaysPredictions() {
   }, [profiles.content]);
 
   const matchPredictions = useMemo(() => {
-    if (!allPredictions.content || todaysMatches.length === 0) return [];
+    if (!allPredictions.content || dayMatches.length === 0) return [];
 
-    return todaysMatches.map((match) => {
+    return dayMatches.map((match) => {
       const isGroupMatch = match.stage === "GROUP_STAGE";
       const othersVisible = isGroupMatch
         ? stageLockStatus.groupStageLocked
@@ -166,7 +152,7 @@ export default function TodaysPredictions() {
     });
   }, [
     allPredictions.content,
-    todaysMatches,
+    dayMatches,
     profileMap,
     currentUserId,
     isAdmin,
@@ -174,11 +160,21 @@ export default function TodaysPredictions() {
     stageLockStatus.knockoutStageLocked,
   ]);
 
-  if (todaysMatches.length === 0) return null;
-  if (competitionLoading || !currentCompetitionId) return null;
-
-  const hasPredictions = matchPredictions.some((mp) => mp.groups.length > 0);
+  // Only block rendering when there's truly no data (first load)
+  if ((competitionLoading || !currentCompetitionId) && !allPredictions.content && !profiles.content) return null;
   if (!allPredictions.content && !profiles.content) return null;
+  if (dayMatches.length === 0) return null;
+
+  // If browsing a knockout day and knockout isn't locked, hide all predictions
+  const allKnockout = dayMatches.length > 0 && dayMatches.every((m) => m.stage !== "GROUP_STAGE");
+  const knockoutHidden = allKnockout && !stageLockStatus.knockoutStageLocked;
+
+  const hasPredictions = !knockoutHidden && matchPredictions.some((mp) => mp.groups.length > 0);
+
+  const formatDay = (dateStr: string) => {
+    const date = new Date(dateStr + "T12:00:00Z");
+    return format(date, "EEEE, MMMM d");
+  };
 
   return (
     <div className="glass-card overflow-hidden">
@@ -187,13 +183,41 @@ export default function TodaysPredictions() {
         <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-xl flex items-center justify-center">
           <span className="text-xl sm:text-2xl">🔮</span>
         </div>
-        <div>
+        <div className="flex-1">
           <h2 className="text-lg sm:text-xl font-bold text-white">
-            Today&apos;s Predictions
+            {isToday ? "Today's Predictions" : "Predictions"}
           </h2>
           <p className="text-purple-100 text-xs sm:text-sm">
-            {todaysMatches.length} match{todaysMatches.length !== 1 ? "es" : ""}
+            {isToday
+              ? `${dayMatches.length} match${dayMatches.length !== 1 ? "es" : ""}`
+              : formatDay(selectedDay!)}
           </p>
+        </div>
+        {!isToday && (
+          <button
+            onClick={goToday}
+            className="px-2 py-1 rounded-lg text-xs text-white/80 hover:text-white bg-white/10 hover:bg-white/20 transition-colors"
+          >
+            Today
+          </button>
+        )}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={prev}
+            disabled={!canPrev}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white/80 hover:text-white bg-white/10 hover:bg-white/20 transition-colors disabled:text-white/20 disabled:bg-white/5 disabled:hover:bg-white/5"
+            aria-label="Previous match day"
+          >
+            ‹
+          </button>
+          <button
+            onClick={next}
+            disabled={!canNext}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white/80 hover:text-white bg-white/10 hover:bg-white/20 transition-colors disabled:text-white/20 disabled:bg-white/5 disabled:hover:bg-white/5"
+            aria-label="Next match day"
+          >
+            ›
+          </button>
         </div>
       </div>
 
@@ -202,7 +226,9 @@ export default function TodaysPredictions() {
         <div className="p-6 sm:p-8 text-center">
           <div className="text-3xl sm:text-4xl mb-3">🔮</div>
           <p className="text-white/60 text-sm sm:text-base">
-            No predictions yet
+            {knockoutHidden
+              ? "Knockout predictions are hidden until the stage locks"
+              : "No predictions yet"}
           </p>
         </div>
       ) : (

@@ -6,7 +6,7 @@ import { useUser } from "@/contexts/UserContext";
 import UserName from "@/components/UserName";
 
 export default function Leaderboard() {
-  const { scores } = useLeaderboard();
+  const { scores, loading } = useLeaderboard();
   const { user } = useUser();
   const currentUserId = user?.id;
   return (
@@ -25,15 +25,26 @@ export default function Leaderboard() {
 
       <div className="divide-y divide-white/5">
         {scores.length === 0 ? (
-          <div className="p-6 sm:p-8 text-center">
-            <div className="text-3xl sm:text-4xl mb-3">📊</div>
-            <p className="text-white/60 text-sm sm:text-base">
-              No predictions yet
-            </p>
-            <p className="text-white/40 text-xs sm:text-sm mt-1">
-              Be the first to make predictions!
-            </p>
-          </div>
+          loading ? (
+            <div className="p-6 sm:p-8 text-center">
+              <span className="text-3xl sm:text-4xl inline-block animate-bounce-spin">
+                ⚽
+              </span>
+              <p className="text-white/60 text-sm sm:text-base mt-3">
+                Loading scores…
+              </p>
+            </div>
+          ) : (
+            <div className="p-6 sm:p-8 text-center">
+              <div className="text-3xl sm:text-4xl mb-3">📊</div>
+              <p className="text-white/60 text-sm sm:text-base">
+                No predictions yet
+              </p>
+              <p className="text-white/40 text-xs sm:text-sm mt-1">
+                Be the first to make predictions!
+              </p>
+            </div>
+          )
         ) : (
           scores.map((score) => {
             const isCurrentUser = score.userId === currentUserId;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { MatchDayNavProvider } from "@/hooks/useMatchDayNav";
 import TodaysMatches from "@/components/TodaysMatches";
 import TodaysPredictions from "@/components/TodaysPredictions";
 import Leaderboard from "@/components/Leaderboard";
@@ -45,25 +46,13 @@ export default function HomePage() {
         <div className="grid lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Matches Section */}
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-3 mb-4 sm:mb-6">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                <span className="text-lg sm:text-xl">📅</span>
-              </div>
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-white">
-                  Today&apos;s Matches
-                </h2>
-                <p className="text-white/50 text-xs sm:text-sm">
-                  World Cup 2026
-                </p>
-              </div>
-            </div>
+            <MatchDayNavProvider>
+              <TodaysMatches />
 
-            <TodaysMatches />
-
-            <div className="mt-6 sm:mt-8">
-              <TodaysPredictions />
-            </div>
+              <div className="mt-6 sm:mt-8">
+                <TodaysPredictions />
+              </div>
+            </MatchDayNavProvider>
           </div>
 
           {/* Leaderboard Section */}

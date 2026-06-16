@@ -110,6 +110,18 @@ export class ProviderRateLimitError extends Error {
   }
 }
 
+/**
+ * Thrown when a provider has exhausted its daily quota.
+ * The provider should be marked unavailable until the next UTC day reset
+ * so we stop wasting cycles on a provider that can't serve data.
+ */
+export class ProviderQuotaExhaustedError extends Error {
+  constructor(providerName: string) {
+    super(`${providerName}: daily quota exhausted`);
+    this.name = "ProviderQuotaExhaustedError";
+  }
+}
+
 export class ProviderError extends Error {
   constructor(providerName: string, message: string) {
     super(`${providerName}: ${message}`);

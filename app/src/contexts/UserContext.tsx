@@ -11,8 +11,9 @@ import {
 } from "react";
 import { useDatabase } from "@/contexts/DatabaseContext";
 import { Profile } from "@/types/database";
-import { LCE, lceLoading, lceContent, lceError } from "@/types/lce";
+import { LCE } from "@/types/lce";
 import { useCachedData } from "@/hooks/useCachedData";
+import { useRevalidatingResource } from "@/hooks/useRevalidatingResource";
 
 // =====================================================================
 // TYPES
@@ -44,12 +45,12 @@ const UserContext = createContext<UserContextValue | null>(null);
 // =====================================================================
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const { authService, db } = useDatabase();
+  const { authService, db, currentCompetitionId } = useDatabase();
   const [user, setUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Centralized cache — auto-clears on competition switch (db change)
-  const profileCache = useCachedData<string, Profile, Profile[]>(db);
+  // Centralized cache — auto-clears on competition switch (keyed by ID, not db object)
+  const profileCache = useCachedData<string, Profile, Profile[]>(currentCompetitionId);
   // Destructure stable callbacks for use in dependency arrays
   const cacheSet = profileCache.set;
   const cacheGet = profileCache.get;
@@ -79,6 +80,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     const { unsubscribe } = authService.onAuthStateChange((event) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        fetchUser();
+      } else if (event === "TOKEN_REFRESHED" && !hasData) {
+        // Cross-tab sign-in: this tab was unauthenticated but another tab
+        // signed in. TOKEN_REFRESHED fires instead of SIGNED_IN.
         fetchUser();
       }
     });
@@ -187,33 +192,21 @@ export function useUser(): UserContextValue {
 export function useProfile(userId: string | null): LCE<Profile> {
   const { getProfile, getCachedProfile } = useUser();
 
-  // Initialize from cache — if we already have this profile, skip loading
-  const [state, setState] = useState<LCE<Profile>>(() => {
-    if (!userId) return lceContent(null as unknown as Profile);
-    const cached = getCachedProfile(userId);
-    return cached ? lceContent(cached) : lceLoading();
+  const fetcher = useCallback(async () => {
+    const profile = await getProfile(userId!);
+    if (!profile) throw new Error("Profile not found");
+    return profile;
+  }, [userId, getProfile]);
+
+  const getCached = useCallback(
+    () => (userId ? getCachedProfile(userId) : null),
+    [userId, getCachedProfile],
+  );
+
+  return useRevalidatingResource<Profile>(fetcher, getCached, [fetcher], {
+    enabled: !!userId,
+    disabledContent: null as unknown as Profile,
   });
-
-  useEffect(() => {
-    if (!userId) {
-      setState(lceContent(null as unknown as Profile));
-      return;
-    }
-
-    // If we have cached data, keep showing it (don't flash loading)
-    const cached = getCachedProfile(userId);
-    if (!cached) setState(lceLoading());
-
-    getProfile(userId)
-      .then((profile) => {
-        setState(profile ? lceContent(profile) : lceError("Profile not found"));
-      })
-      .catch((err) => {
-        setState(lceError(err.message));
-      });
-  }, [userId, getProfile, getCachedProfile]);
-
-  return state;
 }
 
 /**
@@ -222,27 +215,9 @@ export function useProfile(userId: string | null): LCE<Profile> {
  */
 export function useAllProfiles(): LCE<Profile[]> {
   const { getAllProfiles, getCachedAllProfiles } = useUser();
-
-  // Initialize from cache — if we already fetched all profiles, skip loading
-  const [state, setState] = useState<LCE<Profile[]>>(() => {
-    const cached = getCachedAllProfiles();
-    return cached ? lceContent(cached) : lceLoading();
-  });
-
-  useEffect(() => {
-    // Only show loading if we have no data at all (first load)
-    const cached = getCachedAllProfiles();
-    if (!cached && !state.content) setState(lceLoading());
-
-    getAllProfiles()
-      .then((profiles) => {
-        setState(lceContent(profiles));
-      })
-      .catch((err) => {
-        setState(lceError(err.message));
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getAllProfiles]);
-
-  return state;
+  return useRevalidatingResource<Profile[]>(
+    getAllProfiles,
+    getCachedAllProfiles,
+    [getAllProfiles],
+  );
 }

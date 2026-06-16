@@ -18,6 +18,7 @@ export function calculateStandingsFromPredictions(
   predictionMap: Map<number, LocalPrediction>,
 ): CalculatedStanding[] {
   const teamStats = new Map<number, CalculatedStanding>();
+  const results: MatchResult[] = [];
 
   // Initialize all teams
   groupMatches.forEach((match) => {
@@ -74,6 +75,13 @@ export function calculateStandingsFromPredictions(
     homeStats.goalDifference = homeStats.goalsFor - homeStats.goalsAgainst;
     awayStats.goalDifference = awayStats.goalsFor - awayStats.goalsAgainst;
 
+    results.push({
+      homeId: match.homeTeam.id,
+      awayId: match.awayTeam.id,
+      homeGoals: prediction.home_goals,
+      awayGoals: prediction.away_goals,
+    });
+
     if (prediction.home_goals > prediction.away_goals) {
       homeStats.won++;
       homeStats.points += 3;
@@ -90,7 +98,7 @@ export function calculateStandingsFromPredictions(
     }
   });
 
-  return sortStandings(Array.from(teamStats.values()));
+  return sortStandings(Array.from(teamStats.values()), results);
 }
 
 /**
@@ -109,6 +117,7 @@ export function calculateActualStandings(
   groupMatches: Match[],
 ): CalculatedStanding[] {
   const teamStats = new Map<number, CalculatedStanding>();
+  const results: MatchResult[] = [];
 
   // Initialize all teams (skip null/TBD teams)
   groupMatches.forEach((match) => {
@@ -164,6 +173,13 @@ export function calculateActualStandings(
     homeStats.goalDifference = homeStats.goalsFor - homeStats.goalsAgainst;
     awayStats.goalDifference = awayStats.goalsFor - awayStats.goalsAgainst;
 
+    results.push({
+      homeId: match.homeTeam.id,
+      awayId: match.awayTeam.id,
+      homeGoals,
+      awayGoals,
+    });
+
     if (homeGoals > awayGoals) {
       homeStats.won++;
       homeStats.points += 3;
@@ -180,21 +196,151 @@ export function calculateActualStandings(
     }
   });
 
-  return sortStandings(Array.from(teamStats.values()));
+  return sortStandings(Array.from(teamStats.values()), results);
 }
 
 /**
- * Sort standings by points, goal difference, goals for
+ * A single played match result, used to compute head-to-head sub-tables.
  */
-function sortStandings(standings: CalculatedStanding[]): CalculatedStanding[] {
-  return standings
-    .sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      if (b.goalDifference !== a.goalDifference)
-        return b.goalDifference - a.goalDifference;
-      return b.goalsFor - a.goalsFor;
-    })
-    .map((s, i) => ({ ...s, position: i + 1 }));
+interface MatchResult {
+  homeId: number;
+  awayId: number;
+  homeGoals: number;
+  awayGoals: number;
+}
+
+/** Aggregated head-to-head record among a tied subset of teams. */
+interface H2HRecord {
+  points: number;
+  goalDifference: number;
+  goalsFor: number;
+}
+
+/**
+ * Compute a head-to-head mini-table among ONLY the given teams, using just the
+ * matches played between those teams.
+ */
+function computeHeadToHead(
+  teamIds: number[],
+  results: MatchResult[],
+): Map<number, H2HRecord> {
+  const records = new Map<number, H2HRecord>();
+  teamIds.forEach((id) =>
+    records.set(id, { points: 0, goalDifference: 0, goalsFor: 0 }),
+  );
+
+  const inGroup = new Set(teamIds);
+  for (const r of results) {
+    if (!inGroup.has(r.homeId) || !inGroup.has(r.awayId)) continue;
+
+    const home = records.get(r.homeId)!;
+    const away = records.get(r.awayId)!;
+
+    home.goalsFor += r.homeGoals;
+    away.goalsFor += r.awayGoals;
+    home.goalDifference += r.homeGoals - r.awayGoals;
+    away.goalDifference += r.awayGoals - r.homeGoals;
+
+    if (r.homeGoals > r.awayGoals) home.points += 3;
+    else if (r.awayGoals > r.homeGoals) away.points += 3;
+    else {
+      home.points += 1;
+      away.points += 1;
+    }
+  }
+
+  return records;
+}
+
+/** Split an already-sorted list into runs whose key() values are all equal. */
+function groupByEqual<T>(
+  items: T[],
+  key: (item: T) => string,
+): T[][] {
+  const runs: T[][] = [];
+  for (const item of items) {
+    const last = runs[runs.length - 1];
+    if (last && key(last[0]) === key(item)) last.push(item);
+    else runs.push([item]);
+  }
+  return runs;
+}
+
+/**
+ * Break a tie among teams that are equal on the overall criteria
+ * (points, goal difference, goals scored) using the FIFA head-to-head rules:
+ *   d) points in matches between the tied teams
+ *   e) goal difference in those matches
+ *   f) goals scored in those matches
+ * If a subset is still tied after head-to-head, the procedure is re-applied to
+ * that smaller subset (re-computing the mini-table among only those teams), per
+ * FIFA regulations. Fair-play points are not tracked, so the final fallback is
+ * a deterministic ordering by team id (in place of drawing of lots).
+ */
+function breakTie(
+  tied: CalculatedStanding[],
+  results: MatchResult[],
+): CalculatedStanding[] {
+  if (tied.length <= 1) return tied;
+
+  const h2h = computeHeadToHead(
+    tied.map((s) => s.team.id),
+    results,
+  );
+
+  const sorted = [...tied].sort((a, b) => {
+    const ra = h2h.get(a.team.id)!;
+    const rb = h2h.get(b.team.id)!;
+    if (rb.points !== ra.points) return rb.points - ra.points;
+    if (rb.goalDifference !== ra.goalDifference)
+      return rb.goalDifference - ra.goalDifference;
+    if (rb.goalsFor !== ra.goalsFor) return rb.goalsFor - ra.goalsFor;
+    return a.team.id - b.team.id; // deterministic stand-in for drawing of lots
+  });
+
+  const h2hKey = (s: CalculatedStanding) => {
+    const r = h2h.get(s.team.id)!;
+    return `${r.points}|${r.goalDifference}|${r.goalsFor}`;
+  };
+  const buckets = groupByEqual(sorted, h2hKey);
+
+  // Head-to-head produced no separation at all → use the deterministic fallback.
+  if (buckets.length === 1) return sorted;
+
+  // Otherwise re-apply the procedure to any still-tied (smaller) subset.
+  const result: CalculatedStanding[] = [];
+  for (const bucket of buckets) {
+    if (bucket.length === 1) result.push(bucket[0]);
+    else result.push(...breakTie(bucket, results));
+  }
+  return result;
+}
+
+/**
+ * Rank a group's standings using the full FIFA tiebreaker hierarchy:
+ *   a) points, b) goal difference, c) goals scored (all group matches), then
+ *   d–f) head-to-head among teams still level (see breakTie).
+ */
+function sortStandings(
+  standings: CalculatedStanding[],
+  results: MatchResult[],
+): CalculatedStanding[] {
+  // Order by the overall criteria first.
+  const sorted = [...standings].sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.goalDifference !== a.goalDifference)
+      return b.goalDifference - a.goalDifference;
+    return b.goalsFor - a.goalsFor;
+  });
+
+  // Resolve any teams level on (points, GD, GF) via head-to-head.
+  const overallKey = (s: CalculatedStanding) =>
+    `${s.points}|${s.goalDifference}|${s.goalsFor}`;
+  const ranked = groupByEqual(sorted, overallKey).flatMap((run) =>
+    run.length === 1 ? run : breakTie(run, results),
+  );
+
+  return ranked.map((s, i) => ({ ...s, position: i + 1 }));
 }
 
 /**

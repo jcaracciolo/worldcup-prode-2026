@@ -9,11 +9,12 @@ export interface LCE<T> {
 }
 
 /**
- * Helper to create a loading state
+ * Helper to create a loading state.
+ * Pass previous content to preserve stale data while revalidating.
  */
-export const lceLoading = <T>(): LCE<T> => ({
+export const lceLoading = <T>(staleContent?: T | null): LCE<T> => ({
   loading: true,
-  content: null,
+  content: staleContent ?? null,
   error: null,
 });
 
@@ -27,10 +28,12 @@ export const lceContent = <T>(content: T): LCE<T> => ({
 });
 
 /**
- * Helper to create an error state
+ * Helper to create an error state.
+ * Pass previous content to preserve stale data when a refresh fails —
+ * data should never disappear just because revalidation errored.
  */
-export const lceError = <T>(error: string): LCE<T> => ({
+export const lceError = <T>(error: string, staleContent?: T | null): LCE<T> => ({
   loading: false,
-  content: null,
+  content: staleContent ?? null,
   error,
 });

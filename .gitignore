@@ -2,3 +2,7 @@
 deploy.zip
 tests/
 .playwright-mcp/
+
+azure-logs/
+azure-logs.zip
+deploy.zip

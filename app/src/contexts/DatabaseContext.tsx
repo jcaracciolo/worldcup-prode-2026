@@ -17,6 +17,7 @@ import {
 import {
   createAuthService,
   createDatabaseServiceFromClient,
+  ALL_CIRCUIT_ID,
 } from "@/lib/services/database-shared";
 import { Competition } from "@/types/database";
 
@@ -25,6 +26,19 @@ import { Competition } from "@/types/database";
 // =====================================================================
 
 const COMPETITION_STORAGE_KEY = "worldcupprode_competition_id";
+
+/**
+ * Detect the read-only "all users" viewing mode from the URL (?circuit=all).
+ * Client-only; returns false during SSR.
+ */
+function readAllCircuitParam(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return new URLSearchParams(window.location.search).get("circuit") === "all";
+  } catch {
+    return false;
+  }
+}
 
 interface DatabaseContextValue {
   /** Stable auth service — NOT recreated on competition switch */
@@ -62,6 +76,12 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
   >(null);
   const [userCompetitions, setUserCompetitions] = useState<Competition[]>([]);
   const [competitionLoading, setCompetitionLoading] = useState(true);
+
+  // "All users" viewing mode (?circuit=all). Read once on mount. While active,
+  // the competition auto-select funnels to the ALL_CIRCUIT_ID sentinel instead
+  // of the user's saved/first competition. Never persisted to localStorage, so a
+  // reload without the param reverts to the user's real circuit.
+  const allCircuitRef = React.useRef(false);
 
   // Stable Supabase client reference (singleton, never changes)
   const supabaseClient = useMemo(() => {
@@ -136,6 +156,15 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
 
         if (competitions && competitions.length > 0) {
           hasLoadedCompetitionsRef.current = true;
+
+          // "All users" mode: select the sentinel instead of a real competition,
+          // but still keep the loaded userCompetitions so the Header can switch
+          // out. Don't persist the sentinel to localStorage.
+          if (allCircuitRef.current) {
+            setCurrentCompetitionId(ALL_CIRCUIT_ID);
+            return;
+          }
+
           // Check if saved competition is still valid
           const savedIsValid =
             savedCompetitionId &&
@@ -151,7 +180,8 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
             }
           }
         } else {
-          setCurrentCompetitionId(null);
+          // No competitions: still honor all-mode so the combined view works.
+          setCurrentCompetitionId(allCircuitRef.current ? ALL_CIRCUIT_ID : null);
         }
       } finally {
         setCompetitionLoading(false);
@@ -173,11 +203,22 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
   useEffect(() => {
     if (!authService || !stableDb) return;
 
+    // Detect "all users" mode from the URL up front so every selection path
+    // (logged-in auto-select and guest fallback) can funnel to the sentinel.
+    allCircuitRef.current = readAllCircuitParam();
+    if (allCircuitRef.current) {
+      setCurrentCompetitionId(ALL_CIRCUIT_ID);
+    }
+
     // Check for existing user on mount
     const checkUser = async () => {
       const { data: user } = await authService.getUser();
       if (user) {
         await loadUserCompetitions(user.id);
+      } else if (allCircuitRef.current) {
+        // Guest in all-mode: use the sentinel directly.
+        setCurrentCompetitionId(ALL_CIRCUIT_ID);
+        setCompetitionLoading(false);
       } else {
         // Unauthenticated guest: pick a default competition so public data
         // (leaderboard, predictions panel, profiles) still loads correctly.

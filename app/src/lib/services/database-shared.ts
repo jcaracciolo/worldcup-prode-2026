@@ -87,6 +87,15 @@ async function fetchAllRows<T>(
 /** Function type for getting the current competition ID */
 export type GetCompetitionIdFn = () => string | null;
 
+/**
+ * Sentinel competition id that means "all users across every competition".
+ * When this is the active competition id, getAllProfiles() returns every
+ * profile instead of scoping to a single competition's members. Used by the
+ * read-only `?circuit=all` viewing mode. It is intentionally NOT a real
+ * competitions.id row, so it must never be written to a competition_id column.
+ */
+export const ALL_CIRCUIT_ID = "all";
+
 // =====================================================================
 // PROFILE SERVICE IMPLEMENTATION
 // =====================================================================
@@ -120,6 +129,17 @@ export function createProfileService(
     ): Promise<ServiceResult<Profile[]>> {
       try {
         const effectiveCompetitionId = overrideCompetitionId ?? competitionId;
+
+        // "All users" sentinel — return every profile, ignoring competition
+        // membership. Used by the read-only ?circuit=all combined leaderboard.
+        if (effectiveCompetitionId === ALL_CIRCUIT_ID) {
+          const result = await fetchAllRows<Profile>(
+            supabase.from("profiles"),
+            "*",
+          );
+          if (result.error) throw new Error(result.error);
+          return { data: result.data, error: null };
+        }
 
         if (effectiveCompetitionId) {
           // Get only profiles for users in the current competition

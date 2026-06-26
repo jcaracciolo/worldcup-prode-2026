@@ -56,6 +56,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const cacheGet = profileCache.get;
   const cacheBulkSet = profileCache.bulk.set;
   const cacheBulkGet = profileCache.bulk.get;
+  const cacheGeneration = profileCache.generation;
+  const cacheIsCurrentGeneration = profileCache.isCurrentGeneration;
 
   // Fetch current user on mount and auth changes.
   // Depends on authService (stable) — NOT on db — so competition switches
@@ -105,13 +107,19 @@ export function UserProvider({ children }: { children: ReactNode }) {
     [user, db],
   );
 
-  // In-flight dedup for getAllProfiles
-  const allProfilesPromiseRef = useRef<Promise<Profile[]> | null>(null);
+  // In-flight dedup for getAllProfiles, keyed by competition so a fetch started
+  // under one competition (e.g. the "all" sentinel) is never reused to satisfy
+  // a request for a different competition after a fast switch.
+  const allProfilesRequestRef = useRef<{
+    competitionId: string | null;
+    promise: Promise<Profile[]>;
+  } | null>(null);
 
   const getAllProfiles = useCallback(async () => {
-    // Return existing in-flight promise if one is already running
-    if (allProfilesPromiseRef.current) {
-      return allProfilesPromiseRef.current;
+    // Reuse an in-flight fetch only when it was started for the SAME competition
+    const inflight = allProfilesRequestRef.current;
+    if (inflight && inflight.competitionId === currentCompetitionId) {
+      return inflight.promise;
     }
 
     // Safe to return cached data — bulkGet rejects stale entries
@@ -119,23 +127,46 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const cached = cacheBulkGet();
     if (cached) return cached;
 
+    // Capture the cache generation at request start. If the competition switches
+    // (invalidating the cache) while this fetch is in flight, the generation
+    // changes and we must NOT write these now-stale results into the new
+    // competition's cache.
+    const gen = cacheGeneration;
+    const requestCompetitionId = currentCompetitionId;
+
     const promise = (async () => {
       const { data } = await db.profiles.getAllProfiles();
       const profiles = data || [];
-      cacheBulkSet(profiles);
-      for (const p of profiles) {
-        cacheSet(p.id, p);
+      if (cacheIsCurrentGeneration(gen)) {
+        cacheBulkSet(profiles);
+        for (const p of profiles) {
+          cacheSet(p.id, p);
+        }
       }
       return profiles;
     })();
 
-    allProfilesPromiseRef.current = promise;
+    allProfilesRequestRef.current = {
+      competitionId: requestCompetitionId,
+      promise,
+    };
     try {
       return await promise;
     } finally {
-      allProfilesPromiseRef.current = null;
+      // Only clear if this is still the current in-flight request
+      if (allProfilesRequestRef.current?.promise === promise) {
+        allProfilesRequestRef.current = null;
+      }
     }
-  }, [db, cacheBulkGet, cacheBulkSet, cacheSet]);
+  }, [
+    db,
+    currentCompetitionId,
+    cacheBulkGet,
+    cacheBulkSet,
+    cacheSet,
+    cacheGeneration,
+    cacheIsCurrentGeneration,
+  ]);
 
   const getCachedAllProfiles = useCallback(
     () => cacheBulkGet(),

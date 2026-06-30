@@ -683,7 +683,7 @@ export const KNOCKOUT_SCHEDULE: MatchInfo[] = [
     fifaNumber: 75,
     stage: "LAST_32",
     date: "2026-06-30",
-    time: "00:00",
+    time: "01:00",
     venue: { stadium: "Estadio BBVA", city: "Monterrey", country: "MEX" },
   },
   {
@@ -711,7 +711,7 @@ export const KNOCKOUT_SCHEDULE: MatchInfo[] = [
     fifaNumber: 79,
     stage: "LAST_32",
     date: "2026-07-01",
-    time: "00:00",
+    time: "01:00",
     venue: { stadium: "Estadio Azteca", city: "Mexico City", country: "MEX" },
   },
   {
@@ -791,19 +791,19 @@ export const KNOCKOUT_SCHEDULE: MatchInfo[] = [
     fifaNumber: 89,
     stage: "LAST_16",
     date: "2026-07-04",
-    time: "17:00",
-    venue: { stadium: "NRG Stadium", city: "Houston", country: "USA" },
-  },
-  {
-    fifaNumber: 90,
-    stage: "LAST_16",
-    date: "2026-07-04",
     time: "21:00",
     venue: {
       stadium: "Lincoln Financial Field",
       city: "Philadelphia",
       country: "USA",
     },
+  },
+  {
+    fifaNumber: 90,
+    stage: "LAST_16",
+    date: "2026-07-04",
+    time: "17:00",
+    venue: { stadium: "NRG Stadium", city: "Houston", country: "USA" },
   },
   {
     fifaNumber: 91,

@@ -23,8 +23,16 @@ export const GROUP_STAGE_START = new Date(Date.UTC(2026, 5, 11, 18, 0, 0));
 /** Last group stage match: June 28, 2026 18:00 UTC (match 72) */
 export const GROUP_STAGE_END = new Date(Date.UTC(2026, 5, 28, 18, 0, 0));
 
-/** First knockout match: June 28, 2026 21:00 UTC (match 73 - R32) */
-export const KNOCKOUT_START = new Date(Date.UTC(2026, 5, 28, 21, 0, 0));
+/** First knockout match: June 28, 2026 19:00 UTC (match 73 - R32) */
+export const KNOCKOUT_START = new Date(Date.UTC(2026, 5, 28, 19, 0, 0));
+
+/**
+ * Knockout bracket deadline: June 29, 2026 17:00 UTC.
+ * After the first knockout match kicks off, the rest of the bracket stays
+ * editable until this deadline (gives players one extra day). Any individual
+ * match that kicks off before this deadline is locked at its own kickoff.
+ */
+export const KNOCKOUT_DEADLINE = new Date(Date.UTC(2026, 5, 29, 17, 0, 0));
 
 /** Final: July 19, 2026 21:00 UTC */
 export const TOURNAMENT_END = new Date(Date.UTC(2026, 6, 19, 21, 0, 0));
@@ -99,25 +107,47 @@ export function isKnockoutStageOpen(now?: Date): boolean {
 }
 
 /**
- * Check if knockout stage is locked (first knockout match has started)
+ * Check if the knockout stage is locked (the bracket-completion deadline has
+ * passed). After this, the WHOLE knockout bracket is locked for editing and all
+ * predictions are revealed. Before this, individual matches may still be locked
+ * via isKnockoutMatchLocked once they kick off.
  */
 export function isKnockoutStageLocked(now?: Date): boolean {
   const currentTime = now ?? getCurrentTime();
-  return currentTime >= KNOCKOUT_START;
+  return currentTime >= KNOCKOUT_DEADLINE;
 }
 
 /**
- * Get days until knockout stage locks (null if already locked or >5 days)
+ * Check if a specific knockout match is locked (for editing AND visibility).
+ * A knockout match is locked when EITHER:
+ *   - the global bracket deadline has passed (KNOCKOUT_DEADLINE), or
+ *   - that specific match has kicked off (now >= its scheduled start).
+ * This lets the first match lock at kickoff while the rest of the bracket
+ * stays open until the deadline.
+ */
+export function isKnockoutMatchLocked(
+  matchUtcDate: string | Date,
+  now?: Date,
+): boolean {
+  const currentTime = now ?? getCurrentTime();
+  if (currentTime >= KNOCKOUT_DEADLINE) return true;
+  const matchTime =
+    typeof matchUtcDate === "string" ? new Date(matchUtcDate) : matchUtcDate;
+  return currentTime >= matchTime;
+}
+
+/**
+ * Get days until knockout bracket locks (null if already locked or >5 days)
  * Returns number of days if 5 or less, null otherwise
  */
 export function getDaysUntilKnockoutLocks(now?: Date): number | null {
   const currentTime = now ?? getCurrentTime();
 
-  if (currentTime >= KNOCKOUT_START) {
+  if (currentTime >= KNOCKOUT_DEADLINE) {
     return null; // Already locked
   }
 
-  const diff = KNOCKOUT_START.getTime() - currentTime.getTime();
+  const diff = KNOCKOUT_DEADLINE.getTime() - currentTime.getTime();
   const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
 
   if (days <= 5) {

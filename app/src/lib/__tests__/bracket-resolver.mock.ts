@@ -283,14 +283,16 @@ export const EXPECTED_THIRD_PLACE_ASSIGNMENTS: Record<
   number,
   { group: string; team: Team }
 > = {
-  74: { group: "GROUP_H", team: TEAM_H3 }, // TUN
-  77: { group: "GROUP_G", team: TEAM_G3 }, // NGA
-  79: { group: "GROUP_B", team: TEAM_B3 }, // URU
-  80: { group: "GROUP_C", team: TEAM_C3 }, // POR
-  81: { group: "GROUP_A", team: TEAM_A3 }, // CAN
-  82: { group: "GROUP_F", team: TEAM_F3 }, // AUS
-  85: { group: "GROUP_D", team: TEAM_D3 }, // BEL
-  87: { group: "GROUP_E", team: TEAM_E3 }, // CRO
+  // Official FIFA assignment for qualifying 3rds A,B,C,D,E,F,G,H (key ABCDEFGH):
+  // [74→C, 77→F, 79→H, 80→E, 81→B, 82→A, 85→G, 87→D]
+  74: { group: "GROUP_C", team: TEAM_C3 }, // POR
+  77: { group: "GROUP_F", team: TEAM_F3 }, // AUS
+  79: { group: "GROUP_H", team: TEAM_H3 }, // TUN
+  80: { group: "GROUP_E", team: TEAM_E3 }, // CRO
+  81: { group: "GROUP_B", team: TEAM_B3 }, // URU
+  82: { group: "GROUP_A", team: TEAM_A3 }, // CAN
+  85: { group: "GROUP_G", team: TEAM_G3 }, // NGA
+  87: { group: "GROUP_D", team: TEAM_D3 }, // BEL
 };
 
 // =====================================================================

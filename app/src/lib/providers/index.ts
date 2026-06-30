@@ -10,6 +10,7 @@
 import { providerRegistry } from "./provider-registry";
 import { ApiFootballProvider } from "./api-football-provider";
 import { WorldCup26Provider } from "./worldcup26-provider";
+import { FootballDataLiveProvider } from "./football-data-live-provider";
 
 export { getMatchesFromComposite, getPollingIntervalMs } from "./composite-provider";
 export { fetchBaseMatch } from "./football-data-provider";
@@ -49,6 +50,15 @@ export function initializeProviders(): void {
   if (keys.length === 0) {
     console.warn("[providers] No API_FOOTBALL_KEY set — live data available via worldcup26 only");
   }
+
+  // football-data.org live fallback (priority 20 — last resort).
+  // Reachable from Azure (unlike worldcup26) and has NO daily cap (only
+  // 10 req/min), so we give it a high daily budget. Scores lag ~1-2 min and
+  // there's no live minute, but it never runs out and is always reachable.
+  // Only used when worldcup26 + api-football both return nothing.
+  const fdLive = new FootballDataLiveProvider();
+  providerRegistry.register(fdLive, 10_000, 0);
+  console.log(`[providers] Registered: ${fdLive.name} (priority ${fdLive.priority}, 10/min no daily cap)`);
 }
 
 function getApiFootballKeys(): string[] {

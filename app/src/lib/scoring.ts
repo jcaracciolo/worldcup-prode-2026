@@ -25,6 +25,9 @@ export const POINTS_CORRECT_RESULT = 2;
 /** Points for predicting exact goals for one team */
 export const POINTS_CORRECT_GOALS = 1;
 
+/** Points for predicting exact goals for one team in a knockout match */
+export const KNOCKOUT_POINTS_PER_GOAL = 1;
+
 /**
  * Multipliers for knockout rounds
  * Applied to result prediction points (not goals)
@@ -96,11 +99,10 @@ export function calculateMatchPoints(
   const isKnockout = !isGroupStageMatch(match);
   const isLive = isMatchLive(match);
 
-  // Max possible: result points × multiplier + 4 goals points (2 per team)
-  // For knockout: 2 × multiplier (win + lose or 2 × tie) + 4 goals = 2*mult + 4
-  // For group: 2 (result) + 2 (goals) = 4
+  // Max possible (knockout): winner + loser + passes (each ×multiplier) + goals
+  // (1 per team) = 3 × multiplier + 2. Group: 2 (result) + 2 (goals) = 4.
   const maxPossible = isKnockout
-    ? 2 * multiplier + 4 // knockout: result (×mult) + goals (2 per team)
+    ? 3 * multiplier + 2 // knockout: result+passes (3×mult) + goals (1 per team)
     : POINTS_CORRECT_RESULT + POINTS_CORRECT_GOALS * 2; // group: 4 points
 
   // Check if we can calculate
@@ -161,10 +163,39 @@ export function calculateMatchPoints(
     }
   }
 
+  // Passes points (knockout only): the team predicted to advance actually
+  // advanced — by winning OR on penalties. Independent of the result award, so
+  // a predicted tie that becomes a win still scores here.
+  if (isKnockout) {
+    const actualSide = getActualAdvancerSide(match);
+    const predictedSide = getPredictedAdvancerSide(prediction);
+    if (actualSide && predictedSide) {
+      const usesTeams = !!(predictedHomeTeam || predictedAwayTeam);
+      let passes: boolean;
+      if (usesTeams) {
+        // R16+: compare by team identity
+        const predictedAdvTeam =
+          predictedSide === "home" ? predictedHomeTeam : predictedAwayTeam;
+        const actualAdvTeam =
+          actualSide === "home" ? match.homeTeam : match.awayTeam;
+        passes =
+          predictedAdvTeam?.id != null &&
+          actualAdvTeam?.id != null &&
+          predictedAdvTeam.id === actualAdvTeam.id;
+      } else {
+        // R32 / position-based: compare by side
+        passes = predictedSide === actualSide;
+      }
+      if (passes) total += multiplier;
+    }
+  }
+
   // Goals points
-  // Group stage: 1 point each, Knockout: 2 points each
+  // Group stage: 1 point each, Knockout: 1 point each
   // For knockout: only award if the predicted team matches the actual team in that slot
-  const goalsPointsPerTeam = isKnockout ? 2 : POINTS_CORRECT_GOALS;
+  const goalsPointsPerTeam = isKnockout
+    ? KNOCKOUT_POINTS_PER_GOAL
+    : POINTS_CORRECT_GOALS;
   const homeTeamMatches =
     !isKnockout ||
     !predictedHomeTeam ||
@@ -200,8 +231,43 @@ export function getMaxPossiblePoints(match: Match): number {
   const isKnockout = !isGroupStageMatch(match);
 
   return isKnockout
-    ? 2 * multiplier + 4 // result (2 × multiplier) + goals (2 per team × 2)
+    ? 3 * multiplier + 2 // winner + loser + passes (3×mult) + goals (1 per team)
     : POINTS_CORRECT_RESULT + POINTS_CORRECT_GOALS * 2;
+}
+
+/**
+ * Which side actually advanced from a knockout match: the decisive winner, or
+ * the penalty-shootout winner on a draw (`score.winner`). Returns null if
+ * undetermined (e.g. a draw with no recorded shootout winner).
+ */
+function getActualAdvancerSide(match: Match): "home" | "away" | null {
+  const result = getMatchResult(match);
+  if (result === "home" || result === "away") return result;
+  if (result === "draw") {
+    if (match.score.winner === "HOME_TEAM") return "home";
+    if (match.score.winner === "AWAY_TEAM") return "away";
+  }
+  return null;
+}
+
+/**
+ * Which side the user predicted to advance: the decisive winner, or the
+ * predicted penalty-shootout winner (`penalty_winner`) on a predicted draw.
+ */
+function getPredictedAdvancerSide(
+  prediction: LocalPrediction,
+): "home" | "away" | null {
+  if (prediction.home_goals === null || prediction.away_goals === null) {
+    return null;
+  }
+  const result = getPredictionResult(
+    prediction.home_goals,
+    prediction.away_goals,
+  );
+  if (result === "home" || result === "away") return result;
+  if (prediction.penalty_winner === "HOME") return "home";
+  if (prediction.penalty_winner === "AWAY") return "away";
+  return null;
 }
 
 // =====================================================================
@@ -594,7 +660,47 @@ export function calculateKnockoutPoints(
     }
   }
 
-  // 2 points for exact goals in knockout
+  // Passes: did the team the user predicted to advance actually advance?
+  // Independent of the win/lose/tie awards (a predicted tie that becomes a win
+  // still scores here). Advancer = decisive winner or penalty-shootout winner.
+  {
+    const actualSide = getActualAdvancerSide(match);
+    const predictedSide = getPredictedAdvancerSide(prediction);
+    if (actualSide && predictedSide) {
+      const actualAdvancer = actualSide === "home" ? homeTeam : awayTeam;
+      let passes: boolean;
+      if (isR32 || !predictedTeams) {
+        // Position-based: compare by side (teams are fixed)
+        passes = predictedSide === actualSide;
+      } else {
+        // R16+: compare by team identity
+        const predictedAdvancer =
+          predictedSide === "home" ? predictedTeams.home : predictedTeams.away;
+        passes =
+          predictedAdvancer?.id != null &&
+          predictedAdvancer.id === actualAdvancer.id;
+      }
+      if (passes) {
+        points.push({
+          matchId: match.id,
+          description: `${stageName} advances${multiplier > 1 ? ` (${multiplier}×)` : ""}`,
+          points: 1 * multiplier,
+          type: "knockout_pass",
+          isLive,
+          team: {
+            tla: actualAdvancer.tla,
+            crest: actualAdvancer.crest,
+            name: actualAdvancer.name,
+          },
+          matchInfo,
+          prediction: predictionInfo,
+          predictedTeamInfo,
+        });
+      }
+    }
+  }
+
+  // 1 point per team for exact goals in knockout
   if (isR32) {
     // R32: position-based (teams are fixed by group standings)
     if (prediction.home_goals === actualHomeGoals) {
@@ -602,7 +708,7 @@ export function calculateKnockoutPoints(
       points.push({
         matchId: match.id,
         description: `Correct goals (${homeTla})`,
-        points: 2,
+        points: KNOCKOUT_POINTS_PER_GOAL,
         type: "goals_home",
         isLive,
         team: {
@@ -620,7 +726,7 @@ export function calculateKnockoutPoints(
       points.push({
         matchId: match.id,
         description: `Correct goals (${awayTla})`,
-        points: 2,
+        points: KNOCKOUT_POINTS_PER_GOAL,
         type: "goals_away",
         isLive,
         team: {
@@ -658,7 +764,7 @@ export function calculateKnockoutPoints(
       points.push({
         matchId: match.id,
         description: `Correct goals (${homeTla})`,
-        points: 2,
+        points: KNOCKOUT_POINTS_PER_GOAL,
         type: "goals_home",
         isLive,
         team: {
@@ -676,7 +782,7 @@ export function calculateKnockoutPoints(
       points.push({
         matchId: match.id,
         description: `Correct goals (${awayTla})`,
-        points: 2,
+        points: KNOCKOUT_POINTS_PER_GOAL,
         type: "goals_away",
         isLive,
         team: {
@@ -724,9 +830,17 @@ export function calculateGroupStandingsBonusPoints(
 
     if (!actual || !predicted.team) return;
 
-    // User must have predicted team to advance:
+    // Whether the USER predicted this team to advance. This depends only on the
+    // user's predicted bracket (known immediately), NOT on whether the real
+    // best-third ranking is final:
     // - Positions 1-2 always advance
-    // - Position 3 only advances if user's predicted 3rd place qualifies (best 4 of 12)
+    // - Position 3 advances if the user's predicted 3rd place qualifies (best 4 of 12)
+    //
+    // The cross-group "best third" gating that must wait for every group to
+    // finish lives entirely in `advancingTeamIds` (the ACTUAL side): a team that
+    // actually finished 3rd is only added there once all groups are complete. So
+    // a team you predicted 3rd that actually finished 1st/2nd is awarded as soon
+    // as its own group is done, while one that actually finished 3rd still waits.
     const predictedToAdvance =
       predictedPosition <= 2 ||
       (predictedPosition === 3 && predictedThirdPlaceQualifies);
@@ -790,6 +904,23 @@ export function calculateTotalPoints(
   );
   const allBreakdown: PointBreakdown[] = [];
 
+  // Group-stage completeness per group. Best-third qualification is a
+  // cross-group ranking that is only valid once EVERY group has finished, so we
+  // track both per-group completeness and whether the whole stage is done.
+  const groupCompletion = new Map<string, { total: number; finished: number }>();
+  for (const m of matches) {
+    if (!isGroupStageMatch(m) || !m.group) continue;
+    const entry = groupCompletion.get(m.group) || { total: 0, finished: 0 };
+    entry.total += 1;
+    if (m.status === "FINISHED") entry.finished += 1;
+    groupCompletion.set(m.group, entry);
+  }
+  const allGroupsComplete =
+    groupCompletion.size > 0 &&
+    [...groupCompletion.values()].every(
+      (c) => c.total > 0 && c.finished === c.total,
+    );
+
   // Derive advancing team IDs from actual standings in the live bracket
   const advancingTeamIds = new Set<number>();
   liveBracket.groupStandings.forEach((standings, groupName) => {
@@ -798,8 +929,11 @@ export function calculateTotalPoints(
         advancingTeamIds.add(standing.team.id);
       } else if (
         index === 2 &&
+        allGroupsComplete &&
         liveBracket.thirdPlaceQualifying.get(groupName)
       ) {
+        // A 3rd-place team only counts as advancing once the best-third ranking
+        // is final (all groups finished) — before that it's provisional.
         advancingTeamIds.add(standing.team.id);
       }
     });

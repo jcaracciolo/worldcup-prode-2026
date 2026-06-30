@@ -23,6 +23,8 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
         return "Result";
       case "knockout_tie":
         return "Result";
+      case "knockout_pass":
+        return "Passes";
       case "goals_home":
       case "goals_away":
         return "Goals";
@@ -42,6 +44,8 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
       case "knockout_lose":
       case "knockout_tie":
         return "bg-emerald-500/30 text-emerald-300 border-emerald-500/40";
+      case "knockout_pass":
+        return "bg-teal-500/30 text-teal-300 border-teal-500/40";
       case "goals_home":
       case "goals_away":
         return "bg-blue-500/30 text-blue-300 border-blue-500/40";
@@ -90,6 +94,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
         b.type === "knockout_win" ||
         b.type === "knockout_lose" ||
         b.type === "knockout_tie" ||
+        b.type === "knockout_pass" ||
         b.type === "goals_home" ||
         b.type === "goals_away") &&
       b.matchInfo &&
@@ -192,13 +197,13 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
           </div>
           <div className="w-px h-6 bg-white/10 mx-1" />
           {/* Reason */}
-          <div className="w-44 shrink-0 flex items-center gap-2">
+          <div className="w-56 shrink-0 flex items-center gap-2">
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 border ${getTypeBgColor(item.type)}`}
             >
               {getTypeLabel(item.type)}
             </span>
-            <p className="text-xs text-white/60 truncate">{item.description}</p>
+            <p className="text-xs text-white/60 whitespace-nowrap">{item.description}</p>
           </div>
         </Link>
       );
@@ -315,7 +320,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
         <div className="w-px h-6 bg-white/10 mx-1" />
 
         {/* Reason */}
-        <div className="w-44 shrink-0 flex items-center gap-2">
+        <div className="w-56 shrink-0 flex items-center gap-2">
           <span
             className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 border ${getTypeBgColor(item.type)}`}
           >
@@ -342,13 +347,13 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
                 ) : null}
               </>
             )}
-          {/* Flag for result/win/loss rows — show winner or relevant team */}
-          {(item.type === "result" || item.type === "knockout_win" || item.type === "knockout_lose" || item.type === "knockout_tie") &&
+          {/* Flag for result/win/loss/pass rows — show winner or relevant team */}
+          {(item.type === "result" || item.type === "knockout_win" || item.type === "knockout_lose" || item.type === "knockout_tie" || item.type === "knockout_pass") &&
             item.matchInfo && (() => {
               const isHomeWin = item.matchInfo!.homeGoals > item.matchInfo!.awayGoals;
               const isAwayWin = item.matchInfo!.awayGoals > item.matchInfo!.homeGoals;
               const isDraw = !isHomeWin && !isAwayWin;
-              // For knockout_tie/knockout_win/knockout_lose, use item.team (already set per-team)
+              // For knockout_tie/win/lose/pass, use item.team (already set per-team)
               if (item.team?.crest) {
                 return (
                   <img
@@ -369,7 +374,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
                 />
               ) : null;
             })()}
-          <p className="text-[11px] text-white/60 truncate">
+          <p className="text-[11px] text-white/60 whitespace-nowrap">
             {item.type === "goals_home" || item.type === "goals_away"
               ? "Correct goals"
               : item.description}
@@ -457,7 +462,7 @@ export default function PointsBreakdown({ userId }: PointsBreakdownProps) {
               <span className="text-[10px] text-white/30 uppercase tracking-wider">Pts</span>
             </div>
             <div className="w-px h-4 bg-transparent mx-1" />
-            <div className="w-44 shrink-0">
+            <div className="w-56 shrink-0">
               <span className="text-[10px] text-white/30 uppercase tracking-wider">Category</span>
             </div>
             <div className="w-px h-4 bg-transparent mx-1" />

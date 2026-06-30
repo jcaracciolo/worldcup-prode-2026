@@ -71,6 +71,20 @@ export default function UserGroupSection({
     return map;
   }, [breakdown]);
 
+  // Sum of match-prediction points per FIFA match id (from centralized breakdown).
+  // Group-bonus entries (group_advance/group_position) carry no matchId, so they
+  // are naturally excluded here and counted separately via groupBonusPoints.
+  const matchPointsById = useMemo(() => {
+    const map = new Map<number, number>();
+    breakdown.forEach((b) => {
+      if (b.matchId != null) {
+        const key = b.matchId as number;
+        map.set(key, (map.get(key) ?? 0) + b.points);
+      }
+    });
+    return map;
+  }, [breakdown]);
+
   if (!showPredictions) {
     return (
       <section className="mb-8">
@@ -101,6 +115,11 @@ export default function UserGroupSection({
             );
             // Get bonus points for this group from centralized breakdown
             const bonusPoints = groupBonusPoints.get(groupName) || [];
+            // Sum of this group's per-match prediction points
+            const matchPoints = groupMatchList.reduce(
+              (sum, m) => sum + (matchPointsById.get(m.id as number) ?? 0),
+              0,
+            );
             return (
               <GroupCard
                 key={groupName}
@@ -114,6 +133,7 @@ export default function UserGroupSection({
                 userId={userId}
                 actualStandings={groupActualStandings}
                 bonusPoints={bonusPoints}
+                matchPoints={matchPoints}
                 groupComplete={groupComplete}
               />
             );
@@ -155,6 +175,7 @@ interface GroupCardProps {
   userId: string;
   actualStandings: CalculatedStanding[];
   bonusPoints: PointBreakdown[];
+  matchPoints: number;
   groupComplete: boolean;
 }
 
@@ -167,15 +188,34 @@ function GroupCard({
   userId,
   actualStandings,
   bonusPoints,
+  matchPoints,
   groupComplete,
 }: GroupCardProps) {
   const totalBonusPoints = bonusPoints.reduce((sum, b) => sum + b.points, 0);
+  // Grand total earned in this group: match predictions + advance/position bonus
+  const totalGroupPoints = matchPoints + totalBonusPoints;
+  // Show the running total once any match in the group has been played
+  const hasFinishedMatch = matches.some((m) => m.status === "FINISHED");
 
   return (
     <div className="glass-card p-4 overflow-visible">
-      <h3 className="font-bold text-lg mb-3 text-white">
-        {groupName.replace("GROUP_", "Group ")}
-      </h3>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <h3 className="font-bold text-lg text-white">
+          {groupName.replace("GROUP_", "Group ")}
+        </h3>
+        {hasFinishedMatch && (
+          <span
+            title="Total points earned in this group (matches + bonus)"
+            className={`text-xs font-bold px-2 py-1 rounded ${
+              totalGroupPoints > 0
+                ? "bg-emerald-500/20 text-emerald-300"
+                : "bg-white/10 text-white/40"
+            }`}
+          >
+            +{totalGroupPoints}
+          </span>
+        )}
+      </div>
 
       <div className="space-y-4">
         <div className="bg-slate-800/50 rounded-lg p-3 overflow-visible">

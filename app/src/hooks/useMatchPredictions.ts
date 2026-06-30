@@ -30,7 +30,7 @@ export function useMatchPredictions(fifaId: FifaMatchId) {
   const { loading: matchesLoading } = useMatches();
   const match = useMatch(fifaId);
   const { matchPoints } = useMatchPointsForAllUsers(fifaId);
-  const { stageLockStatus } = useTime();
+  const { stageLockStatus, isKnockoutMatchLocked } = useTime();
 
   const loading = profiles.loading || allPredictions.loading;
 
@@ -40,11 +40,12 @@ export function useMatchPredictions(fifaId: FifaMatchId) {
 
     // Determine if other users' predictions should be visible
     // Group predictions: visible after group stage locks
-    // Knockout predictions: visible after knockout stage locks
+    // Knockout predictions: visible per-match once that match locks (kicks off
+    // before the deadline, or the deadline passes)
     const isGroupMatch = match.stage === "GROUP_STAGE";
     const othersVisible = isGroupMatch
       ? stageLockStatus.groupStageLocked
-      : stageLockStatus.knockoutStageLocked;
+      : isKnockoutMatchLocked(match.utcDate);
     const isAdmin = profile?.is_admin === true;
 
     const profilesList = profiles.content;
@@ -105,7 +106,7 @@ export function useMatchPredictions(fifaId: FifaMatchId) {
     profile?.id,
     profile?.is_admin,
     stageLockStatus.groupStageLocked,
-    stageLockStatus.knockoutStageLocked,
+    isKnockoutMatchLocked,
   ]);
 
   return {

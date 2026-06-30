@@ -6,8 +6,9 @@ import { useAllPredictions } from "@/contexts/PredictionsContext";
 import { useAllProfiles } from "@/contexts/UserContext";
 import { useLeaderboard } from "@/contexts/LeaderboardContext";
 import { useTime } from "@/contexts/TimeContext";
-import { FifaMatchId } from "@/types/football";
-import { calculateMatchPoints } from "@/lib/scoring";
+import { FifaMatchId, Match } from "@/types/football";
+import { calculateTotalPoints } from "@/lib/scoring";
+import { LiveBracketResolver } from "@/lib/live-bracket-resolver";
 
 /**
  * Convert ISO 3166-1 alpha-2 country code to flag emoji.
@@ -28,7 +29,7 @@ function nameWithFlag(name: string, country: string | null | undefined): string 
 }
 
 export default function SummaryPanel() {
-  const { todaysMatches } = useMatches();
+  const { todaysMatches, matches } = useMatches();
   const allPredictions = useAllPredictions();
   const profiles = useAllProfiles();
   const { scores } = useLeaderboard();
@@ -129,64 +130,101 @@ export default function SummaryPanel() {
     return lines.join("\n");
   }, [allPredictions.content, todaysMatches, profileMap, todayStr]);
 
-  // Build points text: standings + day points + position changes
+  // Build points text: standings + today's match/bonus split + position changes.
+  //
+  // "Today" = the delta vs the state before today's matches. We recompute each
+  // user's score with today's scorable matches reverted to not-started, then:
+  //   matchPoints today = (match total now)  - (match total before)
+  //   bonus  today = (group bonus now) - (group bonus before)
+  // The position arrows are computed from the before-today totals, so they
+  // correctly account for bonus awarded today (e.g. when a group completes).
   const buildPointsText = useCallback(() => {
     const predictionsMap = allPredictions.content;
-    if (!predictionsMap || todaysMatches.length === 0) return "";
-
-    // Only include finished or live matches for scoring
-    const scorableMatches = todaysMatches.filter(
-      (m) => m.status === "FINISHED" || m.status === "IN_PLAY" || m.status === "PAUSED",
-    );
-
-    if (scorableMatches.length === 0) {
-      // No scored matches today — still show standings with +0
+    if (!predictionsMap || matches.length === 0 || scores.length === 0) {
+      return "";
     }
 
-    // Calculate today's points per user
-    const dayPointsByUser = new Map<string, number>();
+    // Only finished/live matches scheduled for today are "scored today"
+    const scorableToday = todaysMatches.filter(
+      (m) =>
+        m.status === "FINISHED" ||
+        m.status === "IN_PLAY" ||
+        m.status === "PAUSED",
+    );
+    const todayIds = new Set(scorableToday.map((m) => m.id));
 
-    predictionsMap.forEach((userData, userId) => {
-      const profile = profileMap.get(userId);
-      if (!profile) return;
+    // Build the "before today" match set by reverting today's scorable matches
+    // to a not-started state, then recompute the bracket from it.
+    const matchesBefore: (Match & { fifaNumber?: FifaMatchId | null })[] =
+      matches.map((m) => {
+        const base = { ...m, fifaNumber: m.fifaNumber as FifaMatchId | null };
+        if (!todayIds.has(m.id)) return base;
+        return {
+          ...base,
+          status: "TIMED" as Match["status"],
+          score: {
+            ...m.score,
+            winner: null,
+            fullTime: { home: null, away: null },
+            halfTime: { home: null, away: null },
+          },
+        };
+      });
 
-      let dayTotal = 0;
-      for (const match of scorableMatches) {
-        const pred = userData.predictions.find(
-          (p) => p.match_id === (match.id as FifaMatchId),
+    // Per-user "before today" totals. Skip the recompute entirely when nothing
+    // is scored today (deltas are all zero, before == now).
+    const beforeByUser = new Map<string, { total: number; bonus: number }>();
+    if (scorableToday.length > 0) {
+      const liveBracketBefore = new LiveBracketResolver(matchesBefore).resolve();
+      scores.forEach((s) => {
+        const userData = predictionsMap.get(s.userId);
+        const { totalPoints, breakdown } = calculateTotalPoints(
+          matchesBefore,
+          userData?.predictions || [],
+          userData?.overrides || [],
+          liveBracketBefore,
+          userData?.thirdPlaceOverrides || [],
         );
-        const result = calculateMatchPoints(match, pred || null);
-        dayTotal += result.total;
-      }
+        let bonus = 0;
+        for (const item of breakdown) {
+          if (item.type === "group_advance" || item.type === "group_position") {
+            bonus += item.points;
+          }
+        }
+        beforeByUser.set(s.userId, { total: totalPoints, bonus });
+      });
+    }
 
-      dayPointsByUser.set(userId, dayTotal);
-    });
-
-    // Build standings with day points and position change
-    // "Yesterday's position" = position if we subtract today's points
-    const standingsWithDay = scores.map((s) => {
-      const dayPts = dayPointsByUser.get(s.userId) ?? 0;
+    // Build per-user entries with today's match/bonus split.
+    const entries = scores.map((s) => {
+      const currentBonus = s.groupBonusPoints;
+      const before = beforeByUser.get(s.userId) ?? {
+        total: s.totalPoints,
+        bonus: currentBonus,
+      };
+      const todayBonus = currentBonus - before.bonus;
+      const todayMatch =
+        s.totalPoints - currentBonus - (before.total - before.bonus);
       return {
         userId: s.userId,
         name: s.displayName,
         country: s.country,
         position: s.position,
         totalPoints: s.totalPoints,
-        dayPoints: dayPts,
-        // Points without today → used to compute yesterday's rank
-        pointsBeforeToday: s.totalPoints - dayPts,
+        todayMatch,
+        todayBonus,
+        beforeTotal: before.total,
       };
     });
 
-    // Compute yesterday's positions by sorting on pointsBeforeToday
-    const yesterdayOrder = [...standingsWithDay].sort(
-      (a, b) => b.pointsBeforeToday - a.pointsBeforeToday || a.name.localeCompare(b.name),
+    // Compute yesterday's positions by sorting on the before-today total.
+    const yesterdayOrder = [...entries].sort(
+      (a, b) => b.beforeTotal - a.beforeTotal || a.name.localeCompare(b.name),
     );
-    // Assign positions with tie handling
     const yesterdayPositions = new Map<string, number>();
     let pos = 1;
     for (let i = 0; i < yesterdayOrder.length; i++) {
-      if (i > 0 && yesterdayOrder[i].pointsBeforeToday < yesterdayOrder[i - 1].pointsBeforeToday) {
+      if (i > 0 && yesterdayOrder[i].beforeTotal < yesterdayOrder[i - 1].beforeTotal) {
         pos = i + 1;
       }
       yesterdayPositions.set(yesterdayOrder[i].userId, pos);
@@ -196,8 +234,8 @@ export default function SummaryPanel() {
     lines.push(`📊 Tabla de posiciones — ${todayStr}`);
 
     // List which matches are included (if any)
-    if (scorableMatches.length > 0) {
-      const matchLabels = scorableMatches.map((m) => {
+    if (scorableToday.length > 0) {
+      const matchLabels = scorableToday.map((m) => {
         const home = m.homeTeam?.tla || "???";
         const away = m.awayTeam?.tla || "???";
         const homeGoals = m.score.fullTime.home ?? "?";
@@ -209,7 +247,7 @@ export default function SummaryPanel() {
     lines.push("");
 
     // Sort by current position
-    const sorted = [...standingsWithDay].sort(
+    const sorted = [...entries].sort(
       (a, b) => a.position - b.position || a.name.localeCompare(b.name),
     );
 
@@ -221,16 +259,15 @@ export default function SummaryPanel() {
       if (posChange > 0) changeStr = ` (↑${posChange})`;
       else if (posChange < 0) changeStr = ` (↓${Math.abs(posChange)})`;
 
-      const daySign = entry.dayPoints > 0 ? "+" : "";
       const flag = nameWithFlag(entry.name, entry.country);
 
       lines.push(
-        `${entry.position}. ${flag} — ${entry.totalPoints} pts (${daySign}${entry.dayPoints})${changeStr}`,
+        `${entry.position}. ${flag} - ${entry.totalPoints} (+${entry.todayMatch}, b:+${entry.todayBonus})${changeStr}`,
       );
     }
 
     return lines.join("\n");
-  }, [allPredictions.content, todaysMatches, profileMap, todayStr, scores]);
+  }, [allPredictions.content, todaysMatches, matches, todayStr, scores]);
 
   const handleCopyPredictions = async () => {
     const text = buildPredictionsText();

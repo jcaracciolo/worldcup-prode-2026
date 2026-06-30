@@ -9,7 +9,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { Match, FifaMatchId, CalculatedStanding } from "@/types/football";
+import { Match, FifaMatchId, CalculatedStanding, Team } from "@/types/football";
 import { getMatchInfo, Venue } from "@/lib/tournament";
 import { getTeamDisplaySimple } from "@/lib/team-display";
 import { isMatchLive } from "@/lib/scoring";
@@ -160,16 +160,35 @@ function determinePeriod(
  * Enhance a match with live info, FIFA number, venue, and display names
  */
 function enhanceMatch(match: Match, currentTime: Date): MatchWithLiveInfo {
-  const isLive = isMatchLive(match);
-  const elapsedMinutes = calculateElapsedMinutes(match, currentTime);
-  const period = determinePeriod(match, elapsedMinutes);
-
   // match.id IS the FIFA number (converted by the API route)
   const fifaNumber = match.id;
 
-  // Get static venue from tournament data (only available for knockout matches 73-104)
+  // Get static schedule (venue + date/time) from tournament data
+  // (only available for knockout matches 73-104).
   const matchInfo = fifaNumber ? getMatchInfo(fifaNumber) : null;
   const staticVenue = matchInfo?.venue || null;
+
+  // The live data provider numbers knockout matches CHRONOLOGICALLY, which does
+  // not match the FIFA "regulations" numbering used by our bracket (team labels)
+  // and tournament schedule. Until the API supplies real fixture data (a valid
+  // venue), trust the official tournament.ts date/time/venue so the kickoff time,
+  // stadium, and teams shown are all consistent. Once the API has real data
+  // (match.venue present), defer to it. Group-stage dates from the API are
+  // already correct, so only knockout matches are overridden.
+  const isKnockout = match.stage !== "GROUP_STAGE";
+  const useStaticSchedule = isKnockout && !!matchInfo && !match.venue;
+  const effectiveUtcDate =
+    useStaticSchedule && matchInfo!.date && matchInfo!.time
+      ? `${matchInfo!.date}T${matchInfo!.time}:00Z`
+      : match.utcDate;
+  const effectiveMatch =
+    effectiveUtcDate === match.utcDate
+      ? match
+      : { ...match, utcDate: effectiveUtcDate };
+
+  const isLive = isMatchLive(effectiveMatch);
+  const elapsedMinutes = calculateElapsedMinutes(effectiveMatch, currentTime);
+  const period = determinePeriod(effectiveMatch, elapsedMinutes);
 
   // Compute venue display: prefer API venue, fall back to static venue
   let venueDisplay: string | null = null;
@@ -192,7 +211,7 @@ function enhanceMatch(match: Match, currentTime: Date): MatchWithLiveInfo {
   );
 
   return {
-    ...match,
+    ...effectiveMatch,
     isLive,
     elapsedMinutes,
     period,
@@ -249,6 +268,7 @@ export function MatchProvider({
         teams: new Map<FifaMatchId, ResolvedTeams>(),
         groupStandings: new Map<string, CalculatedStanding[]>(),
         thirdPlaceQualifying: new Map<string, boolean>(),
+        rankedThirdPlaceTeams: [],
       };
     }
     return new LiveBracketResolver(processedMatches).resolve();
@@ -261,23 +281,35 @@ export function MatchProvider({
   // and bake resolved knockout teams into match.homeTeam/match.awayTeam.
   // This makes knockout team resolution transparent — every consumer
   // gets correct team data regardless of simulation or API state.
-  const matches = useMemo(
-    () =>
-      processedMatches.map((m) => {
-        const enhanced = enhanceMatch(m, currentTime);
-        if (m.stage === "GROUP_STAGE") return enhanced;
-        const resolved = resolvedKnockoutTeams.get(m.id);
-        if (!resolved) return enhanced;
-        return {
-          ...enhanced,
-          homeTeam: resolved.home ?? enhanced.homeTeam,
-          awayTeam: resolved.away ?? enhanced.awayTeam,
-          homeDisplayName: resolved.homeDisplayName,
-          awayDisplayName: resolved.awayDisplayName,
-        };
-      }),
-    [processedMatches, currentTime, resolvedKnockoutTeams],
-  );
+  //
+  // When a knockout slot can't be calculated yet (e.g. an unresolved 3rd-place
+  // slot), we deliberately do NOT fall back to the API's team. The football-data
+  // feed may have already filled the slot with the real team, but trusting it
+  // here leaks a crest that contradicts the placeholder label (e.g. a 🇯🇵 flag
+  // next to a "3ABCDF" label). The calculated bracket is the single source of
+  // truth, so we surface a crest-less placeholder built from the display label.
+  const matches = useMemo(() => {
+    const placeholderTeam = (label: string): Team => ({
+      id: 0,
+      name: label,
+      shortName: label,
+      tla: label,
+      crest: null,
+    });
+    return processedMatches.map((m) => {
+      const enhanced = enhanceMatch(m, currentTime);
+      if (m.stage === "GROUP_STAGE") return enhanced;
+      const resolved = resolvedKnockoutTeams.get(m.id);
+      if (!resolved) return enhanced;
+      return {
+        ...enhanced,
+        homeTeam: resolved.home ?? placeholderTeam(resolved.homeDisplayName),
+        awayTeam: resolved.away ?? placeholderTeam(resolved.awayDisplayName),
+        homeDisplayName: resolved.homeDisplayName,
+        awayDisplayName: resolved.awayDisplayName,
+      };
+    });
+  }, [processedMatches, currentTime, resolvedKnockoutTeams]);
 
   // Check if any matches are currently live
   const hasLiveMatches = useMemo(

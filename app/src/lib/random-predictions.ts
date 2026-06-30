@@ -36,6 +36,9 @@ export function randomFillPredictions(
     groupLocked: boolean;
     knockoutOpen: boolean;
     knockoutLocked: boolean;
+    /** Per-match knockout lock — a match that has individually kicked off is
+     *  locked even before the global deadline. */
+    isKnockoutMatchLocked?: (matchUtcDate: string | Date) => boolean;
   },
 ): Map<FifaMatchId, LocalPrediction> {
   const newPredictions = new Map(predictions);
@@ -54,7 +57,11 @@ export function randomFillPredictions(
 
     const isGroupStage = match.stage === "GROUP_STAGE";
     if (isGroupStage && opts.groupLocked) return;
-    if (!isGroupStage && (!opts.knockoutOpen || opts.knockoutLocked)) return;
+    if (!isGroupStage) {
+      if (!opts.knockoutOpen || opts.knockoutLocked) return;
+      // Don't fill a knockout match that has individually locked (kicked off).
+      if (opts.isKnockoutMatchLocked?.(match.utcDate)) return;
+    }
 
     const homeGoals = randomScore();
     const awayGoals = randomScore();

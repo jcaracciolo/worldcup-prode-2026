@@ -12,8 +12,11 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - api/matches (public match data — polled frequently and gates page
+     *   load; it self-caches and needs no auth, so skip the per-request
+     *   supabase.auth.getUser() network round-trip the middleware would add)
      * - public folder
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/matches|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

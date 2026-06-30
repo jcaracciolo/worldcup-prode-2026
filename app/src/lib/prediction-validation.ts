@@ -20,6 +20,9 @@ export function validatePredictions(
     groupLocked: boolean;
     knockoutOpen: boolean;
     knockoutLocked: boolean;
+    /** Per-match knockout lock — locked matches can no longer be filled, so
+     *  they shouldn't be reported as "missing". */
+    isKnockoutMatchLocked?: (matchUtcDate: string | Date) => boolean;
   },
 ): string[] {
   const warnings: string[] = [];
@@ -38,9 +41,15 @@ export function validatePredictions(
     }
   }
 
-  // Count unfilled knockout predictions and ties without winner
+  // Count unfilled knockout predictions and ties without winner.
+  // Skip matches that have already individually locked (kicked off) — they can
+  // no longer be edited, so don't nag about them.
   if (opts.knockoutOpen && !opts.knockoutLocked) {
-    const koMatches = matches.filter((m) => m.stage !== "GROUP_STAGE");
+    const koMatches = matches.filter(
+      (m) =>
+        m.stage !== "GROUP_STAGE" &&
+        !opts.isKnockoutMatchLocked?.(m.utcDate),
+    );
     const unfilledKo = koMatches.filter((m) => {
       const pred = predictions.get(m.id);
       return !pred || pred.home_goals === null || pred.away_goals === null;

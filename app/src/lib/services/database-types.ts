@@ -299,6 +299,16 @@ export interface AuthService {
   /** Update user password */
   updatePassword(newPassword: string): Promise<ServiceVoidResult>;
 
+  /**
+   * Send a password-recovery email. The link redirects to `redirectTo`, which
+   * should point at an /auth/callback route that exchanges the code for a
+   * (recovery) session before forwarding to the set-new-password page.
+   */
+  resetPasswordForEmail(
+    email: string,
+    redirectTo: string,
+  ): Promise<ServiceVoidResult>;
+
   /** Subscribe to auth state changes */
   onAuthStateChange(
     callback: (event: string, session: AuthSession | null) => void,

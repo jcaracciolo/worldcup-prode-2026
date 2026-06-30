@@ -45,7 +45,7 @@ const B = team(2, "BBB");
 const C = team(3, "CCC");
 const D = team(4, "DDD");
 
-describe("group standings — FIFA head-to-head tiebreakers", () => {
+describe("group standings — FIFA 2026 tiebreakers (head-to-head first)", () => {
   it("orders two teams level on points/GD/GF by their head-to-head result", () => {
     // A and B both: 1 win, 1 draw, 1 loss profiles engineered to be equal on
     // overall points (4), goal difference (0) and goals for (3), but A beat B.
@@ -144,5 +144,33 @@ describe("group standings — FIFA head-to-head tiebreakers", () => {
     // A has more points overall, so finishes above B despite losing the H2H.
     expect(a.points).toBeGreaterThan(b.points);
     expect(a.position).toBeLessThan(b.position);
+  });
+
+  it("ranks head-to-head ABOVE overall goal difference (2026 rule)", () => {
+    // The decisive 2026 change: when two teams are level on points, head-to-head
+    // is applied BEFORE overall goal difference. Here B has a far superior
+    // OVERALL goal difference (+9 vs +1), but A beat B head-to-head — so under
+    // the 2026 rules A must finish above B. (Under the pre-2026 order, B would
+    // have finished first on overall GD.)
+    const matches: Match[] = [
+      finishedMatch(1, A, B, 1, 0), // head-to-head: A beats B
+      finishedMatch(2, A, C, 1, 0), // A: small wins → modest overall GD
+      finishedMatch(3, D, A, 1, 0), // A loses to D
+      finishedMatch(4, B, C, 5, 0), // B: big wins → huge overall GD
+      finishedMatch(5, B, D, 5, 0),
+      finishedMatch(6, C, D, 1, 0), // keep C/D below the A/B tie
+    ];
+
+    const standings = calculateActualStandings(matches);
+    const a = standings.find((s) => s.team.tla === "AAA")!;
+    const b = standings.find((s) => s.team.tla === "BBB")!;
+
+    // A and B are level on points, and B's overall GD is strictly better.
+    expect(a.points).toBe(b.points);
+    expect(b.goalDifference).toBeGreaterThan(a.goalDifference);
+
+    // Yet head-to-head (A beat B) decides first → A is 1st, B is 2nd.
+    expect(a.position).toBe(1);
+    expect(b.position).toBe(2);
   });
 });

@@ -1268,6 +1268,25 @@ export function createAuthService(supabase: SupabaseClient): AuthService {
       }
     },
 
+    async resetPasswordForEmail(
+      email: string,
+      redirectTo: string,
+    ): Promise<ServiceVoidResult> {
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo,
+        });
+        if (error) throw error;
+        return { success: true, error: null };
+      } catch (error) {
+        console.error("[Auth] Failed to send password reset email:", error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+        };
+      }
+    },
+
     onAuthStateChange(
       callback: (event: string, session: AuthSession | null) => void,
     ): { unsubscribe: () => void } {

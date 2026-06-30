@@ -13,6 +13,9 @@ interface UsersPanelProps {
   selectedCompetitionId: string | null;
 }
 
+// FIFA match id for the RSA vs CAN Round-of-32 match (#73).
+const RSA_CAN_FIFA_ID = 73;
+
 export default function UsersPanel({
   selectedCompetitionId,
 }: UsersPanelProps) {
@@ -26,37 +29,33 @@ export default function UsersPanel({
   const { matches } = useMatches();
   const allPredictions = useAllPredictions();
 
-  // Count group stage and knockout matches
-  const { groupMatchCount, knockoutMatchCount } = useMemo(() => {
-    let group = 0;
-    let knockout = 0;
-    for (const m of matches) {
-      if (m.stage === "GROUP_STAGE") group++;
-      else knockout++;
-    }
-    return { groupMatchCount: group, knockoutMatchCount: knockout };
-  }, [matches]);
+  // Count knockout matches
+  const knockoutMatchCount = useMemo(
+    () => matches.filter((m) => m.stage !== "GROUP_STAGE").length,
+    [matches],
+  );
 
   // Calculate prediction completeness per user
   const predictionStatus = useMemo(() => {
     const predictionsMap = allPredictions.content;
-    if (!predictionsMap) return new Map<string, { group: number; knockout: number }>();
+    if (!predictionsMap)
+      return new Map<string, { knockout: number; rsaCan: boolean }>();
 
-    const status = new Map<string, { group: number; knockout: number }>();
+    const status = new Map<string, { knockout: number; rsaCan: boolean }>();
     const groupMatchIds = new Set(
       matches.filter((m) => m.stage === "GROUP_STAGE").map((m) => m.id),
     );
 
     predictionsMap.forEach((userData, userId) => {
-      let groupComplete = 0;
       let knockoutComplete = 0;
+      let rsaCan = false;
       for (const p of userData.predictions) {
         if (p.home_goals !== null && p.away_goals !== null) {
-          if (groupMatchIds.has(p.match_id)) groupComplete++;
-          else knockoutComplete++;
+          if (!groupMatchIds.has(p.match_id)) knockoutComplete++;
+          if (p.match_id === RSA_CAN_FIFA_ID) rsaCan = true;
         }
       }
-      status.set(userId, { group: groupComplete, knockout: knockoutComplete });
+      status.set(userId, { knockout: knockoutComplete, rsaCan });
     });
 
     return status;
@@ -108,8 +107,6 @@ export default function UsersPanel({
               <th className="text-left py-2 px-4 text-white/60">Name</th>
               <th className="text-left py-2 px-4 text-white/60">Email</th>
               <th className="text-left py-2 px-4 text-white/60">Joined</th>
-              <th className="text-center py-2 px-4 text-white/60">Group</th>
-              <th className="text-center py-2 px-4 text-white/60">Knockout</th>
               <th className="text-left py-2 px-4 text-white/60">Admin</th>
               <th className="text-left py-2 px-4 text-white/60">Actions</th>
             </tr>
@@ -117,13 +114,13 @@ export default function UsersPanel({
           <tbody>
             {usersLoading ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-white/50">
+                <td colSpan={5} className="py-8 text-center text-white/50">
                   Loading users...
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-white/50">
+                <td colSpan={5} className="py-8 text-center text-white/50">
                   No users found
                 </td>
               </tr>
@@ -136,42 +133,50 @@ export default function UsersPanel({
                   }`}
                 >
                   <td className="py-2 px-4 font-medium text-white">
-                    <UserName name={user.display_name} country={user.country} />
-                    {user.id === profile?.id && (
-                      <span className="ml-2 text-xs text-emerald-400">
-                        (you)
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <UserName
+                        name={user.display_name}
+                        country={user.country}
+                      />
+                      {user.id === profile?.id && (
+                        <span className="text-xs text-emerald-400">(you)</span>
+                      )}
+                      {(() => {
+                        const s = predictionStatus.get(user.id);
+                        const filledRsaCan = s?.rsaCan ?? false;
+                        const knockoutDone = s?.knockout ?? 0;
+                        const knockoutComplete =
+                          knockoutDone === knockoutMatchCount &&
+                          knockoutMatchCount > 0;
+                        return (
+                          <>
+                            <span
+                              className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                                filledRsaCan
+                                  ? "bg-emerald-500/20 text-emerald-300"
+                                  : "bg-red-500/20 text-red-300"
+                              }`}
+                            >
+                              RSA-CAN {filledRsaCan ? "✓" : "✗"}
+                            </span>
+                            <span
+                              className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                                knockoutComplete
+                                  ? "bg-emerald-500/20 text-emerald-300"
+                                  : "bg-white/10 text-white/50"
+                              }`}
+                            >
+                              Knockout {knockoutDone}/{knockoutMatchCount}
+                              {knockoutComplete && " ✓"}
+                            </span>
+                          </>
+                        );
+                      })()}
+                    </div>
                   </td>
                   <td className="py-2 px-4 text-white/70">{user.email}</td>
                   <td className="py-2 px-4 text-white/70">
                     {format(new Date(user.created_at), "MMM d, yyyy")}
-                  </td>
-                  <td className="py-2 px-4 text-center">
-                    {(() => {
-                      const s = predictionStatus.get(user.id);
-                      const done = s?.group ?? 0;
-                      const isComplete = done === groupMatchCount && groupMatchCount > 0;
-                      return (
-                        <span className={`text-xs font-medium ${isComplete ? "text-emerald-400" : "text-white/50"}`}>
-                          {done}/{groupMatchCount}
-                          {isComplete && " ✓"}
-                        </span>
-                      );
-                    })()}
-                  </td>
-                  <td className="py-2 px-4 text-center">
-                    {(() => {
-                      const s = predictionStatus.get(user.id);
-                      const done = s?.knockout ?? 0;
-                      const isComplete = done === knockoutMatchCount && knockoutMatchCount > 0;
-                      return (
-                        <span className={`text-xs font-medium ${isComplete ? "text-emerald-400" : "text-white/50"}`}>
-                          {done}/{knockoutMatchCount}
-                          {isComplete && " ✓"}
-                        </span>
-                      );
-                    })()}
                   </td>
                   <td className="py-2 px-4">
                     {user.is_admin ? (

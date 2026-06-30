@@ -11,6 +11,7 @@ import {
 } from "../scoring";
 import { Match, FifaMatchId, asFifaMatchId, CalculatedStanding } from "@/types/football";
 import { LocalPrediction } from "@/types/database";
+import { LiveBracketResolver } from "../live-bracket-resolver";
 import {
   buildGroupStandings,
   buildGroupStageMatches,
@@ -227,40 +228,55 @@ describe("calculateGroupStagePoints", () => {
 // =====================================================================
 
 describe("calculateKnockoutPoints — R32", () => {
-  it("exact match = 6pts (2 result + 2 home + 2 away)", () => {
+  it("exact match = 5pts (2 result + 1 passes + 1 home + 1 away)", () => {
     const match = makeFinishedKnockoutMatch(73, "LAST_32", 2, 1);
     const points = calculateKnockoutPoints(match, pred(2, 1, 73), undefined);
     const total = points.reduce((s, p) => s + p.points, 0);
-    expect(total).toBe(6);
-    expect(points).toHaveLength(3);
+    expect(total).toBe(5);
+    expect(points).toHaveLength(4); // result + passes + home goals + away goals
   });
 
-  it("correct result only = 2pts", () => {
+  it("correct result only = 3pts (2 result + 1 passes)", () => {
     const match = makeFinishedKnockoutMatch(73, "LAST_32", 3, 1);
     const points = calculateKnockoutPoints(match, pred(1, 0, 73), undefined); // both home wins, but both goals wrong
     const total = points.reduce((s, p) => s + p.points, 0);
-    expect(total).toBe(2);
+    expect(total).toBe(3);
   });
 
   it("correct result + one goal = 4pts", () => {
     const match = makeFinishedKnockoutMatch(73, "LAST_32", 2, 1);
     const points = calculateKnockoutPoints(match, pred(3, 1, 73), undefined);
     const total = points.reduce((s, p) => s + p.points, 0);
-    expect(total).toBe(4); // 2 result + 2 away
+    expect(total).toBe(4); // 2 result + 1 passes + 1 away goal
   });
 
-  it("wrong result but one exact goal = 2pts", () => {
+  it("wrong result but one exact goal = 1pt", () => {
     const match = makeFinishedKnockoutMatch(73, "LAST_32", 2, 1);
     const points = calculateKnockoutPoints(match, pred(0, 1, 73), undefined);
     const total = points.reduce((s, p) => s + p.points, 0);
-    expect(total).toBe(2); // only away goals
+    expect(total).toBe(1); // only away goals (wrong result + wrong advancer)
   });
 
-  it("draw exact match = 6pts", () => {
+  it("predicted tie that becomes a win still earns the passes half = 1pt", () => {
+    // Predict 0-0 with home advancing on penalties; home actually wins 2-1.
+    const match = makeFinishedKnockoutMatch(73, "LAST_32", 2, 1);
+    const prediction = {
+      ...pred(0, 0, 73),
+      penalty_winner: "HOME" as const,
+    };
+    const points = calculateKnockoutPoints(match, prediction, undefined);
+    const total = points.reduce((s, p) => s + p.points, 0);
+    // result wrong (draw vs win), goals wrong, but home advanced as predicted
+    expect(total).toBe(1);
+    expect(points).toHaveLength(1);
+    expect(points[0].type).toBe("knockout_pass");
+  });
+
+  it("draw exact match = 4pts (2 result + 1 home + 1 away, no advancer)", () => {
     const match = makeFinishedKnockoutMatch(73, "LAST_32", 1, 1);
     const points = calculateKnockoutPoints(match, pred(1, 1, 73), undefined);
     const total = points.reduce((s, p) => s + p.points, 0);
-    expect(total).toBe(6); // 2 result + 2 home + 2 away
+    expect(total).toBe(4); // no passes: neither side has a recorded advancer
   });
 
   it("completely wrong = 0pts", () => {
@@ -282,13 +298,37 @@ describe("calculateKnockoutPoints — R32", () => {
     expect(points).toHaveLength(0);
   });
 
-  it("goals are 2pts each (not 1pt like group stage)", () => {
+  it("goals are 1pt each (same as group stage)", () => {
     const match = makeFinishedKnockoutMatch(73, "LAST_32", 2, 1);
     const points = calculateKnockoutPoints(match, pred(0, 1, 73), undefined);
-    // Only away goals correct, wrong result
+    // Only away goals correct, wrong result + wrong advancer
     expect(points).toHaveLength(1);
-    expect(points[0].points).toBe(2);
+    expect(points[0].points).toBe(1);
     expect(points[0].type).toBe("goals_away");
+  });
+
+  it("exact tie + correct shootout advancer = 4pts (2 result + 1 passes + 1 goal-ish)", () => {
+    // Actual 1-1, home advances on penalties (score.winner = HOME_TEAM).
+    const match = makeFinishedKnockoutMatch(73, "LAST_32", 1, 1);
+    match.score.winner = "HOME_TEAM";
+    const prediction = { ...pred(1, 1, 73), penalty_winner: "HOME" as const };
+    const points = calculateKnockoutPoints(match, prediction, undefined);
+    const total = points.reduce((s, p) => s + p.points, 0);
+    // result(draw) 2 + passes 1 + goals home 1 + goals away 1 = 5
+    expect(total).toBe(5);
+    expect(points.some((p) => p.type === "knockout_pass")).toBe(true);
+  });
+
+  it("exact tie + wrong shootout advancer = no passes", () => {
+    // Actual 1-1, away advances on penalties; user picked home to advance.
+    const match = makeFinishedKnockoutMatch(73, "LAST_32", 1, 1);
+    match.score.winner = "AWAY_TEAM";
+    const prediction = { ...pred(1, 1, 73), penalty_winner: "HOME" as const };
+    const points = calculateKnockoutPoints(match, prediction, undefined);
+    // result(draw) 2 + goals 1 + 1 = 4, no passes (wrong advancer)
+    const total = points.reduce((s, p) => s + p.points, 0);
+    expect(total).toBe(4);
+    expect(points.some((p) => p.type === "knockout_pass")).toBe(false);
   });
 });
 
@@ -302,20 +342,20 @@ describe("calculateKnockoutPoints — R16 (multiplier=2)", () => {
     away: { id: TEAM_AWAY.id, tla: TEAM_AWAY.tla },
   };
 
-  it("exact match with correct teams = 8pts (4 result + 2+2 goals)", () => {
+  it("exact match with correct teams = 8pts (winner 2 + loser 2 + passes 2 + goals 1+1)", () => {
     const match = makeFinishedKnockoutMatch(89, "LAST_16", 2, 1);
     const points = calculateKnockoutPoints(match, pred(2, 1, 89), predictedTeams);
     const total = points.reduce((s, p) => s + p.points, 0);
-    expect(total).toBe(8); // winner 2 + loser 2 + home goals 2 + away goals 2
+    expect(total).toBe(8); // winner 2 + loser 2 + passes 2 + home goal 1 + away goal 1
   });
 
-  it("correct winner only = 2pts", () => {
+  it("correct winner only = 7pts", () => {
     const match = makeFinishedKnockoutMatch(89, "LAST_16", 3, 0);
-    // Predict 1-0 (home wins, so winner+loser correct, but wrong goals)
+    // Predict 1-0 (home wins, so winner+loser+passes correct, but wrong home goals)
     const points = calculateKnockoutPoints(match, pred(1, 0, 89), predictedTeams);
     const total = points.reduce((s, p) => s + p.points, 0);
-    // winner 2pts + loser 2pts + away goals correct (0=0) 2pts = 6
-    expect(total).toBe(6);
+    // winner 2 + loser 2 + passes 2 + away goals correct (0=0) 1 = 7
+    expect(total).toBe(7);
   });
 
   it("wrong result, no teams match = 0pts", () => {
@@ -325,18 +365,18 @@ describe("calculateKnockoutPoints — R16 (multiplier=2)", () => {
       away: { id: 998, tla: "YYY" },
     };
     const points = calculateKnockoutPoints(match, pred(0, 1, 89), wrongTeams);
-    // Predicted away win but home won. Winner/loser teams don't match either.
+    // Predicted away win but home won. Winner/loser/advancer teams don't match.
     // Goals: predicted home team (id=999) != actual home (id=100), so no goals awarded
     const total = points.reduce((s, p) => s + p.points, 0);
     expect(total).toBe(0);
   });
 
-  it("draw with both teams predicted = 4pts", () => {
+  it("draw with both teams predicted = 6pts", () => {
     const match = makeFinishedKnockoutMatch(89, "LAST_16", 1, 1);
     const points = calculateKnockoutPoints(match, pred(1, 1, 89), predictedTeams);
     const total = points.reduce((s, p) => s + p.points, 0);
-    // tie home 2pts + tie away 2pts + home goals 2pts + away goals 2pts = 8pts
-    expect(total).toBe(8);
+    // tie home 2 + tie away 2 + home goal 1 + away goal 1 = 6 (no advancer recorded)
+    expect(total).toBe(6);
   });
 });
 
@@ -346,18 +386,18 @@ describe("calculateKnockoutPoints — Quarter-finals (multiplier=3)", () => {
     away: { id: TEAM_AWAY.id, tla: TEAM_AWAY.tla },
   };
 
-  it("exact match = 10pts (winner 3 + loser 3 + goals 2+2)", () => {
+  it("exact match = 11pts (winner 3 + loser 3 + passes 3 + goals 1+1)", () => {
     const match = makeFinishedKnockoutMatch(97, "QUARTER_FINALS", 2, 1);
     const points = calculateKnockoutPoints(match, pred(2, 1, 97), predictedTeams);
     const total = points.reduce((s, p) => s + p.points, 0);
-    expect(total).toBe(10);
+    expect(total).toBe(11);
   });
 
-  it("max possible per multiplier table: 3×2 + 4 = 10", () => {
+  it("max possible per multiplier table: 3×3 + 2 = 11", () => {
     // This validates the spec's multiplier table
-    const maxResult = 2 * ROUND_MULTIPLIERS["QUARTER_FINALS"]; // 6
-    const maxGoals = 4; // 2 per team
-    expect(maxResult + maxGoals).toBe(10);
+    const maxResult = 3 * ROUND_MULTIPLIERS["QUARTER_FINALS"]; // 9 (winner+loser+passes)
+    const maxGoals = 2; // 1 per team
+    expect(maxResult + maxGoals).toBe(11);
   });
 });
 
@@ -367,11 +407,11 @@ describe("calculateKnockoutPoints — Semi-finals (multiplier=4)", () => {
     away: { id: TEAM_AWAY.id, tla: TEAM_AWAY.tla },
   };
 
-  it("exact match = 12pts", () => {
+  it("exact match = 14pts", () => {
     const match = makeFinishedKnockoutMatch(101, "SEMI_FINALS", 2, 1);
     const points = calculateKnockoutPoints(match, pred(2, 1, 101), predictedTeams);
     const total = points.reduce((s, p) => s + p.points, 0);
-    expect(total).toBe(12);
+    expect(total).toBe(14);
   });
 });
 
@@ -381,17 +421,17 @@ describe("calculateKnockoutPoints — Final (multiplier=6)", () => {
     away: { id: TEAM_AWAY.id, tla: TEAM_AWAY.tla },
   };
 
-  it("exact match = 16pts", () => {
+  it("exact match = 20pts", () => {
     const match = makeFinishedKnockoutMatch(104, "FINAL", 2, 1);
     const points = calculateKnockoutPoints(match, pred(2, 1, 104), predictedTeams);
     const total = points.reduce((s, p) => s + p.points, 0);
-    expect(total).toBe(16);
+    expect(total).toBe(20);
   });
 
-  it("max possible per multiplier table: 6×2 + 4 = 16", () => {
-    const maxResult = 2 * ROUND_MULTIPLIERS["FINAL"];
-    const maxGoals = 4;
-    expect(maxResult + maxGoals).toBe(16);
+  it("max possible per multiplier table: 3×6 + 2 = 20", () => {
+    const maxResult = 3 * ROUND_MULTIPLIERS["FINAL"];
+    const maxGoals = 2;
+    expect(maxResult + maxGoals).toBe(20);
   });
 });
 
@@ -407,11 +447,11 @@ describe("calculateMatchPoints", () => {
     expect(result.maxPossible).toBe(4);
   });
 
-  it("R32 max = 6", () => {
+  it("R32 max = 5", () => {
     const match = makeFinishedKnockoutMatch(73, "LAST_32", 2, 1);
     const result = calculateMatchPoints(match, pred(2, 1, 73));
-    expect(result.total).toBe(6);
-    expect(result.maxPossible).toBe(6);
+    expect(result.total).toBe(5);
+    expect(result.maxPossible).toBe(5);
   });
 
   it("R16 max = 8", () => {
@@ -421,32 +461,32 @@ describe("calculateMatchPoints", () => {
     expect(result.maxPossible).toBe(8);
   });
 
-  it("QF max = 10", () => {
+  it("QF max = 11", () => {
     const match = makeFinishedKnockoutMatch(97, "QUARTER_FINALS", 2, 1);
     const result = calculateMatchPoints(match, pred(2, 1, 97));
-    expect(result.total).toBe(10);
-    expect(result.maxPossible).toBe(10);
+    expect(result.total).toBe(11);
+    expect(result.maxPossible).toBe(11);
   });
 
-  it("SF max = 12", () => {
+  it("SF max = 14", () => {
     const match = makeFinishedKnockoutMatch(101, "SEMI_FINALS", 2, 1);
     const result = calculateMatchPoints(match, pred(2, 1, 101));
-    expect(result.total).toBe(12);
-    expect(result.maxPossible).toBe(12);
-  });
-
-  it("3rd place max = 14", () => {
-    const match = makeFinishedKnockoutMatch(103, "THIRD_PLACE", 2, 1);
-    const result = calculateMatchPoints(match, pred(2, 1, 103));
     expect(result.total).toBe(14);
     expect(result.maxPossible).toBe(14);
   });
 
-  it("Final max = 16", () => {
+  it("3rd place max = 17", () => {
+    const match = makeFinishedKnockoutMatch(103, "THIRD_PLACE", 2, 1);
+    const result = calculateMatchPoints(match, pred(2, 1, 103));
+    expect(result.total).toBe(17);
+    expect(result.maxPossible).toBe(17);
+  });
+
+  it("Final max = 20", () => {
     const match = makeFinishedKnockoutMatch(104, "FINAL", 2, 1);
     const result = calculateMatchPoints(match, pred(2, 1, 104));
-    expect(result.total).toBe(16);
-    expect(result.maxPossible).toBe(16);
+    expect(result.total).toBe(20);
+    expect(result.maxPossible).toBe(20);
   });
 
   it("no prediction → hasPrediction=false, total=0", () => {
@@ -558,6 +598,74 @@ describe("calculateGroupStandingsBonusPoints", () => {
     expect(types.has("group_position")).toBe(true);
     expect(types.size).toBe(2);
   });
+
+  it("3rd actually finished 3rd is withheld until it qualifies (best-third not final) = max 4pts", () => {
+    // Model the not-yet-final best-third ranking by EXCLUDING Group A's actual
+    // 3rd-place team from advancingTeamIds (it hasn't been confirmed as a best
+    // third yet). The withholding now lives entirely on the actual side.
+    const advancingNoThird = new Set(advancingTeamIds);
+    advancingNoThird.delete(actualA[2].team.id);
+
+    const predicted = [...actualA];
+    const points = calculateGroupStandingsBonusPoints(
+      "GROUP_A",
+      predicted,
+      actualA,
+      advancingNoThird,
+      true, // this group complete
+      true, // user predicted 3rd to qualify
+    );
+    const total = points.reduce((s, p) => s + p.points, 0);
+    // Only 1st/2nd count: 2 advance (2pts) + 2 correct position (2pts) = 4pts
+    expect(total).toBe(4);
+    // No 3rd-place team should appear in the breakdown
+    expect(points.some((p) => p.predictedPosition === 3)).toBe(false);
+  });
+
+  it("3rd-place bonus awarded once the 3rd actually qualifies = 6pts", () => {
+    const predicted = [...actualA];
+    const points = calculateGroupStandingsBonusPoints(
+      "GROUP_A",
+      predicted,
+      actualA,
+      advancingTeamIds, // includes Group A's qualifying 3rd
+      true,
+      true,
+    );
+    const total = points.reduce((s, p) => s + p.points, 0);
+    expect(total).toBe(6);
+  });
+
+  it("team predicted 3rd that actually advanced as 2nd still gets its advance bonus", () => {
+    // Regression: putting a team 3rd in your bracket must not block its advance
+    // bonus when it actually passes as 1st/2nd — that's already certain, so it
+    // must not wait for the cross-group best-third ranking.
+    const actualSecond = actualA[1].team; // really finished 2nd
+    // User's predicted order places that team 3rd instead of 2nd.
+    const predicted = [actualA[0], actualA[2], actualA[1], actualA[3]];
+
+    // Only confirmed advancers (1st + 2nd). The real 3rd has NOT qualified yet.
+    const advancing = new Set<number>([actualA[0].team.id, actualA[1].team.id]);
+
+    const points = calculateGroupStandingsBonusPoints(
+      "GROUP_A",
+      predicted,
+      actualA,
+      advancing,
+      true, // group complete
+      true, // user's predicted 3rd qualifies
+    );
+
+    // The team predicted 3rd / actual 2nd earns a group_advance point.
+    const advanceForSecond = points.find(
+      (p) =>
+        p.type === "group_advance" &&
+        p.predictedPosition === 3 &&
+        p.team?.tla === actualSecond.tla,
+    );
+    expect(advanceForSecond).toBeDefined();
+    expect(advanceForSecond!.points).toBe(1);
+  });
 });
 
 // =====================================================================
@@ -573,12 +681,12 @@ describe("R32 goals = 2pts vs Group goals = 1pt", () => {
     expect(goalPoints[0].points).toBe(1);
   });
 
-  it("R32 awards 2pts per correct goal", () => {
+  it("R32 awards 1pt per correct goal", () => {
     const match = makeFinishedKnockoutMatch(73, "LAST_32", 2, 1);
     const points = calculateKnockoutPoints(match, pred(0, 1, 73), undefined);
     const goalPoints = points.filter((p) => p.type === "goals_away");
     expect(goalPoints).toHaveLength(1);
-    expect(goalPoints[0].points).toBe(2);
+    expect(goalPoints[0].points).toBe(1);
   });
 });
 
@@ -593,10 +701,10 @@ describe("Edge cases", () => {
     expect(result.total).toBe(4);
   });
 
-  it("0-0 draw exact match = 6pts (R32)", () => {
+  it("0-0 draw exact match = 4pts (R32, no advancer)", () => {
     const match = makeFinishedKnockoutMatch(73, "LAST_32", 0, 0);
     const result = calculateMatchPoints(match, pred(0, 0, 73));
-    expect(result.total).toBe(6);
+    expect(result.total).toBe(4); // result 2 + goals 1+1 (no recorded advancer)
   });
 
   it("high-scoring exact match scores same as low-scoring", () => {
@@ -632,12 +740,12 @@ describe("Edge cases", () => {
 
 describe("Max points match spec multiplier table", () => {
   const cases: [string, number, number][] = [
-    ["LAST_32", 73, 6],
+    ["LAST_32", 73, 5],
     ["LAST_16", 89, 8],
-    ["QUARTER_FINALS", 97, 10],
-    ["SEMI_FINALS", 101, 12],
-    ["THIRD_PLACE", 103, 14],
-    ["FINAL", 104, 16],
+    ["QUARTER_FINALS", 97, 11],
+    ["SEMI_FINALS", 101, 14],
+    ["THIRD_PLACE", 103, 17],
+    ["FINAL", 104, 20],
   ];
 
   it.each(cases)("%s (match %i) max = %i", (stage, matchId, expectedMax) => {
@@ -645,5 +753,71 @@ describe("Max points match spec multiplier table", () => {
     const result = calculateMatchPoints(match, pred(2, 1, matchId));
     expect(result.maxPossible).toBe(expectedMax);
     expect(result.total).toBe(expectedMax); // exact match should hit max
+  });
+});
+
+// =====================================================================
+// 3RD-PLACE BONUS TIMING (integration via calculateTotalPoints)
+// Best-third qualification is a cross-group ranking, so the 3rd-place
+// advance/position bonus must wait until EVERY group is finished.
+// =====================================================================
+
+describe("3rd-place bonus waits for all groups (integration)", () => {
+  // Predict exactly the real scores so predicted standings == actual standings.
+  function predictionsFromMatches(matches: Match[]): LocalPrediction[] {
+    return matches
+      .filter(
+        (m) =>
+          m.stage === "GROUP_STAGE" &&
+          m.status === "FINISHED" &&
+          m.score.fullTime.home !== null &&
+          m.score.fullTime.away !== null,
+      )
+      .map((m) => ({
+        match_id: m.id as FifaMatchId,
+        home_goals: m.score.fullTime.home as number,
+        away_goals: m.score.fullTime.away as number,
+        penalty_winner: null,
+      }));
+  }
+
+  it("awards a 3rd-place advance bonus once every group is finished", () => {
+    const matches = buildGroupStageMatches(); // all 72 FINISHED
+    const live = new LiveBracketResolver(matches).resolve();
+    const predictions = predictionsFromMatches(matches);
+    const { breakdown } = calculateTotalPoints(matches, predictions, [], live, []);
+    const thirdAdvances = breakdown.filter(
+      (p) => p.type === "group_advance" && p.predictedPosition === 3,
+    );
+    expect(thirdAdvances.length).toBeGreaterThan(0);
+  });
+
+  it("withholds ALL 3rd-place bonuses while any group is unfinished", () => {
+    const matches = buildGroupStageMatches();
+    // Leave Group L unfinished — best-third ranking is not yet final.
+    for (const m of matches) {
+      if (m.group === "GROUP_L") {
+        m.status = "IN_PLAY";
+        m.score = {
+          ...m.score,
+          winner: null,
+          fullTime: { home: null, away: null },
+        };
+      }
+    }
+    const live = new LiveBracketResolver(matches).resolve();
+    const predictions = predictionsFromMatches(matches);
+    const { breakdown } = calculateTotalPoints(matches, predictions, [], live, []);
+
+    const thirdAdvances = breakdown.filter(
+      (p) => p.type === "group_advance" && p.predictedPosition === 3,
+    );
+    expect(thirdAdvances).toHaveLength(0);
+
+    // 1st/2nd advance bonuses for the finished groups are still awarded.
+    const topTwoAdvances = breakdown.filter(
+      (p) => p.type === "group_advance" && p.predictedPosition !== 3,
+    );
+    expect(topTwoAdvances.length).toBeGreaterThan(0);
   });
 });

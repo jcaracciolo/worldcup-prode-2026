@@ -123,7 +123,7 @@ export function usePredictionEditor(): PredictionEditor {
   } = usePredictedMatches(userId);
 
   // ── Lock status ───────────────────────────────────────────────────
-  const { stageLockStatus } = useTime();
+  const { stageLockStatus, isKnockoutMatchLocked } = useTime();
   const {
     groupStageLocked: groupLocked,
     knockoutStageOpen: knockoutOpen,
@@ -232,6 +232,7 @@ export function usePredictionEditor(): PredictionEditor {
       groupLocked,
       knockoutOpen,
       knockoutLocked,
+      isKnockoutMatchLocked,
     });
 
     if (warnings.length > 0) {
@@ -267,7 +268,14 @@ export function usePredictionEditor(): PredictionEditor {
       if (isGroupStage && !groupLocked) {
         newPredictions.delete(fifaNumber);
       }
-      if (!isGroupStage && knockoutOpen && !knockoutLocked) {
+      // Only clear knockout matches that are still editable — never wipe a
+      // match that has individually locked (kicked off) before the deadline.
+      if (
+        !isGroupStage &&
+        knockoutOpen &&
+        !knockoutLocked &&
+        !isKnockoutMatchLocked(match.utcDate)
+      ) {
         newPredictions.delete(fifaNumber);
       }
     });
@@ -282,6 +290,7 @@ export function usePredictionEditor(): PredictionEditor {
     groupLocked,
     knockoutOpen,
     knockoutLocked,
+    isKnockoutMatchLocked,
     setPredictions,
     updateOverrides,
   ]);
@@ -305,6 +314,7 @@ export function usePredictionEditor(): PredictionEditor {
       groupLocked,
       knockoutOpen,
       knockoutLocked,
+      isKnockoutMatchLocked,
     });
     setPredictions(newPredictions);
   }, [
@@ -313,6 +323,7 @@ export function usePredictionEditor(): PredictionEditor {
     groupLocked,
     knockoutOpen,
     knockoutLocked,
+    isKnockoutMatchLocked,
     setPredictions,
   ]);
 

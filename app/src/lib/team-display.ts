@@ -68,8 +68,25 @@ export function getTeamLabel(
 // =====================================================================
 
 /**
+ * Third-place qualifier pools per R32 match (FIFA official, regulations
+ * numbering). The away slot of these matches is a "best third" from one of the
+ * listed groups; FIFA shows the eligible-group pool rather than a generic "3rd".
+ * Source: FIFA match calendar (PlaceHolderB), api.fifa.com.
+ */
+const THIRD_PLACE_POOLS: Record<number, string> = {
+  74: "ABCDF",
+  77: "CDFGH",
+  79: "CEFHI",
+  80: "EHIJK",
+  81: "BEFIJ",
+  82: "AEHIJ",
+  85: "EFGIJ",
+  87: "DEIJL",
+};
+
+/**
  * Get the bracket label for a knockout match position.
- * R32: "1A", "2B", "3rd"
+ * R32: "1A", "2B", "3ABCDF"
  * R16+: "W73", "W74", etc.
  */
 export function getBracketLabel(
@@ -85,7 +102,9 @@ export function getBracketLabel(
       const groupLetter = pos.group.replace("GROUP_", "");
       return `${pos.position}${groupLetter}`;
     }
-    return "3rd";
+    // Dynamic third-place slot — show the eligible-group pool (FIFA style).
+    const pool = THIRD_PLACE_POOLS[fifaMatchNumber as number];
+    return pool ? `3${pool}` : "3rd";
   }
 
   // R16 matches (89-96): Winner of R32

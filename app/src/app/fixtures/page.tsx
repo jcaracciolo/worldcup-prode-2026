@@ -140,6 +140,7 @@ export default function FixturesPage() {
               groups={groups}
               thirdPlaceQualifying={thirdPlaceQualifying}
               groupStandings={liveBracket.groupStandings}
+              rankedThirdPlaceTeams={liveBracket.rankedThirdPlaceTeams}
               readOnly={true}
             />
           </>
@@ -150,6 +151,7 @@ export default function FixturesPage() {
               groups={groups}
               thirdPlaceQualifying={thirdPlaceQualifying}
               groupStandings={liveBracket.groupStandings}
+              rankedThirdPlaceTeams={liveBracket.rankedThirdPlaceTeams}
               readOnly={true}
             />
 

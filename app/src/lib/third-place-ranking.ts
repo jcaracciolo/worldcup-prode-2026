@@ -221,19 +221,19 @@ function tiedGroupStraddlesCutoff(
 /**
  * R32 matches that have third-place teams as the away team.
  * Each match has a "pool" of groups whose 3rd-place team can be assigned there.
- * Pools derived from the official FIFA 495-entry lookup table.
- * Note: Some matches allow the 3rd-place team from the same group as the
- * home team's group winner (e.g., 3E vs 1E) per FIFA regulations.
+ * Pools are the official FIFA 2026 pools (Annex C / regulations), i.e. the
+ * "Third-place Group X/Y/Z" lists published for each match. A group winner is
+ * never paired with the third-place team from its own group.
  */
 const R32_THIRD_PLACE_MATCHES = [
-  { matchNumber: 74, homeGroup: "E", pool: ["C", "E", "F", "H", "I"] },
-  { matchNumber: 77, homeGroup: "I", pool: ["E", "F", "G", "I", "J"] },
-  { matchNumber: 79, homeGroup: "A", pool: ["B", "E", "F", "I", "J"] },
-  { matchNumber: 80, homeGroup: "L", pool: ["A", "B", "C", "D", "F"] },
-  { matchNumber: 81, homeGroup: "D", pool: ["A", "E", "H", "I", "J"] },
-  { matchNumber: 82, homeGroup: "G", pool: ["C", "D", "F", "G", "H"] },
-  { matchNumber: 85, homeGroup: "B", pool: ["D", "E", "I", "J", "L"] },
-  { matchNumber: 87, homeGroup: "K", pool: ["E", "H", "I", "J", "K"] },
+  { matchNumber: 74, homeGroup: "E", pool: ["A", "B", "C", "D", "F"] },
+  { matchNumber: 77, homeGroup: "I", pool: ["C", "D", "F", "G", "H"] },
+  { matchNumber: 79, homeGroup: "A", pool: ["C", "E", "F", "H", "I"] },
+  { matchNumber: 80, homeGroup: "L", pool: ["E", "H", "I", "J", "K"] },
+  { matchNumber: 81, homeGroup: "D", pool: ["B", "E", "F", "I", "J"] },
+  { matchNumber: 82, homeGroup: "G", pool: ["A", "E", "H", "I", "J"] },
+  { matchNumber: 85, homeGroup: "B", pool: ["E", "F", "G", "I", "J"] },
+  { matchNumber: 87, homeGroup: "K", pool: ["D", "E", "I", "J", "L"] },
 ];
 
 /**

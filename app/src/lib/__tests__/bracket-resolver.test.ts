@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { LiveBracketResolver, LiveBracket } from "../live-bracket-resolver";
 import { PredictionBracketResolver } from "../prediction-bracket-resolver";
 import { asFifaMatchId, Team } from "@/types/football";
-import { r32Bracket } from "../r32-bracket";
+import { r32Bracket, r16Bracket } from "../r32-bracket";
 import {
   getQualifyingThirdPlaceTeams,
   assignThirdPlaceToR32,
@@ -107,16 +107,16 @@ describe("LiveBracketResolver — R32 resolution (all groups finished)", () => {
     },
   );
 
-  // Third-place R32 matches
+  // Third-place R32 matches — official assignment for key ABCDEFGH
   const thirdPlaceR32: [number, Team, Team][] = [
-    [74, TEAM_E1, TEAM_H3], // 1E vs 3rd_H(TUN)
-    [77, TEAM_I1, TEAM_G3], // 1I vs 3rd_G(NGA)
-    [79, TEAM_A1, TEAM_B3], // 1A vs 3rd_B(URU)
-    [80, TEAM_L1, TEAM_C3], // 1L vs 3rd_C(POR)
-    [81, TEAM_D1, TEAM_A3], // 1D vs 3rd_A(CAN)
-    [82, TEAM_G1, TEAM_F3], // 1G vs 3rd_F(AUS)
-    [85, TEAM_B1, TEAM_D3], // 1B vs 3rd_D(BEL)
-    [87, TEAM_K1, TEAM_E3], // 1K vs 3rd_E(CRO)
+    [74, TEAM_E1, TEAM_C3], // 1E vs 3rd_C(POR)
+    [77, TEAM_I1, TEAM_F3], // 1I vs 3rd_F(AUS)
+    [79, TEAM_A1, TEAM_H3], // 1A vs 3rd_H(TUN)
+    [80, TEAM_L1, TEAM_E3], // 1L vs 3rd_E(CRO)
+    [81, TEAM_D1, TEAM_B3], // 1D vs 3rd_B(URU)
+    [82, TEAM_G1, TEAM_A3], // 1G vs 3rd_A(CAN)
+    [85, TEAM_B1, TEAM_G3], // 1B vs 3rd_G(NGA)
+    [87, TEAM_K1, TEAM_D3], // 1K vs 3rd_D(BEL)
   ];
 
   it.each(thirdPlaceR32)(
@@ -261,15 +261,32 @@ describe("Third-place FIFA lookup table assignments", () => {
     );
     const assignments = assignThirdPlaceToR32(groups);
 
-    // Expected from FIFA table: [H, G, B, C, A, F, D, E]
-    expect(assignments.get(74)).toBe("H");
-    expect(assignments.get(77)).toBe("G");
-    expect(assignments.get(79)).toBe("B");
-    expect(assignments.get(80)).toBe("C");
-    expect(assignments.get(81)).toBe("A");
-    expect(assignments.get(82)).toBe("F");
-    expect(assignments.get(85)).toBe("D");
-    expect(assignments.get(87)).toBe("E");
+    // Expected from official FIFA table (natural match order 74,77,79,80,81,82,85,87)
+    expect(assignments.get(74)).toBe("C");
+    expect(assignments.get(77)).toBe("F");
+    expect(assignments.get(79)).toBe("H");
+    expect(assignments.get(80)).toBe("E");
+    expect(assignments.get(81)).toBe("B");
+    expect(assignments.get(82)).toBe("A");
+    expect(assignments.get(85)).toBe("G");
+    expect(assignments.get(87)).toBe("D");
+  });
+
+  it("matches the official 2026 real-world result (3rds B,D,E,F,I,J,K,L)", () => {
+    // Published outcome: 1A-3E, 1B-3J, 1D-3B, 1E-3D, 1G-3I, 1I-3F, 1K-3L, 1L-3K
+    // (Wikipedia: 2026 FIFA World Cup knockout stage / Annex C).
+    const groups = ["B", "D", "E", "F", "I", "J", "K", "L"].map(
+      (l) => `GROUP_${l}`,
+    );
+    const a = assignThirdPlaceToR32(groups);
+    expect(a.get(74)).toBe("D"); // Winner E vs 3D
+    expect(a.get(77)).toBe("F"); // Winner I vs 3F
+    expect(a.get(79)).toBe("E"); // Winner A vs 3E
+    expect(a.get(80)).toBe("K"); // Winner L vs 3K
+    expect(a.get(81)).toBe("B"); // Winner D vs 3B
+    expect(a.get(82)).toBe("I"); // Winner G vs 3I
+    expect(a.get(85)).toBe("J"); // Winner B vs 3J
+    expect(a.get(87)).toBe("L"); // Winner K vs 3L
   });
 
   it("returns empty map if not exactly 8 groups", () => {
@@ -279,10 +296,10 @@ describe("Third-place FIFA lookup table assignments", () => {
 
   // Test several other combinations from the FIFA table
   const additionalCombinations: [string, string[]][] = [
-    ["ABCDEFGI", ["C", "G", "B", "D", "A", "F", "E", "I"]],
-    ["ABCDEFGJ", ["C", "G", "B", "D", "A", "F", "E", "J"]],
-    ["EFGHIJKL", ["E", "J", "I", "F", "H", "G", "L", "K"]],
-    ["CDEFGHIJ", ["C", "G", "J", "D", "H", "F", "E", "I"]],
+    ["ABCDEFGI", ["D", "F", "C", "I", "B", "A", "G", "E"]],
+    ["ABCDEFGJ", ["D", "F", "C", "J", "B", "A", "G", "E"]],
+    ["EFGHIJKL", ["F", "G", "E", "K", "I", "H", "J", "L"]],
+    ["CDEFGHIJ", ["D", "F", "C", "I", "J", "H", "G", "E"]],
   ];
 
   it.each(additionalCombinations)(
@@ -535,6 +552,36 @@ describe("PredictionBracketResolver — Prediction propagation", () => {
   it("returns predicted third-place qualifying", () => {
     expect(predictedBracket.thirdPlaceQualifying.size).toBe(12);
   });
+
+  it("propagates a predicted winner even when the opponent R32 slot is unresolved", () => {
+    // Simulates clinching: an R32 team is known early while its opponent (e.g. a
+    // 3rd-place team) is still undetermined. A predicted win for the known side
+    // must still advance it to the next round.
+    const matches = buildAllMatches();
+    const liveBracket = resolveLive(matches);
+
+    // Force match 73's away slot to be unresolved (home MEX stays).
+    const orig = liveBracket.teams.get(fid(73))!;
+    liveBracket.teams.set(fid(73), { ...orig, away: null, awayDisplayName: "2B" });
+
+    const predicted = new PredictionBracketResolver({
+      liveBracket,
+      matches,
+      predictions: buildHomePredictions(), // home (MEX) predicted to win
+    }).resolve();
+
+    const r73 = predicted.teams.get(fid(73))!;
+    expect(r73.home?.tla).toBe("MEX");
+    expect(r73.away).toBeNull();
+
+    // The R16 slot fed by the winner of 73 must now contain MEX.
+    const slot = r16Bracket.find(
+      (b) => b.homeFromR32 === 73 || b.awayFromR32 === 73,
+    )!;
+    const r16 = predicted.teams.get(fid(slot.matchNumber))!;
+    const side = slot.homeFromR32 === 73 ? r16.home : r16.away;
+    expect(side?.tla).toBe("MEX");
+  });
 });
 
 // =====================================================================
@@ -607,11 +654,11 @@ describe("LiveBracketResolver — No groups started (all TIMED)", () => {
 });
 
 // =====================================================================
-// API OVERRIDE TESTS
+// API TEAM IS IGNORED (calculated bracket is the only source of truth)
 // =====================================================================
 
-describe("LiveBracketResolver — API team override", () => {
-  it("uses valid API teams even if standings provide different teams", () => {
+describe("LiveBracketResolver — API teams are ignored", () => {
+  it("ignores a valid API team and uses the calculated standings team", () => {
     const matches = buildAllMatches();
     const m73 = matches.find((m) => m.id === 73)!;
     m73.homeTeam = {
@@ -624,11 +671,11 @@ describe("LiveBracketResolver — API team override", () => {
 
     const liveBracket = resolveLive(matches);
     const r73 = liveBracket.teams.get(fid(73))!;
-    expect(r73.home?.tla).toBe("OVR"); // API team takes priority
+    expect(r73.home?.tla).toBe("MEX"); // calculated, not the API "OVR"
     expect(r73.away?.tla).toBe("ARG"); // standings-based for away
   });
 
-  it("accepts placeholder API teams (negative IDs) as valid teams", () => {
+  it("ignores placeholder API teams (negative IDs) in favor of standings", () => {
     const matches = buildAllMatches();
     const m73 = matches.find((m) => m.id === 73)!;
     m73.homeTeam = {
@@ -641,7 +688,7 @@ describe("LiveBracketResolver — API team override", () => {
 
     const liveBracket = resolveLive(matches);
     const r73 = liveBracket.teams.get(fid(73))!;
-    expect(r73.home?.tla).toBe("EU1");
+    expect(r73.home?.tla).toBe("MEX");
   });
 
   it("ignores TBD API teams", () => {

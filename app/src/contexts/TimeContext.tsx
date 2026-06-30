@@ -9,6 +9,7 @@ import React, {
   useCallback,
 } from "react";
 import { useSimulation } from "./SimulationContext";
+import { isKnockoutMatchLocked as isKnockoutMatchLockedAt } from "@/lib/time";
 
 // =====================================================================
 // TIME CONTEXT
@@ -44,6 +45,11 @@ interface TimeContextValue {
   stageLockStatus: StageLockStatus;
   /** Check if a specific match is locked based on time */
   isMatchLocked: (matchUtcDate: string | Date) => boolean;
+  /**
+   * Check if a knockout match is locked (editing + visibility): true when the
+   * bracket deadline has passed OR this specific match has kicked off.
+   */
+  isKnockoutMatchLocked: (matchUtcDate: string | Date) => boolean;
   /** Tick counter - increments on each update interval. Subscribe to this for periodic updates. */
   tick: number;
   /** Whether simulation mode is active (for conditional logic only) */
@@ -96,15 +102,30 @@ export function TimeProvider({ children }: TimeProviderProps) {
     [getCurrentTime],
   );
 
+  // Per-match knockout lock (deadline OR this match's own kickoff)
+  const isKnockoutMatchLocked = useCallback(
+    (matchUtcDate: string | Date): boolean =>
+      isKnockoutMatchLockedAt(matchUtcDate, getCurrentTime()),
+    [getCurrentTime],
+  );
+
   const value: TimeContextValue = useMemo(
     () => ({
       getCurrentTime,
       stageLockStatus,
       isMatchLocked,
+      isKnockoutMatchLocked,
       tick,
       isSimulated: simulationEnabled,
     }),
-    [getCurrentTime, stageLockStatus, isMatchLocked, tick, simulationEnabled],
+    [
+      getCurrentTime,
+      stageLockStatus,
+      isMatchLocked,
+      isKnockoutMatchLocked,
+      tick,
+      simulationEnabled,
+    ],
   );
 
   return <TimeContext.Provider value={value}>{children}</TimeContext.Provider>;

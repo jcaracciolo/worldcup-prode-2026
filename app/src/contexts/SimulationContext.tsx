@@ -16,6 +16,7 @@ import {
   isGroupStageLocked,
   isKnockoutStageOpen,
   isKnockoutStageLocked,
+  isKnockoutMatchLocked,
   isMatchLocked,
   getStageLockStatus,
 } from "@/lib/time";
@@ -25,6 +26,7 @@ export {
   isGroupStageLocked,
   isKnockoutStageOpen,
   isKnockoutStageLocked,
+  isKnockoutMatchLocked,
   isMatchLocked,
   getStageLockStatus,
 } from "@/lib/time";

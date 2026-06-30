@@ -383,6 +383,7 @@ function createPlaceholderDb(): DatabaseService {
       signUp: notAvailable,
       signOut: notAvailable,
       updatePassword: notAvailable,
+      resetPasswordForEmail: notAvailable,
       onAuthStateChange: () => ({ unsubscribe: () => {} }),
     },
     profiles: {

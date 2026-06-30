@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local prediction snapshots (contain user PII — never commit)
+snapshots/

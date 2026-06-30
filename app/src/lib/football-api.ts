@@ -60,16 +60,102 @@ export interface MatchesResult {
   pollIntervalMs: number;
 }
 
+const isFinishedWithScore = (m: Match | undefined): m is Match =>
+  !!m &&
+  m.status === "FINISHED" &&
+  m.score.fullTime.home !== null &&
+  m.score.fullTime.away !== null;
+
+type DbService = Awaited<ReturnType<typeof createServerDatabaseService>>;
+
+/**
+ * In-flight refresh lock (module-level → shared across requests on this
+ * instance). Ensures only ONE refresh runs at a time and lets a stale read
+ * kick off a background refresh without blocking the response (option C).
+ */
+let refreshInFlight: Promise<Match[]> | null = null;
+
+/**
+ * Refresh the match cache from upstream and persist the MERGED result.
+ *
+ * This is the only place that talks to the (slow, unreliable) upstream. It:
+ *   1. Loads the per-match individual cache (frozen finished results) and
+ *      fetches the composite provider IN PARALLEL (option A).
+ *   2. Freezes any newly-finished match into the individual cache.
+ *   3. Merges frozen finals + live scores over the composite base.
+ *   4. Stores the ALREADY-MERGED list in the bulk cache so the hot read path
+ *      needs a single query and no merge work (option B).
+ */
+async function refreshMatchCache(db: DbService): Promise<Match[]> {
+  const [{ data: individualCaches }, composite] = await Promise.all([
+    db.matchesCache.getIndividualCachedMatches(),
+    getMatchesFromComposite(),
+  ]);
+
+  const cachedMatchMap = new Map<number, Match>(
+    (individualCaches || []).map((c) => [c.match_id, c.data as unknown as Match]),
+  );
+
+  // FREEZE finished results: once a match has been recorded FINISHED with a
+  // score, never overwrite that entry. This stops an unreliable upstream
+  // (football-data.org) from flapping the final scoreline of an already
+  // finished match. Live/paused matches still update each refresh.
+  const toPersist = composite.filter(
+    (m) =>
+      (m.status === "IN_PLAY" ||
+        m.status === "PAUSED" ||
+        m.status === "FINISHED") &&
+      m.score.fullTime.home !== null &&
+      m.score.fullTime.away !== null &&
+      !isFinishedWithScore(cachedMatchMap.get(m.id)),
+  );
+  await Promise.all(
+    toPersist.map(async (m) => {
+      await db.matchesCache.updateIndividualMatchCache(m.id, m);
+      cachedMatchMap.set(m.id, m);
+    }),
+  );
+
+  // Merge individually cached results (frozen finals + live) over the base.
+  // Precedence:
+  //   1. A frozen FINISHED cached result wins over the (untrusted) base score.
+  //   2. Otherwise, if the base says FINISHED, use the base.
+  //   3. Otherwise prefer the cached entry if it is more advanced (live score).
+  let merged = composite;
+  if (cachedMatchMap.size > 0) {
+    merged = composite.map((match) => {
+      const cached = cachedMatchMap.get(match.id);
+      if (!cached) return match;
+      if (isFinishedWithScore(cached)) return cached;
+      if (match.status === "FINISHED") return match;
+      return cached;
+    });
+  }
+
+  // Persist the MERGED list so reads are a single query with no merge.
+  await db.matchesCache.updateMatchesCache(merged);
+  return merged;
+}
+
+/** Start (or join) the single in-flight refresh. */
+function triggerRefresh(db: DbService): Promise<Match[]> {
+  if (!refreshInFlight) {
+    refreshInFlight = refreshMatchCache(db).finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+}
+
 /**
  * Fetch all matches — the single entry point for match data.
  *
- * Handles everything internally:
- * 1. DB cache (1-min TTL)
- * 2. Composite provider (base schedule + live overlay with dynamic throttle)
- * 3. Persist live scores to DB (survives deploys)
- * 4. Merge individually cached match results
- * 5. API ID → FIFA ID conversion
- * 6. TBD team resolution
+ * Hot path (cache present): a SINGLE read of the already-merged bulk cache,
+ * then API→FIFA conversion + TBD resolution (CPU only). If the cache is older
+ * than the TTL, a refresh is kicked off in the BACKGROUND and the current
+ * (slightly stale) data is returned immediately — no user request ever blocks
+ * on the slow upstream. Only a completely-empty cache forces a synchronous
+ * refresh.
  *
  * Returns matches with FIFA IDs + recommended polling interval for client.
  */
@@ -77,62 +163,26 @@ export async function getMatches(): Promise<MatchesResult> {
   initializeProviders();
   const db = await createServerDatabaseService();
 
-  // Step 1: Check DB cache
   const { data: cacheData } = await db.matchesCache.getCachedMatches();
-  const now = new Date();
   const cacheAge = cacheData?.updated_at
-    ? now.getTime() - new Date(cacheData.updated_at).getTime()
+    ? Date.now() - new Date(cacheData.updated_at).getTime()
     : Infinity;
 
   let matches: Match[];
-
-  if (cacheData && cacheAge < CACHE_DURATION_MS) {
-    const cachedData = cacheData.data as unknown as { matches: Match[] };
-    matches = cachedData.matches || [];
-  } else {
-    // Step 2: Fetch from composite provider (base schedule + live overlay)
-    // The composite provider handles dynamic throttling internally
-    matches = await getMatchesFromComposite();
-
-    // Step 3: Persist live scores individually (survives restarts/deploys)
-    const liveMatches = matches.filter(
-      (m) =>
-        (m.status === "IN_PLAY" || m.status === "PAUSED" || m.status === "FINISHED") &&
-        m.score.fullTime.home !== null &&
-        m.score.fullTime.away !== null,
-    );
-    for (const liveMatch of liveMatches) {
-      await db.matchesCache.updateIndividualMatchCache(liveMatch.id, liveMatch);
+  if (cacheData) {
+    matches = (cacheData.data as unknown as { matches: Match[] }).matches || [];
+    // Stale → refresh in the background; serve the current data right now.
+    if (cacheAge >= CACHE_DURATION_MS) {
+      void triggerRefresh(db).catch((err) =>
+        console.error("[football-api] background refresh failed:", err),
+      );
     }
-
-    // Update bulk cache
-    await db.matchesCache.updateMatchesCache(matches);
+  } else {
+    // No cache at all (first run / cleared) — must refresh synchronously.
+    matches = await triggerRefresh(db);
   }
 
-  // Step 4: Merge individually cached match results (live scores + admin overrides)
-  // Only apply cached data when it has a more advanced status than the base data.
-  // This prevents stale IN_PLAY cache from overriding a FINISHED status.
-  const { data: individualCaches } = await db.matchesCache.getIndividualCachedMatches();
-  if (individualCaches && individualCaches.length > 0) {
-    const cachedMatchMap = new Map(
-      individualCaches.map((c) => [c.match_id, c.data as unknown as Match]),
-    );
-    matches = matches.map((match) => {
-      const cached = cachedMatchMap.get(match.id);
-      if (!cached) return match;
-
-      // If base already says FINISHED, prefer base (it has final data)
-      if (match.status === "FINISHED") return match;
-
-      // If cached is more advanced (has scores the base doesn't), use it
-      return cached;
-    });
-  }
-
-  // Step 5: Convert API IDs → FIFA IDs
   let fifaMatches = convertToFifaIds(matches);
-
-  // Step 6: Resolve TBD teams
   fifaMatches = resolveAllTbdTeams(fifaMatches);
 
   return {

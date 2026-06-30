@@ -140,6 +140,7 @@ export interface PointBreakdown {
     | "knockout_win"
     | "knockout_lose"
     | "knockout_tie"
+    | "knockout_pass"
     | "goals_home"
     | "goals_away"
     | "group_advance"

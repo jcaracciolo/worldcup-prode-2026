@@ -111,17 +111,18 @@ const content = {
       },
       r32: {
         title: "Round of 32",
-        description: "Position-based scoring (2 pts per correct goal):",
+        description: "Position-based scoring (1 pt per correct goal):",
         scoring: [
           { label: "Correct result (win/draw/loss)", points: "2 pts" },
-          { label: "Exact goals for home team", points: "2 pts" },
-          { label: "Exact goals for away team", points: "2 pts" },
+          { label: "Correct team advances (passes)", points: "1 pt" },
+          { label: "Exact goals for home team", points: "1 pt" },
+          { label: "Exact goals for away team", points: "1 pt" },
         ],
-        max: "Maximum: 6 points per match",
+        max: "Maximum: 5 points per match",
       },
       advanced: {
         title: "Round of 16 and beyond",
-        description: "Split winner/loser scoring with multipliers:",
+        description: "Split winner/loser/passes scoring with multipliers:",
         scoring: [
           { label: "Correct team wins", points: "1 × multiplier" },
           { label: "Correct team loses", points: "1 × multiplier" },
@@ -129,7 +130,8 @@ const content = {
             label: "Correct tie (before penalties)",
             points: "1 × multiplier (each)",
           },
-          { label: "Exact goals for each team", points: "2 pts each" },
+          { label: "Correct team advances (passes)", points: "1 × multiplier" },
+          { label: "Exact goals for each team", points: "1 pt each" },
         ],
         note: "You can only score points for teams you predicted to reach that stage.",
       },
@@ -138,42 +140,54 @@ const content = {
         rounds: [
           {
             name: "Round of 32",
-            mult: "1×",
-            result: "2",
-            goals: "4",
-            max: "6",
+            mult: "1",
+            perTeam: "1",
+            passes: "1",
+            goals: "1",
+            max: "5",
           },
           {
             name: "Round of 16",
-            mult: "2×",
-            result: "4",
-            goals: "4",
+            mult: "2",
+            perTeam: "2",
+            passes: "2",
+            goals: "1",
             max: "8",
           },
           {
             name: "Quarter-finals",
-            mult: "3×",
-            result: "6",
-            goals: "4",
-            max: "10",
+            mult: "3",
+            perTeam: "3",
+            passes: "3",
+            goals: "1",
+            max: "11",
           },
           {
             name: "Semi-finals",
-            mult: "4×",
-            result: "8",
-            goals: "4",
-            max: "12",
+            mult: "4",
+            perTeam: "4",
+            passes: "4",
+            goals: "1",
+            max: "14",
           },
           {
             name: "Third-place",
-            mult: "5×",
-            result: "10",
-            goals: "4",
-            max: "14",
+            mult: "5",
+            perTeam: "5",
+            passes: "5",
+            goals: "1",
+            max: "17",
           },
-          { name: "Final", mult: "6×", result: "12", goals: "4", max: "16" },
+          {
+            name: "Final",
+            mult: "6",
+            perTeam: "6",
+            passes: "6",
+            goals: "1",
+            max: "20",
+          },
         ],
-        headers: ["Round", "Mult", "Result", "Goals", "Max"],
+        headers: ["Round", "Win/Lose/Draw", "Pass next round", "Goals", "Max"],
       },
       example: {
         title: "Example - Quarter-final (3× multiplier)",
@@ -183,10 +197,37 @@ const content = {
         items: [
           { reason: "Correct winner (Germany)", points: "+3 pts (1×3)" },
           { reason: "Correct loser (Brazil)", points: "+3 pts (1×3)" },
+          { reason: "Germany advances (passes)", points: "+3 pts (1×3)" },
           { reason: "Wrong goals for Germany", points: "+0 pts" },
-          { reason: "Correct goals for Brazil (1)", points: "+2 pts" },
+          { reason: "Correct goals for Brazil (1)", points: "+1 pt" },
         ],
-        total: "Total: 8 / 10 points",
+        total: "Total: 10 / 11 points",
+      },
+      example2: {
+        title:
+          "Example 2 — Semi-final tie vs an opponent you didn't predict (4× multiplier)",
+        note: "You predicted Mexico to draw Côte d'Ivoire and advance on penalties. The real semi-final paired Mexico with the Netherlands instead — but it ended in the same 1-1 tie and Mexico still advanced. You keep every point tied to Mexico, but lose the points tied to the opponent you got wrong (you had CIV, not NED).",
+        prediction: "Your prediction",
+        actual: "Actual result",
+        advances: "MEX advances on pens",
+        breakdown: "Points breakdown",
+        items: [
+          {
+            reason: "Correct tie — Mexico (you had MEX in this match)",
+            points: "+4 pts (1×4)",
+          },
+          { reason: "Mexico advances (passes)", points: "+4 pts (1×4)" },
+          { reason: "Correct goals for Mexico (1)", points: "+1 pt" },
+          {
+            reason: "No tie credit for Netherlands (you predicted CIV)",
+            points: "+0 pts",
+          },
+          {
+            reason: "No goal credit for Netherlands (you predicted CIV)",
+            points: "+0 pts",
+          },
+        ],
+        total: "Total: 9 / 14 points",
       },
     },
     tiebreaker: {
@@ -207,8 +248,8 @@ const content = {
       maxPoints: "Maximum possible points",
       groupMatches: "48 group matches × 4 pts = 192 pts",
       groupBonus: "12 groups × 6 pts = 72 pts",
-      knockout: "Knockout rounds = ~254 pts",
-      total: "Total possible: 518 points",
+      knockout: "Knockout rounds = ~253 pts",
+      total: "Total possible: 517 points",
     },
   },
   es: {
@@ -320,21 +361,22 @@ const content = {
       },
       r32: {
         title: "Ronda de 32",
-        description: "Puntuación por posición (2 pts por gol correcto):",
+        description: "Puntuación por posición (1 pt por gol correcto):",
         scoring: [
           {
             label: "Resultado correcto (victoria/empate/derrota)",
             points: "2 pts",
           },
-          { label: "Goles exactos del equipo local", points: "2 pts" },
-          { label: "Goles exactos del equipo visitante", points: "2 pts" },
+          { label: "Equipo correcto avanza (pasa)", points: "1 pt" },
+          { label: "Goles exactos del equipo local", points: "1 pt" },
+          { label: "Goles exactos del equipo visitante", points: "1 pt" },
         ],
-        max: "Máximo: 6 puntos por partido",
+        max: "Máximo: 5 puntos por partido",
       },
       advanced: {
         title: "Octavos de final en adelante",
         description:
-          "Puntuación dividida ganador/perdedor con multiplicadores:",
+          "Puntuación dividida ganador/perdedor/pasa con multiplicadores:",
         scoring: [
           { label: "Equipo correcto gana", points: "1 × multiplicador" },
           { label: "Equipo correcto pierde", points: "1 × multiplicador" },
@@ -342,7 +384,8 @@ const content = {
             label: "Empate correcto (antes de penales)",
             points: "1 × multiplicador (c/u)",
           },
-          { label: "Goles exactos de cada equipo", points: "2 pts c/u" },
+          { label: "Equipo correcto avanza (pasa)", points: "1 × multiplicador" },
+          { label: "Goles exactos de cada equipo", points: "1 pt c/u" },
         ],
         note: "Solo puedes ganar puntos por equipos que predijiste que llegarían a esa fase.",
       },
@@ -351,30 +394,54 @@ const content = {
         rounds: [
           {
             name: "Ronda de 32",
-            mult: "1×",
-            result: "2",
-            goals: "4",
-            max: "6",
+            mult: "1",
+            perTeam: "1",
+            passes: "1",
+            goals: "1",
+            max: "5",
           },
-          { name: "Octavos", mult: "2×", result: "4", goals: "4", max: "8" },
-          { name: "Cuartos", mult: "3×", result: "6", goals: "4", max: "10" },
+          {
+            name: "Octavos",
+            mult: "2",
+            perTeam: "2",
+            passes: "2",
+            goals: "1",
+            max: "8",
+          },
+          {
+            name: "Cuartos",
+            mult: "3",
+            perTeam: "3",
+            passes: "3",
+            goals: "1",
+            max: "11",
+          },
           {
             name: "Semifinales",
-            mult: "4×",
-            result: "8",
-            goals: "4",
-            max: "12",
+            mult: "4",
+            perTeam: "4",
+            passes: "4",
+            goals: "1",
+            max: "14",
           },
           {
             name: "3er puesto",
-            mult: "5×",
-            result: "10",
-            goals: "4",
-            max: "14",
+            mult: "5",
+            perTeam: "5",
+            passes: "5",
+            goals: "1",
+            max: "17",
           },
-          { name: "Final", mult: "6×", result: "12", goals: "4", max: "16" },
+          {
+            name: "Final",
+            mult: "6",
+            perTeam: "6",
+            passes: "6",
+            goals: "1",
+            max: "20",
+          },
         ],
-        headers: ["Ronda", "Mult", "Res", "Goles", "Máx"],
+        headers: ["Ronda", "Gana/Pierde/Empata", "Pasa de ronda", "Goles", "Máx"],
       },
       example: {
         title: "Ejemplo - Cuartos de final (multiplicador 3×)",
@@ -384,10 +451,37 @@ const content = {
         items: [
           { reason: "Ganador correcto (Alemania)", points: "+3 pts (1×3)" },
           { reason: "Perdedor correcto (Brasil)", points: "+3 pts (1×3)" },
+          { reason: "Alemania avanza (pasa)", points: "+3 pts (1×3)" },
           { reason: "Goles incorrectos de Alemania", points: "+0 pts" },
-          { reason: "Goles correctos de Brasil (1)", points: "+2 pts" },
+          { reason: "Goles correctos de Brasil (1)", points: "+1 pt" },
         ],
-        total: "Total: 8 / 10 puntos",
+        total: "Total: 10 / 11 puntos",
+      },
+      example2: {
+        title:
+          "Ejemplo 2 — Empate en semifinal ante un rival que no predijiste (multiplicador 4×)",
+        note: "Predijiste que México empataría con Costa de Marfil y avanzaría por penales. La semifinal real enfrentó a México con Países Bajos — pero terminó en el mismo empate 1-1 y México igual avanzó. Conservás todos los puntos ligados a México, pero perdés los puntos ligados al rival que erraste (tenías a CIV, no a NED).",
+        prediction: "Tu predicción",
+        actual: "Resultado real",
+        advances: "MEX avanza por penales",
+        breakdown: "Desglose de puntos",
+        items: [
+          {
+            reason: "Empate correcto — México (tenías a MEX en este partido)",
+            points: "+4 pts (1×4)",
+          },
+          { reason: "México avanza (pasa)", points: "+4 pts (1×4)" },
+          { reason: "Goles correctos de México (1)", points: "+1 pt" },
+          {
+            reason: "Sin crédito de empate para Países Bajos (predijiste CIV)",
+            points: "+0 pts",
+          },
+          {
+            reason: "Sin crédito de goles para Países Bajos (predijiste CIV)",
+            points: "+0 pts",
+          },
+        ],
+        total: "Total: 9 / 14 puntos",
       },
     },
     tiebreaker: {
@@ -408,8 +502,8 @@ const content = {
       maxPoints: "Máximo de puntos posibles",
       groupMatches: "48 partidos de grupos × 4 pts = 192 pts",
       groupBonus: "12 grupos × 6 pts = 72 pts",
-      knockout: "Rondas eliminatorias = ~254 pts",
-      total: "Total posible: 518 puntos",
+      knockout: "Rondas eliminatorias = ~253 pts",
+      total: "Total posible: 517 puntos",
     },
   },
 };
@@ -957,14 +1051,22 @@ export default function RulesPage() {
                       <td className="py-2 px-1.5 sm:px-2 text-white font-medium text-xs sm:text-sm">
                         {round.name}
                       </td>
-                      <td className="py-2 px-1.5 sm:px-2 text-purple-400 font-bold">
-                        {round.mult}
-                      </td>
                       <td className="py-2 px-1.5 sm:px-2 text-white/70">
-                        {round.result}
+                        {round.perTeam}
+                        <span className="text-white/40 text-[10px]">
+                          {" "}
+                          / correct team
+                        </span>
+                      </td>
+                      <td className="py-2 px-1.5 sm:px-2 text-teal-300">
+                        {round.passes}
                       </td>
                       <td className="py-2 px-1.5 sm:px-2 text-white/70">
                         {round.goals}
+                        <span className="text-white/40 text-[10px]">
+                          {" "}
+                          / correct team
+                        </span>
                       </td>
                       <td className="py-2 px-1.5 sm:px-2 text-emerald-400 font-bold">
                         {round.max}
@@ -1058,6 +1160,99 @@ export default function RulesPage() {
               </span>
             </div>
           </div>
+
+          {/* Knockout Example 2 — tie vs an opponent you didn't predict */}
+          <div className="bg-slate-800/50 rounded-lg p-4 border border-white/10 mt-4">
+            <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+              <span className="text-amber-400">💡</span>
+              {t.phase3.example2.title}
+            </h4>
+
+            <p className="text-white/60 text-sm mb-4">
+              {t.phase3.example2.note}
+            </p>
+
+            <div className="grid sm:grid-cols-2 gap-4 mb-4">
+              {/* Prediction */}
+              <div className="bg-white/5 rounded-lg p-3">
+                <div className="text-white/50 text-xs mb-2">
+                  {t.phase3.example2.prediction}
+                </div>
+                <div className="flex items-center justify-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <img src="https://flagcdn.com/w40/mx.png" alt="MEX" className="w-6 h-4 object-contain" />
+                    <span className="text-white font-semibold">MEX</span>
+                  </div>
+                  <div className="bg-white/10 px-3 py-1 rounded font-bold text-white">
+                    1 - 1
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-semibold">CIV</span>
+                    <img src="https://flagcdn.com/w40/ci.png" alt="CIV" className="w-6 h-4 object-contain" />
+                  </div>
+                </div>
+                <div className="text-center text-white/40 text-[11px] mt-2">
+                  {t.phase3.example2.advances}
+                </div>
+              </div>
+
+              {/* Actual */}
+              <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
+                <div className="text-purple-400/70 text-xs mb-2">
+                  {t.phase3.example2.actual}
+                </div>
+                <div className="flex items-center justify-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <img src="https://flagcdn.com/w40/mx.png" alt="MEX" className="w-6 h-4 object-contain" />
+                    <span className="text-white font-semibold">MEX</span>
+                  </div>
+                  <div className="bg-purple-500/20 px-3 py-1 rounded font-bold text-purple-300">
+                    1 - 1
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-amber-300 font-semibold">NED</span>
+                    <img src="https://flagcdn.com/w40/nl.png" alt="NED" className="w-6 h-4 object-contain" />
+                  </div>
+                </div>
+                <div className="text-center text-purple-300/60 text-[11px] mt-2">
+                  {t.phase3.example2.advances}
+                </div>
+              </div>
+            </div>
+
+            {/* Breakdown */}
+            <div className="text-white/50 text-xs mb-2">
+              {t.phase3.example2.breakdown}
+            </div>
+            <div className="space-y-1">
+              {t.phase3.example2.items.map((item, i) => (
+                <div
+                  key={i}
+                  className={`flex justify-between items-center py-1.5 px-2 rounded ${
+                    item.points.includes("+0")
+                      ? "bg-red-500/10"
+                      : "bg-purple-500/10"
+                  }`}
+                >
+                  <span
+                    className={`text-sm ${item.points.includes("+0") ? "text-red-300" : "text-purple-300"}`}
+                  >
+                    {item.reason}
+                  </span>
+                  <span
+                    className={`font-bold text-sm ${item.points.includes("+0") ? "text-red-400" : "text-purple-400"}`}
+                  >
+                    {item.points}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 pt-2 border-t border-white/20 text-right">
+              <span className="text-white font-bold">
+                {t.phase3.example2.total}
+              </span>
+            </div>
+          </div>
         </section>
 
         {/* Tiebreakers */}
@@ -1109,13 +1304,13 @@ export default function RulesPage() {
               <span className="text-white/70 text-sm">
                 {t.summary.knockout}
               </span>
-              <span className="text-purple-400 font-bold">254</span>
+              <span className="text-purple-400 font-bold">253</span>
             </div>
             <div className="flex justify-between items-center py-3 mt-2 bg-white/10 rounded-lg px-3">
               <span className="text-white font-semibold">
                 {t.summary.total}
               </span>
-              <span className="text-2xl font-bold text-white">518</span>
+              <span className="text-2xl font-bold text-white">517</span>
             </div>
           </div>
         </section>

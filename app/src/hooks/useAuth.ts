@@ -71,6 +71,20 @@ export function useChangePassword() {
   return { changePassword };
 }
 
+/** Hook for requesting a password-reset email */
+export function useResetPassword() {
+  const db = useDatabaseService();
+
+  const resetPassword = useCallback(
+    async (email: string, redirectTo: string) => {
+      return db.auth.resetPasswordForEmail(email, redirectTo);
+    },
+    [db],
+  );
+
+  return { resetPassword };
+}
+
 /** Hook for invite code validation and competition lookup */
 export function useInviteCodes() {
   const db = useDatabaseService();

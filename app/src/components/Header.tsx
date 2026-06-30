@@ -124,6 +124,12 @@ export default function Header() {
               Fixtures
             </Link>
             <Link
+              href="/stats"
+              className="px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+            >
+              Stats
+            </Link>
+            <Link
               href="/rules"
               className="px-4 py-2 text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all"
             >
@@ -250,6 +256,13 @@ export default function Header() {
               className="block px-4 py-2.5 text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all"
             >
               Fixtures
+            </Link>
+            <Link
+              href="/stats"
+              onClick={() => setMenuOpen(false)}
+              className="block px-4 py-2.5 text-sm font-medium text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+            >
+              Stats
             </Link>
             <Link
               href="/rules"

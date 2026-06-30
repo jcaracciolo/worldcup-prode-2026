@@ -16,7 +16,11 @@ function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    searchParams.get("error") === "auth_callback"
+      ? "That reset link is invalid or has expired. Please request a new one."
+      : "",
+  );
   const [loading, setLoading] = useState(false);
 
   // Build signup URL preserving invite params
@@ -103,6 +107,14 @@ function LoginForm() {
               placeholder="••••••••"
               required
             />
+            <div className="mt-2 text-right">
+              <Link
+                href="/forgot-password"
+                className="text-sm text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
           </div>
 
           <button

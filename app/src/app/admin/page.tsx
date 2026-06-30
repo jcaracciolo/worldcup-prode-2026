@@ -7,6 +7,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { Competition } from "@/types/database";
 import { useUser } from "@/contexts/UserContext";
 import SimulationPanel from "@/components/admin/SimulationPanel";
+import MatchDataPanel from "@/components/admin/MatchDataPanel";
 import CompetitionPicker from "@/components/admin/CompetitionPicker";
 import InviteCodesPanel from "@/components/admin/InviteCodesPanel";
 import UsersPanel from "@/components/admin/UsersPanel";
@@ -73,6 +74,8 @@ export default function AdminPage() {
         <h1 className="text-2xl font-bold mb-6 text-white">Admin Panel</h1>
 
         <SimulationPanel />
+
+        <MatchDataPanel />
 
         <SummaryPanel />
 

@@ -124,8 +124,8 @@ export class WorldCup26Provider implements LiveDataProvider {
       return "PAUSED";
     }
 
-    // If it's a number (minutes), match is in play
-    if (/^\d+/.test(elapsed)) {
+    // In-play indicators: a numeric minute (e.g. "67") or the literal "live"
+    if (/^\d+/.test(elapsed) || elapsed === "live" || elapsed === "inplay") {
       return "IN_PLAY";
     }
 

@@ -184,10 +184,13 @@ export class PredictionBracketResolver {
     });
   }
 
-  /** Get predicted winner from user's prediction for a resolved match */
+  /** Get predicted winner from user's prediction for a resolved match.
+   *  Only the WINNING side needs to be resolved — a team can advance on the
+   *  user's prediction even if its opponent isn't known yet (e.g. a clinched
+   *  team whose 3rd-place opponent is still undetermined). */
   private getPredictedWinnerByFifa(fifaNumber: FifaMatchId): Team | null {
     const resolved = this.resolved.get(fifaNumber);
-    if (!resolved?.home || !resolved?.away) return null;
+    if (!resolved) return null;
 
     const prediction = this.predictions.get(fifaNumber);
     if (

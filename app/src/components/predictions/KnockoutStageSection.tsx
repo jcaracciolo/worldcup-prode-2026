@@ -5,6 +5,7 @@ import { FifaMatchId } from "@/types/football";
 import { MatchWithLiveInfo } from "@/contexts/MatchContext";
 import { LocalPrediction } from "@/types/database";
 import { formatStageName } from "@/lib/format";
+import { getBracketLabel } from "@/lib/team-display";
 import MatchPointsTooltip from "@/components/MatchPointsTooltip";
 import { KnockoutMatchRow } from "@/components/match-row";
 import { ActiveField } from "@/components/MobileScoreDisplay";
@@ -36,6 +37,13 @@ interface KnockoutStageSectionProps {
   activeField?: ActiveField | null;
   /** Mobile quick-entry: called when a score field is tapped */
   onFieldTap?: (field: ActiveField) => void;
+  /**
+   * predictions mode only: per-match visibility predicate. When it returns
+   * false for a match, that match's predicted teams and score are masked (used
+   * to hide other users' not-yet-locked knockout picks). Defaults to always
+   * visible.
+   */
+  isPredictionVisible?: (match: MatchWithLiveInfo) => boolean;
 }
 
 const KNOCKOUT_STAGE_ORDER = [
@@ -57,6 +65,7 @@ export default function KnockoutStageSection({
   readOnly = false,
   activeField,
   onFieldTap,
+  isPredictionVisible,
 }: KnockoutStageSectionProps) {
   const { getCurrentTime } = useTime();
 
@@ -117,6 +126,28 @@ export default function KnockoutStageSection({
                   const prediction = predictions?.get(fifaNumber);
 
                   if (viewMode === "predictions") {
+                    // Hide other users' not-yet-locked picks: mask the predicted
+                    // teams (fall back to generic bracket labels) and the score.
+                    const visible = isPredictionVisible
+                      ? isPredictionVisible(match)
+                      : true;
+                    if (!visible) {
+                      const maskedMatch = {
+                        ...match,
+                        homeTeam: null,
+                        awayTeam: null,
+                        homeDisplayName: getBracketLabel(fifaNumber, "home"),
+                        awayDisplayName: getBracketLabel(fifaNumber, "away"),
+                      } as unknown as MatchWithLiveInfo;
+                      return (
+                        <KnockoutMatchRow
+                          key={match.id}
+                          match={maskedMatch}
+                          fifaMatchNumber={fifaNumber}
+                          mode="readonly"
+                        />
+                      );
+                    }
                     // Read-only predictions with points tooltip
                     return (
                       <KnockoutMatchRow

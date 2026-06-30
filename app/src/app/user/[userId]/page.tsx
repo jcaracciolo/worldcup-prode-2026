@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useMatches } from "@/contexts/MatchContext";
 import { useTime } from "@/contexts/TimeContext";
-import { GROUP_STAGE_END } from "@/lib/time";
+import { GROUP_STAGE_END, KNOCKOUT_START } from "@/lib/time";
 import { useUser, useProfile } from "@/contexts/UserContext";
 import {
   useUserPredictions,
@@ -57,7 +57,7 @@ export default function UserPredictionsPage() {
     stageLockStatus;
 
   // Tab state - default to group if group stage is still playing, knockout if group stage is done
-  const { getCurrentTime } = useTime();
+  const { getCurrentTime, isKnockoutMatchLocked } = useTime();
   const [activeTab, setActiveTab] = useState<"group" | "knockout">(() =>
     getCurrentTime() >= GROUP_STAGE_END ? "knockout" : "group",
   );
@@ -92,7 +92,16 @@ export default function UserPredictionsPage() {
 
   // Visibility rules - show predictions when stage is locked
   const showGroupPredictions = isOwnPredictions || groupStageLocked;
-  const showKnockoutPredictions = isOwnPredictions || knockoutStageLocked;
+  // Knockout reveal is per-match: the section appears for other users once the
+  // knockout has begun (first match locked); within it, each not-yet-locked
+  // match's predicted teams + score are masked. Own predictions always visible.
+  const knockoutRevealBegun = getCurrentTime() >= KNOCKOUT_START;
+  const showKnockoutPredictions = isOwnPredictions || knockoutRevealBegun;
+  const knockoutVisibleForMatch = useCallback(
+    (m: { utcDate: string | Date }) =>
+      isOwnPredictions || isKnockoutMatchLocked(m.utcDate),
+    [isOwnPredictions, isKnockoutMatchLocked],
+  );
 
   if (isLoading || (matchesLoading && matches.length === 0)) {
     return <LoadingSpinner />;
@@ -351,6 +360,7 @@ export default function UserPredictionsPage() {
                 predictions={fifaPredictionMap}
                 userId={userId}
                 mode="predictions"
+                isPredictionVisible={knockoutVisibleForMatch}
               />
             )}
           </>

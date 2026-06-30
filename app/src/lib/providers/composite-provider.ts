@@ -300,8 +300,10 @@ async function fetchFromLiveProviders(): Promise<LiveMatchData[] | null> {
   }
 
   // Try providers in priority order (highest priority first).
-  // Only falls back to the next provider when the current one fails.
-  // This preserves budget on paid/limited providers.
+  // Falls back to the next provider when the current one fails OR returns no
+  // usable live data — so a flaky/empty high-priority provider doesn't block
+  // the reachable fallback (e.g. football-data-live). This preserves budget on
+  // limited providers because we still stop at the first one with real data.
   for (const provider of available) {
     try {
       console.log(`[composite] Trying live provider: ${provider.name}`);
@@ -310,7 +312,13 @@ async function fetchFromLiveProviders(): Promise<LiveMatchData[] | null> {
       console.log(
         `[composite] ${provider.name} returned ${data.length} live match(es)`,
       );
-      return data;
+      if (data.length > 0) {
+        return data;
+      }
+      // Success but no live data — fall through to the next provider.
+      console.log(
+        `[composite] ${provider.name} had no live data, trying next...`,
+      );
     } catch (error) {
       if (error instanceof ProviderQuotaExhaustedError) {
         providerRegistry.recordQuotaExhausted(provider.name);

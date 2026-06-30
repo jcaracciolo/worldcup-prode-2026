@@ -115,7 +115,7 @@ export default function TodaysPredictions() {
   const allPredictions = useAllPredictions();
   const profiles = useAllProfiles();
   const { user: profile } = useUser();
-  const { stageLockStatus } = useTime();
+  const { stageLockStatus, isKnockoutMatchLocked } = useTime();
   const { selectedDay, dayMatches, isToday, canPrev, canNext, prev, next, goToday } =
     useMatchDayNav();
 
@@ -135,9 +135,17 @@ export default function TodaysPredictions() {
 
     return dayMatches.map((match) => {
       const isGroupMatch = match.stage === "GROUP_STAGE";
+      // Knockout predictions stay fully hidden (including the user's own) until
+      // that match locks — per-match, so #73 reveals the day it kicks off while
+      // the rest stay hidden until the deadline.
+      const knockoutVisible = isKnockoutMatchLocked(match.utcDate);
+      if (!isGroupMatch && !knockoutVisible) {
+        return { match, groups: [] as ReturnType<typeof groupPredictions> };
+      }
+
       const othersVisible = isGroupMatch
         ? stageLockStatus.groupStageLocked
-        : stageLockStatus.knockoutStageLocked;
+        : knockoutVisible;
 
       const groups = groupPredictions(
         match,
@@ -157,7 +165,7 @@ export default function TodaysPredictions() {
     currentUserId,
     isAdmin,
     stageLockStatus.groupStageLocked,
-    stageLockStatus.knockoutStageLocked,
+    isKnockoutMatchLocked,
   ]);
 
   // Only block rendering when there's truly no data (first load)
@@ -165,9 +173,12 @@ export default function TodaysPredictions() {
   if (!allPredictions.content && !profiles.content) return null;
   if (dayMatches.length === 0) return null;
 
-  // If browsing a knockout day and knockout isn't locked, hide all predictions
+  // If browsing an all-knockout day where NO match has locked yet, hide all
+  // predictions with an explanatory message. Once any match locks (e.g. #73 on
+  // its kickoff day), its predictions show and this banner is suppressed.
   const allKnockout = dayMatches.length > 0 && dayMatches.every((m) => m.stage !== "GROUP_STAGE");
-  const knockoutHidden = allKnockout && !stageLockStatus.knockoutStageLocked;
+  const knockoutHidden =
+    allKnockout && dayMatches.every((m) => !isKnockoutMatchLocked(m.utcDate));
 
   const hasPredictions = !knockoutHidden && matchPredictions.some((mp) => mp.groups.length > 0);
 

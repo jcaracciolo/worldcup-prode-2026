@@ -85,9 +85,18 @@ export default function MatchPointsTooltip({
 
     const rows: { label: string; points: number }[] = [];
 
+    // Advancer ("passes") row — the team you predicted to advance that did.
+    const passItem = matchBreakdown.find((b) => b.type === "knockout_pass");
+    const passTla = passItem?.team?.tla;
+    const passLabel = passTla
+      ? `${passTla} advances${multLabel}`
+      : `Advances${multLabel}`;
+    const passRow = { label: passLabel, points: earned("knockout_pass") };
+
     if (isGroup || isR32) {
       // Group stage and R32 use a single "Result" line (position-based scoring)
       rows.push({ label: "Result", points: earned("result") });
+      if (isR32) rows.push(passRow);
       rows.push({ label: `Goals (${homeTla})`, points: earned("goals_home") });
       rows.push({ label: `Goals (${awayTla})`, points: earned("goals_away") });
     } else {
@@ -132,6 +141,7 @@ export default function MatchPointsTooltip({
           points: earned("knockout_lose"),
         });
       }
+      rows.push(passRow);
       rows.push({ label: `Goals (${homeTla})`, points: earned("goals_home") });
       rows.push({ label: `Goals (${awayTla})`, points: earned("goals_away") });
     }

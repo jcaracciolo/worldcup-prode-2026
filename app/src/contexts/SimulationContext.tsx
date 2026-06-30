@@ -413,14 +413,27 @@ export function SimulationProvider({ children }: SimulationProviderProps) {
           };
         }
 
-        // Finished match - show full score
+        // Finished match - show full score. Knockout ties must resolve an
+        // advancer (penalty shootout): a draw with no winner would otherwise
+        // leave the bracket/"passes" scoring unable to decide who went through.
+        const isKnockout = fifaNumber >= 73;
+        const isTie = finalScore.home === finalScore.away;
+        let finalWinner = getWinner(finalScore.home, finalScore.away);
+        let finalDuration = "REGULAR";
+        if (isKnockout && isTie) {
+          // Deterministic per-match shootout winner (seeded, so it's stable).
+          const penaltyRandom = mulberry32(state.seed + match.id + 2000);
+          finalWinner = penaltyRandom() < 0.5 ? "HOME_TEAM" : "AWAY_TEAM";
+          finalDuration = "PENALTY_SHOOTOUT";
+        }
+
         return {
           ...match,
           utcDate: scheduledUtcDate,
           status,
           score: {
-            winner: getWinner(finalScore.home, finalScore.away),
-            duration: "REGULAR",
+            winner: finalWinner,
+            duration: finalDuration,
             fullTime: { home: finalScore.home, away: finalScore.away },
             halfTime: {
               home: goalTimes.homeMinutes.filter((min) => min <= 45).length,

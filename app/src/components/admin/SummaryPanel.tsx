@@ -261,8 +261,12 @@ export default function SummaryPanel() {
 
       const flag = nameWithFlag(entry.name, entry.country);
 
+      // Points awarded today = match points + any bonus awarded today, shown as
+      // a single figure (no separate bonus breakdown).
+      const todayTotal = entry.todayMatch + entry.todayBonus;
+
       lines.push(
-        `${entry.position}. ${flag} - ${entry.totalPoints} (+${entry.todayMatch}, b:+${entry.todayBonus})${changeStr}`,
+        `${entry.position}. ${flag} - ${entry.totalPoints} (+${todayTotal})${changeStr}`,
       );
     }
 

@@ -1,4 +1,8 @@
 import type { Match, MatchesResponse } from "@/types/football";
+import {
+  normalizePenaltyShootoutScore,
+  type RawFootballDataMatch,
+} from "./score-normalization";
 
 const API_BASE_URL = "https://api.football-data.org/v4";
 const COMPETITION_CODE = "WC";
@@ -29,7 +33,10 @@ export async function fetchBaseMatches(): Promise<Match[]> {
   }
 
   const data: MatchesResponse = await response.json();
-  return data.matches;
+  // Normalise penalty-shootout scores (real on-field score + advancer).
+  return (data.matches as unknown as RawFootballDataMatch[]).map(
+    normalizePenaltyShootoutScore,
+  );
 }
 
 /**
@@ -46,7 +53,8 @@ export async function fetchBaseMatch(matchId: number): Promise<Match | null> {
     });
 
     if (!response.ok) return null;
-    return response.json();
+    const raw = (await response.json()) as RawFootballDataMatch;
+    return normalizePenaltyShootoutScore(raw);
   } catch {
     return null;
   }

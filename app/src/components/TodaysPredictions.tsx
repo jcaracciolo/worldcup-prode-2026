@@ -13,10 +13,21 @@ import UserName from "@/components/UserName";
 import Link from "next/link";
 import { useMatchDayNav } from "@/hooks/useMatchDayNav";
 
+/** Which team a tie-breaker prediction sends through, for the flag badge. */
+type AdvanceSide = {
+  side: "HOME" | "AWAY";
+  tla: string;
+  crest: string | null;
+} | null;
+
 interface GroupedPrediction {
+  /** Unique key for React (score, plus advancer for knockout ties). */
+  key: string;
   score: string;
   homeGoals: number;
   awayGoals: number;
+  /** For knockout ties: the team this group predicted to advance (else null). */
+  advance: AdvanceSide;
   users: { userId: string; name: string; country: string | null }[];
   /** True when this is the first item after a section boundary (ties, away wins) */
   sectionBreak: boolean;
@@ -25,16 +36,30 @@ interface GroupedPrediction {
 /**
  * Group and sort predictions for a match, identical to admin Copy Predictions ordering:
  * home wins → ties → away wins, within each group sorted by winner goals desc.
+ *
+ * For knockout ties, predictions are further split by which team the user
+ * predicted to advance on penalties (penalty_winner), so a "1-1 → home advances"
+ * group is shown separately from "1-1 → away advances", each with a team flag.
  */
 function groupPredictions(
   match: MatchWithLiveInfo,
-  predictionsMap: Map<string, { predictions: { match_id: number; home_goals: number | null; away_goals: number | null }[] }>,
+  predictionsMap: Map<string, { predictions: { match_id: number; home_goals: number | null; away_goals: number | null; penalty_winner?: "HOME" | "AWAY" | null }[] }>,
   profileMap: Map<string, { name: string; country: string | null }>,
   currentUserId: string | null,
   isAdmin: boolean,
   othersVisible: boolean,
 ): GroupedPrediction[] {
-  const grouped = new Map<string, { userId: string; name: string; country: string | null }[]>();
+  const isKnockout = match.stage !== "GROUP_STAGE";
+  // Per-group key → { users, penalty_winner }. For knockout ties the key
+  // embeds the advancer so the two sides land in separate rows.
+  const grouped = new Map<
+    string,
+    {
+      score: string;
+      penaltyWinner: "HOME" | "AWAY" | null;
+      users: { userId: string; name: string; country: string | null }[];
+    }
+  >();
 
   predictionsMap.forEach((userData, userId) => {
     const profile = profileMap.get(userId);
@@ -48,40 +73,54 @@ function groupPredictions(
     );
     if (!pred || pred.home_goals === null || pred.away_goals === null) return;
 
-    const key = `${pred.home_goals}-${pred.away_goals}`;
-    if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key)!.push({ userId, name: profile.name, country: profile.country });
+    const score = `${pred.home_goals}-${pred.away_goals}`;
+    const isTie = pred.home_goals === pred.away_goals;
+    const penaltyWinner =
+      isKnockout && isTie ? pred.penalty_winner ?? null : null;
+    // Knockout ties split by advancer; everything else keys on score alone.
+    const key = penaltyWinner ? `${score}|${penaltyWinner}` : score;
+
+    if (!grouped.has(key))
+      grouped.set(key, { score, penaltyWinner, users: [] });
+    grouped.get(key)!.users.push({ userId, name: profile.name, country: profile.country });
   });
 
   // Group by outcome
-  const homeWins = [...grouped.entries()].filter(([s]) => {
-    const [h, a] = s.split("-").map(Number);
+  const entries = [...grouped.values()];
+  const homeWins = entries.filter((g) => {
+    const [h, a] = g.score.split("-").map(Number);
     return h > a;
   });
-  const ties = [...grouped.entries()].filter(([s]) => {
-    const [h, a] = s.split("-").map(Number);
+  const ties = entries.filter((g) => {
+    const [h, a] = g.score.split("-").map(Number);
     return h === a;
   });
-  const awayWins = [...grouped.entries()].filter(([s]) => {
-    const [h, a] = s.split("-").map(Number);
+  const awayWins = entries.filter((g) => {
+    const [h, a] = g.score.split("-").map(Number);
     return h < a;
   });
 
+  type Grp = (typeof entries)[number];
+
   // Home wins: highest home goals first, then lowest away goals
-  const byHomeWins = (a: [string, any[]], b: [string, any[]]) => {
-    const [ah, aa] = a[0].split("-").map(Number);
-    const [bh, ba] = b[0].split("-").map(Number);
+  const byHomeWins = (a: Grp, b: Grp) => {
+    const [ah, aa] = a.score.split("-").map(Number);
+    const [bh, ba] = b.score.split("-").map(Number);
     if (bh !== ah) return bh - ah;
     return aa - ba;
   };
-  // Ties: highest goals first
-  const byTies = (a: [string, any[]], b: [string, any[]]) => {
-    return Number(b[0].split("-")[0]) - Number(a[0].split("-")[0]);
+  // Ties: highest goals first, then home-advancer before away-advancer
+  const byTies = (a: Grp, b: Grp) => {
+    const diff = Number(b.score.split("-")[0]) - Number(a.score.split("-")[0]);
+    if (diff !== 0) return diff;
+    const rank = (p: "HOME" | "AWAY" | null) =>
+      p === "HOME" ? 0 : p === "AWAY" ? 1 : 2;
+    return rank(a.penaltyWinner) - rank(b.penaltyWinner);
   };
   // Away wins: lowest away goals first (increasing down)
-  const byAwayWins = (a: [string, any[]], b: [string, any[]]) => {
-    const [ah, aa] = a[0].split("-").map(Number);
-    const [bh, ba] = b[0].split("-").map(Number);
+  const byAwayWins = (a: Grp, b: Grp) => {
+    const [ah, aa] = a.score.split("-").map(Number);
+    const [bh, ba] = b.score.split("-").map(Number);
     if (aa !== ba) return aa - ba;
     return bh - ah;
   };
@@ -90,22 +129,37 @@ function groupPredictions(
   const tiesSorted = ties.sort(byTies);
   const awayWinsSorted = awayWins.sort(byAwayWins);
 
+  const advanceFor = (penaltyWinner: "HOME" | "AWAY" | null): AdvanceSide => {
+    if (!penaltyWinner) return null;
+    const team = penaltyWinner === "HOME" ? match.homeTeam : match.awayTeam;
+    if (!team) return null;
+    return {
+      side: penaltyWinner,
+      tla: team.tla || (penaltyWinner === "HOME" ? "HOME" : "AWAY"),
+      crest: team.crest ?? null,
+    };
+  };
+
   const result: GroupedPrediction[] = [];
 
-  homeWinsSorted.forEach(([score, users], i) => {
-    const [h, a] = score.split("-").map(Number);
-    result.push({ score, homeGoals: h, awayGoals: a, users: users.sort((a, b) => a.name.localeCompare(b.name)), sectionBreak: false });
-  });
+  const push = (g: Grp, sectionBreak: boolean) => {
+    const [h, a] = g.score.split("-").map(Number);
+    result.push({
+      key: g.penaltyWinner ? `${g.score}|${g.penaltyWinner}` : g.score,
+      score: g.score,
+      homeGoals: h,
+      awayGoals: a,
+      advance: advanceFor(g.penaltyWinner),
+      users: g.users.sort((x, y) => x.name.localeCompare(y.name)),
+      sectionBreak,
+    });
+  };
 
-  tiesSorted.forEach(([score, users], i) => {
-    const [h, a] = score.split("-").map(Number);
-    result.push({ score, homeGoals: h, awayGoals: a, users: users.sort((a, b) => a.name.localeCompare(b.name)), sectionBreak: i === 0 && homeWinsSorted.length > 0 });
-  });
-
-  awayWinsSorted.forEach(([score, users], i) => {
-    const [h, a] = score.split("-").map(Number);
-    result.push({ score, homeGoals: h, awayGoals: a, users: users.sort((a, b) => a.name.localeCompare(b.name)), sectionBreak: i === 0 && (homeWinsSorted.length > 0 || tiesSorted.length > 0) });
-  });
+  homeWinsSorted.forEach((g) => push(g, false));
+  tiesSorted.forEach((g, i) => push(g, i === 0 && homeWinsSorted.length > 0));
+  awayWinsSorted.forEach((g, i) =>
+    push(g, i === 0 && (homeWinsSorted.length > 0 || tiesSorted.length > 0)),
+  );
 
   return result;
 }
@@ -293,15 +347,33 @@ export default function TodaysPredictions() {
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {groups.map(({ score, users, sectionBreak }) => (
-                    <div key={score}>
+                  {groups.map(({ key, score, advance, users, sectionBreak }) => (
+                    <div key={key}>
                       {sectionBreak && (
                         <div className="border-t border-white/10 my-2" />
                       )}
                       <div className="flex items-start gap-2 sm:gap-3">
-                        {/* Score badge */}
-                        <span className="shrink-0 px-2 py-0.5 bg-white/10 rounded text-xs sm:text-sm font-bold text-white/90 min-w-[36px] text-center">
-                          {score}
+                        {/* Score badge + (knockout tie) advancing-team flag */}
+                        <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 bg-white/10 rounded text-xs sm:text-sm font-bold text-white/90 text-center">
+                          <span className="min-w-[28px] text-center">{score}</span>
+                          {advance && (
+                            <span
+                              className="inline-flex items-center gap-0.5 pl-1 border-l border-white/15"
+                              title={`Advances: ${advance.tla}`}
+                            >
+                              <span className="text-white/40 text-[10px]">→</span>
+                              {advance.crest ? (
+                                <img
+                                  src={advance.crest}
+                                  alt={advance.tla}
+                                  className="w-3.5 h-3.5 object-contain"
+                                />
+                              ) : null}
+                              <span className="text-[10px] text-white/70">
+                                {advance.tla}
+                              </span>
+                            </span>
+                          )}
                         </span>
 
                         {/* Users list */}

@@ -29,13 +29,22 @@ export function getMatchHighlight(match: MatchWithLiveInfo): MatchHighlight {
   const awayWon = isFinished && hasScore && awayGoals! > homeGoals!;
   const isDraw = isFinished && hasScore && homeGoals === awayGoals;
   const isGroupStage = match.stage === "GROUP_STAGE";
+  const isKnockout = !isGroupStage;
+
+  // A knockout match drawn in regular/extra time is decided on penalties: the
+  // advancer is carried in score.winner. Highlight that team (the yellow bg),
+  // mirroring the group-stage "both teams on a draw" behavior.
+  const knockoutHomeAdvances =
+    isDraw && isKnockout && match.score.winner === "HOME_TEAM";
+  const knockoutAwayAdvances =
+    isDraw && isKnockout && match.score.winner === "AWAY_TEAM";
 
   return {
     homeWon,
     awayWon,
     isDraw,
-    homeHighlight: homeWon || (isGroupStage && isDraw),
-    awayHighlight: awayWon || (isGroupStage && isDraw),
+    homeHighlight: homeWon || (isGroupStage && isDraw) || knockoutHomeAdvances,
+    awayHighlight: awayWon || (isGroupStage && isDraw) || knockoutAwayAdvances,
   };
 }
 

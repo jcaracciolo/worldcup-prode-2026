@@ -182,20 +182,26 @@ function findLiveMatch(
 /**
  * Merge live data onto a base match. Only overlays status and score.
  */
-function mergeMatchWithLiveData(base: Match, live: LiveMatchData): Match {
+export function mergeMatchWithLiveData(base: Match, live: LiveMatchData): Match {
+  // Live providers only know the on-field score, not the penalty-shootout
+  // advancer. On a tie we must NOT overwrite the base feed's `winner` (which
+  // may already carry the real advancer for a finished knockout match) with a
+  // bare "DRAW" — doing so wipes the advancing team. Only set a decisive winner
+  // when the live goals are decisive; otherwise keep the base winner.
+  const decisiveWinner: "HOME_TEAM" | "AWAY_TEAM" | null =
+    live.homeGoals !== null && live.awayGoals !== null
+      ? live.homeGoals > live.awayGoals
+        ? "HOME_TEAM"
+        : live.awayGoals > live.homeGoals
+          ? "AWAY_TEAM"
+          : null
+      : null;
   return {
     ...base,
     status: live.status,
     score: {
       ...base.score,
-      winner:
-        live.homeGoals !== null && live.awayGoals !== null
-          ? live.homeGoals > live.awayGoals
-            ? "HOME_TEAM"
-            : live.awayGoals > live.homeGoals
-              ? "AWAY_TEAM"
-              : "DRAW"
-          : null,
+      winner: decisiveWinner ?? base.score.winner,
       fullTime: {
         home: live.homeGoals,
         away: live.awayGoals,

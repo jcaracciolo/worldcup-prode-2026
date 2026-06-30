@@ -64,7 +64,23 @@ const isFinishedWithScore = (m: Match | undefined): m is Match =>
   !!m &&
   m.status === "FINISHED" &&
   m.score.fullTime.home !== null &&
-  m.score.fullTime.away !== null;
+  m.score.fullTime.away !== null &&
+  // A knockout match drawn after extra time isn't fully resolved until the
+  // penalty-shootout advancer is known (score.winner = HOME_TEAM/AWAY_TEAM).
+  // Freezing such a match too early would lock in a draw with no advancer, so
+  // keep refreshing it until the winner is decided.
+  hasResolvedAdvancer(m);
+
+/** Whether a finished match's advancer is decided (decisive score, or a
+ *  recorded shootout winner on a knockout draw). Group-stage draws are fine. */
+const hasResolvedAdvancer = (m: Match): boolean => {
+  const home = m.score.fullTime.home;
+  const away = m.score.fullTime.away;
+  if (home === null || away === null) return false;
+  if (home !== away) return true; // decisive result
+  if (m.stage === "GROUP_STAGE") return true; // group draws need no advancer
+  return m.score.winner === "HOME_TEAM" || m.score.winner === "AWAY_TEAM";
+};
 
 type DbService = Awaited<ReturnType<typeof createServerDatabaseService>>;
 

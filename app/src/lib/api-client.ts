@@ -465,22 +465,25 @@ const API_ID_TO_FIFA: Record<number, number> = {
   537402: 72, // ALG vs AUT - Jun 28 (concurrent with 71)
 
   // Round of 32 (FIFA 73-88)
+  // NOTE: football-data.org's API IDs for the R32 are NOT in FIFA-number order,
+  // so each FIFA slot is mapped to its specific API ID (verified against the
+  // real R32 fixtures/teams in production).
   537417: 73, // Jun 28
-  537423: 74, // Jun 29
-  537415: 75, // Jun 29
-  537418: 76, // Jun 30
-  537424: 77, // Jun 30
-  537416: 78, // Jun 30
+  537415: 74, // Jun 29
+  537418: 75, // Jun 29
+  537423: 76, // Jun 30
+  537416: 77, // Jun 30
+  537424: 78, // Jun 30
   537425: 79, // Jul 1
   537426: 80, // Jul 1
-  537422: 81, // Jul 1
-  537421: 82, // Jul 2
-  537420: 83, // Jul 2
-  537419: 84, // Jul 2
+  537421: 81, // Jul 1
+  537422: 82, // Jul 2
+  537419: 83, // Jul 2
+  537420: 84, // Jul 2
   537429: 85, // Jul 3
-  537428: 86, // Jul 3
-  537427: 87, // Jul 3
-  537430: 88, // Jul 4
+  537427: 86, // Jul 3
+  537430: 87, // Jul 3
+  537428: 88, // Jul 4
 
   // Round of 16 (FIFA 89-96)
   537376: 89, // Jul 4
